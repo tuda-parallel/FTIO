@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["ftio","ftio.*"] 
+
+[project]
+name = "ftio-hpc"
+version = "0.0.1"
+dependencies = [
+	"scikit-learn",
+	"numba",
+	"darshan",
+	"fastdtw",
+	"scipy",
+	"pandas",
+	"jsonlines",
+	"plotly",
+	"dash",
+	"kneed",
+	"PyWavelets",
+	"trace_updater",
+	"plotly_resampler",
+	"msgpack",
+	"rich",
+	"dash_extensions",
+]
+requires-python = ">=3.8"
+authors = [
+  {name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de"},
+]
+maintainers = [
+  {name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de"}
+]
+description = "Frequency Techniques for I/O"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["ftio", "I/O"]
+classifiers = [
+	"Development Status :: 5 - Production/Stable",
+	"License :: OSI Approved :: BSD License",
+	"Operating System :: OS Independent",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3 :: Only",
+	"Programming Language :: Python :: 3.8",
+	"Programming Language :: Python :: 3.9",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3.11",
+	"Operating System :: OS Independent",
+	"Intended Audience :: Developers",
+	"Intended Audience :: Science/Research",
+	"Topic :: Scientific/Engineering",
+	"Topic :: Software Development",
+	"Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.optional-dependencies]
+
+
+[project.urls]
+Homepage = "https://github.com/tuda-parallel/FTIO"
+Documentation = "https://github.com/tuda-parallel/FTIO/docs"
+Repository = "https://github.com/tuda-parallel/FTIO"
+"Bug Tracker" = "https://github.com/tuda-parallel/FTIO/issues"
+Changelog = "https://github.com/tuda-parallel/FTIO/blob/master/CHANGELOG.md"
+
+[project.scripts]
+ftio = "ftio.ftio.ftio:main"
+predictor = "ftio.ftio.predictor:main"
+ioplot = "ftio.util.ioplot:main"
+parse = "ftio.util.parse:main"
+
+[project.gui-scripts]
+

@@ -1,0 +1,75 @@
+# This file is part of the Extra-P software (http://www.scalasca.org/software/extra-p)
+#
+# Copyright (c) 2020-2023, Technical University of Darmstadt, Germany
+#
+# This software may be modified and distributed under the terms of a BSD-style license.
+# See the LICENSE file in the base directory for details.
+
+from setuptools import setup, find_packages
+
+with open(file="README.md", encoding="utf8") as fh:
+    long_description = fh.read()
+
+info = {}
+with open("ftio/__init__.py","r",encoding="utf-8") as fp:
+    exec(fp.read(), info)
+
+setup(
+    name="ftio",
+    version=info['__version__'],
+    packages=find_packages(include=('ftio', 'ftio.*')),
+    author="Ahmad Tarraf",
+    author_email="ahmad.tarraf@tu-darmstadt.de",
+    # description=info['__description__'],
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/tuda-parallel/FTIO",
+    entry_points={
+        "console_scripts": [
+            "ftio = ftio.ftio.ftio:main",
+            "predictor = ftio.ftio.predictor:main",
+            "ioplot = ftio.util.ioplot:main",
+            "parse = ftio.util.parse:main"
+        ],
+
+        "gui_scripts": [
+        ]
+    },
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "License :: OSI Approved :: BSD License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Operating System :: OS Independent",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Software Development",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
+    python_requires='>=3.8',
+    include_package_data=True,
+    install_requires=[
+        "scikit-learn",
+        "numba",
+        "darshan",
+        "fastdtw",
+        "scipy",
+        "pandas",
+        "jsonlines",
+        "plotly",
+        "dash",
+        "kneed",
+        "PyWavelets",
+        "trace_updater",
+        "plotly_resampler",
+        "msgpack",
+        "rich",
+        "dash_extensions",
+    ]
+)
