@@ -1,7 +1,7 @@
 """Performs the anylsis for prediction. This includes the calculation of ftio and parsing of the data into a queue """
 from __future__ import annotations
 from multiprocessing import  Queue
-from ftio.ftio import ftio
+from ftio.cli import ftio_core
 from ftio.prediction.helper import get_dominant
 from rich.console import Console
 import numpy as np
@@ -25,7 +25,7 @@ def ftio_process(queue: Queue, count, hits, start_time, aggregated_bytes, args) 
     args.extend(["-e", "no"])
     args.extend(["-ts", f"{start_time.value:.2f}"])
     # perform prediction
-    prediction, args = ftio.main(args)
+    prediction, args = ftio_core.main(args)
     # get data
     t_s = prediction["t_start"]
     t_e = prediction["t_end"]

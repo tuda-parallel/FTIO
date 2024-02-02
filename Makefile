@@ -12,7 +12,7 @@ test:
 	ftio -e no
 
 clean:
-	pip uninstall ftio
+	pip uninstall ftio-hpc
 
 
 install: PYTHON = .venv/bin/python3
@@ -40,3 +40,10 @@ docker_run:
 
 docker_interactive:
 	cd docker && docker run -ti   freq_io:1.0
+
+debug:
+	mv old_setup setup.py
+	mv pyproject.toml pyproject
+	pip install -e .
+	mv pyproject pyproject.toml
+	mv setup.py old_setup

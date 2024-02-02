@@ -1,3 +1,10 @@
 */__pycache__*
 */__pycache__/*
 **/__pycache__/**
+
+old_setup
+*/sim/*
+*venv/*
+**/msgpack-c
+*extern_lib*
+*vscode*

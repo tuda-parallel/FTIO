@@ -245,7 +245,7 @@ class FreqPlot:
     def Plot(self):
         if "mat" not in self.plot_engine and "plotly" not in self.plot_engine:
             return
-        
+
         # Settings
         console = Console()
         all_or_10 = False
@@ -960,8 +960,6 @@ class FreqPlot:
                             args=(fig, index, length, extension),
                         )
                     )
-                    # if f.index(fig) == 2:
-                    #     break
 
                 for thread in threads:
                     thread.start()
@@ -1218,4 +1216,3 @@ def convert_and_plot(data,dfs:list ,args) -> None:
         }
     )
     freq_plot.Plot()
- 

@@ -1,13 +1,17 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools","wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-include = ["ftio","ftio.*"] 
+[tool.setuptools.packages]
+find = {} 
+# include = ["ftio*"]  # package names should match these glob patterns (["*"] by default)
+# exclude = ["ftio.tests*"]  
+
+
 
 [project]
 name = "ftio-hpc"
-version = "0.0.1"
+dynamic = ["version"]
 dependencies = [
 	"scikit-learn",
 	"numba",
@@ -55,8 +59,6 @@ classifiers = [
 	"Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-[project.optional-dependencies]
-
 
 [project.urls]
 Homepage = "https://github.com/tuda-parallel/FTIO"
@@ -66,10 +68,16 @@ Repository = "https://github.com/tuda-parallel/FTIO"
 Changelog = "https://github.com/tuda-parallel/FTIO/blob/master/CHANGELOG.md"
 
 [project.scripts]
-ftio = "ftio.ftio.ftio:main"
-predictor = "ftio.ftio.predictor:main"
+ftio = "ftio.cli.ftio_core:main"
+predictor = "ftio.cli.predictor:main"
 ioplot = "ftio.util.ioplot:main"
 parse = "ftio.util.parse:main"
 
+
 [project.gui-scripts]
+
+
+[tool.setuptools.dynamic]
+version = {attr = "ftio.__version__"}
+readme = {file = ["README.md"]}
 

@@ -2,13 +2,15 @@
 
 **Capturing Periodic I/O Using Frequency Techniques**
 
-<!-- ![GitHub release (latest by date)](https://img.shields.io/github/v/release/extra-p/extrap?style=plastic)
-[![PyPI version](https://badge.fury.io/py/extrap.png)](https://badge.fury.io/py/extrap)
-[![PyPI - License](https://img.shields.io/pypi/l/extrap?style=plastic)](https://badge.fury.io/py/extrap)
-![GitHub issues](https://img.shields.io/github/issues/extra-p/extrap?style=plastic)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/extra-p/extrap?style=plastic) -->
 
-![license][license.bedge] &emsp; ![coverage][coverage.badge] &emsp;![pipline][pipeline.badge] 
+
+![license][license.bedge] 
+![Coveralls branch](https://img.shields.io/coverallsCoverage/github/tuda-parallel/FTIO)
+![GitHub Release](https://img.shields.io/github/v/release/tuda-parallel/FTIO)
+![issues](https://img.shields.io/github/issues/tuda-parallel/FTIO)
+![contributors](https://img.shields.io/github/contributors/tuda-parallel/FTIO)
+<!-- ![GitHub pull requests](https://img.shields.io/github/issues-pr/tuda-parallel/FTIO) -->
+
 
 <br />
 <div align="center">
@@ -293,3 +295,7 @@ Publication:
 [linkedin.profile]: https://www.linkedin.com/in/dr-ahmad-tarraf-8b6942118
 [parallel_website]: https://www.parallel.informatik.tu-darmstadt.de/laboratory/team/tarraf/tarraf.html
 [parallel.bedge]: https://img.shields.io/badge/Parallel_Programming:-Ahmad_Tarraf-blue
+[pull.bedge]: https://img.shields.io/github.com/tuda-parallel/FTIO/pulls
+
+![GitHub issues](https://img.shields.io/github/issues/extra-p/extrap?style=plastic)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/extra-p/extrap?style=plastic)

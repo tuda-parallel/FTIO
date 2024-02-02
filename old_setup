@@ -1,10 +1,3 @@
-# This file is part of the Extra-P software (http://www.scalasca.org/software/extra-p)
-#
-# Copyright (c) 2020-2023, Technical University of Darmstadt, Germany
-#
-# This software may be modified and distributed under the terms of a BSD-style license.
-# See the LICENSE file in the base directory for details.
-
 from setuptools import setup, find_packages
 
 with open(file="README.md", encoding="utf8") as fh:
@@ -15,7 +8,7 @@ with open("ftio/__init__.py","r",encoding="utf-8") as fp:
     exec(fp.read(), info)
 
 setup(
-    name="ftio",
+    name="ftio-hpc",
     version=info['__version__'],
     packages=find_packages(include=('ftio', 'ftio.*')),
     author="Ahmad Tarraf",
@@ -26,8 +19,8 @@ setup(
     url="https://github.com/tuda-parallel/FTIO",
     entry_points={
         "console_scripts": [
-            "ftio = ftio.ftio.ftio:main",
-            "predictor = ftio.ftio.predictor:main",
+            "ftio = ftio.cli.ftio_core:main",
+            "predictor = ftio.cli.predictor:main",
             "ioplot = ftio.util.ioplot:main",
             "parse = ftio.util.parse:main"
         ],

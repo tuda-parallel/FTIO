@@ -1,4 +1,4 @@
-from ftio.ftio.ftio import main
+from ftio.cli.ftio_core import main
 import sys
 
 if __name__ == "__main__":
