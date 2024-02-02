@@ -19,7 +19,7 @@ setup(
     url="https://github.com/tuda-parallel/FTIO",
     entry_points={
         "console_scripts": [
-            "ftio = ftio.cli.ftio_core:main",
+            "ftio = ftio.cli.ftio_core:run",
             "predictor = ftio.cli.predictor:main",
             "ioplot = ftio.util.ioplot:main",
             "parse = ftio.util.parse:main"

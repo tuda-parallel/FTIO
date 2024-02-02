@@ -133,7 +133,10 @@ class MyConsole(Console):
             self.verbose = True
         else:
             self.verbose = False
-        
+
     def print(self,s):
         if self.verbose:
             Console.print(self, s)
+
+    def info(self, s):
+        Console.print(self, s)

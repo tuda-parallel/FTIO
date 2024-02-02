@@ -1205,7 +1205,8 @@ def convert_and_plot(data,dfs:list ,args) -> None:
         args (argparse): _description_
     """
     freq_plot = FreqPlot(True)
-    freq_plot.add_df(len(data),dfs[0],dfs[1],dfs[2],dfs[3])
+    if any(x in args.engine for x in ["mat","plot"]):
+        freq_plot.add_df(len(data),dfs[0],dfs[1],dfs[2],dfs[3])
     freq_plot.set(
         {
             "render": args.render,
