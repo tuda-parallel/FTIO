@@ -264,6 +264,15 @@ and INRIA.
 
 Publication:
 ```
+@inproceedings{tarraf2024ftio,
+      title={Capturing Periodic I/O Using Frequency Techniques , 
+      author={Ahmad Tarraf and Alexis Bandet and Francieli Boito and Guillaume Pallez and Felix Wolf},
+	  booktitle={2024 IEEE International Parallel and Distributed Processing Symposium (IPDPS)},
+      year={2024},
+	  pages = {1--12},
+  	  publisher = {IEEE},
+}
+
 @misc{tarraf2023ftio,
       title={FTIO: Detecting I/O Periodicity Using Frequency Techniques}, 
       author={Ahmad Tarraf and Alexis Bandet and Francieli Boito and Guillaume Pallez and Felix Wolf},
@@ -296,6 +305,3 @@ Publication:
 [parallel_website]: https://www.parallel.informatik.tu-darmstadt.de/laboratory/team/tarraf/tarraf.html
 [parallel.bedge]: https://img.shields.io/badge/Parallel_Programming:-Ahmad_Tarraf-blue
 [pull.bedge]: https://img.shields.io/github.com/tuda-parallel/FTIO/pulls
-
-![GitHub issues](https://img.shields.io/github/issues/extra-p/extrap?style=plastic)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/extra-p/extrap?style=plastic)
