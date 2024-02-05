@@ -47,3 +47,11 @@ debug:
 	pip install -e .
 	mv pyproject pyproject.toml
 	mv setup.py old_setup
+
+profile:
+	rm -f test.pstats
+	python3  -m cProfile -o test.pstats ftio/cli/ftio_core.py -h
+	snakeviz test.pstats
+
+profile2:
+	python3  -m pyinstrument ftio/cli/ftio_core.py  -h

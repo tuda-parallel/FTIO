@@ -1,6 +1,6 @@
-#!#################################
-#! Helper Functions
-#!#################################
+"""Helper function for frequency techniques    
+"""
+
 from rich.console import Console
 
 def get_mode(data,mode):
@@ -71,6 +71,11 @@ def match(mode):
 
 
 def format_plot(fig) -> None:
+    """makes plots uniform
+
+    Args:
+        fig (pltoly figure)
+    """
     fig.update_layout(
     plot_bgcolor='white',
         legend=dict(
@@ -123,6 +128,12 @@ def format_plot(fig) -> None:
 
 
 class MyConsole(Console):
+    """Console child class that overwrites
+    the print method for silent version
+
+    Args:
+        Console (_type_): _description_
+    """
 
     def __init__(self):
         super().__init__()

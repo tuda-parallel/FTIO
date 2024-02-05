@@ -1,9 +1,4 @@
-# FTIO
-
-**Capturing Periodic I/O Using Frequency Techniques**
-
-
-
+<!-- # FTIO -->
 ![license][license.bedge] 
 ![Coveralls branch](https://img.shields.io/coverallsCoverage/github/tuda-parallel/FTIO)
 ![GitHub Release](https://img.shields.io/github/v/release/tuda-parallel/FTIO)
@@ -14,30 +9,28 @@
 
 <br />
 <div align="center">
-  <a href="https://git.rwth-aachen.de/parallel/ftio">
-    <!-- <img src="images/logo.png" alt="Logo" width="80" height="80"> -->
-	FTIO LOGO
-  </a>
+<!-- TODO: Add logo -->
+  <!-- <a href="https://git.rwth-aachen.de/parallel/ftio">
+    <img src="images/logo.png" alt="Logo" width="80" height="80">
+  </a> -->
 
-  <h1 align="center">FTIO</h1>
+  <h1 align="center"> FTIO</h1>
 
   <p align="center">
-    Frequency techniques for I/O
+	<h3 align="center"> Frequency Techniques for I/O </h3>
     <br />
     <a href="https://git.rwth-aachen.de/parallel/ftio/-/wikis/home"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://git.rwth-aachen.de/parallel/ftio">View Demo</a>
     ·
-    <a href="https://git.rwth-aachen.de/parallel/ftio/issues">Report Bug</a>
+    <a href="https://github.com/tuda-parallel/FTIO/issues">Report Bug</a>
     ·
-    <a href="https://git.rwth-aachen.de/parallel/ftio/issues">Request Feature</a>
+    <a href="https://github.com/tuda-parallel/FTIO/issues">Request Feature</a>
   </p>
 </div>
 
-  
-
-This repository contains the FTIO source code.
+This repository contains the source code of FTIO. FTIO captures periodic I/O using frequency techniques.
 - For installation, see [Installation](#installation)
 - See the list of updates here: [Latest News](#latest-news)
 
@@ -93,7 +86,7 @@ An overview of `FTIO` is provided in the image below:
 <br />
 
  ### Predictor
-The other tool, `predictor`, launches FTIO in a loop. It basically monitors a file for changes. The file contains bandwidth values over time (see [Quick Start](#quick-start)). Once the file changes, FTIO is called and a new prediction is found. `predictor` performs a few additional steps compared FTIO:
+The other tool, `predictor`, launches FTIO in a loop. It monitors a file for changes. The file contains bandwidth values over time (see [Quick Start](#quick-start)). Once the file changes, FTIO is called and a new prediction is found. `predictor` performs a few additional steps compared FTIO:
 * FTIO results are merged into frequency ranges using DB-Scan​
 * Conditional probability is calculated​
 * Data is further processed (e.g., average bytes estimation, estimated number of phases,...)
@@ -111,7 +104,7 @@ An overview of predictor.py is provided in the image below:
 For any questions, feel free to contact me: <ahmad.tarraf@tu-darmstadt.de>
 
 ### Built With
-The project was build with Python.
+The project was built with Python.
 
 - ![python][python.bedge] 
 
@@ -250,7 +243,7 @@ Project Link: [https://git.rwth-aachen.de/parallel/ftio](https://git.rwth-aachen
 
 ## License
 
-Distributed under the BSD 3-Clause License. See `LICENSE.txt` for more information.
+Distributed under the BSD 3-Clause License. See [LISCENCE](./LICENSE) for more information.
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- ACKNOWLEDGMENTS -->
@@ -262,16 +255,20 @@ Authors:
 This work is a result of a coopertion between the Technical University of Darmstadt 
 and INRIA. 
 
-Publication:
+
+
+## Publication:
 ```
-@inproceedings{tarraf2024ftio,
-      title={Capturing Periodic I/O Using Frequency Techniques , 
-      author={Ahmad Tarraf and Alexis Bandet and Francieli Boito and Guillaume Pallez and Felix Wolf},
-	  booktitle={2024 IEEE International Parallel and Distributed Processing Symposium (IPDPS)},
-      year={2024},
-	  pages = {1--12},
-  	  publisher = {IEEE},
-}
+ @inproceedings{Tarraf_Bandet_Boito_Pallez_Wolf_2024, 
+ 	author={Tarraf, Ahmad and Bandet, Alexis and Boito, Francieli and Pallez, Guillaume and Wolf, Felix},
+ 	title={Capturing Periodic I/O Using Frequency Techniques}, 
+ 	booktitle={2024 IEEE International Parallel and Distributed Processing Symposium (IPDPS)}, 
+ 	address={San Francisco, CA, USA}, 
+ 	year={2024},
+ 	month=may, 
+ 	pages={1–14}, 
+ 	notes = {(accepted)}
+ }
 
 @misc{tarraf2023ftio,
       title={FTIO: Detecting I/O Periodicity Using Frequency Techniques}, 
@@ -295,8 +292,8 @@ Publication:
 
 <!-- https://img.shields.io/badge/any_text-you_like-blue -->
 
+<!--* Badges *-->
 [pipeline.badge]: https://git.rwth-aachen.de/parallel/ftio/badges/main/pipeline.svg
-
 [coverage.badge]: https://git.rwth-aachen.de/parallel/ftio/badges/main/coverage.svg
 [python.bedge]: https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54
 [license.bedge]: https://img.shields.io/badge/License-BSD_3--Clause-blue.svg
@@ -305,3 +302,9 @@ Publication:
 [parallel_website]: https://www.parallel.informatik.tu-darmstadt.de/laboratory/team/tarraf/tarraf.html
 [parallel.bedge]: https://img.shields.io/badge/Parallel_Programming:-Ahmad_Tarraf-blue
 [pull.bedge]: https://img.shields.io/github.com/tuda-parallel/FTIO/pulls
+
+
+<!--* links *-->
+[issue]: https://github.com/tuda-parallel/FTIO/issues
+[pull]: https://github.com/tuda-parallel/FTIO/pulls
+[insight]: https://github.com/tuda-parallel/FTIO/network/dependencies
