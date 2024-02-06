@@ -1,5 +1,5 @@
 <!-- # FTIO -->
-![license][license.bedge] 
+![license][license.bedge]
 ![Coveralls branch](https://img.shields.io/coverallsCoverage/github/tuda-parallel/FTIO)
 ![GitHub Release](https://img.shields.io/github/v/release/tuda-parallel/FTIO)
 ![issues](https://img.shields.io/github/issues/tuda-parallel/FTIO)
@@ -15,13 +15,12 @@
   </a> -->
 
   <h1 align="center"> FTIO</h1>
-
   <p align="center">
-	<h3 align="center"> Frequency Techniques for I/O </h3>
+	<h3 align="center"> Frequency Techniques for I/O </h2>
+    <!-- <br /> -->
+    <a href="https://github.com/tuda-parallel/FTIO/tree/main/docs/approach.md"><strong>Explore the approach »</strong></a>
     <br />
-    <a href="https://git.rwth-aachen.de/parallel/ftio/-/wikis/home"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
+    <!-- <br /> -->
     <a href="https://git.rwth-aachen.de/parallel/ftio">View Demo</a>
     ·
     <a href="https://github.com/tuda-parallel/FTIO/issues">Report Bug</a>
@@ -30,20 +29,31 @@
   </p>
 </div>
 
-This repository contains the source code of FTIO. FTIO captures periodic I/O using frequency techniques.
-- For installation, see [Installation](#installation)
-- See the list of updates here: [Latest News](#latest-news)
+
+FTIO captures periodic I/O using frequency techniques. 
+Many high-performance computing (HPC) applications perform their I/O in bursts following a periodic pattern. 
+Predicting such patterns can be very efficient for I/O contention avoidance strategies, including burst buffer management, for example. 
+FTIO allows [*offline* detection](#offline-detection) and [*online* prediction](#online-prediction) of periodic I/O phases. 
+FTIO uses the discrete Fourier transform (DFT), combined with outlier detection methods to extract the dominant frequency in the signal. 
+Additional metrics gauge the confidence in the output and tell how far from being periodic the signal is. 
+A complete description of the approach is provided [here](https://github.com/tuda-parallel/FTIO/tree/main/docs/approach.md).
+
+
+This repository provides two main Python-based tools: 
+- [`ftio`](#online-pridiction):  uses frequency techniques, outlier detection methods to find the period of I/O 
+- [`predictor`](#offline-detection): implements the online version of FTIO. It simply reinvokes FTIO whenever new traces are appended to the monitored file. See [online prediction](#online-prediction) for more details. We recommend using [TMIO](https://github.com/tuda-parallel/TMIO) to generate the file with the I/O traces.
+
+
+Other tools:
+- [`ioplot`](https://github.com/tuda-parallel/FTIO/tree/main/docs/approach.md) generates interactive plots in HTML
+- [`parse`](https://github.com/tuda-parallel/FTIO/tree/main/docs/approach.md) parses and merges several traces to an [Extra-P](https://github.com/extra-p/extrap) supported format. This allows to examine the scaling behavior of the monitored metrics. 
+
+
 
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
@@ -52,21 +62,22 @@ This repository contains the source code of FTIO. FTIO captures periodic I/O usi
       </ul>
     </li>
     <li><a href="#quick-start">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
+	<li><a href="#citation">Citation</a></li>
+	<li><a href="#publications">Publications</a></li>
   </ol>
 </details>
 
-## About The Project
-`FTIO` stands for **F**requency **t**echniques for **I**/**O**.
-This repository provides two tools: `FTIO` and `predictor`. Both tools 
-are written in Python. `FTIO` uses frequency techniques, outlier detection methods, and clustering methods to predict the perodificty of I/O (see [FTIO](#ftio-frequency-techniques-for-io)). The task of periodically reinvoking `FTIO`` is done by `predictor` to calculate the probability of periodic I/O (see [predictor](#predictor)). 
+Join the [Slack channel](https://join.slack.com/t/ftioworkspace/shared_invite/zt-2bydqdt13-~hIHzIrKW2zJY_ZWJ5oE_g) or see latest updates here: [Latest News](https://github.com/tuda-parallel/FTIO/tree/main/ChangeLog.md)
 
 
-### FTIO:  **F**requency **T**echniques for **I**/**O**
+
+
+## Offline Detection
+
 `FTIO` generates frequency predictions. There are several options available to enhance the predictions. In the standard mode, the DFT is used in combination with an outlier detection method. In the latest version, autocorrelation was added to `FTIO`:
 
 1. DFT + outlier detection (Z-score, DB-Scan, Isolation forest, peak detection, or LOF)​
@@ -78,14 +89,16 @@ An overview of `FTIO` is provided in the image below:
 <br />
 <div align="center">
   <!-- <a href="https://github.com/othneildrew/Best-README-Template"> -->
-<img src="docs/images//FTIO_new.png" width=60% alt=ftio>
+<!-- <img src="docs/images/FTIO_new.png" width=60% alt=ftio> -->
+<img src="docs/images/ftio.png" width=80% alt=ftio>
   </a>
 </div>
 <br />
 
 <br />
 
- ### Predictor
+ ## Online Prediction:  
+
 The other tool, `predictor`, launches FTIO in a loop. It monitors a file for changes. The file contains bandwidth values over time (see [Quick Start](#quick-start)). Once the file changes, FTIO is called and a new prediction is found. `predictor` performs a few additional steps compared FTIO:
 * FTIO results are merged into frequency ranges using DB-Scan​
 * Conditional probability is calculated​
@@ -96,90 +109,74 @@ An overview of predictor.py is provided in the image below:
 <br />
 <div align="center">
   <!-- <a href="https://github.com/othneildrew/Best-README-Template"> -->
-<img src="docs/images//Predictor_new.png" width=50% >
+<img src="docs/images/predictor.png" width=80% >
   </a>
 </div>
 <br />
 
-For any questions, feel free to contact me: <ahmad.tarraf@tu-darmstadt.de>
-
-### Built With
-The project was built with Python.
-
-- ![python][python.bedge] 
 
 
-## Latest News
-
-- Speed-up with msgpack
-- Added autocorrelation to FTIO
-- Added 4 new outlier detection methods
 
 
-## Getting Started
-### Prerequisites
-see `./install/install_packages.py`
-### Installation
-There are two options for installation: [Automated](#automated) or [manually](#manually). Below both are described
-#### Automated
 
-Just a single command is needed:
+## Installation
+
+FTIO can be installed either [automatically](#automated-installation) or [manually](#manual-installation). 
+
+
+### Automated installation:
+
+Simply call the make command:
+
 ```sh
 make install
 ```
-This creates a virtual environment and installs the required packages locally. It also installs FTIO and predictor into `~/.local/bin`, such that both tools can be called directly on the command line. You can change the installation path by setting the variable `INSTALL_DIR` in the make file
 
-#### Manually
+This generates a virtual environment in the current directory, sources `.venv/bin/activate`, and installs FTIO as a module. 
 
-Install a virtual environment in your desired location:
-```sh
-python3 -m venv your_folder
-```
+If you don't need a dedicated environment, simply call:
 
-Active it:
-```sh
-source your_folder/bin/activate
-```
-
-Install the following modules:
-```sh
-python3 -m pip install darshan extrap fastdtw pandas numpy jsonlines numba plotly PyWavelets sklearn scipy seaborn scikit-learn kneed
-```
-
-Now install `FTIO`:
 ```sh
 make ftio
 ```
 
-### Testing
-After installation, `FTIO`` is installed in `~/.local/bin/ftio`. Now `FTIO` can
-be called from the command line:
+
+### Manual installation:
+
+Create a virtual environment if needed and activate it:
 
 ```sh
-ftio file_name
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-Use test.sh to check that everything works like it should:
+Install all tools provided in this repo simply by using pip:
 
 ```sh
-./test.sh
+pip install .
 ```
-You might have to change the path to the Python environment in `test.sh` if you manually installed ftio.
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## Usage
+Note: you need to activate the environment to use `ftio` and the other tools using:
 
-To call ftio on a single file, use:
+```sh
+source path/to/venv/bin/activate
+```
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+## Getting Started
+For installation instructions see [installation](#installation).
+
+To call `ftio` on a single file, use:
 ```sh
 ftio filename.extension
 ```
 
-Supported extensions are `json`, `jsonLines`, `msgpack`, and `darshan`. For recorder, provide the path to the folder instead of `filename.extension`. There is a `8.jsonl` file provided for testing. Here just call:
+Supported extensions are `json`, `jsonLines`, `msgpack`, and `darshan`. For recorder, provide the path to the folder instead of `filename.extension`. 
 
-```sh
-ftio 8.jsonl
-```
 
+### Usage
+FTIO provides various options and extensions. In the default
 To see all available command line arguments, call:
 
 ```sh
@@ -195,6 +192,18 @@ ftio [-h] [-m MODE] [-r RENDER] [-f FREQ] [-ts TS] [-te TE]
 
 ```
 
+### Testing
+
+There is a `8.jsonl` file provided for testing. Here just call:
+
+```sh
+ftio 8.jsonl
+```
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
+
+
 The most relevant settings are:
 
 | Flag | Description|
@@ -209,7 +218,7 @@ The most relevant settings are:
 `predictor` has the same syntax as `FTIO`. 
 All arguments that are available for `FTIO` are also available for `predictor``.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 <!-- CONTRIBUTING -->
 ## Contributing
@@ -225,7 +234,7 @@ Don't forget to give the project a star! Thanks again!
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 
@@ -238,13 +247,13 @@ Ahmad Tarraf
 
 Project Link: [https://git.rwth-aachen.de/parallel/ftio](https://git.rwth-aachen.de/parallel/ftio)
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ## License
 
 Distributed under the BSD 3-Clause License. See [LISCENCE](./LICENSE) for more information.
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
@@ -257,7 +266,7 @@ and INRIA.
 
 
 
-## Publication:
+## Citation:
 ```
  @inproceedings{Tarraf_Bandet_Boito_Pallez_Wolf_2024, 
  	author={Tarraf, Ahmad and Bandet, Alexis and Boito, Francieli and Pallez, Guillaume and Wolf, Felix},
@@ -269,19 +278,16 @@ and INRIA.
  	pages={1–14}, 
  	notes = {(accepted)}
  }
-
-@misc{tarraf2023ftio,
-      title={FTIO: Detecting I/O Periodicity Using Frequency Techniques}, 
-      author={Ahmad Tarraf and Alexis Bandet and Francieli Boito and Guillaume Pallez and Felix Wolf},
-      year={2023},
-      eprint={2306.08601},
-      archivePrefix={arXiv},
-      primaryClass={cs.DC}
-}
 ```
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<p align="right">(<a href="#top">back to top</a>)</p>
 
-<!-- LICENSE -->
+
+## Publications:
+1. A. Tarraf, A. Bandet, F. Boito, G. Pallez, and F. Wolf, “Capturing Periodic I/O Using Frequency Techniques,” in 2024 IEEE International Parallel and Distributed Processing Symposium (IPDPS), San Francisco, CA, USA, May 2024, pp. 1–14.
+
+2. A. Tarraf, A. Bandet, F. Boito, G. Pallez, and F. Wolf, “FTIO: Detecting I/O periodicity using frequency techniques.” 2023.
+
+
 
 
 

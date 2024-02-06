@@ -9,20 +9,17 @@ ftio_core:
 
 
 test:
-	ftio -e no
+	ftio -e no -h 
 
 clean:
 	pip uninstall ftio-hpc
 
 
 install: PYTHON = .venv/bin/python3
-install: req ftio test 
 
-req: .venv
-	$(PYTHON) ./install/install_packages.py
-	
+install: ftio test 
 
-.venv: install/install_packages.py
+.venv: 
 	python3 -m venv .venv
 
 
