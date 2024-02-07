@@ -9,19 +9,12 @@ import numpy as np
 from rich.panel import Panel
 from rich.console import Console
 from rich.text import Text
+from ftio import __version__
 from ftio.ioparse.simrun import Simrun
 from ftio.ioparse.parse_recorder import ParseRecorder
 from ftio.ioparse.parse_darshan import ParseDarshan
 from ftio.ioparse.parse_msgpack import ParseMsgpack
 from ftio.ioparse.args import parse_args
-# from scipy import stats
-
-# try:
-#     import jsonlines
-# except ImportError:
-#     import pip
-#     pip.main(['install', '--user', 'jsonlines'])
-#     import jsonlines
 
 
 class Scales:
@@ -160,7 +153,7 @@ class Scales:
         title = Panel(Text(name, justify="center"), style="bold white on cyan", border_style="white", title_align="left")
         text = "\n[cyan]Author:[/]  Ahmad Tarraf\n"
         text += f"[cyan]Date:[/]    {str(datetime.date.today())}\n"
-        text += "[cyan]Version:[/]  0.0.1\n"
+        text += f"[cyan]Version:[/]  {__version__}\n"
         text += "[cyan]License:[/]  BSD\n"
         # console.print(Panel(Group(title,text), style="white", border_style='blue'))
         console.print(title)
