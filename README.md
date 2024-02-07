@@ -6,7 +6,6 @@
 ![contributors](https://img.shields.io/github/contributors/tuda-parallel/FTIO)
 <!-- ![GitHub pull requests](https://img.shields.io/github/issues-pr/tuda-parallel/FTIO) -->
 
-
 <br />
 <div align="center">
 <!-- TODO: Add logo -->
@@ -14,7 +13,7 @@
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a> -->
 
-  <h1 align="center"> FTIO</h1>
+  <h1 align="center">FTIO</h1>
   <p align="center">
 	<h3 align="center"> Frequency Techniques for I/O </h2>
     <!-- <br /> -->
@@ -118,7 +117,7 @@ Note: you need to activate the environment to use `ftio` and the other tools usi
 source path/to/venv/bin/activate
 ```
 
-<p align="right"><a href="#top">⬆</a></p>
+<p align="right"><a href="#ftio">⬆</a></p>
 
 ## Usage
 For installation instructions see [installation](#installation).
@@ -178,7 +177,7 @@ Several flags can be specified. The most relevant settings are:
 `predictor` has the same syntax as `ftio`. 
 All arguments that are available for `ftio` are also available for `predictor`.
 
-<p align="right"><a href="#top">⬆</a></p>
+<p align="right"><a href="#ftio">⬆</a></p>
 
 ## Testing
 There is a `8.jsonl` file provided for testing under [examples](https://github.com/tuda-parallel/FTIO/examples). Here just call:
@@ -186,7 +185,7 @@ There is a `8.jsonl` file provided for testing under [examples](https://github.c
 ```sh
 ftio 8.jsonl
 ```
-<p align="right"><a href="#top">⬆</a></p>
+<p align="right"><a href="#ftio">⬆</a></p>
 
 <!-- CONTRIBUTING -->
 ## Contributing
@@ -199,7 +198,7 @@ If you have a suggestion that would make this better, please fork the repo and c
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-<p align="right"><a href="#top">⬆</a></p>
+<p align="right"><a href="#ftio">⬆</a></p>
 
 
 
@@ -211,14 +210,14 @@ If you have a suggestion that would make this better, please fork the repo and c
 
   
 
-<p align="right"><a href="#top">⬆</a></p>
+<p align="right"><a href="#ftio">⬆</a></p>
 
 
 ## License
 ![license][license.bedge]
 
 Distributed under the BSD 3-Clause License. See [LISCENCE](./LICENSE) for more information.
-<p align="right"><a href="#top">⬆</a></p>
+<p align="right"><a href="#ftio">⬆</a></p>
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
@@ -229,7 +228,7 @@ Authors:
 This work is a result of a coopertion between the Technical University of Darmstadt 
 and INRIA. 
 
-<p align="right"><a href="#top">⬆</a></p>
+<p align="right"><a href="#ftio">⬆</a></p>
 
 ## Citation:
 ```
@@ -244,7 +243,7 @@ and INRIA.
  	notes = {(accepted)}
  }
 ```
-<p align="right"><a href="#top">⬆</a></p>
+<p align="right"><a href="#ftio">⬆</a></p>
 
 
 ## Publications:
@@ -253,7 +252,7 @@ and INRIA.
 2. A. Tarraf, A. Bandet, F. Boito, G. Pallez, and F. Wolf, “FTIO: Detecting I/O periodicity using frequency techniques.” 2023.
 
 
-<p align="right"><a href="#top">⬆</a></p>
+<p align="right"><a href="#ftio">⬆</a></p>
 
 
 

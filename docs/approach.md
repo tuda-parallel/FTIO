@@ -32,7 +32,7 @@ An overview of the core of FTIO is provided below:
 </div>
 <br />
 
-<p align="right"><a href="#top">⬆</a></p>
+<p align="right"><a href="#approach">⬆</a></p>
 
  ## Online Prediction 
 
@@ -52,5 +52,5 @@ An overview of predictor.py is provided in the image below:
 <br />
 
 
-<p align="right"><a href="#top">⬆</a></p>
+<p align="right"><a href="#approach">⬆</a></p>
 
