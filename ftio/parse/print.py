@@ -1,6 +1,6 @@
 """Converts results from TMIO / Darshan Files into Extra-P supported format
 """
-from ftio.ioparse.scales import Scales
+from ftio.parse.scales import Scales
 import numpy as np
 
 

@@ -12,19 +12,21 @@ from threading import Lock
 
 class print_html:
 
-    def __init__(self, render, path, names, filename = "main.html", outdir = "io_results") -> None:
+    def __init__(self, args, path, names, filename = "main.html", outdir = "io_results") -> None:
         """generates HTML report
         Args:
             filename (str): main html file name
-            render (str): static or dynamic
+            args (list): contains render (static or dynamic) 
+                        and show (True or False) flag
             path (str): output location
             outdir (str): output dir name
         """
-        self.render = render
+        self.render = args.render
         self.path = path
         self.names = names
         self.filename = filename
         self.outdir = outdir
+        self.show = not args.no_disp
         self.lock = Lock()
 
     #! ----------------------- Plot to HTML ------------------------------
@@ -86,17 +88,18 @@ class print_html:
             file.write("</body></html> \n")
 
         print(f"\nTo see the result call \nopen {self.path}/main.html \n")
-        if platform == "linux" or platform == "linux2":
-            if "WSL" in plat.uname().release:
-                os.system(f"powershell.exe start ./{self.outdir}/main.html ")
-            else:
-                os.system(f"open {self.path}/main.html \n")
+        if self.show:
+            if platform == "linux" or platform == "linux2":
+                if "WSL" in plat.uname().release:
+                    os.system(f"powershell.exe start ./{self.outdir}/main.html ")
+                else:
+                    os.system(f"open {self.path}/main.html \n")
 
-        if "windows" in platform:
-            try:
-                os.system(f"powershell.exe start {self.path}/main.html &\n" )
-            except:
-                os.system(f"powershell.exe start./{self.path}/main.html")
+            if "windows" in platform:
+                try:
+                    os.system(f"powershell.exe start {self.path}/main.html &\n" )
+                except:
+                    os.system(f"powershell.exe start./{self.path}/main.html")
 
 
 #**********************************************************************

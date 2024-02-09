@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from ftio.plot_io.helper import format_plot
+from ftio.plot.helper import format_plot
 
 
 def make_sub():

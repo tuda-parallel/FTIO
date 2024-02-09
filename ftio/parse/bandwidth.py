@@ -1,5 +1,5 @@
 import numpy as np
-from ftio.ioparse.overlap_thread import overlap_thread
+from ftio.parse.overlap_thread import overlap_thread
 from numba import jit
 
 

@@ -1,5 +1,5 @@
 import sys
-from ftio.ioparse.print import Print
+from ftio.parse.print import Print
 
 def main(args=sys.argv):
     out = Print(args)

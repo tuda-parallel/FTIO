@@ -1,7 +1,9 @@
-from ftio.ioparse.simrun import Simrun
-from ftio.ioparse.msgpack_reader import extract
+from ftio.parse.simrun import Simrun
+from ftio.parse.darshan_reader import extract
 
-class ParseMsgpack:
+class ParseDarshan:
+    """class to parse darshan files
+    """
     def __init__(self, path):
         self.path = path
         if self.path[-1] == "/":
@@ -15,7 +17,6 @@ class ParseMsgpack:
         Returns:
             Simrun: Simrun object
         """
-        file = self.path
-        data = extract(file)
+        dataframe, ranks = extract(self.path, args)
 
-        return Simrun(data,'msgpack', file, args, index)
+        return Simrun(dataframe,'darshan',str(ranks), args, index)

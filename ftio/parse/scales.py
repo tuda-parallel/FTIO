@@ -10,11 +10,11 @@ from rich.panel import Panel
 from rich.console import Console
 from rich.text import Text
 from ftio import __version__
-from ftio.ioparse.simrun import Simrun
-from ftio.ioparse.parse_recorder import ParseRecorder
-from ftio.ioparse.parse_darshan import ParseDarshan
-from ftio.ioparse.parse_msgpack import ParseMsgpack
-from ftio.ioparse.args import parse_args
+from ftio.parse.simrun import Simrun
+from ftio.parse.parse_recorder import ParseRecorder
+from ftio.parse.parse_darshan import ParseDarshan
+from ftio.parse.parse_msgpack import ParseMsgpack
+from ftio.parse.args import parse_args
 
 
 class Scales:

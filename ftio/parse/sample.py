@@ -1,4 +1,4 @@
-from ftio.ioparse.bandwidth import Bandwidth
+from ftio.parse.bandwidth import Bandwidth
 
 
 class Sample:

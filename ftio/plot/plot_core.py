@@ -7,13 +7,13 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from ftio.ioparse.metrics import Metrics
-from ftio.ioparse.scales import Scales
 
-from ftio.plot_io.dash_files.dash_app import IOAnalysisApp
-from ftio.plot_io.print_html import print_html
-from ftio.plot_io.helper import *
-from ftio.plot_io.plot_error import plot_error_bar, plot_time_error_bar
+from ftio.parse.metrics import Metrics
+from ftio.parse.scales import Scales
+from ftio.plot.dash_files.dash_app import IOAnalysisApp
+from ftio.plot.print_html import print_html
+from ftio.plot.helper import *
+from ftio.plot.plot_error import plot_error_bar, plot_time_error_bar
 
 
 def _find_free_port():
@@ -34,7 +34,7 @@ class plot_core:
 
         self.barprecision = "%{y:.0f}"
 
-    def plot(self):
+    def plot_io(self):
         if "dash" in self.data.args.engine.lower():
             self.plot_dash()
         else:
@@ -67,7 +67,7 @@ class plot_core:
             "\033[1;31mMultithreaded is off \033[1;0m"
         )
 
-        out = print_html(args.render, path, self.names)
+        out = print_html(args, path, self.names)
         out.generate_html_start()
         if args.threaded:
             t = []
@@ -125,32 +125,32 @@ class plot_core:
         else:
             if "stat" in args.render:
                 if "async_write" in args.mode:
-                    self.plot_io("async write", self.data.df_wat, self.data.df_wab)
+                    self.plot_io_mode("async write", self.data.df_wat, self.data.df_wab)
                 elif "async_read" in args.mode:
-                    self.plot_io("async read", self.data.df_rat, self.data.df_rab)
+                    self.plot_io_mode("async read", self.data.df_rat, self.data.df_rab)
                 elif "sync_write" in args.mode:
-                    self.plot_io("sync write", self.data.df_wst)
+                    self.plot_io_mode("sync write", self.data.df_wst)
                 elif "sync_read" in args.mode:
-                    self.plot_io("sync read", self.data.df_rst)
+                    self.plot_io_mode("sync read", self.data.df_rst)
                 else:
                     pass
                 exit(0)
             else:
                 self.plot_time()
                 out.generate_html_core("time.html", self.get_figure("time.html"))
-                self.plot_io("async write", self.data.df_wat, self.data.df_wab)
+                self.plot_io_mode("async write", self.data.df_wat, self.data.df_wab)
                 out.generate_html_core(
                     "async_write.html", self.get_figure("async_write.html")
                 )
-                self.plot_io("async read", self.data.df_rat, self.data.df_rab)
+                self.plot_io_mode("async read", self.data.df_rat, self.data.df_rab)
                 out.generate_html_core(
                     "async_read.html", self.get_figure("async_read.html")
                 )
-                self.plot_io("sync write", self.data.df_wst)
+                self.plot_io_mode("sync write", self.data.df_wst)
                 out.generate_html_core(
                     "sync_write.html", self.get_figure("sync_write.html")
                 )
-                self.plot_io("sync read", self.data.df_rst)
+                self.plot_io_mode("sync read", self.data.df_rst)
                 out.generate_html_core(
                     "sync_read.html", self.get_figure("sync_read.html")
                 )
@@ -161,28 +161,28 @@ class plot_core:
         return [*self.f_aw, *self.f_ar, *self.f_sr, *self.f_sr, *self.f_t]
 
     # **********************************************************************
-    # *                       2. plot_IO Multithreaded
+    # *                       2. plot Multithreaded
     # **********************************************************************
     def plot_and_generate_html(self, mode, out):
         if "async" in mode:
             if "write" in mode:
-                self.plot_io("async write", self.data.df_wat, self.data.df_wab)
+                self.plot_io_mode("async write", self.data.df_wat, self.data.df_wab)
                 out.generate_html_core(
                     "async_write.html", self.get_figure("async_write.html")
                 )
             else:
-                self.plot_io("async read", self.data.df_rat, self.data.df_rab)
+                self.plot_io_mode("async read", self.data.df_rat, self.data.df_rab)
                 out.generate_html_core(
                     "async_read.html", self.get_figure("async_read.html")
                 )
         elif "sync" in mode:
             if "write" in mode:
-                self.plot_io("sync write", self.data.df_wst)
+                self.plot_io_mode("sync write", self.data.df_wst)
                 out.generate_html_core(
                     "sync_write.html", self.get_figure("sync_write.html")
                 )
             else:
-                self.plot_io("sync read", self.data.df_rst)
+                self.plot_io_mode("sync read", self.data.df_rst)
                 out.generate_html_core(
                     "sync_read.html", self.get_figure("sync_read.html")
                 )
@@ -191,9 +191,9 @@ class plot_core:
             out.generate_html_core("time.html", self.get_figure("time.html"))
 
     # **********************************************************************
-    # *                       2. plot_IO
+    # *                       2. plot
     # **********************************************************************
-    def plot_io(self, mode, df_t, df_b=[]):
+    def plot_io_mode(self, mode, df_t, df_b=[]):
         """Plots I/O
 
         Args:

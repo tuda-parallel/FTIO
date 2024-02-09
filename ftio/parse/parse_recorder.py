@@ -1,5 +1,5 @@
-from ftio.ioparse.simrun import Simrun
-from ftio.ioparse.recorder_reader import extract
+from ftio.parse.simrun import Simrun
+from ftio.parse.recorder_reader import extract
 
 class ParseRecorder:
     

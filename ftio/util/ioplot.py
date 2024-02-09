@@ -1,10 +1,10 @@
 import sys
-from ftio.plot_io.plot_core import plot_core
+from ftio.plot.plot_core import plot_core
 
 
 def main(args=sys.argv):
     plotter = plot_core(args)
-    plotter.plot()
+    plotter.plot_io()
 
 if __name__ == "__main__":
     main(sys.argv)

@@ -9,7 +9,7 @@ def parse_args(argv:list) -> argparse.Namespace:
     # name = name[name.rfind('/')+1:-3]
     name = name[name.rfind('/')+1:]
 
-    if 'ioplot' in name:
+    if 'plot' in name:
         disc = 'Plots result stored in Json file to a HTML page or PDF document.'
     elif 'ftio' in name:
         disc = 'Captures the period of the I/O phases. Uses freqeuncy techniques (default=discrete fourier transformation) and outlier detection methods (Z-score) on the provided file. Supported file formats are Json, Jsonlines, Msgpack, Darshan, and REcorder (folder). TMIO can be used to generate the tracing file needed. There are several parameters which can be controlled by the arguments bellow.'
@@ -88,7 +88,7 @@ Full documentation:
         parser.add_argument('-v', '--verbose', dest= 'verbose',   action = 'store_true', help ='sets verbose on or off (default=False)')
         parser.set_defaults(verbose =  False)
 
-    if 'ioplot' in name.lower():
+    if 'plot' in name.lower():
         parser.set_defaults(mode='')
         parser.add_argument('-z', '--zoom',       type = float, help ='upper zoom limit on the y-axis')
         parser.add_argument('-nt', '--no-threaded', dest='threaded', action='store_false', help= 'turn multithreading off (default=on)')
@@ -99,6 +99,8 @@ Full documentation:
         parser.set_defaults(n_shown_samples=20_000)
         parser.add_argument('--merge_plots', action='store_true', help='only for dash: Merges the plots to one plot for each io mode. Note: The file dropdwon menu then has no functionality')
         parser.set_defaults(merge_plots=False)
+        parser.add_argument('--no_disp', action='store_true', help='avoids opening the generated HTML file')
+        parser.set_defaults(no_disp=False)
 
     # Data modes
     parser.add_argument('-s', '--sum', action='store_true', help ='sum plot: True (default) or False')

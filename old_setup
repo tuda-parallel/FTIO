@@ -22,7 +22,7 @@ setup(
             "ftio = ftio.cli.ftio_core:run",
             "predictor = ftio.cli.predictor:main",
             "ioplot = ftio.util.ioplot:main",
-            "parse = ftio.util.parse:main"
+            "ioparse = ftio.util.ioparse:main"
         ],
 
         "gui_scripts": [

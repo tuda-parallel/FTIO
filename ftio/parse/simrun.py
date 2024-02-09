@@ -1,8 +1,8 @@
 from __future__ import annotations
 import statistics as st
-from ftio.ioparse.sample import Sample
-from ftio.ioparse.time_io import Time
-from ftio.ioparse.percent import Percent
+from ftio.parse.sample import Sample
+from ftio.parse.time_io import Time
+from ftio.parse.percent import Percent
 import re 
 class Simrun:
     """Stores the result from a single simulation including the:
