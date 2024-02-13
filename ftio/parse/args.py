@@ -112,7 +112,10 @@ Full documentation:
     parser.add_argument('-i', '--ind', action='store_true', help ='ind plot: True or False (default)')
     parser.add_argument('-ni', '--no-ind', dest='ind', action='store_false')
     parser.set_defaults(ind=False)
-
+    #TODO: use this unit
+    parser.add_argument('-u', '--unit', dest='unit',  type = str ,  help ='unit of the provided data (MB is default)')
+    parser.set_defaults(unit='MB')
+    
     parser.add_argument('-x', '--dxt_mode', dest='dxt_mode',  type = str ,  help ='select data to extract from darshan traces (DXT_POSIX or DXT_MPIIO (default))')
     parser.set_defaults(dxt_mode='DXT_MPIIO')
     parser.add_argument('-l', '--limit',      type = int,   help ='max ranks to consider when reading a folder')

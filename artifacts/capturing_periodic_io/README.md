@@ -9,6 +9,10 @@ The experiments are divided into three parts:
 - [Limitations of FTIO](#limitations-of-ftio)
 - [Use Case: I/O Scheduling](#use-case-io-scheduling)
 
+The version of FTIO used was v0.0.1. To checkout to this version, execute:
+``` sh
+git checkout v0.0.1
+```
 
 ## Case Studies
 For the examples here, `ftio` first needs to be installed (see [Installation](https://github.com/tuda-parallel/FTIO?tab=readme-ov-file#installation)). 
@@ -31,7 +35,7 @@ pass the `-e no` flag to avoid generating plots and just directly obtaining the 
 ftio nek_2048.darshan -e no
 ```
 
-To limit the time window to 56,000 s, pass the `-te 56000` flag as following:
+To limit the time window to 56,000 s, pass the `-te 56000` flag as follows:
 
 ```
 ftio nek_2048.darshan  -te 56000 -e no

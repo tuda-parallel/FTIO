@@ -1,10 +1,12 @@
 <!-- # FTIO -->
-![license][license.bedge]
-![Coveralls branch](https://img.shields.io/coverallsCoverage/github/tuda-parallel/FTIO)
 ![GitHub Release](https://img.shields.io/github/v/release/tuda-parallel/FTIO)
-![issues](https://img.shields.io/github/issues/tuda-parallel/FTIO)
+![GitHub Release](https://img.shields.io/github/release-date/tuda-parallel/FTIO)
+![](https://img.shields.io/github/last-commit/tuda-parallel/FTIO)
 ![contributors](https://img.shields.io/github/contributors/tuda-parallel/FTIO)
-<!-- ![GitHub pull requests](https://img.shields.io/github/issues-pr/tuda-parallel/FTIO) -->
+![issues](https://img.shields.io/github/issues/tuda-parallel/FTIO)
+![](https://img.shields.io/github/languages/code-size/tuda-parallel/FTIO)
+![](https://img.shields.io/github/languages/top/tuda-parallel/FTIO)
+![license][license.bedge]
 
 <br />
 <div align="center">
@@ -171,7 +173,7 @@ All arguments that are available for `ftio` are also available for `predictor`.
 
 ## Testing
 
-There is a `8.jsonl` file provided for testing under [examples](https://github.com/tuda-parallel/FTIO/examples). Here just call:
+There is a `8.jsonl` file provided for testing under [examples](https://github.com/tuda-parallel/FTIO/examples). On your system, navigate to the folder and  call:
 
 ```sh
 ftio 8.jsonl
@@ -214,10 +216,8 @@ Distributed under the BSD 3-Clause License. See [LISCENCE](./LICENSE) for more i
 Authors:
 
 - Ahmad Tarraf
-- Add your name here
 
-This work is a result of a coopertion between the Technical University of Darmstadt
-and INRIA.
+This work is a result of a coopertion between the Technical University of Darmstadt and INRIA.
 
 <p align="right"><a href="#ftio">⬆</a></p>
 
@@ -242,7 +242,7 @@ and INRIA.
 
 1. A. Tarraf, A. Bandet, F. Boito, G. Pallez, and F. Wolf, “Capturing Periodic I/O Using Frequency Techniques,” in 2024 IEEE International Parallel and Distributed Processing Symposium (IPDPS), San Francisco, CA, USA, May 2024, pp. 1–14.
 
-2. A. Tarraf, A. Bandet, F. Boito, G. Pallez, and F. Wolf, “FTIO: Detecting I/O periodicity using frequency techniques.” 2023.
+2. A. Tarraf, A. Bandet, F. Boito, G. Pallez, and F. Wolf, “FTIO: Detecting I/O periodicity using frequency techniques.” arXiv preprint arXiv:2306.08601 (2023).
 
 <p align="right"><a href="#ftio">⬆</a></p>
 
