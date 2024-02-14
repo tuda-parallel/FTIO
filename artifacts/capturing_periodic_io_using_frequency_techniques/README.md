@@ -5,6 +5,7 @@ This file describes how to reproduce the experiments in the Paper entitled:
 
 The experiments are divided into three parts:
 - [Artifacts Reproducibility](#artifacts-reproducibility)
+	- [Running Example (IOR)](#running-example-ior)
 	- [Case Studies](#case-studies)
 		- [LAMMPS](#lammps)
 		- [Nek5000](#nek5000)
@@ -16,6 +17,10 @@ FTIO version v0.0.1 was used for all experiments. To checkout to this version, e
 ``` sh
 git checkout v0.0.1
 ```
+
+## Running Example (IOR)
+Throughout Section II in the paper "Capturing Periodic I/O Using Frequency Techniques", IOR was used to demonstrate 
+the approach. 
 
 ## Case Studies
 
@@ -34,11 +39,12 @@ Navigate to the LAMMPS folder and follow the instructions provided in the [READM
 The trace can be downloaded from: <https://hpcioanalysis.zdv.uni-mainz.de/trace/64ed13e0f9a07cf8244e45cc>.
 After downloading, instructions on how to reproduce the results are provided in the [NEK5000/README](/artifacts/capturing_periodic_io_using_frequency_techniques/NEK5000/README.md).
 
+<p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
 ### Modified HACC-IO
+Navigate to [HACC-IO/README](/artifacts/capturing_periodic_io_using_frequency_techniques/HACC-IO/README.md) and follow the provided instructions. 
 
-Coming soon
-
+<p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
 
 

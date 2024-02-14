@@ -96,7 +96,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Install all tools provided in this repo simply by using pip:
+Install all tools provided in this repository simply by using pip:
 
 ```sh
 pip install .

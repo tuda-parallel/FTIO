@@ -9,10 +9,14 @@ The folder contains:
 2. Input simulation file and sbatch script in case you want to repeat the experiment on your cluster
 
 ## Analyzing the provided trace file
+
 [Install FTIO](https://github.com/tuda-parallel/FTIO#installation). To get the dominant frequency with `ftio` simply call:
+
 ```sh
 ftio lammps_3072.json
 ```
+
+<p align="right"><a href="#lammps-with-3072-ranks">⬆</a></p>
 
 ## Repeating the experiment on your cluster
 First, install the required software on your cluster:
@@ -114,3 +118,5 @@ To get the dominant frequency with `ftio` simply call:
 ```sh
 ftio 3072.json
 ```
+
+<p align="right"><a href="#lammps-with-3072-ranks">⬆</a></p>
