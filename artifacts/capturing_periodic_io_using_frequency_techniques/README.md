@@ -9,16 +9,21 @@ The experiments are divided into three parts:
 - [Limitations of FTIO](#limitations-of-ftio)
 - [Use Case: I/O Scheduling](#use-case-io-scheduling)
 
-The version of FTIO used was v0.0.1. To checkout to this version, execute:
+FTIO version v0.0.1 was used for all experiments. To checkout to this version, execute:
 ``` sh
 git checkout v0.0.1
 ```
 
 ## Case Studies
-For the examples here, `ftio` first needs to be installed (see [Installation](https://github.com/tuda-parallel/FTIO?tab=readme-ov-file#installation)). 
+`ftio` first needs to be installed (see [Installation](https://github.com/tuda-parallel/FTIO?tab=readme-ov-file#installation)). 
 
 ### LAMMPS
-Coming soon
+This experiment was executed on the Lichtenberg cluster with 3072 ranks. 
+Navigate to the LAMMPS folder and follow the instructions provided in the [README.md](/LAMMPS/README.md). 
+
+<!-- The provided [tar archive](/LAMMPS/lammps.tar.gz) contains not only the result from our -->
+
+
 
 ### Nek5000
 The trace can be downloaded from: <https://hpcioanalysis.zdv.uni-mainz.de/trace/64ed13e0f9a07cf8244e45cc>
