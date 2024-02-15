@@ -1,21 +1,21 @@
 from __future__ import annotations
 import time
 import numpy as np
-import ftio.freq.discretize as dis
-from ftio.freq.helper import format_plot
 from scipy.signal import find_peaks
 from rich.panel import Panel
-from rich.console import Console
+import plotly.graph_objects as go
 # from rich.padding import Padding
+import ftio.freq.discretize as dis
+from ftio.freq.helper import format_plot
+from ftio.freq.helper import MyConsole
 
 
-PLOT_MODE = "on"
-try:
-    import plotly.graph_objects as go
-except ImportError:
-    PLOT_MODE = "empty"
+# PLOT_MODE = "on"
+# try:
+# except ImportError:
+#     PLOT_MODE = "empty"
 
-CONSOLE = Console()
+CONSOLE = MyConsole()
 
 def find_autocorrelation(args, data: dict, share:dict) -> dict:
     """Finds perodicity using autocorreleation
@@ -34,6 +34,7 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
     prediction = {}
     candidates = np.array([])
     fig = []
+    CONSOLE.set(args.verbose)
     tik = time.time()
     if args.autocorrelation:
         CONSOLE.print("[cyan]Executing:[/] Autocorrelation\n")
@@ -52,10 +53,7 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
         t_e = np.NaN
         total_bytes = np.NaN
         # Ckeck if figure is on
-        if "empty" == PLOT_MODE:
-            args.engine = "off"
-            print("\033[1;35m      '-> Cluster mode, plot disabled\n")
-        else:
+        if any(x in args.engine for x in ["mat","plot"]):
             fig.append(go.Figure())
 
         # Take data if already avilable from previous step
@@ -111,7 +109,7 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
         acorr = np.correlate(ndata, ndata, "full")[len(ndata) - 1 :]
         acorr = acorr / var / len(ndata)
         # plot
-        if "mat" in args.engine or "plotly" in args.engine:
+        if any(x in args.engine for x in ["mat","plot"]):
             fig[-1].add_scatter(y=acorr, mode="markers+lines", name="ACF", 
                                 marker=dict(
                                             color = acorr,

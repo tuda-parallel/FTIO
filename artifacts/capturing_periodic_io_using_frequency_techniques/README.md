@@ -7,6 +7,7 @@ The experiments are divided into three parts:
 - [Artifacts Reproducibility](#artifacts-reproducibility)
 	- [Running Example (IOR)](#running-example-ior)
 	- [Case Studies](#case-studies)
+		- [IOR](#ior)
 		- [LAMMPS](#lammps)
 		- [Nek5000](#nek5000)
 		- [Modified HACC-IO](#modified-hacc-io)
@@ -23,20 +24,28 @@ Throughout Section II in the paper "Capturing Periodic I/O Using Frequency Techn
 the approach. 
 
 ## Case Studies
+For all the cases bellow, `ftio` first needs to be installed (see [Installation](https://github.com/tuda-parallel/FTIO?tab=readme-ov-file#installation)). We used `ftio` version 0.0.1 for the experiment in the paper. To get this version simply execute the following code:
+```sh
+git checkout v0.0.1 
+```
 
-`ftio` first needs to be installed (see [Installation](https://github.com/tuda-parallel/FTIO?tab=readme-ov-file#installation)). 
+Next, follow the instructions provided for each application. 
+
+### IOR
+This is the running example from the paper handled in Section II. 
+Follow the instructions provided in the [IOR/README.md](/artifacts/capturing_periodic_io_using_frequency_techniques/IOR/README.md) to reconstruct this experiment. 
 
 ### LAMMPS
 
 This experiment was executed on the Lichtenberg cluster with 3072 ranks. 
-Navigate to the LAMMPS folder and follow the instructions provided in the [README.md](/artifacts/capturing_periodic_io_using_frequency_techniques/LAMMPS/README.md). 
+Follow the instructions provided in the [LAMMPS/README.md](/artifacts/capturing_periodic_io_using_frequency_techniques/LAMMPS/README.md) to reconstruct this experiment. 
 
 <!-- The provided [tar archive](/LAMMPS/lammps.tar.gz) contains not only the result from our -->
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
 
 ### Nek5000
-The trace can be downloaded from: <https://hpcioanalysis.zdv.uni-mainz.de/trace/64ed13e0f9a07cf8244e45cc>.
+The trace can be downloaded from [here](https://hpcioanalysis.zdv.uni-mainz.de/trace/64ed13e0f9a07cf8244e45cc).
 After downloading, instructions on how to reproduce the results are provided in the [NEK5000/README](/artifacts/capturing_periodic_io_using_frequency_techniques/NEK5000/README.md).
 
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>

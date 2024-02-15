@@ -4,10 +4,10 @@
 from __future__ import annotations
 import time
 import numpy as np
-from rich.console import Console
 from rich.panel import Panel
+from ftio.freq.helper import MyConsole
 
-CONSOLE = Console()
+CONSOLE = MyConsole()
 
 def merge_predictions(args, pred_dft:dict, pred_auto:dict)-> dict:
     """Merge prediction if both autocorrelation and freq. technique (dft/wavelet) are executed
@@ -20,6 +20,7 @@ def merge_predictions(args, pred_dft:dict, pred_auto:dict)-> dict:
     Returns:
         dict: merge prediction
     """
+    CONSOLE.set(args.verbose)
     pred_merged = pred_dft.copy()
     if args.autocorrelation:
         tik = time.time()
