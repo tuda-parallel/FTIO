@@ -182,7 +182,7 @@ def _update_layout(fig: FigureResampler, file_data: FileData, data: DataSource) 
         yaxis_rangemode="nonnegative",
         barmode="stack",
         xaxis_title="Time (s)",
-        yaxis_title="Transfer Rate (MB/s)",
+        yaxis_title="Transfer Rate (B/s)",
         font=dict(family=data.fontfamily, size=data.fontsize),
         width=data.width_figure,
         height=data.height_figure,

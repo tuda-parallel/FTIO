@@ -77,7 +77,7 @@ def extract_recorder(data:list, ranks:int) -> tuple[dict, dict]:
             b_part  = line.rfind(')')
             b_part = int(line[line[:b_part-1].rfind(' ')+1:b_part-1])
 
-            b_part = b_part/(t_end-t_start)*1e-6 if t_end-t_start != 0 else 0
+            b_part = b_part/(t_end-t_start) if t_end-t_start != 0 else 0 #B/s
             #? Assign
             if 'write' in line:
                 write['bandwidth']['t_rank_s'].append(t_start)

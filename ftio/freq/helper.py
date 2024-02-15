@@ -3,6 +3,7 @@
 
 from rich.console import Console
 
+
 def get_mode(data,mode):
     """used after get_data() to exract df. The df 
     contains all sims group by mode
@@ -88,7 +89,8 @@ def format_plot(fig) -> None:
             size= 24, 
             color= "black"
             ),
-        margin=dict(l=5, r=5, t=5, b=5)
+        # margin=dict(l=5, r=5, t=5, b=5) #IEEE
+        margin=dict(t=25) 
     )
 
     fig.update_xaxes(
@@ -119,12 +121,6 @@ def format_plot(fig) -> None:
         minor=dict(ticklen=2)
     )  
 
-    # for i in range(0,colorbars):
-    #     fig.update(
-    #         coloraxis4={
-    #     "colorscale": ["rgb(0,50,150)", "rgb(150,50,150)", "rgb(255,50,0)"] #'Bluered'
-    # }
-    #     )
 
 
 class MyConsole(Console):

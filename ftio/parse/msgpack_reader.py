@@ -51,7 +51,7 @@ def convert_to_iosample(arr: list, io_type: str) -> list:
 
 def assign_metrics(arr: list, bandwidth:dict) -> dict:
     return {
-            "total_bytes": arr[3]*1e-6,
+            "total_bytes": arr[3] , #Bytes
             "max_bytes_per_rank": arr[4],
             "max_transfersize_over_ranks": arr[5],
             "max_io_phases_per_rank": arr[6],
@@ -79,12 +79,12 @@ def assign_bandwidth(arr: list, io_type: str) -> list[dict]:
             # data.append(i[0])
             t_start.append(i[1])
             t_end_act.append(i[2])
-            T_sum.append(i[4]*1e-6) # MB/s
-            T_avr.append(i[5]*1e-6) # MB/s
+            T_sum.append(i[4]) # Bytes/s
+            T_avr.append(i[5]) # Bytes/s
             if "async" in io_type:
                 t_end_req.append(i[3])
-                B_sum.append(i[6]*1e-6) # MB/s
-                B_avr.append(i[7]*1e-6) # MB/s
+                B_sum.append(i[6]) # Bytes/s
+                B_avr.append(i[7]) # Bytes/s
             # n_op.append(i[8])
     if "async" in io_type:
         return [{

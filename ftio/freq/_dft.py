@@ -93,7 +93,7 @@ def precision_dft(
         plt.ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
-        plt.ylabel("Amplitude (MB/s)", fontsize=17)
+        plt.ylabel("Amplitude (B/s)", fontsize=17)
         plt.xlabel("Time (s)", fontsize=17)
         plt.grid(True)
         plt.legend(loc="upper left", ncol=2, fontsize=13)

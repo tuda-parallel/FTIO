@@ -22,7 +22,7 @@ def predictor_with_processes(
         hits (Manager().Value): hits indicating how often a dominant frequncy was found
         start_time (Manager().Value): start time window for ftio
         aggregated_bytes (Manager().Value): total bytes transferred so far
-        args (list[str]): additional arguments passed to ftio.py
+        args (list[str]): additional arguments passed to ftio
     """
     procs = []
     # Init: Monitore a file

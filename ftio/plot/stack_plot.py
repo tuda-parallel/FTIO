@@ -40,7 +40,7 @@ class StackPlot:
             height = 600
             self.fig.update_layout(
                 xaxis_title="Time (s)",
-                yaxis_title="Bandwidth (MB/s)",
+                yaxis_title="Bandwidth (B/s)",
                 font=dict(family="Courier New, monospace", size=24),
                 width=width,
                 height=height / 1.1,
@@ -52,5 +52,5 @@ class StackPlot:
             plt.stackplot(self.t, self.b, baseline="zero")
             plt.legend()
             plt.xlabel("Time (s)")
-            plt.ylabel("Bandwidth (MB/s)")
+            plt.ylabel("Bandwidth (B/s)")
             plt.show()

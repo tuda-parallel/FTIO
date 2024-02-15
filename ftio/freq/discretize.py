@@ -19,8 +19,8 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, floa
         
     """
     text = ""
-    text += f"Time window : {t[-1]-t[0]} s\n"
-    text += f"Frequency step: {1/(t[-1]-t[0]) if (t[-1]-t[0]) != 0 else 0:.6f} Hz\n"
+    text += f"Time window : {t[-1]-t[0]:.2f} s\n"
+    text += f"Frequency step: {1/(t[-1]-t[0]) if (t[-1]-t[0]) != 0 else 0:.3e} Hz\n"
 
     # ? calculate recommended frequency:
     if len(t) == 0:
@@ -36,9 +36,9 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, floa
                 t_rec = t[i + 1] - t[i]
                 # print("tre_c",t_rec, "t[i+1] ",t[i+1], "t[i]", t[i])
         freq = 2 / t_rec
-        text += f"Recomended sampling frequency: {freq} Hz\n"
+        text += f"Recomended sampling frequency: {freq:.3e} Hz\n"
     else:
-        text += f"Sampling frequency:  {freq} Hz\n"
+        text += f"Sampling frequency:  {freq:.3e} Hz\n"
     N = int(np.floor((t[-1] - t[0]) * freq))
     text += f"Expected samples: {N}\n"
     # print("    '-> \033[1;Start time: %f s \033[1;0m"%t[0])
@@ -66,7 +66,7 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, floa
     v_0 = np.sum(b * (np.concatenate([t[1:], t[-1:]]) - t))
     # E = (abs(error))/(V0) if V0 > 0 else 0
     error = (abs(v_a - v_0)) / v_0 if v_0 > 0 else 0
-    text += f"Abstraction error: {error:.6f}\n"
+    text += f"Abstraction error: {error:.5f}\n"
 
     return b_sampled, freq, text[:-1]
 

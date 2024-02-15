@@ -17,7 +17,7 @@ def ftio_process(queue: Queue, count, hits, start_time, aggregated_bytes, args) 
         hits (Manager().Value): hits indicating how often a dominant frequncy was found
         start_time (Manager().Value): start time window for ftio
         aggregated_bytes (Manager().Value): total bytes transferred so far
-        args (list[str]): additional arguments passed to ftio.py
+        args (list[str]): additional arguments passed to ftio
     """
     console = Console()
     console.print(f"[purple][PREDICTOR] (#{count.value}):[/]  Started")
@@ -53,9 +53,9 @@ def ftio_process(queue: Queue, count, hits, start_time, aggregated_bytes, args) 
 
     text += (
         f"[purple][PREDICTOR] (#{count.value}):[/] Time window {t_e-t_s:.3f} sec ([{t_s:.3f},{t_e:.3f}] sec)\n"
-        f"[purple][PREDICTOR] (#{count.value}):[/] Total bytes {total_bytes:.3f} MB\n"
+        f"[purple][PREDICTOR] (#{count.value}):[/] Total bytes {total_bytes:.3f} B\n"
         f"[purple][PREDICTOR] (#{count.value}):[/] Bytes transferred since last "
-        f"time {abs(total_bytes-aggregated_bytes.value):.3f} MB\n"
+        f"time {abs(total_bytes-aggregated_bytes.value):.3f} B\n"
         )
     # safe total transferred bytes
     aggregated_bytes.value = total_bytes
@@ -68,7 +68,7 @@ def ftio_process(queue: Queue, count, hits, start_time, aggregated_bytes, args) 
         if not args.window_adaptation:
             text += (
                 f"[purple][PREDICTOR] (#{count.value}):[/] Estimated phases {n_phases:.2f}\n"
-                f"[purple][PREDICTOR] (#{count.value}):[/] Average transferred {avr_bytes:.3f} MB\n"
+                f"[purple][PREDICTOR] (#{count.value}):[/] Average transferred {avr_bytes:.3f} B\n"
             )
         
         # adaptive time window

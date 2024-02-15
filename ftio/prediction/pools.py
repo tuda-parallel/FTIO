@@ -19,7 +19,7 @@ def predictor_with_pools(filename, data, queue, count, hits, start_time, aggrega
         hits (Manager().Value): hits indicating how often a dominant frequncy was found
         start_time (Manager().Value): start time window for ftio
         aggregated_bytes (Manager().Value): total bytes transferred so far
-        args (list[str]): additional arguments passed to ftio.py
+        args (list[str]): additional arguments passed to ftio
     """
     # Init: Monitore a file
     stamp, _ = pm.monitor(filename,"")
@@ -47,7 +47,7 @@ def ftio_future(data, queue , count, hits, start_time, aggregated_bytes, args: l
         hits (Manager().Value): hits indicating how often a dominant frequncy was found
         start_time (Manager().Value): start time window for ftio
         aggregated_bytes (Manager().Value): total bytes transferred so far
-        args (list[str]): additional arguments passed to ftio.py
+        args (list[str]): additional arguments passed to ftio
     """
     ftio_process(queue, count, hits, start_time, aggregated_bytes, args)
     while not queue.empty():

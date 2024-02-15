@@ -114,7 +114,7 @@ Full documentation:
     parser.set_defaults(ind=False)
     #TODO: use this unit
     parser.add_argument('-u', '--unit', dest='unit',  type = str ,  help ='unit of the provided data (MB is default)')
-    parser.set_defaults(unit='MB')
+    parser.set_defaults(unit='B')
     
     parser.add_argument('-x', '--dxt_mode', dest='dxt_mode',  type = str ,  help ='select data to extract from darshan traces (DXT_POSIX or DXT_MPIIO (default))')
     parser.set_defaults(dxt_mode='DXT_MPIIO')

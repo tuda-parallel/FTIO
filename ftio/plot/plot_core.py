@@ -12,9 +12,9 @@ from ftio.parse.metrics import Metrics
 from ftio.parse.scales import Scales
 from ftio.plot.dash_files.dash_app import IOAnalysisApp
 from ftio.plot.print_html import print_html
-from ftio.plot.helper import *
+from ftio.plot.helper import *  
 from ftio.plot.plot_error import plot_error_bar, plot_time_error_bar
-
+from ftio.plot.units import find_unit
 
 def _find_free_port():
     sock = socket.socket()
@@ -292,7 +292,7 @@ class plot_core:
             )
         f[-1].update_layout(
             xaxis_title="Ranks",
-            yaxis_title="Transfer Rate (MB/s)",
+            yaxis_title="Transfer Rate (B/s)",
             width=self.width,
             height=self.height,
         )
@@ -321,7 +321,7 @@ class plot_core:
             )
         f[-1].update_layout(
             xaxis_title="Ranks",
-            yaxis_title="Transfer Rate (MB/s)",
+            yaxis_title="Transfer Rate (B/s)",
             width=self.width,
             height=self.height,
         )  # ,legend_title_text='Metrics' )
@@ -389,7 +389,7 @@ class plot_core:
             )
         f[-1].update_layout(
             xaxis_title="Ranks",
-            yaxis_title="Transfer Rate (MB/s)",
+            yaxis_title="Transfer Rate (B/s)",
             width=self.width,
             height=self.height,
         )
@@ -405,7 +405,7 @@ class plot_core:
                 color="number_of_ranks",
                 marginal="box",
                 labels={
-                    "b_overlap_avr": "Throughput  (MB/s)",
+                    "b_overlap_avr": "Throughput  (B/s)",
                     "number_of_ranks": "Ranks",
                 },
             )  # "number_of_ranks": "idth (cm)","number_of_ranks": "Rank"
@@ -413,7 +413,7 @@ class plot_core:
                 width=self.width,
                 height=self.height,
                 title="Distribution",
-                xaxis_title="Throughput (MB/s)",
+                xaxis_title="Throughput (B/s)",
                 yaxis_title="Count",
             )
             format_plot(fig_tmp)
@@ -426,7 +426,7 @@ class plot_core:
                 color="number_of_ranks",
                 marginal="box",
                 labels={
-                    "b_overlap_sum": "Bandwidth  (MB/s)",
+                    "b_overlap_sum": "Bandwidth  (B/s)",
                     "number_of_ranks": "Ranks",
                 },
             )  # "number_of_ranks": "idth (cm)","number_of_ranks": "Rank"
@@ -434,7 +434,7 @@ class plot_core:
                 width=self.width,
                 height=self.height,
                 title="Distribution",
-                xaxis_title="Bandwidth (MB/s)",
+                xaxis_title="Bandwidth (B/s)",
                 yaxis_title="Count",
             )
             format_plot(fig_tmp)
@@ -464,13 +464,16 @@ class plot_core:
                     f.append(go.Figure())
                     index2 = df_t[1]["file_index"][index].isin([j])
                     index2_ind = df_t[3]["file_index"][index_ind].isin([j])
+
+                    # finder the order and unit of the plots on y-axis
+                    unit, order = find_unit(df_t,index,index2,index_ind,index2_ind,args)
                     # ? Avr plot
                     if args.avr:
                         if df_t:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_t[1]["t_overlap"][index][index2],
-                                    y=df_t[1]["b_overlap_avr"][index][index2],
+                                    y=df_t[1]["b_overlap_avr"][index][index2]*order,
                                     mode="lines",
                                     name="$T_A$",
                                     line={"shape": "hv"},
@@ -482,7 +485,7 @@ class plot_core:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_b[1]["t_overlap"][index][index2],
-                                    y=df_b[1]["b_overlap_avr"][index][index2],
+                                    y=df_b[1]["b_overlap_avr"][index][index2]*order,
                                     mode="lines",
                                     name="$B_A$",
                                     line={"shape": "hv"},
@@ -496,7 +499,7 @@ class plot_core:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_t[1]["t_overlap"][index][index2],
-                                    y=df_t[1]["b_overlap_sum"][index][index2],
+                                    y=df_t[1]["b_overlap_sum"][index][index2]*order,
                                     mode="lines",
                                     name="$T_S$",
                                     line={"shape": "hv"},
@@ -508,7 +511,7 @@ class plot_core:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_b[1]["t_overlap"][index][index2],
-                                    y=df_b[1]["b_overlap_sum"][index][index2],
+                                    y=df_b[1]["b_overlap_sum"][index][index2]*order,
                                     mode="lines",
                                     name="$B_S$",
                                     line={"shape": "hv"},
@@ -522,7 +525,7 @@ class plot_core:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_t[3]["t_overlap_ind"][index_ind][index2_ind],
-                                    y=df_t[3]["b_overlap_ind"][index_ind][index2_ind],
+                                    y=df_t[3]["b_overlap_ind"][index_ind][index2_ind]*order,
                                     mode="lines",
                                     name="$T_E$",
                                     line={"shape": "hv"},
@@ -534,7 +537,7 @@ class plot_core:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_b[3]["t_overlap_ind"][index_ind][index2_ind],
-                                    y=df_b[3]["b_overlap_ind"][index_ind][index2_ind],
+                                    y=df_b[3]["b_overlap_ind"][index_ind][index2_ind]*order,
                                     mode="lines",
                                     name="$B_E$",
                                     line={"shape": "hv"},
@@ -544,16 +547,16 @@ class plot_core:
                     f[-1].update_layout(
                         barmode="stack",
                         xaxis_title="Time (s)",
-                        yaxis_title="Transfer Rate (MB/s)",
+                        yaxis_title=f"Transfer Rate ({unit})",
                         width=self.width,
                         height=self.height,
-                        title="%i Ranks (Run %i)" % (i, j),
+                        title=f"{i} Ranks (Run {j})",
                     )
                     format_plot(f[-1])
 
                     if self.names and (args.avr or args.sum or args.ind):
                         f[-1].update_layout(
-                            title="%i Ranks (Run %i: %s)" % (i, j, self.names[j])
+                            title=f"{i} Ranks (Run {j}: {self.names[j]})"
                         )
 
                     if args.avr or args.sum or args.ind:
@@ -666,7 +669,7 @@ class plot_core:
                 f[-1].update_layout(
                     barmode="stack",
                     xaxis_title="Ranks",
-                    yaxis_title="Transfer Rate (MB/s)",
+                    yaxis_title="Transfer Rate (B/s)",
                     title="Overlap Statistics: %s" % type.capitalize(),
                 )
                 format_plot(f[-1])

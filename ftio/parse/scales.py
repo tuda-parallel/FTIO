@@ -222,6 +222,7 @@ class Scales:
             levels explained above
         """
         name = ""
+        data_metrics = np.array([])
         for i in range(0, self.n):
             value = getattr(self.s[i], io_mode)
             data = value.get_data()
@@ -244,6 +245,10 @@ class Scales:
                 data_ind_ovr = np.concatenate((data_ind_ovr, data[7]), axis=1)
                 data_ind = np.concatenate((data_ind, data[9]), axis=1)
             # data.append(d0)
+        # check if there is data
+        if data_metrics.size == 0:
+            raise RuntimeError(f"The mode {self.args.mode} contains no values\nChange the mode by using the -m argument.")
+        
         df0 = pd.DataFrame(data_metrics, columns=name)
         df0 = df0.sort_values(by=["number_of_ranks"])
         df1 = pd.DataFrame(data_rank_ovr.transpose(), columns=name_rank_ovr)

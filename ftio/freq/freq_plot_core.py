@@ -2,37 +2,35 @@ from __future__ import annotations
 import os
 from threading import Thread
 import datetime
+import json
 import numpy as np
 import pandas as pd
-import json
 from scipy.spatial.distance import euclidean
-from ftio.freq.freq_data import FreqData
-from ftio.freq.helper import format_plot
 from fastdtw import fastdtw
-try:
-    import matplotlib
-    matplotlib.rcParams['backend'] = 'TkAgg'
-    import matplotlib.pyplot as plt
-    # import plotly.io as pio
-    import plotly.graph_objects as go
-    import plotly.offline
-    import plotly.express as px
-    from plotly.subplots import make_subplots
-except ImportError:
-    print("\033[1;35mCluster mode, plot disabled\033[1;0m\n")
-    plot_engine = "empty"
-else:
-    plot_engine = "plotly"
-
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
+import matplotlib
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.offline
+import plotly.express as px
+from plotly.subplots import make_subplots
+
+from ftio.freq.freq_data import FreqData
+from ftio.freq.helper import format_plot
+from ftio.plot.units import set_unit
+# import plotly.io as pio
+
+matplotlib.rcParams['backend'] = 'TkAgg'
+
+
 class FreqPlot:
     """For plotting the result of ftio
     """
     def __init__(self, argv):
         self.render = "dynamic"
-        self.plot_engine = plot_engine
+        self.plot_engine = "plotly"
         self.dtw = True
         self.dominant = []
         self.recon = False
@@ -74,7 +72,7 @@ class FreqPlot:
                     # path = path[:path.rfind("/")]
                     if path[-1] == "/":
                         path = path[:-1]
-                    for root, folder, files in os.walk(path):
+                    for root, _, files in os.walk(path):
                         for file in sorted(files, key=len):
                             if "DFT.json" in file[-8:]:
                                 file = os.path.join(root, file)
@@ -185,10 +183,6 @@ class FreqPlot:
                 pd.concat(D2, ignore_index=True),
                 pd.concat(D3, ignore_index=True),
             )
-            # convert to MB/s:
-            # self.D.data_df["A"] = self.D.data_df["A"] * 1e-6
-            # self.D.data_df["b_sampled"] = self.D.data_df["b_sampled"] * 1e-6
-            # self.D.original_df["b"] = self.D.original_df["b"] * 1e-6
 
     def add_df(self, n, D1, D2, D3, D4=[]):
         self.n = n
@@ -206,8 +200,6 @@ class FreqPlot:
                 self.render = value
             elif prop in "plot_engine":
                 self.plot_engine = value
-                if plot_engine in "empty":
-                    self.plot_engine = plot_engine
             elif prop in "dtw":
                 self.dtw = value  
             elif prop in "reconstruction":
@@ -339,12 +331,13 @@ class FreqPlot:
                 top_x = top_x[top_x < limit[0]]
 
             name_dominant = ""
+            # set the unit and order
+            unit, order = set_unit(self.D.data_df[index_data]["b_sampled"])
 
             # dominant_k1 = -1
             # dominant_k2 = -1[self.D.settings_df[index_set]["N"][0]-(dominant[0])
             # dominant_k3 = -1
             for k in samples:
-                # with k
                 x = (
                     (1 / len(samples))
                     * amp.values[k]
@@ -357,8 +350,6 @@ class FreqPlot:
                         + self.D.data_df[index_data]["phi"].values[k]
                     )
                 )
-                # with freq
-                # x = (1/len(samples))*amp.values[k]*np.cos(2*np.pi*samples*freq.values[k]*self.D.settings_df[index_set]["T_s"].values + self.D.data_df[index_data]["phi"].values[k] )
                 if k == 0:
                     sum = x
                     sum_dominant = 0
@@ -437,25 +428,21 @@ class FreqPlot:
                                     name_dominant = s
                 else:  # pltoly
                     if self.D.data_df[index_data].index[k] in top_x:
-                        # s = "%.1ecos(2pi*%.0f*k/N + %.2f)" % (amp.values[k], k, self.D.data_df[index_data]["phi"].values[k])
-                        # s = "%.1ecos(2pi*%.0f*k/N + %.2f)" % (amp.values[k], k, self.D.data_df[index_data]["phi"].values[k])
-                        # f[-1].add_trace(Scatter(x=time,y=x,mode='lines',name=s, hovertemplate ='<b>Time</b>: %{x:.2f} s'+ '<br><b>Amplitude</b>: %{y}'+'<br><b>f</b>: %{text} s',text =['%.2f'%(freq.values[k])]))
                         # plot only real
                         if k == 0 or k == len(samples) / 2:
                             a = 1
                         else:
                             a = 2
-
-                        if round(freq.values[k],1) > 0:
-                            s = f"{a / length * amp.values[k]:.1f}*cos(2\u03C0*{freq.values[k]:.2f}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
+                        if round(freq.values[k],1) > 0 and amp.values[k] < 100:
+                            s = f"{a / length * order*amp.values[k]:.1f}*cos(2\u03C0*{freq.values[k]:.2f}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
                         else:
-                            s = f"{a / length * amp.values[k]:.1e}*cos(2\u03C0*{freq.values[k]:.2e}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
+                            s = f"{a / length * order*amp.values[k]:.1e}*cos(2\u03C0*{freq.values[k]:.2e}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
                         ## For the paper
-                        # s = f"{a / length * amp.values[k]:.0f}*cos(2\u03C0*{freq.values[k]:.2f}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
+                        # s = f"{a / length * order*amp.values[k]:.0f}*cos(2\u03C0*{freq.values[k]:.2f}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
                         f[-1].add_trace(
                             Scatter(
                                 x=time,
-                                y=a * x,
+                                y=a * x * order,
                                 mode="lines",
                                 name=s,
                                 hovertemplate="<b>Time</b>: %{x:.2f} s"
@@ -463,7 +450,7 @@ class FreqPlot:
                                 + "<br><b>T</b>: %{text} s",
                                 text=len(samples)
                                 * [
-                                    "%.2f" % (self.D.data_df[index_data]["T"].values[k])
+                                    f"{self.D.data_df[index_data]['T'].values[k]:.2f}"
                                 ],
                                 marker_color= colors[color_counter] if color_counter != 1 else "rgb(70,220,70)"
                             )
@@ -535,7 +522,7 @@ class FreqPlot:
                 plt.ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
                 plt.xticks(fontsize=12)
                 plt.yticks(fontsize=12)
-                plt.ylabel("Bandwidth (MB/s)", fontsize=17)
+                plt.ylabel("Bandwidth (B/s)", fontsize=17)
                 plt.xlabel("Time (s)", fontsize=17)
                 plt.grid(True)
                 plt.legend(loc="upper left", ncol=2, fontsize=13)
@@ -596,7 +583,7 @@ class FreqPlot:
                 plt.ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
                 plt.xticks(fontsize=12)
                 plt.yticks(fontsize=12)
-                plt.ylabel("Bandwidth (MB/s)", fontsize=17)
+                plt.ylabel("Bandwidth (B/s)", fontsize=17)
                 plt.xlabel("Time (s)", fontsize=17)
                 plt.grid(True)
                 plt.legend(loc="upper left", ncol=1, fontsize=13)
@@ -615,37 +602,31 @@ class FreqPlot:
                 plt.ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
                 plt.xticks(fontsize=12)
                 plt.yticks(fontsize=12)
-                plt.ylabel("Bandwidth (MB/s)", fontsize=17)
+                plt.ylabel("Bandwidth (B/s)", fontsize=17)
                 plt.xlabel("freq (Hz)", fontsize=17)
                 plt.grid(True)
                 plt.legend(loc="upper left", ncol=2, fontsize=13)
                 plt.tight_layout()
                 f3.show()
+                
             else:  # pltoly
                 #! Reconstructed plot
                 #!######################
                 colors = px.colors.qualitative.Plotly
-                # f[-1].update_layout(xaxis_title='Time (s)', yaxis_title='Bandwidth (MB/s)',font=font_settings, width=1.3*width, height=height, title = 'Reconstruced Signal (Ranks %i)'%r, template = template)
+                
                 f[-1].add_trace(
                     Scatter(
                         x=time,
-                        y=sum,
+                        y=sum*order,
                         mode="lines+markers",
                         name="Discrete signal",
                         line={"shape": "hv"},
                         marker_color= "rgb(180,30,30)"
                     )
                 )
-                
-                # f[-1].add_trace(Scatter(x=time,y=sum,mode='lines+markers',name="Reconstructed signal",line={"shape": 'hv'},marker_color=colors[5]))
-                # rangeslider(f[-1],time,2/self.D.data_df.iloc[dominant_k1]['freq'],slider_cond)
-                # if not self.D.original_df.empty:
-                #     f[-1].add_trace(Scatter(x=self.D.original_df[index_original]["t"],y=self.D.original_df[index_original]["b"],mode='lines+markers',name="Original signal",line={"shape": 'hv'},line_color=colors[0], line_dash='dash'))
-                # f[-1].add_trace(Scatter(x=time,y=self.D.data_df[index_data]["b_sampled"],mode='lines+markers',name="Discrete signal",fill='tozeroy',line={"shape": 'hv'},line_color=colors[1]))
                 f[-1].update_layout(
                     xaxis_title="Time (s)",
-                    yaxis_title="Bandwidth (MB/s)",
-                    # width=1.05*width,
+                    yaxis_title=f"Bandwidth ({unit})",
                     width=width,
                     height=height / 1.1,
                     template=template,
@@ -666,11 +647,13 @@ class FreqPlot:
                 #     fill = None
                 #     print ('too many points, removing fill')
 
+                #! Dominant plot
+                #!######################
                 if not self.D.original_df.empty:
                     f[-1].add_trace(
                         Scatter(
                             x=self.D.original_df[index_original]["t"],
-                            y=self.D.original_df[index_original]["b"],
+                            y=self.D.original_df[index_original]["b"]*order,
                             mode="lines+markers",
                             name="Original signal",
                             fill=fill,
@@ -682,7 +665,7 @@ class FreqPlot:
                 f[-1].add_trace(
                     Scatter(
                         x=time,
-                        y=self.D.data_df[index_data]["b_sampled"],
+                        y=self.D.data_df[index_data]["b_sampled"]*order,
                         mode="lines+markers",
                         name="Discrete signal",
                         fill=fill,
@@ -697,7 +680,7 @@ class FreqPlot:
                     f[-1].add_trace(
                         Scatter(
                             x=time,
-                            y=sum_dominant,
+                            y=sum_dominant*order,
                             mode="lines+markers",
                             name=name_dominant,
                             fill=fill,
@@ -709,7 +692,7 @@ class FreqPlot:
                     f[-1].add_trace(
                         Scatter(
                             x=time,
-                            y=sum_top_2,
+                            y=sum_top_2*order,
                             mode="lines+markers",
                             name="Recon. top 2 signal",
                             fill=fill,
@@ -720,7 +703,7 @@ class FreqPlot:
                     f[-1].add_trace(
                         Scatter(
                             x=time,
-                            y=sum_top_3,
+                            y=sum_top_3*order,
                             mode="lines+markers",
                             name="Recon. top 3 signal",
                             fill=fill,
@@ -731,7 +714,7 @@ class FreqPlot:
                     f[-1].add_trace(
                         Scatter(
                             x=time,
-                            y=sum_top_5,
+                            y=sum_top_5*order,
                             mode="lines+markers",
                             name="Recon. top 5 signal",
                             fill=fill,
@@ -742,7 +725,7 @@ class FreqPlot:
                     f[-1].add_trace(
                         Scatter(
                             x=time,
-                            y=sum_top_10,
+                            y=sum_top_10*order,
                             mode="lines+markers",
                             name="Recon. top 10 signal",
                             fill=fill,
@@ -758,7 +741,7 @@ class FreqPlot:
                 )
                 f[-1].update_layout(
                     xaxis_title="Time (s)",
-                    yaxis_title="Bandwidth (MB/s)",
+                    yaxis_title=f"Bandwidth ({unit})",
                     font=font_settings,
                     # width=1.05*width,
                     width=width,
@@ -770,6 +753,7 @@ class FreqPlot:
                     legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
                     # legend=dict(yanchor="top", y=0.99, xanchor="right", x=.99)
                 )
+                
                 f[-1].update_xaxes(range=[time[0], time[-1]])
                 if isinstance(sum_dominant, list):
                     f[-1].update_yaxes(
@@ -813,7 +797,7 @@ class FreqPlot:
                     font=font_settings,
                     width=width,
                     height=height / 1.3,
-                    title="Full Spectrum (Ranks %i)" % r,
+                    # title="Full Spectrum (Ranks %i)" % r,
                     coloraxis_colorbar=dict(yanchor="top", y=1, x=1, ticks="outside", title = ""),
                     template=template,
                 )
@@ -871,41 +855,41 @@ class FreqPlot:
             # margin=dict(l=0, r=0, b=0, t=0), width=width, height = height, title = 'Frequency Plot',
             # font=font_settings,
             # coloraxis_colorbar=dict(title='Frequency (Hz)', yanchor="top", y=1, x=0, ticks="outside"),
-            # scene = dict(xaxis_title='Frequency (Hz)',yaxis_title='Ranks', zaxis_title='Bandwidth (MB/s)',
+            # scene = dict(xaxis_title='Frequency (Hz)',yaxis_title='Ranks', zaxis_title='Bandwidth (B/s)',
             # xaxis=dict(showgrid=True, gridwidth=1, gridcolor='gray'),
             # yaxis=dict(showgrid=True, gridwidth=1, gridcolor='gray'),
             # zaxis=dict(showgrid=True, gridwidth=1, gridcolor='gray')))
             # fig_tmp.layout.scene.aspectratio = {'x':2, 'y':1, 'conf':1}
             # f.append(fig_tmp)
 
-            f.append(go.Figure())
-            f[-1].add_traces(
-                list(
-                    px.line(
-                        self.D.data_df.iloc[top],
-                        x="ranks",
-                        y="T",
-                        color="k",
-                        markers=True,
-                        hover_data={
-                            "ranks": True,
-                            "k": True,
-                            "A": ":.2f",
-                            "F": (":.2f (Hz)", self.D.data_df.iloc[top]["freq"]),
-                            "T": True,
-                        },
-                    ).select_traces()
-                )
-            )
-            f[-1].update_layout(
-                xaxis_title="Ranks",
-                yaxis_title="Period (s)",
-                font=font_settings,
-                width=width,
-                height=height,
-                title="Prediction",
-                template=template,
-            )
+            # f.append(go.Figure())
+            # f[-1].add_traces(
+            #     list(
+            #         px.line(
+            #             self.D.data_df.iloc[top],
+            #             x="ranks",
+            #             y="T",
+            #             color="k",
+            #             markers=True,
+            #             hover_data={
+            #                 "ranks": True,
+            #                 "k": True,
+            #                 "A": ":.2f",
+            #                 "F": (":.2f (Hz)", self.D.data_df.iloc[top]["freq"]),
+            #                 "T": True,
+            #             },
+            #         ).select_traces()
+            #     )
+            # )
+            # f[-1].update_layout(
+            #     xaxis_title="Ranks",
+            #     yaxis_title="Period (s)",
+            #     font=font_settings,
+            #     width=width,
+            #     height=height,
+            #     title="Prediction",
+            #     template=template,
+            # )
 
 
             try:

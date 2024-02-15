@@ -67,9 +67,9 @@ def extract_data(path: str, args) -> tuple[list, int, dict]:
                 dataframe, freq, total_time = extract_heatmap(report, "MPIIO")
                 if isinstance(args, list):
                     pass
-                elif freq > 0 and "ftio.py" in args.files[0]:
+                elif freq > 0 and "ftio" in args.files[0]:
                     args.freq = freq
-                    console.print(f"[cyan]Adjusting sampling freq:[/] {freq}")
+                    console.print(f"[cyan]Adjusting sampling freq:[/] {freq:.3e}")
 
         elif "POSIX" in args.dxt_mode.upper():
             if "DXT_POSIX" in modules:
@@ -79,7 +79,7 @@ def extract_data(path: str, args) -> tuple[list, int, dict]:
                 dataframe, freq, total_time = extract_heatmap(report, "POSIX")
                 if freq > 0:
                     args.freq = freq
-                    console.print(f"[cyan]Adjusting sampling freq:[/] {freq}")
+                    console.print(f"[cyan]Adjusting sampling freq:[/] {freq:.3e}")
 
         console.print(f"[cyan]Done:[/] {time.time()-start:.3f} s\n")
 
@@ -190,7 +190,7 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
             and not dataframe[rank]["write_segments"].empty
         ):
             bandwidth = (
-                1e-6 * dataframe[rank]["write_segments"]["length"]/ (
+                dataframe[rank]["write_segments"]["length"]/ (
                     dataframe[rank]["write_segments"]["end_time"]
                     - dataframe[rank]["write_segments"]["start_time"]
                 )
@@ -224,7 +224,7 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
             and not dataframe[rank]["read_segments"].empty
         ):
             bandwidth = (
-                1e-6 * dataframe[rank]["read_segments"]["length"] / (
+                dataframe[rank]["read_segments"]["length"] / (
                     dataframe[rank]["read_segments"]["end_time"]
                     - dataframe[rank]["read_segments"]["start_time"]
                 )

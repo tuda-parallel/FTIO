@@ -123,7 +123,8 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
         text += f"End time: [cyan]{time_b[-1]:.2f}[/] s\n"
 
     ignored_bytes = (ignored_bytes - total_bytes)
-    text += f"Ignored bytes: [cyan]{ignored_bytes:.6e} bytes[/]\n"
+    text += f"Total bytes: [cyan]{total_bytes:.2e} bytes[/]\n"
+    text += f"Ignored bytes: [cyan]{ignored_bytes:.2e} bytes[/]\n"
     tik = time.time()
     CONSOLE.print("[cyan]Executing:[/] Discretization\n")
 

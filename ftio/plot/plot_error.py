@@ -87,7 +87,7 @@ def plot_error_bar(df, s, f=[]):
             col=1,
         )
 
-    f.update_yaxes(title_text="Transfer rate (MB/s)", row=1, col=1)
+    f.update_yaxes(title_text="Transfer rate (B/s)", row=1, col=1)
     f.update_xaxes(type="log", row=1, col=1, showspikes=True)
     # f.update_xaxes(type="log",row=1, col=1, showspikes=True) #, tickmode = 'array', tickvals = x_unqiue, ticktext = x_unqiue.astype(str))
     f.update_layout(
@@ -147,7 +147,7 @@ def plot_error_bar(df, s, f=[]):
         title = "Error Bar: Ind"
 
     f.update_layout(
-        yaxis_title="Transfer Rate (MB/s)",
+        yaxis_title="Transfer Rate (B/s)",
         title=title,
         width=900,
         height=560,
