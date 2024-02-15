@@ -5,35 +5,30 @@ This file describes how to reproduce the experiments in the Paper entitled:
 
 The experiments are divided into three parts:
 - [Artifacts Reproducibility](#artifacts-reproducibility)
+	- [FTIO Version](#ftio-version)
 	- [Running Example (IOR)](#running-example-ior)
 	- [Case Studies](#case-studies)
-		- [IOR](#ior)
 		- [LAMMPS](#lammps)
 		- [Nek5000](#nek5000)
 		- [Modified HACC-IO](#modified-hacc-io)
 	- [Limitations of FTIO](#limitations-of-ftio)
 	- [Use Case: I/O Scheduling](#use-case-io-scheduling)
 
-FTIO version v0.0.1 was used for all experiments. To checkout to this version, execute:
-``` sh
-git checkout v0.0.1
-```
+## FTIO Version
 
-## Running Example (IOR)
-Throughout Section II in the paper "Capturing Periodic I/O Using Frequency Techniques", IOR was used to demonstrate 
-the approach. 
-
-## Case Studies
 For all the cases bellow, `ftio` first needs to be installed (see [Installation](https://github.com/tuda-parallel/FTIO?tab=readme-ov-file#installation)). We used `ftio` version 0.0.1 for the experiment in the paper. To get this version simply execute the following code:
 ```sh
 git checkout v0.0.1 
 ```
 
-Next, follow the instructions provided for each application. 
 
-### IOR
-This is the running example from the paper handled in Section II. 
-Follow the instructions provided in the [IOR/README.md](/artifacts/capturing_periodic_io_using_frequency_techniques/IOR/README.md) to reconstruct this experiment. 
+## Running Example (IOR)
+Throughout Section II in the paper "Capturing Periodic I/O Using Frequency Techniques", IOR was used to demonstrate 
+the approach.  Follow the instructions provided in the [IOR/README.md](/artifacts/capturing_periodic_io_using_frequency_techniques/IOR/README.md) to reconstruct this experiment. 
+
+
+## Case Studies
+Bellow instructions are provided on how to recreate the case studies from Section III-B. As mentioned [above](#ftio-version), `ftio` version 0.0.1 was used for all examples here. 
 
 ### LAMMPS
 
@@ -52,9 +47,6 @@ After downloading, instructions on how to reproduce the results are provided in 
 
 ### Modified HACC-IO
 Navigate to [HACC-IO/README](/artifacts/capturing_periodic_io_using_frequency_techniques/HACC-IO/README.md) and follow the provided instructions. 
-
-<p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
-
 
 
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
