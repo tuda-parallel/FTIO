@@ -3,16 +3,17 @@
 This file describes how to reproduce the experiments in the Paper entitled:
 "Capturing Periodic I/O Using Frequency Techniques" which was published at the IPDPS 2024
 
-The experiments are divided into three parts:
+Before you start, first set up the correct [`ftio` version](#ftio-version).
+The experiments are divided into four parts:
 - [Artifacts Reproducibility](#artifacts-reproducibility)
 	- [FTIO Version](#ftio-version)
-	- [Running Example (IOR)](#running-example-ior)
-	- [Case Studies](#case-studies)
+	- [1. Running Example (IOR)](#1-running-example-ior)
+	- [2. Case Studies](#2-case-studies)
 		- [LAMMPS](#lammps)
 		- [Nek5000](#nek5000)
 		- [Modified HACC-IO](#modified-hacc-io)
-	- [Limitations of FTIO](#limitations-of-ftio)
-	- [Use Case: I/O Scheduling](#use-case-io-scheduling)
+	- [3. Limitations of FTIO](#3-limitations-of-ftio)
+	- [4. Use Case: I/O Scheduling](#4-use-case-io-scheduling)
 
 ## FTIO Version
 
@@ -22,12 +23,12 @@ git checkout v0.0.1
 ```
 
 
-## Running Example (IOR)
+## 1. Running Example (IOR)
 Throughout Section II in the paper "Capturing Periodic I/O Using Frequency Techniques", IOR was used to demonstrate 
 the approach.  Follow the instructions provided in the [IOR/README.md](/artifacts/capturing_periodic_io_using_frequency_techniques/IOR/README.md) to reconstruct this experiment. 
 
 
-## Case Studies
+## 2. Case Studies
 Bellow instructions are provided on how to recreate the case studies from Section III-B. As mentioned [above](#ftio-version), `ftio` version 0.0.1 was used for all examples here. 
 
 ### LAMMPS
@@ -51,7 +52,7 @@ Navigate to [HACC-IO/README](/artifacts/capturing_periodic_io_using_frequency_te
 
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
-## Limitations of FTIO
+## 3. Limitations of FTIO
 
 The details for this experiment are provided here: 
 <br>
@@ -60,7 +61,7 @@ The details for this experiment are provided here:
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
 
-## Use Case: I/O Scheduling
+## 4. Use Case: I/O Scheduling
 The details for this experiment are provided here:
 <br>
 <https://gitlab.inria.fr/hpc_io/iosets-ftio-experiments>
