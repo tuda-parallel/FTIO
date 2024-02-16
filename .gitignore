@@ -2,9 +2,18 @@
 */__pycache__/*
 **/__pycache__/**
 
+zenodo
+.call.txt
+freq.html
+io_results
 old_setup
 */sim/*
 *venv/*
 **/msgpack-c
 *extern_lib*
 *vscode*
+*.json*
+*.sh
+*.darshan
+*.*.gz
+*.*.pois

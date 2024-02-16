@@ -11,6 +11,8 @@ TODO: upload the HACC src files somewhere
 
 
 ## Extract the provided trace file
+Download and extract the file data.zip
+
 
 <p align="right"><a href="#hacc-io">⬆</a></p>
 

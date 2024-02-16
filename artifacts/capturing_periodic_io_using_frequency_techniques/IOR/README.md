@@ -59,3 +59,34 @@ ftio 9216.json  -e no  -t 0.45 -c
 ```
 
 <p align="right"><a href="#ior">⬆</a></p>
+
+
+## Tracing Library Overhead
+
+### Detection Mode:
+Download and extract the file data.zip
+
+Navigate to application_traces/IOR/overhead/detection and call [`ioplot`](https://github.com/tuda-parallel/FTIO/blob/main/docs/tools.md#ioplot):
+
+```sh
+cd application_traces/IOR/overhead/detection
+ioplot 
+```
+
+Now examine the plots in your browser by selecting "Time". If your browser does not open automatically, open the `file io_results/time.html` or `file io_results/main.html` and select time.
+
+<p align="right"><a href="#ior">⬆</a></p>
+
+### Prediction Mode:
+
+Download and extract the file data.zip
+
+Navigate to application_traces/IOR/overhead/prediction and call [`ioplot`](https://github.com/tuda-parallel/FTIO/blob/main/docs/tools.md#ioplot):
+
+```sh
+cd application_traces/IOR/overhead/detection
+ioplot run_*
+```
+Now examine the plots in your browser by selecting "Time". If your browser does not open automatically, open the `file io_results/time.html` or `file io_results/main.html` and select time.
+
+<p align="right"><a href="#ior">⬆</a></p>

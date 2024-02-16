@@ -7,7 +7,7 @@ Before you start, first set up the correct [`ftio` version](#ftio-version).
 The experiments are divided into four parts:
 - [Artifacts Reproducibility](#artifacts-reproducibility)
 	- [FTIO Version](#ftio-version)
-	- [1. Running Example (IOR)](#1-running-example-ior)
+	- [1. Running Example and Overhead](#1-running-example-and-overhead)
 	- [2. Case Studies](#2-case-studies)
 		- [LAMMPS](#lammps)
 		- [Nek5000](#nek5000)
@@ -17,16 +17,18 @@ The experiments are divided into four parts:
 
 ## FTIO Version
 
-For all the cases bellow, `ftio` first needs to be installed (see [Installation](https://github.com/tuda-parallel/FTIO?tab=readme-ov-file#installation)). We used `ftio` version 0.0.1 for the experiment in the paper. To get this version simply execute the following code:
+For all the cases below, `ftio`` first needs to be installed (see [Installation](https://github.com/tuda-parallel/FTIO?tab=readme-ov-file#installation)). We used `ftio` version 0.0.1 for the experiment in the paper. To get this version simply execute the following code:
 ```sh
 git checkout v0.0.1 
 ```
 
 
-## 1. Running Example (IOR)
-Throughout Section II in the paper "Capturing Periodic I/O Using Frequency Techniques", IOR was used to demonstrate 
-the approach.  Follow the instructions provided in the [IOR/README.md](/artifacts/capturing_periodic_io_using_frequency_techniques/IOR/README.md) to reconstruct this experiment. 
+## 1. Running Example and Overhead
+Throughout Section II of the paper "Capturing Periodic I/O Using Frequency Techniques", IOR was used to demonstrate the approach. Moreover, In Section III-C the overhead of our approach was examined using IOR with a varying number of ranks (from 1 to 10752 ranks).
+- Follow the instructions provided in the [IOR/README.md](/artifacts/capturing_periodic_io_using_frequency_techniques/IOR/README.md) to setup and run IOR. 
+- Instructions regarding the overhead are provided [here](/artifacts/capturing_periodic_io_using_frequency_techniques/IOR/README.md#tracing-library-overhead). 
 
+<p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
 ## 2. Case Studies
 Bellow instructions are provided on how to recreate the case studies from Section III-B. As mentioned [above](#ftio-version), `ftio` version 0.0.1 was used for all examples here. 
