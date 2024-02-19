@@ -1,6 +1,6 @@
 <!-- # FTIO -->
 ![GitHub Release](https://img.shields.io/github/v/release/tuda-parallel/FTIO)
-![GitHub Release](https://img.shields.io/github/release-date/tuda-parallel/FTIO)
+![GitHub Release Date](https://img.shields.io/github/release-date/tuda-parallel/FTIO)
 ![](https://img.shields.io/github/last-commit/tuda-parallel/FTIO)
 ![contributors](https://img.shields.io/github/contributors/tuda-parallel/FTIO)
 ![issues](https://img.shields.io/github/issues/tuda-parallel/FTIO)
@@ -65,7 +65,7 @@ Other tools:
   </ol>
 </details>
 
-Join the [Slack channel](https://join.slack.com/t/ftioworkspace/shared_invite/zt-2bydqdt13-~hIHzIrKW2zJY_ZWJ5oE_g) or see latest updates here: [Latest News](https://github.com/tuda-parallel/FTIO/tree/main/ChangeLog.md)
+Join the [Slack channel](https://join.slack.com/t/ftioworkspace/shared_invite/zt-2bydqdt13-~hIHzIrKW2zJY_ZWJ5oE_g) or see the latest updates here: [Latest News](https://github.com/tuda-parallel/FTIO/tree/main/ChangeLog.md)
 
 ## Installation
 
