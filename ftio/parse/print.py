@@ -1,14 +1,15 @@
 """Converts results from TMIO / Darshan Files into Extra-P supported format
 """
-from ftio.parse.scales import Scales
 import numpy as np
+from ftio.parse.scales import Scales
+from ftio.parse.helper import scale_metric
 
 
 class Print:
     def __init__(self, args):
         self.data = Scales(args)
         self.data.get_data()
-        self.data.names = self.data.names
+        self.args = self.data.args
 
     def print_txt(self):
         self.file = open("./scale.txt", "w")
@@ -63,15 +64,15 @@ class Print:
         self.print_io_mode("write_async_b", type)
 
     def print_io_mode(self, mode, type):
-        self.print_data(mode, "total_bytes", f"{mode}->total_bytes", "Bytes", type)
+        self.print_data(mode, "total_bytes", f"{mode}->total_bytes", "Size (B)", type)
         self.print_data(
-            mode, "max_bytes_per_rank", f"{mode}->max_bytes_per_rank", "Bytes", type
+            mode, "max_bytes_per_rank", f"{mode}->max_bytes_per_rank", "Size (B)", type
         )
         self.print_data(
             mode,
             "max_transfersize_over_ranks",
             f"{mode}->max_transfersize_over_ranks",
-            "Bytes",
+            "Size (B)",
             type,
         )
         self.print_data(
@@ -148,28 +149,28 @@ class Print:
                 "io_time",
                 "delta_t_total",
                 "io_time->total_time",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_overhead",
                 "io_time->total_time->lib_overhead_time",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_overhead_post_runtime",
                 "io_time->total_time->lib_overhead_time->delta_t_overhead_post_runtime",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_overhead_peri_runtime",
                 "io_time->total_time->lib_overhead_time->delta_t_overhead_peri_runtime",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
 
@@ -177,21 +178,21 @@ class Print:
                 "io_time",
                 "delta_t_agg",
                 "io_time->total_time->total_app_time",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_com",
                 "io_time->total_time->total_app_time->total_com_time",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_agg_io",
                 "io_time->total_time->total_app_time->total_io_time",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
 
@@ -199,28 +200,28 @@ class Print:
                 "io_time",
                 "delta_t_sr",
                 "io_time->total_time->total_app_time->total_io_time->sync_read",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_ar_lost",
                 "io_time->total_time->total_app_time->total_io_time->delta_t_ar_lost",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_sw",
                 "io_time->total_time->total_app_time->total_io_time->sync_write",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_aw_lost",
                 "io_time->total_time->total_app_time->total_io_time->delta_t_aw_lost",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             # self.print_data('io_time', 'delta_t_sr',      'io_time->sync_read',       'time', print_type = type)
@@ -228,21 +229,21 @@ class Print:
                 "io_time",
                 "delta_t_ara",
                 "io_time->async_read_t",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_arr",
                 "io_time->async_read_b",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_ar_lost",
                 "io_time->delta_t_ar_lost",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
 
@@ -251,21 +252,21 @@ class Print:
                 "io_time",
                 "delta_t_awa",
                 "io_time->async_write_t",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_awr",
                 "io_time->async_write_b",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_aw_lost",
                 "io_time->delta_t_aw_lost",
-                "Time",
+                "Time (s)",
                 print_type=type,
             )
 
@@ -494,7 +495,7 @@ class Print:
         io_mode,
         var="bandwidth.app",
         call_path="",
-        metric="Bandwidth",
+        metric="Bandwidth (B/s)",
         print_type="txt",
     ):
         if self.check_non_empty(io_mode, var):
@@ -517,6 +518,7 @@ class Print:
                         self.file.write(f"DATA {art:e} \n")
                 self.file.write("\n")
             elif "jsonl" in print_type:
+                order = 1
                 for i in range(0, self.data.n):
                     value = getattr(self.data.s[i], io_mode)
                     if "bandwidth" in var:
@@ -526,12 +528,17 @@ class Print:
                         art = -1 if np.isnan(art) else art
                     if isinstance(art, list):
                         for j, _ in enumerate(art):
+                            if j == 0:
+                                if self.args.scale:
+                                    metric, order = scale_metric(metric,art[j])
                             self.file.write(
-                                f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art[j]:e} }}\n'
+                                f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art[j]*order:e} }}\n'
                             )
                     else:
+                        if self.args.scale:
+                            metric, order = scale_metric(metric,art)
                         self.file.write(
-                            f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art:e} }}\n'
+                            f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art*order:e} }}\n'
                         )
             else:
                 pass

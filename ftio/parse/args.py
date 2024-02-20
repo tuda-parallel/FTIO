@@ -101,7 +101,9 @@ Full documentation:
         parser.set_defaults(merge_plots=False)
         parser.add_argument('--no_disp', action='store_true', help='avoids opening the generated HTML file')
         parser.set_defaults(no_disp=False)
-
+    if 'parse' in name.lower():
+        parser.add_argument('--scale',  action='store_true', help ='scales the Y-axis')
+        parser.set_defaults(scale=False)    
     # Data modes
     parser.add_argument('-s', '--sum', action='store_true', help ='sum plot: True (default) or False')
     parser.add_argument('-ns', '--no-sum', dest='sum', action='store_false')
@@ -112,7 +114,7 @@ Full documentation:
     parser.add_argument('-i', '--ind', action='store_true', help ='ind plot: True or False (default)')
     parser.add_argument('-ni', '--no-ind', dest='ind', action='store_false')
     parser.set_defaults(ind=False)
-    #TODO: use this unit
+    #TODO: use this  unit
     parser.add_argument('-u', '--unit', dest='unit',  type = str ,  help ='unit of the provided data (MB is default)')
     parser.set_defaults(unit='B')
     
