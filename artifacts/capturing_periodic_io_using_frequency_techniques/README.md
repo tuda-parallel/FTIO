@@ -6,7 +6,9 @@ This file describes how to reproduce the experiments in the Paper entitled:
 Before you start, first set up the correct [`ftio` version](#ftio-version).
 The experiments are divided into four parts:
 - [Artifacts Reproducibility](#artifacts-reproducibility)
-	- [FTIO Version](#ftio-version)
+		- [Prerequisites](#prerequisites)
+		- [FTIO Version](#ftio-version)
+		- [Extracting the Data Set:](#extracting-the-data-set)
 	- [1. Running Example and Overhead](#1-running-example-and-overhead)
 	- [2. Case Studies](#2-case-studies)
 		- [LAMMPS](#lammps)
@@ -15,11 +17,40 @@ The experiments are divided into four parts:
 	- [3. Limitations of FTIO](#3-limitations-of-ftio)
 	- [4. Use Case: I/O Scheduling](#4-use-case-io-scheduling)
 
-## FTIO Version
+### Prerequisites 
+Before you start, there are two prerequisites:
+1. Install the correct [FTIO version](#ftio-version) 
+2. Depending on what you want to test, you need to [download and extract](#extracting-the-data-set) the data set from [Zenodo](LINK)
 
-For all the cases below, `ftio`` first needs to be installed (see [Installation](https://github.com/tuda-parallel/FTIO?tab=readme-ov-file#installation)). We used `ftio` version 0.0.1 for the experiment in the paper. To get this version simply execute the following code:
+### FTIO Version
+
+For all the cases below, `ftio` first needs to be installed (see [Installation](https://github.com/tuda-parallel/FTIO?tab=readme-ov-file#installation)). We used `ftio` version 0.0.1 for the experiment in the paper. To get this version simply execute the following code:
 ```sh
 git checkout v0.0.1 
+```
+
+### Extracting the Data Set:
+download the following file: LINK
+```sh
+wget LINK
+```
+Next, unzip the file
+```sh
+unzip data.zip
+```
+This created the needed traces and experiments:
+
+```sh
+data
+├── application_traces
+│   ├── HACC-IO
+│   ├── IOR
+│   ├── LAMMPS
+│   ├── NEK5000
+│   └── README.md
+├── exps_with_synthetic_traces
+├── iosets-ftio-experiments
+└── README.md
 ```
 
 

@@ -17,7 +17,7 @@
     <a href="https://github.com/tuda-parallel/FTIO/tree/main/docs/approach.md"><strong>Explore the approach »</strong></a>
     <br />
     <!-- <br /> -->
-    <a href="https://git.rwth-aachen.de/parallel/ftio">View Demo</a>
+    <a href="#testing">View Demo</a>
     ·
     <a href="https://github.com/tuda-parallel/FTIO/issues">Report Bug</a>
     ·
