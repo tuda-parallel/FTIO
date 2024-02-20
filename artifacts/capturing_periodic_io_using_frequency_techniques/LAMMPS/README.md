@@ -8,6 +8,9 @@ The folder contains:
 1. Tracing file generated with TMIO: lammps_3072.json
 2. Input simulation file and sbatch script in case you want to repeat the experiment on your cluster
 
+Alternatively, download and extract the file data.zip as described [here](/artifacts/capturing_periodic_io_using_frequency_techniques/README.md#extracting-the-data-set).
+Once extracted, you can find the LAMMPS trace under `application_traces/LAMMPS`.
+
 ## Analyzing the provided trace file
 
 [Install FTIO](https://github.com/tuda-parallel/FTIO#installation). To get the dominant frequency with `ftio` simply call:

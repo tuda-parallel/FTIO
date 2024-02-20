@@ -20,7 +20,7 @@ The experiments are divided into four parts:
 ### Prerequisites 
 Before you start, there are two prerequisites:
 1. Install the correct [FTIO version](#ftio-version) 
-2. Depending on what you want to test, you need to [download and extract](#extracting-the-data-set) the data set from [Zenodo](LINK)
+2. Depending on what you want to test, you need to [download and extract](#extracting-the-data-set) the data set from [Zenodo](https://doi.org/10.5281/zenodo.10670270).
 
 ### FTIO Version
 
@@ -30,9 +30,9 @@ git checkout v0.0.1
 ```
 
 ### Extracting the Data Set:
-download the following file: LINK
+download the zip file from [here](https://doi.org/10.5281/zenodo.10670270).
 ```sh
-wget LINK
+wget https://zenodo.org/records/10670271/files/data.zip?download=1
 ```
 Next, unzip the file
 ```sh
@@ -102,5 +102,21 @@ The details for this experiment are provided here:
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
 
-
+## Citation
+The paper citation is available [here](/README.md#citation). You can cite the [data set](https://doi.org/10.5281/zenodo.10670270) as:
+```
+ @dataset{tarraf_2024_10670270,
+  author       = {Tarraf, Ahmad and
+                  Bandet, Alexis and
+                  Boito, Francieli and
+                  Pallez, Guillaume and
+                  Wolf, Felix},
+  title        = {Capturing Periodic I/O Using Frequency Techniques},
+  month        = Feb,
+  year         = 2024,
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.10670270},
+  url          = {https://doi.org/10.5281/zenodo.10670270}
+}
+```
 
