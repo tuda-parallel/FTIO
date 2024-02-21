@@ -1,6 +1,6 @@
 import numpy as np
+import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-
 
 def legend_fix(data, c) -> bool:
     if c == data.nRun - 1:
@@ -9,7 +9,7 @@ def legend_fix(data, c) -> bool:
         return False
 
 
-def format_plot(fig) -> None:
+def format_plot(fig) -> go.Figure:
     """Formats plots
 
     Args:
@@ -54,12 +54,7 @@ def format_plot(fig) -> None:
         ),
     )
 
-    # fig.update_layout(legend=dict(
-    # yanchor="top",
-    # y=0.99,
-    # xanchor="right",
-    # x=1
-    # ))
+    return fig
 
 
 def save_fig(fig, f, path, name):
@@ -74,7 +69,7 @@ def save_fig(fig, f, path, name):
     print(f"   -> Finished {index}/{length-1}")
 
 
-def add_fig_row(nRun, onefig=False, specs=None, subplot_titles=None):
+def add_fig_row(nRun, onefig=False, specs=None, subplot_titles=None) -> go.Figure:
     if nRun == 1 or onefig == True:
         # self.f_t.append(go.Figure())
         f = make_subplots(rows=1, cols=1, specs=specs)
@@ -86,7 +81,7 @@ def add_fig_row(nRun, onefig=False, specs=None, subplot_titles=None):
 
 def add_fig_col(
     nRun, onefig=False, specs=None, subplot_titles=None, horizontal_spacing=0.01
-):
+) -> go.Figure:
     if nRun == 1 or onefig == True:
         # self.f_t.append(go.Figure())
         f = make_subplots(rows=1, cols=1, specs=specs)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+from sys import platform
 from threading import Thread
 import datetime
 import json
@@ -20,6 +21,7 @@ from plotly.subplots import make_subplots
 from ftio.freq.freq_data import FreqData
 from ftio.freq.helper import format_plot
 from ftio.plot.units import set_unit
+from ftio.freq.freq_html import create_html
 # import plotly.io as pio
 
 matplotlib.rcParams['backend'] = 'TkAgg'
@@ -638,7 +640,7 @@ class FreqPlot:
                 )
                 # f[-1].update_layout(legend=dict(orientation="h", yanchor="bottom",y=1.02, xanchor="right", x=1))
                 f[-1].update_xaxes(range=[time[0], time[-1]])
-                format_plot(f[-1])
+                f[-1] = format_plot(f[-1])
                 f[-1].show(config=conf)
 
                 f.append(go.Figure())
@@ -763,7 +765,7 @@ class FreqPlot:
                         ]
                     )
                 # f[-1].update_yaxes(range=[-2000, 72000])
-                format_plot(f[-1])
+                f[-1] = format_plot(f[-1])
                 f[-1].show(config=conf)
 
             
@@ -890,90 +892,11 @@ class FreqPlot:
             #     title="Prediction",
             #     template=template,
             # )
-
-
-            try:
-                os.system("rm -f ./freq.html")
-                os.system("rm -rf io_predicition_freq_images")
-            except:
-                pass
-
-            if self.render == "dynamic":
-                # with open('freq.html', 'a') as file:
-                #     for fig in f:
-                #         file.write(fig.to_html(config=conf, full_html=False))
-                #         file.write("<br>import plotly.offline<br>")
-                # os.system("open ./freq.html &\n")
-                # conf = {  'toImageButtonOptions': {     'format': 'svg', 'scale':1  }}
-                template = """
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                <meta charset="utf-8"/>
-                <script>{plotly}</script>
-                </head>
-                <body>
-                {plots}
-                </body>
-                </html>
-                """
-                s = ""
-                for fig in f:
-                    # s = s + fig.to_html(include_plotlyjs=False) + "\n"
-                    s= s + fig.to_html(config=conf,include_plotlyjs=False) + "\n"
-                template = template.format(
-                    plotly=plotly.offline.get_plotlyjs(), plots=s
-                )
-                with open("freq.html", "a") as file:
-                    file.write(template)
-                os.system("open ./freq.html &\n")
-            else:
-                os.mkdir("io_predicition_freq_images")
-                # extension='jpg'
-                extension='svg'
-                # extension = "png"
-                print("-> Generating %s figures" % extension.upper())
-                threads = []
-                length = len(f)
-                plotly.io.json.config.default_engine = "orjson"
-                for fig in f:
-                    index = f.index(fig)
-                    threads.append(
-                        Thread(
-                            target=create_static_figure,
-                            args=(fig, index, length, extension),
-                        )
-                    )
-
-                for thread in threads:
-                    thread.start()
-                for thread in threads:
-                    thread.join()
-                os.system("open . &")
+            create_html(f,self.render,conf,"freq")
         else:
             input()
 
 
-def create_static_figure(fig, index, length, extension):
-    console = Console()
-    scale = 1
-    console.print("working on [cyan]figure (%i/%i) [/]" % (index + 1, length))
-    if fig.layout.title.text:
-        file_name = f"io_predicition_freq_images/{fig.layout.title.text.replace(' ', '_').replace('(', '_').replace(')', '_')}.{extension}"
-    else:
-        file_name = f"io_predicition_freq_images/{index}.{extension}"
-
-    if "svg" not in extension and "pdf" not in extension:
-        scale = 5
-
-    fig.write_image(file_name, scale=scale)
-    if index == 0:
-        try:
-            os.system(f"open {file_name} || echo 'not found' &")
-        except:
-            pass
-
-    console.print(f"[cyan]figure ({index + 1}/{length}) [/]created")
 
 
 ##Fill DTW Matrix
@@ -1102,7 +1025,7 @@ def plot_spectrum(amp:np.ndarray, freq:np.ndarray, mode:str = "Amplitude", perce
         coloraxis_colorbar=dict(yanchor="top", y=1, x=0, ticks="outside"),
         template=template,
     )
-    format_plot(fig_tmp)
+    fig_tmp = format_plot(fig_tmp)
     return fig_tmp, name+unit
 
 

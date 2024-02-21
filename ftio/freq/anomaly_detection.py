@@ -9,7 +9,6 @@ from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestNeighbors
 from kneed import KneeLocator
 from rich.panel import Panel
-import plotly.express as px
 # Isolation forest
 from sklearn.ensemble import IsolationForest
 # Lof
@@ -18,7 +17,7 @@ from sklearn.neighbors import LocalOutlierFactor
 from scipy.signal import find_peaks
 # all
 import numpy as np
-from ftio.freq.anomaly_plot import  plot_outliers, plot_dbscan, plot_decision_boundaries
+from ftio.freq.anomaly_plot import  plot_outliers,  plot_decision_boundaries
 
 
 def outlier_detection(amp:np.ndarray, freq_arr:np.ndarray, args) -> tuple[list[float], np.ndarray, Panel]:
@@ -216,29 +215,12 @@ def db_scan(
     model = DBSCAN(eps=eps, min_samples=min_pts)
     model.fit(d)
     dominant_index = model.labels_
-
-    m_label = max(model.labels_)
-    try:
-        color = [
-            px.colors.qualitative.Plotly[x]
-            if (x >= 0)
-            else px.colors.qualitative.Plotly[m_label + 1]
-            for x in model.labels_
-        ]
-    except IndexError:
-        if m_label > 10:
-            color = [
-                "blue" if (x >= 0) else "red"
-                for x in model.labels_
-            ]
-        else:
-            color = [
-                px.colors.qualitative.Plotly[x] if (x >= 0) else "aliceblue"
-                for x in model.labels_
-            ]
+    #normalize like the remaing methods
+    dominant_index[dominant_index==-1] = dominant_index[dominant_index==-1] - 1 
+    dominant_index =  dominant_index + 1 
 
     if "plotly" in args.engine:
-        plot_dbscan(args, freq_arr, amp, indecies, conf, dominant_index, eps, color, d)
+        plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d, eps)
 
     clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp,  indecies[dominant_index == -1])
     dominant_index,text_d = dominant(clean_index, freq_arr, conf)
@@ -324,6 +306,8 @@ def lof(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.nd
     model.fit(d)
     conf = model.decision_function(d)
     dominant_index = model.predict(d)
+    # conf is between [-1,1]. Scale this to [0,1]
+    conf = -1*(conf-1)/2
 
     # plot
     if "plotly" in args.engine:

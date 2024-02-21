@@ -3,13 +3,14 @@
 
 from __future__ import annotations
 import numpy as np
-from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import plotly.express as px
 import matplotlib.pyplot as plt
 from sklearn.inspection import DecisionBoundaryDisplay
-from ftio.freq.freq_plot_core import plot_both_spectrums
+from ftio.freq.freq_html import create_html
 from ftio.freq.helper import format_plot
+from ftio.freq.freq_plot_core import plot_both_spectrums
+
 
 # ?#################################
 # ? Plot outliers
@@ -21,24 +22,39 @@ def plot_outliers(
     indecies: np.ndarray,
     conf: np.ndarray,
     dominant_index: np.ndarray,
-    d: np.ndarray = np.array([])
+    d: np.ndarray = np.array([]),
+    eps: float = 0,
 ) -> None:
-    """Plots outliers
+    """Plots outliers for DB scan
 
     Args:
         freq_arr (np.ndarray): _description_
-        amp (np.ndarray): aplitude or power 
+        amp (np.ndarray): aplitude or power
         indecies (np.ndarray): _description_
         conf (np.ndarray): _description_
         dominant_index (np.ndarray): _description_
         d (np.ndarray, optional): _description_. Defaults to np.array([]).
     """
-    colorscale = ["rgb(0,50,150)", "rgb(150,50,150)", "rgb(255,50,0)"]
-    name = "Amplitude"
-    if args.psd:
-        name = "Power"
+    colorscale = [(0, "rgb(0,50,150)"), (0.5, "rgb(150,50,150)"), (1, "rgb(255,50,0)")]
+    labels = [(f"cluster {i}") if (i >= 0) else "outliers" for i in dominant_index]
+    #prepare figures
+    figs = []
+    for i in np.arange(0, 5):
+        f = go.Figure()
+        f = format_plot(f)
+        figs.append(f)
 
-    if d.size == 0 and len(freq_arr) != 0:
+    #prepare symbols
+    if dominant_index.size > 0 and dominant_index.max() < 20:
+        symbol = dominant_index.copy()
+        symbol[symbol >= 5] = symbol[symbol >= 5] + 1
+        symbol[symbol == -1] = 5  # x marker
+        symbol = symbol - 1
+    else:
+        symbol = np.ones(dominant_index.size)
+    labels = np.array(labels)
+
+    if d.size  == 0 and len(freq_arr) != 0:
         d = np.vstack(
             (
                 freq_arr[indecies] / freq_arr[indecies].max(),
@@ -50,256 +66,130 @@ def plot_outliers(
     else:
         pass
 
-    names = [(f"cluster {i}") if (i >= 0) else "outliers" for i in dominant_index]
-    fig_main = make_subplots(
-        rows=4,
-        cols=2,
-        specs=[
-            [{"colspan": 2}, None],
-            [{}, {}],
-            [{"colspan": 2}, None],
-            [{"colspan": 2}, None]
-            ],
-            horizontal_spacing = 0.2
-    )
     
-    fig_0 = px.scatter(
-        d, x=0, y=1, color=names, labels={"0": "Frequency (Hz)", "1": name}, color_continuous_scale=colorscale
-    )
-    for trace in list(fig_0.select_traces()):
-        fig_main.append_trace(trace, row=1, col=1)
-        
-    fig_main.update_traces(
-        hovertemplate="<b>freq: %{x:.4f}    Hz<br>" + "Amplitude: %{y:.2f}<br>"
-    )
-    
-    
-    fig_main.add_trace(
-        go.Scatter(
-            x=d[:, 0],
-            y=d[:, 1],
-            mode="markers",
-            marker=dict(color=conf,colorscale=colorscale),
-            text=conf,
-            hovertemplate="<b>Noremed values<br><br>Freq: %{x:.4f}  <br>"
-            + "Amplitude: %{y:.2f}<br>"
-            + "conf: %{text:.2f}",
-            showlegend=False,
-        ),
-        row=2,
-        col=1,
-    )
-    
-    fig_main.add_trace(
-        go.Scatter(
-            x=freq_arr[indecies],
-            y=2*amp[indecies],
-            mode="markers",
-            marker=dict(color=dominant_index),
-            text=dominant_index,
-            hovertemplate="<b>Freq: %{x:.4f}    Hz<br>"
-            + "Amplitude: %{y:.2f}<br>"
-            + "cluster: %{text:.2f}",
-            showlegend=False,
-        ),
-        row=2,
-        col=2,
-    )
+    all_colors = [px.colors.qualitative.Alphabet[0], px.colors.qualitative.Plotly[0]] + px.colors.qualitative.Plotly[2:]
+    all_colors = np.array(all_colors + px.colors.qualitative.Alphabet + px.colors.qualitative.Dark24 + [px.colors.qualitative.Plotly[1]])
 
+    # Only for DB SCAN
+    if args.outlier.lower() in ["dbscan", "db-scan", "db"]:
+        if dominant_index.max() < 20: 
+            color = all_colors[dominant_index]
+        else:
+            color = np.array([
+                        "blue" if (x >= 0) else "red"
+                        for x in dominant_index
+                    ])
+        # draw the circles
+        for i in range(0, len(d)):
+            figs[0].add_shape(
+                dict(
+                    type="circle",
+                    x0=d[i, 0] - eps,
+                    y0=d[i, 1] - eps,
+                    x1=d[i, 0] + eps,
+                    y1=d[i, 1] + eps,
+                    opacity=0.3,
+                ),
+                name=labels[i],
+                line_color=color[i],
+            )
+    else:     
+        color = all_colors[dominant_index]
 
+    for i in np.unique(labels):
+        figs[0].add_trace(
+            go.Scatter(
+                x=d[labels == i, 0],
+                y=d[labels == i, 1],
+                mode="markers",
+                marker=dict(color=color[labels == i], colorscale=colorscale),
+                text=conf[labels == i],
+                hovertemplate="<b>Noremed values<br><br>Freq: %{x:.4f}  <br>"
+                + "Amplitude: %{y:.2f}<br>"
+                + "conf: %{text}",
+                showlegend=True,
+                name=i,
+            )
+        )
+
+        figs[1].add_trace(
+            go.Scatter(
+                x=d[labels == i, 0],
+                y=d[labels == i, 1],
+                mode="markers",
+                marker=dict(
+                    color=conf[labels == i],
+                    colorscale=colorscale,
+                    coloraxis="coloraxis",
+                    symbol=symbol[labels == i],
+                    size=12,
+                ),
+                text=labels[labels == i],
+                hovertemplate="<b>Noremed values<br><br>Freq: %{x:.4f}  <br>"
+                + "Amplitude: %{y:.2f}<br>"
+                + "cluster: %{text}",
+                showlegend=True,
+                name=i,
+            )
+        )
+
+        figs[2].add_trace(
+            go.Scatter(
+                x=freq_arr[indecies[labels == i]],
+                y=2 * amp[indecies[labels == i]],
+                mode="markers",
+                marker=dict(color=color[labels == i], colorscale=colorscale),
+                text=labels[labels == i],
+                hovertemplate="<b>Freq: %{x:.4f}    Hz<br>"
+                + "Amplitude: %{y:.2f}<br>"
+                + "cluster: %{text}",
+                showlegend=True,
+                name=i,
+            )
+        )
+
+    figs[1].update_layout(
+        coloraxis={
+            "colorbar": {
+                "x": 0.92,
+                "len": 0.91,
+                "y": 0.57,
+                "title": "conf",
+                "thickness": 10,
+                "tickfont": dict(size=14),
+            },
+            "colorscale": colorscale,
+        }
+    )
     
     counter = 2
-    figs,names = plot_both_spectrums(args,freq_arr, amp, full = False)
-    for trace in list(figs.select_traces()):
+    spec_figs, plt_names = plot_both_spectrums(args, freq_arr, amp, full=False)
+    for trace in list(spec_figs.select_traces()):
         counter += 1
-        trace.update(marker={'coloraxis': f'coloraxis{counter}'})
-        fig_main.append_trace(trace, row=counter, col=1)
-    fig_main.update_layout(
-    coloraxis3={
-        "colorbar": {
-            "x": 1,
-            "len": .2,
-            "y": 0.36,
-        },
-        "colorscale": colorscale #'Bluered'
-    },
-    coloraxis4={
-        "colorbar": {
-            "x": 1,
-            "len": .2,
-            "y": .09,
-        },
-        "colorscale": colorscale #'Bluered'
-    }
-    )
-    
-    fig_main.update_xaxes(title_text="Frequency (Hz)", col=1, row=2, range=[-.01,1.01])
-    fig_main.update_xaxes(title_text="Frequency (Hz)", col=2, row=2)
-    fig_main.update_xaxes(title_text="Frequency (Hz)", col=1, row=1, range=[-.01,1.01])
-    fig_main.update_yaxes(title_text=f"Normed {name}", col=1, row=2)
-    fig_main.update_yaxes(title_text=f"{name}"       , col=2, row=2)
-    fig_main.update_yaxes(title_text=f"Normed {name}", col=1, row=1)
-    fig_main.update_xaxes(title_text="Frequency (Hz)", col=1, row=4)
-    fig_main.update_xaxes(title_text="Frequency (Hz)", col=1, row=3)
-    fig_main.update_yaxes(title_text=names[0], col=1, row=3)
-    fig_main.update_yaxes(title_text=names[1], col=1, row=4)
-    fig_main.update_layout(
-        width=1300, 
-        height=1700, 
-        font={"family": "Courier New, monospace", "size": 24, "color": "black"},
-        template="plotly",
-        )
-    format_plot(fig_main)
-    fig_main.show()
+        trace.update(marker={"coloraxis": "coloraxis"})
+        figs[counter].add_trace(trace)
+        if figs[counter].data and "xaxis" in figs[counter].data[0]:
+            figs[counter].data[0]["xaxis"] = "x1"
+            figs[counter].data[0]["yaxis"] = "y1"
 
+    for i in np.arange(3, 5):
+        figs[i].update_layout(coloraxis={"colorscale": colorscale})
 
-def plot_dbscan(
-    args,
-    freq_arr: np.ndarray,
-    amp: np.ndarray,
-    indecies: np.ndarray,
-    conf: np.ndarray,
-    dominant_index: np.ndarray,
-    eps,
-    color,
-    d: np.ndarray = np.array([]),
-    ) -> None:
-    """Plots outliers for DB scan
-
-    Args:
-        freq_arr (np.ndarray): _description_
-        amp (np.ndarray): aplitude or power 
-        indecies (np.ndarray): _description_
-        conf (np.ndarray): _description_
-        dominant_index (np.ndarray): _description_
-        d (np.ndarray, optional): _description_. Defaults to np.array([]).
-    """
-    colorscale = ["rgb(0,50,150)", "rgb(150,50,150)", "rgb(255,50,0)"]
-    name = "Amplitude"
-    if args.psd:
-        name = "Power"
-    names = [(f"cluster {i}") if (i >= 0) else "outliers" for i in dominant_index]
-    fig_main = make_subplots(
-        rows=4,
-        cols=2,
-        specs=[
-            [{"colspan": 2}, None],
-            [{}, {}],
-            [{"colspan": 2}, None],
-            [{"colspan": 2}, None]
-            ]
-    )
-    
-    fig_main.add_trace(
-        go.Scatter(
-            x=d[:, 0],
-            y=d[:, 1],
-            mode="markers",
-            marker=dict(color=color,colorscale=colorscale),
-            text=names,
-            hovertemplate="<b>Noremed values<br><br>Freq: %{x:.4f}  <br>"
-            + "Amplitude: %{y:.2f}<br>"
-            + "cluster: %{text}",
-            showlegend=False,
-        ),
-        row=1,
-        col=1,
-    )
-
-    fig_main.update_traces(
-        hovertemplate="<b>freq: %{x:.4f}    Hz<br>" + "Amplitude: %{y:.2f}<br>"
-    )
-
-    fig_main.add_trace(
-        go.Scatter(
-            x=d[:, 0],
-            y=d[:, 1],
-            mode="markers",
-            marker=dict(color=color,colorscale=colorscale),
-            text=names,
-            hovertemplate="<b>Noremed values<br><br>Freq: %{x:.4f}  <br>"
-            + "Amplitude: %{y:.2f}<br>"
-            + "cluster: %{text}",
-            showlegend=False,
-        ),
-        row=2,
-        col=1,
-    )
-    
-    fig_main.add_trace(
-        go.Scatter(
-            x=freq_arr[indecies],
-            y=2*amp[indecies],
-            mode="markers",
-            marker=dict(color=conf,colorscale=colorscale),
-            text=names,
-            hovertemplate="<b>Freq: %{x:.4f}    Hz<br>"
-            + "Amplitude: %{y:.2f}<br>"
-            + "cluster: %{text}",
-            showlegend=False,
-        ),
-        row=2,
-        col=2,
-    )
-
-    for i in range(0, len(d)):
-        fig_main.add_shape(
-            dict(
-                type="circle",
-                x0=d[i, 0] - eps,
-                y0=d[i, 1] - eps,
-                x1=d[i, 0] + eps,
-                y1=d[i, 1] + eps,
-                opacity=0.3,
-            ),
-            row=1,
-            col=1,
-            name=names[i],
-            line_color=color[i],
-        )
-
-    counter = 2
-    figs,names = plot_both_spectrums(args,freq_arr, amp, full = False)
-    for trace in list(figs.select_traces()):
-        counter += 1
-        trace.update(marker={'coloraxis': f'coloraxis{counter}'})
-        fig_main.append_trace(trace, row=counter, col=1)
-    fig_main.update_layout(
-    coloraxis3={
-        "colorbar": {
-            "x": 1,
-            "len": .2,
-            "y": 0.36,
-        },
-        "colorscale": colorscale
-    },
-    coloraxis4={
-        "colorbar": {
-            "x": 1,
-            "len": .2,
-            "y": .09,
-        },
-        "colorscale": colorscale
-    })
-
-    fig_main.update_xaxes(title_text="Frequency (Hz)", col=1, row=2, range=[-.01,1.01])
-    fig_main.update_xaxes(title_text="Frequency (Hz)", col=2, row=2)
-    fig_main.update_xaxes(title_text="Frequency (Hz)", col=1, row=1, range=[-.01,1.01])
-    fig_main.update_yaxes(title_text=f"Normed {name}", col=1, row=2)
-    fig_main.update_yaxes(title_text=f"{name}"       , col=2, row=2)
-    fig_main.update_yaxes(title_text=f"Normed {name}", col=1, row=1)
-    fig_main.update_xaxes(title_text="Frequency (Hz)", col=1, row=4)
-    fig_main.update_xaxes(title_text="Frequency (Hz)", col=1, row=3)
-    fig_main.update_yaxes(title_text=names[0], col=1, row=3)
-    fig_main.update_yaxes(title_text=names[1], col=1, row=4)
-    fig_main.update_layout(
-        width=1300, 
-        height=1700, 
-        font={"family": "Courier New, monospace", "size": 24, "color": "black"},
-        template="plotly",
-        )
-    format_plot(fig_main)
-    fig_main.show()
+    y_title = "Power" if args.psd else "Amplitude"
+    figs[0].update_xaxes(title_text="Normed Frequency", range=[-0.01, 1.01])
+    figs[0].update_yaxes(title_text=f"Normed {y_title}")
+    figs[1].update_xaxes(title_text="Normed Frequency ", range=[-0.01, 1.01])
+    figs[1].update_yaxes(title_text=f"Normed {y_title}")
+    figs[2].update_xaxes(title_text="Frequency (Hz)",range=[0, freq_arr[indecies].max()])
+    figs[2].update_yaxes(title_text=f"{y_title}")
+    figs[3].update_xaxes(title_text="Frequency (Hz)")
+    figs[3].update_yaxes(title_text=plt_names[0])
+    figs[4].update_xaxes(title_text="Frequency (Hz)")
+    figs[4].update_yaxes(title_text=plt_names[1])
+    for fig in figs:
+        fig.update_layout(width=1300, height=400)
+    configuration = {"toImageButtonOptions": {"format": "png", "scale": 4}}
+    create_html(figs, args.render, configuration, "anaomality")
 
 
 def plot_decision_boundaries(model, d, conf):
@@ -314,3 +204,4 @@ def plot_decision_boundaries(model, d, conf):
     plt.axis("square")
     plt.legend(labels=["outliers", "inliers"], title="true class")
     plt.show()
+

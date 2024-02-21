@@ -167,7 +167,7 @@ def prepare_plot_dfs(
 
 def display_prediction(argv: list, prediction: dict) -> None:
     func_name = argv[0][argv[0].rfind("/") + 1:]
-    if "ftio" == func_name:
+    if "ftio" in func_name:
         if prediction:
             freq, conf = get_dominant_and_conf(prediction)
             if not np.isnan(freq):
@@ -177,4 +177,9 @@ def display_prediction(argv: list, prediction: dict) -> None:
                     f"[cyan]Confidence:[/] {color_pred(conf)}"
                     f"{np.round(conf*100,2)}[/] %\n"
                 )
+            else:
+                CONSOLE.info(
+                        "[cyan underline]Predection results:[/]\n"
+                        "[red]No dominant frequency found[/]\n"
+                    )
 

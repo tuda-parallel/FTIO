@@ -55,7 +55,9 @@ profile2:
 
 test_all:
 	cp examples/8.jsonl test
-	cd test && ftio 8.jsonl -e no && echo "--- passed ftio ---" || echo "--- failed ftio ---"
-	cd test && ioparse 8.jsonl && echo "--- passed ioparse ---" || echo "--- failed ioparse ---"
-	cd test && ioplot 8.jsonl --no_disp && echo "--- passed ioplot ---" || echo "--- failed ioplot ---"
-	rm -rf ./test/*
+	@cd test && ftio 8.jsonl -e no && echo "--- passed ftio ---" || echo "--- failed ftio ---"
+	@cd test && ftio 8.jsonl -e no -o dbscan && echo "--- passed ftio ---" || echo "--- failed ftio ---"
+	@cd test && ftio 8.jsonl -e no -o lof && echo "--- passed ftio ---" || echo "--- failed ftio ---"
+	@cd test && ioparse 8.jsonl && echo "--- passed ioparse ---" || echo "--- failed ioparse ---"
+	@cd test && ioplot 8.jsonl --no_disp && echo "--- passed ioplot ---" || echo "--- failed ioplot ---"
+	@rm -rf ./test/*

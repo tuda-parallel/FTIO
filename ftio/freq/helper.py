@@ -1,6 +1,6 @@
 """Helper function for frequency techniques    
 """
-
+import plotly.graph_objects as go
 from rich.console import Console
 
 
@@ -71,7 +71,7 @@ def match(mode):
 
 
 
-def format_plot(fig) -> None:
+def format_plot(fig) -> go.Figure:
     """makes plots uniform
 
     Args:
@@ -120,6 +120,8 @@ def format_plot(fig) -> None:
         minor_ticks='outside',
         minor=dict(ticklen=2)
     )  
+
+    return fig
 
 
 
