@@ -1,5 +1,8 @@
 # Artifacts Reproducibility
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10670270.svg)](https://doi.org/10.5281/zenodo.10670270)
+
+
 This file describes how to reproduce the experiments in the Paper entitled:
 "Capturing Periodic I/O Using Frequency Techniques" which was published at the IPDPS 2024
 
@@ -56,8 +59,8 @@ data
 
 ## 1. Running Example and Overhead
 Throughout Section II of the paper "Capturing Periodic I/O Using Frequency Techniques", IOR was used to demonstrate the approach. Moreover, In Section III-C the overhead of our approach was examined using IOR with a varying number of ranks (from 1 to 10752 ranks).
-- Follow the instructions provided in the [IOR/README.md](/artifacts/capturing_periodic_io_using_frequency_techniques/IOR/README.md) to setup and run IOR. 
-- Instructions regarding the overhead are provided [here](/artifacts/capturing_periodic_io_using_frequency_techniques/IOR/README.md#tracing-library-overhead). 
+- Follow the instructions provided in the [IOR/README.md](/artifacts/ipdps24/IOR/README.md) to setup and run IOR. 
+- Instructions regarding the overhead are provided [here](/artifacts/ipdps24/IOR/README.md#tracing-library-overhead). 
 
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
@@ -67,7 +70,7 @@ Bellow instructions are provided on how to recreate the case studies from Sectio
 ### LAMMPS
 
 This experiment was executed on the Lichtenberg cluster with 3072 ranks. 
-Follow the instructions provided in the [LAMMPS/README.md](/artifacts/capturing_periodic_io_using_frequency_techniques/LAMMPS/README.md) to reconstruct this experiment. 
+Follow the instructions provided in the [LAMMPS/README.md](/artifacts/ipdps24/LAMMPS/README.md) to reconstruct this experiment. 
 
 <!-- The provided [tar archive](/LAMMPS/lammps.tar.gz) contains not only the result from our -->
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
@@ -75,12 +78,12 @@ Follow the instructions provided in the [LAMMPS/README.md](/artifacts/capturing_
 
 ### Nek5000
 The trace can be downloaded from [here](https://hpcioanalysis.zdv.uni-mainz.de/trace/64ed13e0f9a07cf8244e45cc).
-After downloading, instructions on how to reproduce the results are provided in the [NEK5000/README](/artifacts/capturing_periodic_io_using_frequency_techniques/NEK5000/README.md).
+After downloading, instructions on how to reproduce the results are provided in the [NEK5000/README](/artifacts/ipdps24/NEK5000/README.md).
 
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
 ### Modified HACC-IO
-Navigate to [HACC-IO/README](/artifacts/capturing_periodic_io_using_frequency_techniques/HACC-IO/README.md) and follow the provided instructions. 
+Navigate to [HACC-IO/README](/artifacts/ipdps24/HACC-IO/README.md) and follow the provided instructions. 
 
 
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>

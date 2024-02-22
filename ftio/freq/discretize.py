@@ -19,7 +19,7 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, floa
         
     """
     text = ""
-    text += f"Time window : {t[-1]-t[0]:.2f} s\n"
+    text += f"Time window: {t[-1]-t[0]:.2f} s\n"
     text += f"Frequency step: {1/(t[-1]-t[0]) if (t[-1]-t[0]) != 0 else 0:.3e} Hz\n"
 
     # ? calculate recommended frequency:

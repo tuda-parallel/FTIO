@@ -172,14 +172,14 @@ def display_prediction(argv: list, prediction: dict) -> None:
             freq, conf = get_dominant_and_conf(prediction)
             if not np.isnan(freq):
                 CONSOLE.info(
-                    f"[cyan underline]Predection results:[/]\n[cyan]Frequency:[/] {freq:.3e} Hz"
+                    f"[cyan underline]Prediction results:[/]\n[cyan]Frequency:[/] {freq:.3e} Hz"
                     f"[cyan] ->[/] {np.round(1/freq,4)} s\n"
                     f"[cyan]Confidence:[/] {color_pred(conf)}"
                     f"{np.round(conf*100,2)}[/] %\n"
                 )
             else:
                 CONSOLE.info(
-                        "[cyan underline]Predection results:[/]\n"
+                        "[cyan underline]Prediction results:[/]\n"
                         "[red]No dominant frequency found[/]\n"
                     )
 

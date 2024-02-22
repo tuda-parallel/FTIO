@@ -53,7 +53,7 @@ def extract_data(path: str, args) -> tuple[list, int, dict]:
     with darshan.DarshanReport(path, read_all=True) as report:
         ranks = int(report.metadata["job"]["nprocs"])
         console = Console()
-        console.print(f"[cyan]Ellapsed time:[/] {time.time()-start:.3f} s")
+        console.print(f"[cyan]Elapsed time:[/] {time.time()-start:.3f} s")
         start = time.time()
         # dataframe = pd.DataFrame()
         dataframe = []

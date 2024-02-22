@@ -35,7 +35,7 @@ def main(cmd_input: list[str]):# -> dict[Any, Any]:
     df = get_mode(data, args.mode)
     CONSOLE.set(args.verbose)
     CONSOLE.print(f"\n[cyan]Data imported in:[/] {time.time() - start:.2f} s")
-    CONSOLE.print(f"[cyan]Frequency Analysis:[/] {args.transformation}")
+    CONSOLE.print(f"[cyan]Frequency Analysis:[/] {args.transformation.upper()}")
     CONSOLE.print(f"[cyan]Mode:[/] {args.mode}")
 
     data = get_time_behavior(df)
@@ -50,7 +50,7 @@ def main(cmd_input: list[str]):# -> dict[Any, Any]:
         prediction = merge_predictions(args, prediction_dft, prediction_auto)
 
     convert_and_plot(data, dfs, args)
-    CONSOLE.print(f"[cyan]Total ellapsed time:[/] {time.time()-start:.3f} s\n")
+    CONSOLE.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
     display_prediction(cmd_input, prediction)
     return prediction, args
 
@@ -249,7 +249,7 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
             text,
             style="white",
             border_style="cyan",
-            title=args.transformation.capitalize(),
+            title=args.transformation.upper(),
             title_align="left",
         )
     )

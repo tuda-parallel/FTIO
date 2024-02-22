@@ -11,7 +11,7 @@ TODO: upload the HACC src files somewhere
 
 
 ## Extract the provided trace file
-Download and extract the file data.zip as described [here](/artifacts/capturing_periodic_io_using_frequency_techniques/README.md#extracting-the-data-set).
+Download and extract the file data.zip as described [here](/artifacts/ipdps24/README.md#extracting-the-data-set).
 Once extracted, you can find the HACC-IO trace under `application_traces/HACC-IO`.
 
 <p align="right"><a href="#hacc-io">⬆</a></p>

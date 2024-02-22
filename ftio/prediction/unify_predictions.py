@@ -86,7 +86,7 @@ def merge_core(pred_dft:dict, pred_auto:dict ,freq:float, text:str) -> tuple[lis
             text += f"Perfect hits of [blue]{pred_dft['dominant_freq']}[/] are [blue] {hits}[/]  \n"
             for i,value in enumerate(hits):
                 if value == len(pred_auto["candidates"]):
-                    text += "[green bold]Perfect Predection found! [/]\n"
+                    text += "[green bold]Perfect Prediction found! [/]\n"
                     dominant_freq = pred_dft["dominant_freq"][i]
                     conf  = 1
                     break
