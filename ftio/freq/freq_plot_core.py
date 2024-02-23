@@ -351,7 +351,7 @@ class FreqPlot:
             name_dominant = ""
             # set the unit and order
             unit, order = set_unit(self.D.data_df[index_data]["b_sampled"])
-            unit = "MB/s"
+            # unit = "MB/s" compatibility with old version
             for k in samples:
                 x = (
                     (1 / len(samples))
