@@ -37,7 +37,7 @@ class print_html:
         
         if not "stat" in self.render:  # only generate a single image
             pwd = os.getcwd()
-            if len(self.path) <= 1 and not any(ext in self.path[0] for ext in ["json","darshan","msgpack"]):
+            if len(self.path) <= 1 and not any(ext in self.path[0] for ext in ["json","darshan","msgpack", "txt"]):
                 pwd = os.path.join(pwd,os.path.relpath(self.path[0],pwd))
 
             self.path = os.path.join(pwd,self.outdir)

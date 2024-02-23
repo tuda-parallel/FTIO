@@ -275,8 +275,8 @@ def main(args) -> None:
     and the parsing of the arguments is done in this function.
     """
     file = args[1]
-    dataframe, _ = extract(file, args[1:])
-    print(dataframe)
+    data, _ = extract(file, args[1:])
+    print(data)
 
 
 if __name__ == "__main__":

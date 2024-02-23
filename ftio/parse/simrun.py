@@ -18,7 +18,7 @@ class Simrun:
 
         Args:
             data (array): contains data from simulation
-            ext (str): 'json', 'jsonl', 'recorder', or 'darshan'
+            ext (str): 'json', 'jsonl', 'recorder', 'darshan', 'msgpack', or 'txt'
             name (str): name of simulation (e.g., 192.json)
             args (argparse): comand line arguments
             file_index (int, optional): file index, in case several files have the same name
@@ -55,7 +55,12 @@ class Simrun:
             self.read_sync         = Sample(data['read_sync'],'read_sync',args)
             self.write_sync        = Sample(data['write_sync'],'write_sync',args)
             self.io_time           = Time(data['io_time'],self.ranks,args)
-            
+
+        elif 'txt' in ext:
+            self.reset(args)
+            mymode = self.getmode(mode)
+            setattr(self,mymode,Sample(data[mymode],mymode,args))
+            self.io_time           = Time(data['io_time'],self.ranks,args)
 
         #! json files
         else:
@@ -243,3 +248,15 @@ class Simrun:
 
         return my_dict
 
+    def getmode(self, mode:str) -> str:
+        if "w" in mode:
+            out = "write"
+        else:
+            out = "read"
+            
+        if "async" in mode:
+            out = out + "_async_t"
+        else:
+            out = out + "_sync"
+
+        return out 

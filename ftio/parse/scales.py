@@ -14,6 +14,7 @@ from ftio.parse.simrun import Simrun
 from ftio.parse.parse_recorder import ParseRecorder
 from ftio.parse.parse_darshan import ParseDarshan
 from ftio.parse.parse_msgpack import ParseMsgpack
+from ftio.parse.parse_txt import ParseTxt
 from ftio.parse.args import parse_args
 
 
@@ -75,7 +76,7 @@ class Scales:
                     sorted_files = sorted(files, key=len)
 
                     for file in sorted_files:
-                        if any(ext in file for ext in ['json','darshan','msgpack']):
+                        if any(ext in file for ext in ['json','darshan','msgpack','txt']):
                             file_path = os.path.join(root, file)
                             # Limit the number of ranks to consider if self.limit is defined
                             try:
@@ -120,17 +121,19 @@ class Scales:
         if ".json" in file_path[-5:]:
             with open(file_path,"rt") as file:
                 data = json.load(file)
-            self.s.append(Simrun(data, "json", file_path, self.args, file_index))
+            run = Simrun(data, "json", file_path, self.args, file_index)
         elif ".jsonl" in file_path[-6:]:
             with jsonlines.open(file_path, "r") as jsonl_f:
                 data = [obj for obj in jsonl_f]
-            self.s.append(Simrun(data, "jsonl", file_path, self.args, file_index))
-        if "darshan" in file_path[-10:]:
+            run = Simrun(data, "jsonl", file_path, self.args, file_index)
+        elif "darshan" in file_path[-10:]:
             run = ParseDarshan(file_path).to_simrun(self.args, file_index)
-            self.s.append(run)
-        if "msgpack" in file_path[-10:]:
+        elif "msgpack" in file_path[-10:]:
             run = ParseMsgpack(file_path).to_simrun(self.args, file_index)
-            self.s.append(run)
+            
+        elif "txt" in file_path[-10:]:
+            run = ParseTxt(file_path).to_simrun(self.args, file_index)
+        self.s.append(run)
 
     def save_call(self, argv):
         """save the call as a hidden file
