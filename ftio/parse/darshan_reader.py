@@ -14,7 +14,7 @@ import pandas as pd
 
 
 def extract(path, args) -> tuple[dict, int]:
-    """exrtracts darshan file and generates dictionary with relevent keys
+    """extracts Darshan file and generates dictionary with relevant keys
 
     Args:
         path (str): filename
@@ -36,7 +36,7 @@ def extract(path, args) -> tuple[dict, int]:
 
 
 def extract_data(path: str, args) -> tuple[list, int, dict]:
-    """Extracts module from darshan
+    """Extracts module from Darshan
 
     Args:
         path (str): file location
@@ -155,7 +155,7 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
         "number_of_ranks": 0,
         "total_bytes": 0,
         "max_bytes_per_rank": 0,
-        "max_transfersize_over_ranks": 0,
+        "max_bytes_per_phase": 0,
         "max_io_phases_per_rank" : 0,
         "total_io_phases" : 0,
         "bandwidth": {
@@ -169,7 +169,7 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
         "number_of_ranks": 0,
         "total_bytes": 0,
         "max_bytes_per_rank": 0,
-        "max_transfersize_over_ranks": 0,
+        "max_bytes_per_phase": 0,
         "max_io_phases_per_rank" : 0,
         "total_io_phases" : 0,
         "bandwidth": {
@@ -214,8 +214,8 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
             write["max_bytes_per_rank"] = max(
                 write["max_bytes_per_rank"], sum(dataframe[rank]["write_segments"]["length"])
             )
-            write["max_transfersize_over_ranks"] = max(
-                write["max_transfersize_over_ranks"], max(dataframe[rank]["write_segments"]["length"]))
+            write["max_bytes_per_phase"] = max(
+                write["max_bytes_per_phase"], max(dataframe[rank]["write_segments"]["length"]))
             write["max_io_phases_per_rank"] = max(write["max_io_phases_per_rank"], len(dataframe[rank]["write_segments"]["length"]))
             write["total_io_phases"] += len(dataframe[rank]["write_segments"]["length"])
 
@@ -248,8 +248,8 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
             read["max_bytes_per_rank"] = max(
                 read["max_bytes_per_rank"], sum(dataframe[rank]["read_segments"]["length"])
             )
-            read["max_transfersize_over_ranks"] = max(
-                read["max_transfersize_over_ranks"], max(dataframe[rank]["read_segments"]["length"]))
+            read["max_bytes_per_phase"] = max(
+                read["max_bytes_per_phase"], max(dataframe[rank]["read_segments"]["length"]))
             read["max_io_phases_per_rank"] = max(read["max_io_phases_per_rank"], len(dataframe[rank]["read_segments"]["length"]))
             read["total_io_phases"] += len(dataframe[rank]["read_segments"]["length"])
 

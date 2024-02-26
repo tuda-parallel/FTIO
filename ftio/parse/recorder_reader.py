@@ -10,7 +10,7 @@ import os
 import sys 
 
 def extract(path, args)-> tuple[dict,int]:
-    """exrtracts darshan file and generates dictionary with relevent keys
+    """exrtracts Darshan file and generates dictionary with relevent keys
 
     Args:
         path (str): filename

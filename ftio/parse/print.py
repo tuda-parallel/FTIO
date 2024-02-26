@@ -1,4 +1,4 @@
-"""Converts results from TMIO / Darshan Files into Extra-P supported format
+"""Converts results from TMIO / Darshan files into Extra-P supported format
 """
 import numpy as np
 from ftio.parse.scales import Scales
@@ -70,8 +70,8 @@ class Print:
         )
         self.print_data(
             mode,
-            "max_transfersize_over_ranks",
-            f"{mode}->max_transfersize_over_ranks",
+            "max_bytes_per_phase",
+            f"{mode}->max_bytes_per_phase",
             "Size (B)",
             type,
         )

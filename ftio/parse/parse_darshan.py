@@ -2,7 +2,7 @@ from ftio.parse.simrun import Simrun
 from ftio.parse.darshan_reader import extract
 
 class ParseDarshan:
-    """class to parse darshan files
+    """class to parse Darshan files
     """
     def __init__(self, path):
         self.path = path

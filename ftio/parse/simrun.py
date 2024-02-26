@@ -49,7 +49,7 @@ class Simrun:
             else:
                 raise ValueError('Data format empty or not supported')
 
-        #! darshan files or recorder files
+        #! Darshan files or recorder files
         elif 'darshan' in ext or 'recorder' in ext:
             self.reset(args)
             self.read_sync         = Sample(data['read_sync'],'read_sync',args)

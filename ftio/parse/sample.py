@@ -1,3 +1,8 @@
+"""class to parse the data
+
+    Returns:
+    Sample: contains metrics for a single I/O type (read/write + async/sync)
+"""
 from ftio.parse.bandwidth import Bandwidth
 
 
@@ -5,23 +10,23 @@ class Sample:
     """contains metrics for a single I/O type (read/write + async/sync)
     """
 
-    def __init__(self, values, io_type, args):
+    def __init__(self, values: dict, io_type:str, args) -> None:
         self.type                        = io_type
-        self.total_bytes                 = self.assign(values,"total_bytes")
         self.max_bytes_per_rank          = self.assign(values,"max_bytes_per_rank")
         #self.max_offset_over_ranks       = self.assign(values,"max_offset_over_ranks")
-        self.max_transfersize_over_ranks = self.assign(values,"max_transfersize_over_ranks")
+        self.total_bytes                 = self.assign(values,"total_bytes")
+        self.max_bytes_per_phase         = self.assign(values,"max_bytes_per_phase")
         self.max_io_phases_per_rank      = self.assign(values,"max_io_phases_per_rank")
         self.total_io_phases             = self.assign(values,"total_io_phases")
-        self.max_io_ops_in_phase         = self.assign(values,"max_io_ops_in_phase")
         self.max_io_ops_per_rank         = self.assign(values,"max_io_ops_per_rank")
+        self.max_io_ops_in_phase         = self.assign(values,"max_io_ops_in_phase")
         self.total_io_ops                = self.assign(values,"total_io_ops")
         self.number_of_ranks             = self.assign(values,"number_of_ranks")
         self.bandwidth                   = Bandwidth(values["bandwidth"], io_type, args)
         self.file_index                  = args.file_index
 
     def get_data(self):
-        #! append list is much faster than appen data frame
+        #! append list is much faster than append data frame
         name0 = []
         data0 = []
         common        = ['number_of_ranks','file_index']
@@ -30,14 +35,13 @@ class Sample:
         name_ind_ovr  = ['b_overlap_ind', 't_overlap_ind']
         name_ind      = [ 'b_ind', 't_ind_s','t_ind_e']
 
-
         # add phase statistics
         for attr, value in self.__dict__.items():
             if (attr not in ['bandwidth', 'file_index']):
                 name0.append(attr)
                 data0.append(value)
 
-        # statisitcs:
+        # statistics:
         name_tmp = common + name_rank_ovr + name_rank + name_ind_ovr + name_ind
         for attr, value in self.bandwidth.__dict__.items():
             if (attr not in name_tmp):

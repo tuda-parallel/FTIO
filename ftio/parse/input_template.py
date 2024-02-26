@@ -9,7 +9,7 @@ def init_data(args:list) -> tuple[str, dict[str, int], dict[str, int]]:
         "number_of_ranks": 0,
         "total_bytes": 0,
         "max_bytes_per_rank": 0,
-        "max_transfersize_over_ranks": 0,
+        "max_bytes_per_phase": 0,
         "max_io_phases_per_rank" : 0,
         "total_io_phases" : 0,
         "bandwidth": {

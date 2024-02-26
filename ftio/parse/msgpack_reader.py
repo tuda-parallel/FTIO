@@ -53,7 +53,7 @@ def assign_metrics(arr: list, bandwidth:dict) -> dict:
     return {
             "total_bytes": arr[3] , #Bytes
             "max_bytes_per_rank": arr[4],
-            "max_transfersize_over_ranks": arr[5],
+            "max_bytes_per_phase": arr[5],
             "max_io_phases_per_rank": arr[6],
             "total_io_phases": arr[7],
             "max_io_ops_in_phase": arr[8],

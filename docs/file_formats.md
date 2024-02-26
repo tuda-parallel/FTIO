@@ -7,6 +7,7 @@ Supported File Formats are:
 	- [MessagePack](#messagepack)
 	- [Darshan](#darshan)
 	- [Recorder](#recorder)
+	- [Custom File Format](#custom-file-format)
 
 ## JSON
 TBD
@@ -24,7 +25,12 @@ TBD
 <p align="right"><a href="#file-formats-and-tools">⬆</a></p>
 
 ## Darshan
-TBD
+standard Darshan file. By default, `ftio` first tries to read the DXT trace. 
+In case it contains a DXT trace, specify with  
+`-x DXT_MODE` the data to extract from the Darshan trace (`DXT_POSIX` or `DXT_MPIIO` (default)).
+If the file does not contain a DXT trace, `ftio` tires to read the heat map. In both cases, pydarshan to read the file.
+
+As the collected values a re per rank level, `ftio` internally overlaps them to obtain the application-level bandwidth.
 
 <p align="right"><a href="#file-formats-and-tools">⬆</a></p>
 
@@ -32,3 +38,67 @@ TBD
 TBD
 
 <p align="right"><a href="#file-formats-and-tools">⬆</a></p>
+
+
+## Custom File Format
+`ftio` supports custom file formats specified with regex. These values can be scaled in case they are not in SI units. 
+The file must currently have the `txt`extension. 
+For that, `ftio` provides two dictionaries that must be filled (pattern and translate) in the [convert](/ftio/parse/custom_patterns.py) function. 
+
+1. _**pattern** (dict[str, str])_: dictionary containing the name and a regex expression to find the custom pattern.
+2. _**translate** (dict[str, tuple[str, (optional)float]])_: dictionary containing matching filed from [sample.py](/ftio/parse/sample.py) and the matching name from the pattern. The unit can be optionally specified
+
+```python
+def convert()->tuple[dict[str,str],dict[str,tuple[str,float]]]:
+    """Converts input according to pattern into and ftio supported file format.
+    The translations dictionary species the matching fields from ftio/parse/sample.py
+    Returns:
+        tuple[dict[str,str],dict[str,tuple[str,float]]]: pattern and translation
+    """
+    pattern = {
+        "avg_thruput_mib": r"avg_thruput_mib:\s+\[([\d.\d,\s]+)\]",
+        "end_t_micro": r"end_t_micro:\s+\[([\d,\s]+)\]",
+        "start_t_micro": r"start_t_micro:\s+\[([\d,\s]+)\]",
+        "total_bytes": r"total_bytes:\s+(\d+)",
+        "total_iops": r"total_iops:\s+(\d+)",
+        }
+
+    # Define map according to sample.py class, along with the scale if any:
+    # ftio_field: ("custom_name", scale)
+    # ftio unit are default in bytes, b/s, ...
+    # scale applies ftio_field = custom_name*scale
+    translate = {
+        "bandwidth": {
+            "b_rank_avr": ("avg_thruput_mib",1.07*1e+6),
+            "t_rank_e": ("end_t_micro", 1e-3),
+            "t_rank_s": ("start_t_micro", 1e-3)
+            },
+        "total_bytes": "total_bytes",
+        "max_io_ops_per_rank": "total_iops"
+        }
+    return pattern, translate
+```
+
+The fields in translate must match the fields in [sample.py](/ftio/parse/sample.py). The field bandwidth as its three fields (`b_rank_avr`, `t_rank_e`, and `t_rank_s`) are mandatory. Though these fields are indexed with `_rank_`, they can be on any level higher than rank. Other supported fields include (from [sample.py](/ftio/parse/sample.py)):
+```python
+# cutout from /ftio/parse/sample.py
+
+⋮
+
+def __init__(self, values, io_type, args):
+        self.type # 'read_sync', 'read_async_t', 'write_async_t','write_sync'                        
+        self.max_bytes_per_rank # maximum bytes transferred per rank per phase
+        self.max_bytes_phase # maximum bytes transferred per rank during all phases
+        self.total_bytes # total transferred bytes
+        self.max_io_phases_per_rank      # maximum I/O phases
+        self.total_io_phases             # total I/O phases
+        self.max_io_ops_per_rank         # maximum I/O operations per rank
+        self.max_io_ops_in_phase         # maximum I/O operation per phase
+        self.total_io_ops                # Total I/O operations
+        self.number_of_ranks             # number of ranks that did I/O
+        self.bandwidth                   = Bandwidth(values["bandwidth"], io_type, args)
+
+⋮
+```
+<p align="right"><a href="#file-formats-and-tools">⬆</a></p>
+

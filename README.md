@@ -55,7 +55,7 @@ Other tools:
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
- <li><a href="#testing">Testing</a></li>
+ 	<li><a href="#testing">Testing</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#license">License</a></li>
@@ -120,7 +120,7 @@ To call `ftio` on a single file, use:
 ftio filename.extension
 ```
 
-Supported extensions are `json`, `jsonLines`, `msgpack`, and `darshan`. For recorder, provide the path to the folder instead of `filename.extension`.
+Supported extensions are `json`, `jsonLines`, `msgpack`, and `darshan`. For recorder, you provide the path to the folder instead of `filename.extension`. For more on the input format including a [custom format](/docs/file_formats.md#custom-file-format) see [supported file formats](/docs/file_formats.md#file-formats-and-tools).
 
 FTIO provides various options and extensions. To see all available command line arguments, call:
 
@@ -163,7 +163,7 @@ Several flags can be specified. The most relevant settings are:
 |-w, --window_adaptation      | online time window adaptation. If set to true, the time window is shifted on X hits to X times the previous phases from the current instance. X corresponds to frequency_hits|
 |-fh FREQUENCY_HITS, --frequency_hits FREQUENCY_HITS |  specifies the number of hits needed to adapt the time window. A hit occurs once a dominant frequency is found|
 |-v, --verbose                | sets verbose on or off (default=False)|
-|-x DXT_MODE, --dxt_mode DXT_MODE| select data to extract from darshan traces (DXT_POSIX or DXT_MPIIO (default)) |
+|-x DXT_MODE, --dxt_mode DXT_MODE| select data to extract from Darshan traces (DXT_POSIX or DXT_MPIIO (default)) |
 |-l LIMIT, --limit LIMIT         | max ranks to consider when reading a folder |
 
 `predictor` has the same syntax as `ftio`.
