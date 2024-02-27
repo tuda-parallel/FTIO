@@ -100,5 +100,18 @@ def __init__(self, values, io_type, args):
 
 ⋮
 ```
+
+Finally, we can call `ftio` on a `2.txt` file containing, for example, the following custom fields:
+
+```
+avg_thruput_mib: [0.0,0.0,1000.0,1000.0,0.0,0.0,1000.0,1000.0,0.0,0.0,1000.0,1000.0,0.0,0.0]
+start_t_micro: [0500,0000,10500,10000,20500,20000,30500,30000,40500,40000,50500,50000,60500,60000]
+end_t_micro: [5000,4500,15000,14500,25000,24500,35000,34500,45000,44500,55000,54500,65000,64500]
+hostname: "XXX"
+pid: 2063022
+total_bytes: 15000
+total_iops: 1024
+```
+
 <p align="right"><a href="#file-formats-and-tools">⬆</a></p>
 
