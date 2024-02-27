@@ -1,8 +1,22 @@
 PYTHON = .venv/bin/python3
 
+testpypi: build
+	python3 -m pip install --upgrade twine
+	python3 -m twine upload --repository testpypi dist/*
+
+testpypi-install:	
+	python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps ftio_hpc
+
+pypi: build
+	python3 -m pip install --upgrade twine
+	python3 -m twine upload --repository testpypi dist/*
+	python3 -m pip install ftio_hpc
+
 build: pack
 
 pack:
+	pip install --upgrade pip
+	pip install --upgrade build 
 	python3 -m build
 
 ftio: 
