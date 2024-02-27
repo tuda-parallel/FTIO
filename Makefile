@@ -1,23 +1,25 @@
-# PYTHON := ~/venv/bin/python3
-PYTHON := python3
-INSTALL_DIR := ~/.local/bin/
+PYTHON = .venv/bin/python3
 
-ftio: ftio_core test
+build: pack
 
-ftio_core:
+pack:
+	python3 -m build
+
+ftio: 
 	pip install . 
 
-
-test:
+quick_test:
 	ftio -e no -h 
 
 clean:
 	pip uninstall ftio-hpc
 
 
-install: PYTHON = .venv/bin/python3
+install: .venv ftio quick_test 
+	@echo "\nftio was installed in an environment" 
+	@echo "To activate it call:\nsource $(PWD)/.venv/bin/activate\n"
+	@echo "Afterwards, you can just call 'ftio [filename]'"
 
-install: ftio test 
 
 .venv: 
 	python3 -m venv .venv
