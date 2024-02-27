@@ -121,7 +121,7 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
                 xaxis_title="Lag (Samples)",
                 yaxis_title="ACF",
                 width = 1100,
-                height = 500
+                height = 400 #500
                 )
             fig[-1].update_layout(coloraxis_colorbar=dict(yanchor="top", y=1, x=0, ticks="outside", ticksuffix=" bills"))
             # fig[-1].update_layout(legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.01))
