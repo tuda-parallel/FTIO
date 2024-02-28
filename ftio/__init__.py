@@ -6,7 +6,7 @@
 # See the LICENSE file in the base directory for details.
 
 __title__ = "FTIO"
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 __liscence__ = "BSD 3"
 __description__ = "FTIO: Capturing Periodic I/O Using Frequency Techniques"
 __copyright__ = "Copyright (c) 2023-2024 Technical University of Darmstadt, Darmstadt, Germany"

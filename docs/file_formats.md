@@ -90,14 +90,14 @@ def __init__(self, values, io_type, args):
         self.max_io_ops_in_phase         # maximum I/O operation per phase
         self.total_io_ops                # Total I/O operations
         self.number_of_ranks             # number of ranks that did I/O
-        self.bandwidth                   = Bandwidth(values["bandwidth"], io_type, args)
+        self.bandwidth                   # Dictionary containing the fileds b_rank_avr, t_rank_e, and t_rank_s
 
 ⋮
 ```
 
 Next, the fields indicated by [`custom_input.py`](/examples/txt/custom_input.py) match the fields in the file [`2.txt`](/examples/txt/2.txt), which contains, for example:
 
-```json
+```
 avg_thruput_mib: [0.0,0.0,1000.0,1000.0,0.0,0.0,1000.0,1000.0,0.0,0.0,1000.0,1000.0,0.0,0.0]
 start_t_micro: [0500,0000,10500,10000,20500,20000,30500,30000,40500,40000,50500,50000,60500,60000]
 end_t_micro: [5000,4500,15000,14500,25000,24500,35000,34500,45000,44500,55000,54500,65000,64500]
