@@ -73,7 +73,12 @@ Join the [Slack channel](https://join.slack.com/t/ftioworkspace/shared_invite/zt
 
 ## Installation
 
-FTIO can be installed either [automatically](#automated-installation) or [manually](#manual-installation). As a prerequisite,
+FTIO is available on PYPI and can be easily installed via pip:
+```sh
+pip install ftio-hpc
+```
+
+For the latest GitHub version, FTIO can be installed either [automatically](#automated-installation) or [manually](#manual-installation). As a prerequisite,
 for the virtual environment, `python3.11-venv` is needed, which can be installed on Ubuntu, for example, with:
 ```sh
 apt install python3.11-venv
