@@ -289,12 +289,13 @@ def check_open(file:str) -> None:
     Args:
         file (str): filename
     """
-    try:
-        _ = open(file, "rb")
-    except Exception as error:
-        print(
-            f"\033[1;31m\n --- Error {type(error).__name__} --- \n -> Could not open file {file}. \n"
-            f"    Make sure it exisits. \n -------------\n\033[1;0m"
+    if os.path.isfile(file):
+        pass
+    else:
+        console = Console()
+        console.print(f"[red]--- Error  --- [/]\n"
+            f"[red]-> Could not open file [b]{file}[/b]. \n[/]"
+            f"[yellow]Make sure [b]{file}[/b] exists in [b]{os.getcwd()}[/b]. \n\n[/]"
         )
         exit()
 

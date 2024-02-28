@@ -65,7 +65,6 @@ test_all:
 test:
 	cd test && python3 -m unittest
 
-# test
 quick_test:
 	$(PWD)/.venv/bin/ftio -e no -h 
 
@@ -89,3 +88,6 @@ pack:
 	${PYTHON} -m  pip install --upgrade pip
 	${PYTHON} -m  pip install --upgrade build 
 	${PYTHON} -m build
+
+
+.PHONY: all test test_all clean clean_all build pack testpypi ftio

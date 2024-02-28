@@ -77,8 +77,15 @@ class Bandwidth:
 
             if "t_rank_s" in b:
                 self.t_rank_s.extend(b["t_rank_s"])
-            if "t_rank_e" in b:
-                self.t_rank_e.extend(b["t_rank_e"])
+                if "t_rank_e" in b and b["t_rank_e"]:
+                    self.t_rank_e.extend(b["t_rank_e"])
+                else:
+                    if b["t_rank_s"]:
+                        self.t_rank_e.extend(b["t_rank_s"][1:])
+                        self.t_rank_e.append(b["t_rank_s"][-1])
+                        b["t_rank_e"] = self.t_rank_e
+                    else:
+                        pass
             else:
                 if "b_rank_sum" in b:
                     self.t_rank_s.extend(np.zeros(len(b["b_rank_sum"])))
@@ -87,7 +94,7 @@ class Bandwidth:
                     self.t_rank_s.extend(np.zeros(len(b["b_rank_avr"])))
                     self.t_rank_e.extend(np.zeros(len(b["b_rank_avr"])))
 
-            # 2) Calcluate bandwidth ooverlapping at rank level
+            # 2) Calcluate bandwidth overlapping at rank level
             if ("t_rank_s" in b) and "b_overlap_avr" not in b and args.avr:
                 self.b_overlap_avr, self.t_overlap = overlap(
                     b["b_rank_avr"], b["t_rank_s"], b["t_rank_e"]
