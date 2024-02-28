@@ -30,7 +30,6 @@ clean:
 
 
 install: venv ftio 
-	source $(PWD)/.venv/bin/activate
 	@echo "\nftio was installed in an environment" 
 	@echo "To activate it call:\nsource $(PWD)/.venv/bin/activate\n"
 	@echo "Afterwards, you can just call 'ftio [filename]'"
