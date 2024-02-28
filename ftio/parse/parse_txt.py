@@ -12,7 +12,7 @@ class ParseTxt:
         if self.path[-1] == "/":
             self.path = self.path[:-1]
 
-    def to_simrun(self, args: list, index:int = 0):
+    def to_simrun(self, args, index:int = 0):
         """Convert to Simrun class
         Args:
             ars (argparse): command line arguments

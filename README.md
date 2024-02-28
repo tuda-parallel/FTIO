@@ -80,9 +80,11 @@ pip install ftio-hpc
 
 For the latest GitHub version, FTIO can be installed either [automatically](#automated-installation) or [manually](#manual-installation). As a prerequisite,
 for the virtual environment, `python3.11-venv` is needed, which can be installed on Ubuntu, for example, with:
+
 ```sh
 apt install python3.11-venv
 ```
+Note there are currently issues with pyDarshan on Mac, that can be solved as mentioned [here](https://github.com/darshan-hpc/darshan/issues/930)
 
 ### Automated installation
 

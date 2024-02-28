@@ -5,22 +5,29 @@ from rich.console import Console
 from ftio.parse.input_template import init_data
 from ftio.parse.custom_patterns import convert
 
-def extract(path:str, args:list) -> tuple[dict, int]:
+def extract(path:str, args:list, custom:bool = False) -> tuple[dict, int]:
+    # init
     start = time.time()
-    # init 
     ranks = 0
     mode, io_data, io_time = init_data(args)
     
-    # Define your pattern and map it
-    pattern, map = convert()
+    # Define your pattern and translate it
+    if not custom:
+        pattern, translate = convert()
+    else:
+        data = {}
+        with open(f"{args.custom_file}") as f:
+            exec(f.read(),globals(),data)
+        pattern = data['pattern']
+        translate = data['translate']
 
     #read data
     extracted_data = read(path, pattern)
 
     # Display the extracted data
-    for key, value in map.items():
+    for key, value in translate.items():
         if "bandwidth" in key:
-            for key2, value2 in map["bandwidth"].items():
+            for key2, value2 in translate["bandwidth"].items():
                 unit, value2 = find_scale(value2)
                 io_data["bandwidth"][key2] = extracted_data[value2]
                 io_data["bandwidth"][key2] = scale(io_data["bandwidth"][key2], unit)

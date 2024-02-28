@@ -836,7 +836,7 @@ class FreqPlot:
                     )
                 # f[-1].update_yaxes(range=[-2000, 72000])
                 f[-1] = format_plot(f[-1])
-                f[-1].show(config=conf)
+                # f[-1].show(config=conf)
 
                 #! Frequency spectrum
                 #!######################
@@ -851,7 +851,7 @@ class FreqPlot:
                     template=template,
                     # title="Spectrum (Ranks %i)" % r
                 )
-                fig_tmp.show(config=conf)
+                # fig_tmp.show(config=conf)
                 f.append(fig_tmp)
 
             if self.dtw:

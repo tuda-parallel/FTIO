@@ -53,7 +53,7 @@ Full documentation:
         parser.set_defaults(render='dynamic')
 
     if 'play' in name.lower():
-        parser.add_argument('-f', '--freq', dest='freq', type = float, help ='specifies the sampling rate with which the continous signal is discretized (default=10Hz). This directly affects the highest captured frequency (Nyquist). The value is specified in Hz. In case this value is set to -1, the auto mode is launched which sets the sampling frequency automatically to the smallest change in the bandwidth detected. Note that the lowest allowed frequency in the auto mode is 2000 Hz')
+        parser.add_argument('-f', '--freq', dest='freq', type = float, help ='specifies the sampling rate with which the continuous signal is discretized (default=10Hz). This directly affects the highest captured frequency (Nyquist). The value is specified in Hz. In case this value is set to -1, the auto mode is launched which sets the sampling frequency automatically to the smallest change in the bandwidth detected. Note that the lowest allowed frequency in the auto mode is 2000 Hz')
         parser.add_argument('-e', '--engine',         type = str, help = 'plot engine. Either plotly (default) or mathplotlib. Specifies the engine used to display the figures. Plotly is used to generate HTML files')
         parser.set_defaults(engine = 'plotly')
 
@@ -93,11 +93,11 @@ Full documentation:
         parser.add_argument('-z', '--zoom',       type = float, help ='upper zoom limit on the y-axis')
         parser.add_argument('-nt', '--no-threaded', dest='threaded', action='store_false', help= 'turn multithreading off (default=on)')
         parser.set_defaults(threaded=True)
-        parser.add_argument('-e', '--engine',         type = str, help = 'plot eingine to use. Either plotly (default), dash, or matplotlib')
+        parser.add_argument('-e', '--engine',         type = str, help = 'plot engine to use. Either plotly (default), dash, or matplotlib')
         parser.set_defaults(engine = 'plotly')
         parser.add_argument('--n_shown_samples', type=int, help='only for dash: Number of shown samples per trace (default: 20_000). Caution: Too small numbers could lead to incorrect representations!')
         parser.set_defaults(n_shown_samples=20_000)
-        parser.add_argument('--merge_plots', action='store_true', help='only for dash: Merges the plots to one plot for each io mode. Note: The file dropdwon menu then has no functionality')
+        parser.add_argument('--merge_plots', action='store_true', help='only for dash: Merges the plots to one plot for each io mode. Note: The file dropdown menu then has no functionality')
         parser.set_defaults(merge_plots=False)
         parser.add_argument('--no_disp', action='store_true', help='avoids opening the generated HTML file')
         parser.set_defaults(no_disp=False)
@@ -106,17 +106,16 @@ Full documentation:
         parser.set_defaults(scale=False)    
     # Data modes
     parser.add_argument('-s', '--sum', action='store_true', help ='sum plot: True (default) or False')
-    parser.add_argument('-ns', '--no-sum', dest='sum', action='store_false')
+    parser.add_argument('-ns', '--no_sum', dest='sum', action='store_false')
     parser.set_defaults(sum=True)
     parser.add_argument('-a', '--avr', action='store_true', help ='avr plot: True (default) or False')
-    parser.add_argument('-na', '--no-avr', dest='avr', action='store_false')
+    parser.add_argument('-na', '--no_avr', dest='avr', action='store_false')
     parser.set_defaults(avr=True)
     parser.add_argument('-i', '--ind', action='store_true', help ='ind plot: True or False (default)')
-    parser.add_argument('-ni', '--no-ind', dest='ind', action='store_false')
+    parser.add_argument('-ni', '--no_ind', dest='ind', action='store_false')
     parser.set_defaults(ind=False)
-    #TODO: use this  unit
-    parser.add_argument('-u', '--unit', dest='unit',  type = str ,  help ='unit of the provided data (MB is default)')
-    parser.set_defaults(unit='B')
+    parser.add_argument('-cf', '--custom_file',   type = str, help = 'passes the file coating the translation and pattern for a custom file format')
+    parser.set_defaults(custom_file = '')
     
     parser.add_argument('-x', '--dxt_mode', dest='dxt_mode',  type = str ,  help ='select data to extract from Darshan traces (DXT_POSIX or DXT_MPIIO (default))')
     parser.set_defaults(dxt_mode='DXT_MPIIO')

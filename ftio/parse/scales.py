@@ -15,6 +15,7 @@ from ftio.parse.parse_recorder import ParseRecorder
 from ftio.parse.parse_darshan import ParseDarshan
 from ftio.parse.parse_msgpack import ParseMsgpack
 from ftio.parse.parse_txt import ParseTxt
+from ftio.parse.parse_custom import ParseCustom
 from ftio.parse.args import parse_args
 
 
@@ -118,7 +119,9 @@ class Scales:
             file_path (str): filename + absolute path
         """
         check_open(file_path)
-        if ".json" in file_path[-5:]:
+        if self.args.custom_file:
+            run = ParseCustom(file_path).to_simrun(self.args, file_index)
+        elif ".json" in file_path[-5:]:
             with open(file_path,"rt") as file:
                 data = json.load(file)
             run = Simrun(data, "json", file_path, self.args, file_index)
@@ -130,7 +133,6 @@ class Scales:
             run = ParseDarshan(file_path).to_simrun(self.args, file_index)
         elif "msgpack" in file_path[-10:]:
             run = ParseMsgpack(file_path).to_simrun(self.args, file_index)
-            
         elif "txt" in file_path[-10:]:
             run = ParseTxt(file_path).to_simrun(self.args, file_index)
         self.s.append(run)
