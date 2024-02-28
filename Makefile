@@ -28,9 +28,8 @@ quick_test:
 clean:
 	pip uninstall ftio-hpc
 
-install: 
 
-install: venv ftio quick_test 
+install: venv ftio 
 	source $(PWD)/.venv/bin/activate
 	@echo "\nftio was installed in an environment" 
 	@echo "To activate it call:\nsource $(PWD)/.venv/bin/activate\n"
