@@ -73,7 +73,11 @@ Join the [Slack channel](https://join.slack.com/t/ftioworkspace/shared_invite/zt
 
 ## Installation
 
-FTIO can be installed either [automatically](#automated-installation) or [manually](#manual-installation).
+FTIO can be installed either [automatically](#automated-installation) or [manually](#manual-installation). As a prerequisite,
+for the virtual environment, `python3.11-venv` is needed, which can be installed on Ubuntu, for example, with:
+```sh
+apt install python3.11-venv
+```
 
 ### Automated installation
 
@@ -85,10 +89,10 @@ make install
 
 This generates a virtual environment in the current directory, sources `.venv/bin/activate`, and installs FTIO as a module.
 
-If you don't need a dedicated environment, simply call:
+If you don't need a dedicated environment, just call:
 
 ```sh
-make ftio
+make ftio PYTHON=python3
 ```
 
 ### Manual installation

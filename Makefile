@@ -1,41 +1,43 @@
 PYTHON = .venv/bin/python3
 
 testpypi: build
-	python3 -m pip install --upgrade twine
-	python3 -m twine upload --repository testpypi dist/*
+	${PYTHON} -m pip install --upgrade twine
+	${PYTHON} -m twine upload --repository testpypi dist/*
 
 testpypi-install:	
-	python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps ftio_hpc
+	${PYTHON} -m pip install --index-url https://test.pypi.org/simple/ --no-deps ftio_hpc
 
 pypi: build
-	python3 -m pip install --upgrade twine
-	python3 -m twine upload --repository testpypi dist/*
-	python3 -m pip install ftio_hpc
+	${PYTHON} -m pip install --upgrade twine
+	${PYTHON} -m twine upload --repository testpypi dist/*
+	${PYTHON} -m pip install ftio_hpc
 
 build: pack
 
 pack:
-	pip install --upgrade pip
-	pip install --upgrade build 
-	python3 -m build
+	${PYTHON} -m  pip install --upgrade pip
+	${PYTHON} -m  pip install --upgrade build 
+	${PYTHON} -m build
 
 ftio: 
-	pip install . 
+	${PYTHON} -m pip install . 
 
 quick_test:
-	ftio -e no -h 
+	$(PWD)/.venv/bin/ftio -e no -h 
 
 clean:
 	pip uninstall ftio-hpc
 
+install: 
 
-install: .venv ftio quick_test 
+install: venv ftio quick_test 
+	source $(PWD)/.venv/bin/activate
 	@echo "\nftio was installed in an environment" 
 	@echo "To activate it call:\nsource $(PWD)/.venv/bin/activate\n"
 	@echo "Afterwards, you can just call 'ftio [filename]'"
 
 
-.venv: 
+venv: 
 	python3 -m venv .venv
 
 
@@ -63,11 +65,11 @@ debug:
 
 profile:
 	rm -f test.pstats
-	python3  -m cProfile -o test.pstats ftio/cli/ftio_core.py -h
+	${PYTHON} -m cProfile -o test.pstats ftio/cli/ftio_core.py -h
 	snakeviz test.pstats
 
 profile2:
-	python3  -m pyinstrument ftio/cli/ftio_core.py  -h
+	${PYTHON} -m pyinstrument ftio/cli/ftio_core.py  -h
 
 test_all:
 	mkdir quicktest
@@ -80,4 +82,4 @@ test_all:
 	@rm -rf ./quicktest/*
 
 test:
-		cd test && python3 -m unittest
+	cd test && python3 -m unittest
