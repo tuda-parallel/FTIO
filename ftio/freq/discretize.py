@@ -34,9 +34,11 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, floa
                 and (t[i + 1] - t[i]) >= 0.001
             ):
                 t_rec = t[i + 1] - t[i]
-                # print("tre_c",t_rec, "t[i+1] ",t[i+1], "t[i]", t[i])
         freq = 2 / t_rec
-        text += f"Recomended sampling frequency: {freq:.3e} Hz\n"
+        text += f"Recommended sampling frequency: {freq:.3e} Hz\n"
+    elif freq == -2:
+        N = 10000
+        freq = N/np.floor((t[-1] - t[0]))
     else:
         text += f"Sampling frequency:  {freq:.3e} Hz\n"
     N = int(np.floor((t[-1] - t[0]) * freq))

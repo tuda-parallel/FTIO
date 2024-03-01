@@ -10,12 +10,12 @@ def convert()->tuple[dict[str,str],dict[str,tuple[str,float]]]:
                         the name from the pattern. The unit can be optionally specified
     """
     pattern = {
-        "avg_thruput_mib": r"avg_thruput_mib:\s+\[([\d.\d,\s]+)\]",
-        "end_t_micro": r"end_t_micro:\s+\[([\d,\s]+)\]",
-        "start_t_micro": r"start_t_micro:\s+\[([\d,\s]+)\]",
+        "avg_thruput_mib": r"avg_thruput_mib:\s*\[([\d.\d,\s*]+)\]",
+        "end_t_micro": r"end_t_micro:\s*\[([\d,\s*]+)\]",
+        "start_t_micro": r"start_t_micro:\s*\[([\d,\s*]+)\]",
         # "req_size": r"req_size:\s+\[([\d,\s]+)\]",
-        "total_bytes": r"total_bytes:\s+(\d+)",
-        "total_iops": r"total_iops:\s+(\d+)",
+        "total_bytes": r"total_bytes:\s*+(\d+)",
+        "total_iops": r"total_iops:\s*+(\d+)",
         }
 
     # Define map according to sample.py class, along with the scale if any:

@@ -18,7 +18,7 @@ def set_unit(arr:np.ndarray) -> tuple[str, float]:
     elif isinstance(arr, pd.DataFrame):
         arr = arr.to_numpy()
     
-    if arr.size > 0:
+    if arr.size > 0 and np.max(arr) > 0:
         order = np.log10(np.max(arr))
 
     if order > 9:

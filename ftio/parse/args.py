@@ -114,7 +114,7 @@ Full documentation:
     parser.add_argument('-i', '--ind', action='store_true', help ='ind plot: True or False (default)')
     parser.add_argument('-ni', '--no_ind', dest='ind', action='store_false')
     parser.set_defaults(ind=False)
-    parser.add_argument('-cf', '--custom_file',   type = str, help = 'passes a [path/filename.py] file containing the translation and pattern for a custom file format similiar to:\n https://github.com/tuda-parallel/FTIO/blob/main/examples/txt/custom_input.py')
+    parser.add_argument('-cf', '--custom_file',   type = str, help = 'passes a [path/filename.py] file containing the translation and pattern for a custom file format similar to:\n https://github.com/tuda-parallel/FTIO/blob/main/examples/txt/custom_input.py')
     parser.set_defaults(custom_file = '')
     
     parser.add_argument('-x', '--dxt_mode', dest='dxt_mode',  type = str ,  help ='select data to extract from Darshan traces (DXT_POSIX or DXT_MPIIO (default))')

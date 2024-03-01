@@ -64,7 +64,8 @@ def read(file_path, patterns):
             if match:
                 if ',' in match.group(1):
                     # If the matched group contains commas, split and convert to integers
-                    results[key] = list(float(val) if '.' in val else int(val) for val in match.group(1).split(','))
+                    tmp = match.group(1).replace(', ',',')
+                    results[key] = list(float(val) if '.' in val else int(val) for val in tmp.split(','))
 
                 else:
                     results[key] = int(match.group(1))
