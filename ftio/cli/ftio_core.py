@@ -191,6 +191,8 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
 
         prediction["dominant_freq"] = freq_arr[dominant_index]
         prediction["conf"] = conf[dominant_index]
+        prediction["amp"] = amp[dominant_index]
+        prediction["phi"] = phi[dominant_index]
         prediction["t_start"] = time_b[0]
         prediction["t_end"] = time_b[-1]
         prediction["total_bytes"] = total_bytes

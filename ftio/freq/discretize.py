@@ -12,7 +12,7 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, floa
         b (array): bandwidth
         t (array): time
         freq (int, optional): sampling frequency. Defaults to -1, calculates the optimal sampling
-        frequency inside this funciton
+        frequency inside this function
 
     Returns:
         _type_: b_sampled, sampling frequency (in case -1), and text 
