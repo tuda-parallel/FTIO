@@ -1,6 +1,5 @@
 from __future__ import annotations
 import os
-from sys import platform
 from threading import Thread
 import datetime
 import json

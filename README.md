@@ -222,7 +222,7 @@ If you have a suggestion that would make this better, please fork the repository
 
 ![license][license.bedge]
 
-Distributed under the BSD 3-Clause License. See [LISCENCE](./LICENSE) for more information.
+Distributed under the BSD 3-Clause License. See [LICENCE](./LICENSE) for more information.
 <p align="right"><a href="#ftio">⬆</a></p>
 
 <!-- ACKNOWLEDGMENTS -->

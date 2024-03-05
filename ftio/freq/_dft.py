@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from ftio.prediction.unify_predictions import  color_pred
 from ftio.prediction.helper import get_dominant_and_conf
-import matplotlib.pyplot as plt
 from ftio.freq.helper import MyConsole
+
 
 CONSOLE = MyConsole()
 
@@ -165,7 +166,7 @@ def prepare_plot_dfs(
     return df0, df1, df2, df3
 
 
-def display_prediction(argv: list, prediction: dict) -> None:
+def display_prediction(argv: list[str], prediction: dict) -> None:
     func_name = argv[0][argv[0].rfind("/") + 1:]
     if "ftio" in func_name:
         if prediction:

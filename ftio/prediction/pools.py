@@ -12,23 +12,23 @@ def predictor_with_pools(filename, data, queue, count, hits, start_time, aggrega
     """performs prediction in ProcessPoolExecuter. FTIO is a submitted future and probability is calculated as a callback
 
     Args:
-        filenme (str): name of file
+        filename (str): name of file
         data (Manager().list): List of dicts with all predictions so far
         queue (Manager().Queue): queue for FTIO data
         count (Manager().Value): number of prediction
-        hits (Manager().Value): hits indicating how often a dominant frequncy was found
+        hits (Manager().Value): hits indicating how often a dominant frequency was found
         start_time (Manager().Value): start time window for ftio
         aggregated_bytes (Manager().Value): total bytes transferred so far
         args (list[str]): additional arguments passed to ftio
     """
-    # Init: Monitore a file
+    # Init: Monitor a file
     stamp, _ = pm.monitor(filename,"")
 
     # Loop and predict if changes occur
     try:
         while True:
             with ProcessPoolExecutor(max_workers=1) as executor:
-                # monitore
+                # monitor
                 stamp, _ = pm.monitor(filename, stamp)
                 future = executor.submit(ftio_future, data, queue, count, hits, start_time, aggregated_bytes, args)
                 future.add_done_callback(probability_callback)
@@ -44,7 +44,7 @@ def ftio_future(data, queue , count, hits, start_time, aggregated_bytes, args: l
         data (Manager().list): List of dicts with all predictions so far
         queue (Manager().Queue): queue for FTIO data
         count (Manager().Value): number of prediction
-        hits (Manager().Value): hits indicating how often a dominant frequncy was found
+        hits (Manager().Value): hits indicating how often a dominant frequency was found
         start_time (Manager().Value): start time window for ftio
         aggregated_bytes (Manager().Value): total bytes transferred so far
         args (list[str]): additional arguments passed to ftio
@@ -62,3 +62,6 @@ def probability_callback(future):
         future (Future): _description_
     """
     probability(future.result()) #the queue
+
+
+

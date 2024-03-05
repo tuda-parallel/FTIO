@@ -153,7 +153,7 @@ class Bandwidth:
             return -1
 
 
-#! ----------------------- I/O anaylsis ------------------------------
+#! ----------------------- I/O analysis ------------------------------
 # **********************************************************************
 # *                       1. Overlap
 # **********************************************************************
@@ -166,10 +166,11 @@ def overlap(b, t_s, t_e):
     id_s = np.argsort(t_s)
     id_e = np.argsort(t_e)
     try:
-        b_ovrlap, t_ovrlap = overlap_core(b, t_s, t_e, id_s, id_e)
+        b_overlap, t_overlap = overlap_core(b, t_s, t_e, id_s, id_e)
     except:
-        b_ovrlap, t_ovrlap = overlap_core_safe(b, t_s, t_e, id_s, id_e)
-    return list(b_ovrlap), list(t_ovrlap)
+        b_overlap, t_overlap = overlap_core_safe(b, t_s, t_e, id_s, id_e)
+
+    return list(b_overlap), list(t_overlap)
 
 
 @jit(nopython=True, cache=True)
@@ -200,7 +201,6 @@ def overlap_core(b, t_s, t_e, id_s, id_e):
         counter += 1
 
     return b_out, t_out
-
 
 def overlap_core_safe(b, t_s, t_e, id_s, id_e):
     agg_phases = len(t_s)

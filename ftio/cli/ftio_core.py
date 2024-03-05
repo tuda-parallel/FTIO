@@ -24,48 +24,76 @@ from ftio.prediction.unify_predictions import merge_predictions
 CONSOLE = MyConsole()
 
 
-def main(cmd_input: list[str]):# -> dict[Any, Any]:
-    """Pass varibales and call main_core. The extraction of the traces
+def main(cmd_input: list[str],msg=""):# -> dict[Any, Any]:
+    """Pass variables and call main_core. The extraction of the traces
     and the parsing of the arguments is done in this function.
     """
+    #prepare data
     start = time.time()
-    data = Scales(cmd_input)
+    data = Scales(cmd_input, msg)
     data.get_data()
     args = data.args
     df = get_mode(data, args.mode)
+    data = get_time_behavior(df)
     CONSOLE.set(args.verbose)
     CONSOLE.print(f"\n[cyan]Data imported in:[/] {time.time() - start:.2f} s")
     CONSOLE.print(f"[cyan]Frequency Analysis:[/] {args.transformation.upper()}")
     CONSOLE.print(f"[cyan]Mode:[/] {args.mode}")
 
-    data = get_time_behavior(df)
-    prediction = {}
-    share = {}
-    dfs = [[], [], [], []]
-    for sim in data:
-        # perform frequency anylsis (dft/wavelet)
-        prediction_dft, dfs, share = freq_analysis(args, sim)
-        # Perform autocorrelation if args.autocorrelation is true + Merge the results into a single prediction
-        prediction_auto = find_autocorrelation(args, sim, share)
-        prediction = merge_predictions(args, prediction_dft, prediction_auto)
+    # get prediction
+    prediction, dfs = core(data, args)
 
+    # plot and print info
     convert_and_plot(data, dfs, args)
     CONSOLE.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
     display_prediction(cmd_input, prediction)
+
     return prediction, args
 
 
+def core(data:list[dict], args) -> tuple[dict,list]:
+    """ftio core function
+
+    Args:
+        data: {
+            "time": time (np.ndarray),
+            "bandwidth": bandwidth (np.ndarray),
+            "total_bytes": total_bytes (int),
+            "ranks": i (int)
+            }
+        args (_type_): argparse
+
+    Returns:
+        tuple[dict,list[list[float]]]: _description_
+    """
+    # init
+    prediction = {}
+    share = {}
+    dfs = [[], [], [], []]
+
+    # get predictions
+    for sim in data:
+        # Perform frequency analysis (dft/wavelet)
+        prediction_dft, dfs, share = freq_analysis(args, sim)
+        # Perform autocorrelation if args.autocorrelation is true + Merge the results into a single prediction
+        prediction_auto = find_autocorrelation(args, sim, share)
+        # Merge results
+        prediction = merge_predictions(args, prediction_dft, prediction_auto)
+
+    return prediction, dfs
+
+
 def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list], dict]:
-    """Discription:
+    """Description:
     performs sampling and that frequency technique (dft, wave_cont, or wave_disc),
     followed by creating
     a datframe with the information for plotting
 
     Args:
         args (argparse): see io_args.py
-        data (dict): containing 4 fields:
+        data (dict[str,np.ndarray]): containing 4 fields:
             1. bandwidth (np.array): bandwidth array
-            2. time (np.array): time array indicating when bandwidth time points chaged
+            2. time (np.array): time array indicating when bandwidth time points changed
             3. total_bytes (int): total transferred bytes
             4. ranks: number of ranks that did I/O
 
@@ -73,11 +101,11 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
         Exception: _description_
 
     Returns:
-        dict: Conating the predicition with the following fields:
-            1. dict:  Containing result of prediction includeing: 
+        dict: Containing the prediction with the following fields:
+            1. dict:  Containing result of prediction including: 
                 "dominant_freq" (list), "conf" (np.array), "t_start" (int), "t_end" (int), "total_bytes" (int).
             2. tuple[list, list, list, list]: for plot
-            3. dict: Conating sampled data including:
+            3. dict: Containing sampled data including:
                 b_sampled, "freq", "t_start", "t_end", "total_bytes"
     """
     k = 0
@@ -101,9 +129,9 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
     ignored_bytes = total_bytes
 
     if args.ts:  # shorten data
-        indecies = np.where(time_b >= args.ts)
-        time_b = time_b[indecies]
-        bandwidth = bandwidth[indecies]
+        indices = np.where(time_b >= args.ts)
+        time_b = time_b[indices]
+        bandwidth = bandwidth[indices]
         total_bytes = np.sum(
             bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b)
         )
@@ -112,9 +140,9 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
         text += f"Start time: [cyan]{time_b[0]:.2f}[/] s \n"
 
     if args.te:  # shorten data
-        indecies = np.where(time_b <= args.te)
-        time_b = time_b[indecies]
-        bandwidth = bandwidth[indecies]
+        indices = np.where(time_b <= args.te)
+        time_b = time_b[indices]
+        bandwidth = bandwidth[indices]
         total_bytes = np.sum(
             bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b)
         )

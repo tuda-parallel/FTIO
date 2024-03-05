@@ -15,23 +15,23 @@ def predictor_with_processes(
     """performs prediction in ProcessPoolExecuter. FTIO is a submitted future and probability is calculated as a callback
 
     Args:   
-        filenme (str): name of file
+        filename (str): name of file
         data (Manager().list): List of dicts with all predictions so far
         queue (Manager().Queue): queue for FTIO data
         count (Manager().Value): number of prediction
-        hits (Manager().Value): hits indicating how often a dominant frequncy was found
+        hits (Manager().Value): hits indicating how often a dominant frequency was found
         start_time (Manager().Value): start time window for ftio
         aggregated_bytes (Manager().Value): total bytes transferred so far
         args (list[str]): additional arguments passed to ftio
     """
     procs = []
-    # Init: Monitore a file
+    # Init: Monitor a file
     stamp,_ = pm.monitor(filename, "")
 
     # Loop and predict if changes occur
     try:
         while True:
-            # monitore
+            # monitor
             stamp, procs = pm.monitor(filename, stamp, procs)
             # launch prediction_process
             procs.append(
@@ -47,20 +47,19 @@ def predictor_with_processes(
 
 
 def prediction_process(
-    data, queue, count, hits, start_time, aggregated_bytes, args: list[str]
-) -> None:
+    data, queue, count, hits, start_time, aggregated_bytes, args: list[str], msg='') -> None:
     """Performs prediction made up of two part: (1) Executes FTIO and (2) appends to data the value
 
     Args:
         data (Manager().list): List of dicts with all predictions so far
         queue (Manager().Queue): queue for FTIO data
         count (Manager().Value): number of prediction
-        hits (Manager().Value): hits indicating how often a dominant frequncy was found
+        hits (Manager().Value): hits indicating how often a dominant frequency was found
         start_time (Manager().Value): start time window for ftio
         aggregated_bytes (Manager().Value): total bytes transferred so far
         args (list[str]): additional arguments passed to ftio.py
     """
-    ftio_process(queue, count, hits, start_time, aggregated_bytes, args)
+    ftio_process(queue, count, hits, start_time, aggregated_bytes, args, msg)
     while not queue.empty():
         data.append(queue.get())
 

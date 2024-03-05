@@ -1,18 +1,23 @@
 from __future__ import annotations
 import argparse
-from ftio import __copyright__, __repo__, __version__, __liscence__
+from ftio import __copyright__, __repo__, __version__, __license__
 
 
 
-def parse_args(argv:list) -> argparse.Namespace:
-    name = argv[0]
-    # name = name[name.rfind('/')+1:-3]
-    name = name[name.rfind('/')+1:]
+def parse_args(argv:list, name='') -> argparse.Namespace:
+    flag = True
+    if name == '':
+        name = argv[0]
+        name = name[name.rfind('/')+1:]
+    else:
+        #API call
+        flag = False
+        
 
     if 'plot' in name:
         disc = 'Plots result stored in Json file to a HTML page or PDF document.'
     elif 'ftio' in name:
-        disc = 'Captures the period of the I/O phases. Uses freqeuncy techniques (default=discrete fourier transformation) and outlier detection methods (Z-score) on the provided file. Supported file formats are Json, Jsonlines, Msgpack, Darshan, and REcorder (folder). TMIO can be used to generate the tracing file needed. There are several parameters which can be controlled by the arguments bellow.'
+        disc = 'Captures the period of the I/O phases. Uses frequency techniques (default=discrete fourier transformation) and outlier detection methods (Z-score) on the provided file. Supported file formats are Json, Jsonlines, Msgpack, Darshan, and REcorder (folder). TMIO can be used to generate the tracing file needed. There are several parameters which can be controlled by the arguments bellow.'
     elif 'predictor' in name:
         disc = 'Wrapper code to execute ftio online. Monitors a file for changes. Whenever the file is modified (i.e., new traces are appended) a new prediction process is executed and the result is store in a shared memory space. All parameters that can be passed to ftio are supported by predictor.'
     elif 'parse' in name:
@@ -34,8 +39,8 @@ Report any bugs to:
 COPYRIGHT:
 {__copyright__} 
 
-LISCENCE:
-{__liscence__} 
+LICENCE:
+{__license__} 
 
 Full documentation:
 {__repo__}
@@ -43,8 +48,11 @@ Full documentation:
 ''',
         formatter_class=argparse.RawDescriptionHelpFormatter
         )
-    
-    parser.add_argument('files', metavar='files', type = str, nargs='+', help='file, file list (file 0 ... file n), folder, or folder list (folder 0.. folder n)')    
+
+    # If CLI call not API, add files
+    if flag:
+        parser.add_argument('files', metavar='files', type = str, nargs='+', help='file, file list (file 0 ... file n), folder, or folder list (folder 0.. folder n)')    
+
     parser.add_argument('-m', '--mode', dest = 'mode',      type = str ,  help ='if the trace file contains several I/O modes, a specific mode can be selected. Supported modes are: async_write, async_read, sync_write, sync_read')
     
     
@@ -87,6 +95,8 @@ Full documentation:
         parser.set_defaults(frequency_hits =  3)
         parser.add_argument('-v', '--verbose', dest= 'verbose',   action = 'store_true', help ='sets verbose on or off (default=False)')
         parser.set_defaults(verbose =  False)
+        parser.add_argument('--zmq', action='store_true', help='avoids opening the generated HTML file')
+        parser.set_defaults(zmq=False)
 
     if 'plot' in name.lower():
         parser.set_defaults(mode='')

@@ -18,7 +18,7 @@ from ftio.freq.helper import MyConsole
 CONSOLE = MyConsole()
 
 def find_autocorrelation(args, data: dict, share:dict) -> dict:
-    """Finds perodicity using autocorreleation
+    """Finds the period using autocorreleation
 
     Args:
         args (argparse): command line arguments
@@ -27,7 +27,7 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
     Returns:
         dict: predictions containing 4 fields: 
             1. bandwidth (np.array): bandwidth array
-            2. time (np.array): time array indicating when bandwidth time points chaged
+            2. time (np.array): time array indicating when bandwidth time points changed
             3. total_bytes (int): total transferred bytes
             4. ranks: number of ranks that did I/O
     """
@@ -160,7 +160,7 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
                 name="peaks",
             )
 
-        # finde outliers
+        # find outliers
         text  = ""
         outliers, text = filter_outliers(freq, candidates, weights)
         # remove outliers
@@ -174,10 +174,10 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
         if isinstance(tmp,list) and len(tmp) > 0:
             tmp = [f"{i:.4f}" for i in tmp]
 
-        text += f"Found perodicities are [purple]{candidates}[/]\n"
-        text += f"Matching Frequncies are [purple]{tmp}[/]\n"
+        text += f"Found periods are [purple]{candidates}[/]\n"
+        text += f"Matching frequencies are [purple]{tmp}[/]\n"
         periodicity = mean if len(candidates) > 0 else np.nan
-        text += f"Average petrodicity is [purple]{periodicity:.2f} [/]sec\n"
+        text += f"Average periods is [purple]{periodicity:.2f} [/]sec\n"
         text += f"Average frequency is [purple]{1/periodicity if periodicity > 0 else np.nan:.4f} [/]Hz\n"
 
         # calculate confidence using "Coefficient of variation": https://en.wikipedia.org/wiki/Coefficient_of_variation

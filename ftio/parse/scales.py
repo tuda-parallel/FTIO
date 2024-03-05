@@ -16,13 +16,14 @@ from ftio.parse.parse_darshan import ParseDarshan
 from ftio.parse.parse_msgpack import ParseMsgpack
 from ftio.parse.parse_txt import ParseTxt
 from ftio.parse.parse_custom import ParseCustom
+from ftio.parse.parse_zmq import ParseZmq
 from ftio.parse.args import parse_args
 
 
 class Scales:
     """load the data. Supports single files (json, jsonl, darshan) or folders (+ recorder)
     """
-    def __init__(self, argv):
+    def __init__(self, argv, msg = ""):
         self.Print_info(argv[0])
         self.render = ""
         self.plot_mode = ""
@@ -32,6 +33,7 @@ class Scales:
         self.zoom = -1
         self.same_path = False
         self.names = []
+        self.msg = msg
         self.s = []
 
         # save call
@@ -40,6 +42,14 @@ class Scales:
         # Parse arguments
         self.args = parse_args(argv)
 
+        if "zmq" in self.args and self.args.zmq:
+            self.s.append(ParseZmq(self.msg).to_simrun(self.args, 0))
+            self.n = 1
+        else:
+            self.load_setup()
+
+
+    def load_setup(self):
         if isinstance(self.args.files, list):
             if len(self.args.files) <= 1:
                 self.paths = ["."]
@@ -50,7 +60,6 @@ class Scales:
         else:
             self.paths = [self.args.files]
 
-        # data = []
         self.Check_Same_Path()
         console = Console()
         for path in self.paths:
@@ -89,7 +98,7 @@ class Scales:
                             self.names.append(root[root.rfind("/") + 1 :])
                             console.print(f"[cyan]Current file:[/] {file}")
                             self.load_file(file_path, self.paths.index(path))
-                    break  # no recusive walk
+                    break  # no reclusive walk
 
             # Compare Several files
             elif not self.same_path and ".json" in path[-6:]:
@@ -111,6 +120,7 @@ class Scales:
             for i in names:
                 if i not in self.names:
                     self.names.append(i)
+
 
     def load_file(self, file_path:str, file_index = 0) -> None:
         """Load file content into an Simrun object

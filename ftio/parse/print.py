@@ -23,6 +23,7 @@ class Print:
     def print_json_lines(self):
         self.file = open("./scale.jsonl", "w")
         self.print_regions_jsonl()
+        self.file.close()
         print("\033[1;32m------------------- done -------------------\n\033[1;0m")
 
     def print_regions_jsonl(self):

@@ -1,4 +1,4 @@
-def init_data(args:list) -> tuple[str, dict[str, int|dict], dict[str, int]]:
+def init_data(args:list) -> tuple[str, dict[str, dict|int], dict[str, int]]:
     """init data set
 
     Returns:

@@ -7,7 +7,7 @@
 
 __title__ = "FTIO"
 __version__ = "0.0.3"
-__liscence__ = "BSD 3"
+__license__ = "BSD 3"
 __description__ = "FTIO: Capturing Periodic I/O Using Frequency Techniques"
 __copyright__ = "Copyright (c) 2023-2024 Technical University of Darmstadt, Darmstadt, Germany"
 __documentation_link__ = f"https://github.com/tuda-parallel/FTIO/tree/v{__version__}/docs"

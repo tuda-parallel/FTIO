@@ -7,14 +7,14 @@ from rich.console import Console
 import numpy as np
 
 
-def ftio_process(queue: Queue, count, hits, start_time, aggregated_bytes, args) -> None:
+def ftio_process(queue: Queue, count, hits, start_time, aggregated_bytes, args, msg="") -> None:
     """Perform a single prediction
 
     Args:
 
         queue (Manager().Queue): queue for FTIO data
         count (Manager().Value): number of prediction
-        hits (Manager().Value): hits indicating how often a dominant frequncy was found
+        hits (Manager().Value): hits indicating how often a dominant frequency was found
         start_time (Manager().Value): start time window for ftio
         aggregated_bytes (Manager().Value): total bytes transferred so far
         args (list[str]): additional arguments passed to ftio
@@ -24,8 +24,11 @@ def ftio_process(queue: Queue, count, hits, start_time, aggregated_bytes, args) 
     # Modify the arguments
     args.extend(["-e", "no"])
     args.extend(["-ts", f"{start_time.value:.2f}"])
+    
+
     # perform prediction
-    prediction, args = ftio_core.main(args)
+    prediction, args = ftio_core.main(args,msg)
+
     # get data
     t_s = prediction["t_start"]
     t_e = prediction["t_end"]
