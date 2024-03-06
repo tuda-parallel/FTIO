@@ -100,12 +100,12 @@ def get_hits(prediction: dict, count: int, hits):
     """Manges the hit variable. In case a dominant frequency is found, hits is increased. 
 
     Args:
-        prediction (dict): predicition up till now
-        count (int): number of the predicition
+        prediction (dict): prediction up till now
+        count (int): number of the prediction
         hits (Value): how often a dominant frequency was found
 
     Returns:
-        hits: increased value if a dominant frequncy was found, otherwise it is reset to 0
+        hits: increased value if a dominant frequency was found, otherwise it is reset to 0
     """
     console = Console()
     text = ""

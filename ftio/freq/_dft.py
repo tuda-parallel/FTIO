@@ -1,3 +1,5 @@
+"""Contains DFT methods and accuracy calculation 
+"""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,8 +14,7 @@ CONSOLE = MyConsole()
 #!################
 #! DFT flavors
 #!################
-
-# Wrapper 
+# Wrapper
 def dft(b):
     return numpy_dft(b)
 
@@ -41,7 +42,9 @@ def dft_slow(b):
     return X
 
 
-
+#!################
+#! DFT Precision
+#!################
 def precision_dft(
     amp: np.ndarray, phi:np.ndarray, dominant_index:np.ndarray, b_sampled:np.ndarray, t_disc:np.ndarray, freq_arr:np.ndarray, plt_engine:str
 ) -> str:
@@ -77,11 +80,6 @@ def precision_dft(
                 x_2[i] = b_sampled[i]
                 x[i] = -x[i] + b_sampled[i]
 
-        # print(
-        #     f"        '-> \033[1;32mPrecision of {freq_arr[index]:.2f} Hz "
-        #     f"is {float(np.sum(x)) / total * 100:.2f}%% "
-        #     f"(Positive only: {float(np.sum(x_2)) / total * 100:.2f}%%)\033[1;0m"
-        # )
         text += f"Precision of [cyan]{freq_arr[index]:.2f}[/] Hz is [cyan]{float(np.sum(x)) / total * 100:.2f}% [/]"
         text += f"(Positive only: [cyan]{float(np.sum(x_2)) / total * 100:.2f}%[/])\n"
 
@@ -167,6 +165,12 @@ def prepare_plot_dfs(
 
 
 def display_prediction(argv: list[str], prediction: dict) -> None:
+    """Displays the result of the prediction from ftio
+
+    Args:
+        argv (list[str]): command line arguments
+        prediction (dict): the result from ftio
+    """
     func_name = argv[0][argv[0].rfind("/") + 1:]
     if "ftio" in func_name:
         if prediction:
@@ -183,4 +187,3 @@ def display_prediction(argv: list[str], prediction: dict) -> None:
                         "[cyan underline]Prediction results:[/]\n"
                         "[red]No dominant frequency found[/]\n"
                     )
-

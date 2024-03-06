@@ -87,7 +87,7 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
     """Description:
     performs sampling and that frequency technique (dft, wave_cont, or wave_disc),
     followed by creating
-    a datframe with the information for plotting
+    a dataframe with the information for plotting
 
     Args:
         args (argparse): see io_args.py
