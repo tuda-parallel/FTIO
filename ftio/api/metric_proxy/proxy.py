@@ -10,7 +10,7 @@ from ftio.api.metric_proxy.parse_proxy import parse
 #---------------------------------
 # Modification Area
 #---------------------------------
-b, t = parse("/d/sim/metric_proxy/traces/Mixed_1x32_3.json", "total___mpi___size_total")
+b, t = parse("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", "total___mpi___size_total")
 ranks = 32
 
 # command line arguments
@@ -37,24 +37,39 @@ display_prediction(["./ftio"], prediction)
 
 # Post processing
 if prediction and len(prediction["dominant_freq"])!= 0:
-    ## Extract period
-    dominant_index = np.argmax(prediction["conf"])
-    conf = prediction["conf"][dominant_index]
-    f    = prediction["dominant_freq"][dominant_index]
-    amp  = prediction["amp"][dominant_index]
-    phi  = prediction["phi"][dominant_index]
-    N    =  np.floor((prediction["t_end"] - prediction["t_start"])*prediction["freq"])
+    only_one = False
+    if only_one:
+        dominant_index = np.argmax(prediction["conf"])
+        conf = prediction["conf"][dominant_index]
+        f    = prediction["dominant_freq"][dominant_index]
+        amp  = prediction["amp"][dominant_index]
+        phi  = prediction["phi"][dominant_index]
+        N    =  np.floor((prediction["t_end"] - prediction["t_start"])*prediction["freq"])
 
-    ## create cosine wave
-    t = np.arange(prediction["t_start"], prediction["t_end"],1/prediction["freq"])
-    cosine_wave = 2*amp/N*np.cos(2*np.pi*f*t+phi)
-    
+        ## create cosine wave
+        t = np.arange(prediction["t_start"], prediction["t_end"],1/prediction["freq"])
+        cosine_wave = 2*amp/N*np.cos(2*np.pi*f*t+phi)
+    else:
+        t = np.arange(prediction["t_start"], prediction["t_end"],1/prediction["freq"])
+        cosine_wave = np.zeros(len(t))
+        for index in range(0,len(prediction["conf"])):
+            conf = prediction["conf"][index]
+            f    = prediction["dominant_freq"][index]
+            amp  = prediction["amp"][index]
+            phi  = prediction["phi"][index]
+            N    =  np.floor((prediction["t_end"] - prediction["t_start"])*prediction["freq"])
+
+            ## create cosine wave
+            cosine_wave = cosine_wave + 2*amp/N*np.cos(2*np.pi*f*t+phi)
+        
     ## make square signal
     square_wave = np.zeros(len(cosine_wave))
     top = np.max(cosine_wave)
     for i, x in enumerate(cosine_wave):
         if x > 0:
             square_wave[i] = top
+        else:
+            square_wave[i] = -top
 
     ## plot 
     if any(x in args.engine for x in ["mat","plot"]):
