@@ -306,10 +306,12 @@ class FreqPlot:
             index_data = self.D.data_df["ranks"].isin([r])
             if not self.D.original_df.empty:
                 index_original = self.D.original_df["ranks"].isin([r])
+
             samples = np.arange(0, self.D.settings_df["N"][index_set].values)
-            amp = self.D.data_df[index_data]["A"]
-            freq = self.D.data_df[index_data]["freq"]
-            found = False
+            amp     = np.array(self.D.data_df[index_data]["A"])
+            freq    = np.array(self.D.data_df[index_data]["freq"])
+            phi     = np.array(self.D.data_df[index_data]["phi"])
+            found   = False
 
             # reconstruct time
             time = (
@@ -354,14 +356,14 @@ class FreqPlot:
             for k in samples:
                 x = (
                     (1 / len(samples))
-                    * amp.values[k]
+                    * amp[k]
                     * np.cos(
                         2
                         * np.pi
                         * samples
                         * k
                         / (self.D.settings_df[index_set]["N"].values)
-                        + self.D.data_df[index_data]["phi"].values[k]
+                        + phi[k]
                     )
                 )
                 if k == 0:
@@ -406,9 +408,9 @@ class FreqPlot:
                 if "mat" in self.plot_engine:
                     if all_or_10:
                         s = "%.1e*cos(2\u03C0*%.1f*t%+.2f)" % (
-                            order * amp.values[k] / length,
+                            order * amp[k] / length,
                             k,
-                            self.D.data_df[index_data]["phi"].values[k],
+                            phi[k],
                         )
                         plt.plot(time, x * order, linewidth=0.7, label="_nolegend_")
                     else:
@@ -418,10 +420,10 @@ class FreqPlot:
                             else:
                                 a = 2
 
-                            if round(freq.values[k], 2) > 0:
-                                s = f"{a / length * order*amp.values[k]:.1e}*cos(2\u03C0*{freq.values[k]:.2f}*t+{self.D.data_df[index_data]['phi'].values[k]:.2f})"
+                            if round(freq[k], 2) > 0:
+                                s = f"{a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2f}*t+{phi[k]:.2f})"
                             else:
-                                s = f"{a / length * order*amp.values[k]:.1e}*cos(2\u03C0*{freq.values[k]:.2e}*t+{self.D.data_df[index_data]['phi'].values[k]:.2e})"
+                                s = f"{a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2e}*t+{phi[k]:.2e})"
                             plt.plot(time, a * x * order, linewidth=0.9, label=s)
                             # if (k in dominant ):
                             if k in dominant and k != 0:
@@ -436,12 +438,12 @@ class FreqPlot:
                             a = 1
                         else:
                             a = 2
-                        if round(freq.values[k], 1) > 0 and amp.values[k] < 100:
-                            s = f"{a / length * order*amp.values[k]:.1f}*cos(2\u03C0*{freq.values[k]:.2f}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
+                        if round(freq[k], 1) > 0 and amp[k] < 100:
+                            s = f"{a / length * order*amp[k]:.1f}*cos(2\u03C0*{freq[k]:.2f}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
                         else:
-                            s = f"{a / length * order*amp.values[k]:.1e}*cos(2\u03C0*{freq.values[k]:.2e}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
+                            s = f"{a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2e}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
                         ## For the paper
-                        # s = f"{a / length * order*amp.values[k]:.0f}*cos(2\u03C0*{freq.values[k]:.2f}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
+                        # s = f"{a / length * order*amp[k]:.0f}*cos(2\u03C0*{freq[k]:.2f}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
                         f[-1].add_trace(
                             Scatter(
                                 x=time,
@@ -469,10 +471,10 @@ class FreqPlot:
                                 name_dominant = s
                         # in reality it is k/N instead of t
                         # if (k == 0 or k == len(samples)/2):
-                        #     s = "%.1ecos(2pi*%.2f*t%+.2f)" % (amp.values[k], freq.values[k], self.D.data_df[index_data]["phi"].values[k])
+                        #     s = "%.1ecos(2pi*%.2f*t%+.2f)" % (amp[k], freq[k], self.D.data_df[index_data]["phi"].values[k])
                         #     f[-1].add_trace(Scatter(x=time,y=x,mode='lines',name=s, hovertemplate ='<b>Time</b>: %{x:.2f} s'+ '<br><b>Amplitude</b>: %{y}'+'<br><b>T</b>: %{text} s',text = len(samples)*['%.2f'%(self.D.data_df[index_data]["T"].values[k])]))
                         # else:
-                        #     s = "%.1ecos(2pi*%.2f*t%+.2f)" % (a*amp.values[k], freq.values[k], self.D.data_df[index_data]["phi"].values[k])
+                        #     s = "%.1ecos(2pi*%.2f*t%+.2f)" % (a*amp[k], freq[k], self.D.data_df[index_data]["phi"].values[k])
                         #     f[-1].add_trace(Scatter(x=time,y=a*x,mode='lines',name=s, hovertemplate ='<b>Time</b>: %{x:.2f} s'+ '<br><b>Amplitude</b>: %{y}'+'<br><b>T</b>: %{text} s',text = len(samples)*['%.2f'%(self.D.data_df[index_data]["T"].values[k])]))
             if self.dtw:
                 threads = []

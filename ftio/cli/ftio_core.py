@@ -13,22 +13,29 @@ from rich.panel import Panel
 from ftio.parse.scales import Scales
 from ftio.parse.extract import get_time_behavior
 from ftio.freq.freq_plot_core import convert_and_plot
-from ftio.freq.helper import get_mode, MyConsole
+from ftio.freq.helper import get_mode, MyConsole, merge_results
 from ftio.freq.autocorrelation import find_autocorrelation
 from ftio.freq.anomaly_detection import outlier_detection
 from ftio.freq.discretize import sample_data
-from ftio.freq._wavelet import wavelet_disc, plot_wave_disc, wavelet_cont, plot_wave_cont#, welch
+from ftio.freq._wavelet import (
+    wavelet_disc,
+    plot_wave_disc,
+    wavelet_cont,
+    plot_wave_cont,
+)  # , welch
 from ftio.freq._dft import dft, prepare_plot_dfs, display_prediction, precision_dft
 from ftio.prediction.unify_predictions import merge_predictions
+from ftio.freq.time_window import data_in_time_window
+
 
 CONSOLE = MyConsole()
 
 
-def main(cmd_input: list[str],msg=""):# -> dict[Any, Any]:
+def main(cmd_input: list[str], msg=""):  # -> dict[Any, Any]:
     """Pass variables and call main_core. The extraction of the traces
     and the parsing of the arguments is done in this function.
     """
-    #prepare data
+    # prepare data
     start = time.time()
     data = Scales(cmd_input, msg)
     data.get_data()
@@ -45,13 +52,13 @@ def main(cmd_input: list[str],msg=""):# -> dict[Any, Any]:
 
     # plot and print info
     convert_and_plot(data, dfs, args)
-    CONSOLE.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
     display_prediction(cmd_input, prediction)
+    CONSOLE.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
 
     return prediction, args
 
 
-def core(data:list[dict], args) -> tuple[dict,list]:
+def core(data: list[dict], args) -> tuple[dict, list]:
     """ftio core function
 
     Args:
@@ -69,7 +76,7 @@ def core(data:list[dict], args) -> tuple[dict,list]:
     # init
     prediction = {}
     share = {}
-    dfs = [[], [], [], []]
+    dfs_out = [[],[],[],[]]
 
     # get predictions
     for sim in data:
@@ -79,8 +86,10 @@ def core(data:list[dict], args) -> tuple[dict,list]:
         prediction_auto = find_autocorrelation(args, sim, share)
         # Merge results
         prediction = merge_predictions(args, prediction_dft, prediction_auto)
+        # merge plots
+        dfs_out = merge_results(dfs_out, dfs)
 
-    return prediction, dfs
+    return prediction, dfs_out
 
 
 def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list], dict]:
@@ -102,12 +111,13 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
 
     Returns:
         dict: Containing the prediction with the following fields:
-            1. dict:  Containing result of prediction including: 
+            1. dict:  Containing result of prediction including:
                 "dominant_freq" (list), "conf" (np.array), "t_start" (int), "t_end" (int), "total_bytes" (int).
             2. tuple[list, list, list, list]: for plot
             3. dict: Containing sampled data including:
                 b_sampled, "freq", "t_start", "t_end", "total_bytes"
     """
+    #! Init
     k = 0
     share = {}
     df_out = [[], [], [], []]
@@ -125,85 +135,74 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
     time_b = data["time"] if "time" in data else np.array([])
     total_bytes = data["total_bytes"] if "total_bytes" in data else 0
     ranks = data["ranks"] if "ranks" in data else 0
-    text = f"Ranks: [cyan]{ranks}[/]\n"
-    ignored_bytes = total_bytes
 
-    if args.ts:  # shorten data
-        indices = np.where(time_b >= args.ts)
-        time_b = time_b[indices]
-        bandwidth = bandwidth[indices]
-        total_bytes = np.sum(
-            bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b)
-        )
-        text += f"[green]Start time set to {args.ts:.2f}[/] s\n"
-    else:
-        text += f"Start time: [cyan]{time_b[0]:.2f}[/] s \n"
+    #! extract relevant data
+    bandwidth, time_b, text = data_in_time_window(
+        args, bandwidth, time_b, total_bytes, ranks
+    )
 
-    if args.te:  # shorten data
-        indices = np.where(time_b <= args.te)
-        time_b = time_b[indices]
-        bandwidth = bandwidth[indices]
-        total_bytes = np.sum(
-            bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b)
-        )
-        text += f"[green]End time set to {args.te:.2f}[/] s\n"
-    else:
-        text += f"End time: [cyan]{time_b[-1]:.2f}[/] s\n"
-
-    ignored_bytes = (ignored_bytes - total_bytes)
-    text += f"Total bytes: [cyan]{total_bytes:.2e} bytes[/]\n"
-    text += f"Ignored bytes: [cyan]{ignored_bytes:.2e} bytes[/]\n"
+    #! Discretize signal: sample the bandwidth
     tik = time.time()
     CONSOLE.print("[cyan]Executing:[/] Discretization\n")
-
-    #! Discretize signal
-    # sample the bandwidth bandwidth
-    b_sampled, freq, text_disc = sample_data(bandwidth, time_b, args.freq)  
-    CONSOLE.print(Panel.fit(text_disc, style="white", border_style='yellow', title="Discretization", title_align='left'))
+    b_sampled, freq, text_disc = sample_data(bandwidth, time_b, args.freq)
+    CONSOLE.print(
+        Panel.fit(
+            text_disc,
+            style="white",
+            border_style="yellow",
+            title="Discretization",
+            title_align="left",
+        )
+    )
     CONSOLE.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
-    CONSOLE.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
+
+    #! Perform transformation
+    CONSOLE.print(
+        f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
+    )
     tik = time.time()
 
-    #! Choose Method
+    ##! Choose Method
     if "dft" in args.transformation:
-        # calculate DFT
+        ##? calculate DFT
         X = dft(b_sampled)
         N = len(X)
-        amp = abs(X)  
-
-        # welch(bandwidth,freq)
+        amp = abs(X)
         freq_arr = freq * np.arange(0, N) / N
         phi = np.arctan2(X.imag, X.real)
         conf = np.zeros(len(amp))
+        # welch(bandwidth,freq)
 
-        # Find dominant frequency
+        ##? Find dominant frequency
         (
             dominant_index,
             conf[1 : int(len(amp) / 2) + 1],
             outlier_text,
         ) = outlier_detection(amp, freq_arr, args)
 
+        ##? ignore DC offset
         conf[0] = np.inf
         if len(amp) % 2 == 0:
             conf[int(len(amp) / 2) + 1 :] = np.flip(conf[1 : int(len(amp) / 2)])
         else:
             conf[int(len(amp) / 2) + 1 :] = np.flip(conf[1 : int(len(amp) / 2) + 1])
 
+        ##? Assign data
         prediction["dominant_freq"] = freq_arr[dominant_index]
-        prediction["conf"] = conf[dominant_index]
-        prediction["amp"] = amp[dominant_index]
-        prediction["phi"] = phi[dominant_index]
-        prediction["t_start"] = time_b[0]
-        prediction["t_end"] = time_b[-1]
-        prediction["total_bytes"] = total_bytes
-        prediction["freq"] = freq
-        prediction["ranks"] = ranks
+        prediction["conf"]          = conf[dominant_index]
+        prediction["amp"]           = amp[dominant_index]
+        prediction["phi"]           = phi[dominant_index]
+        prediction["t_start"]       = time_b[0]
+        prediction["t_end"]         = time_b[-1]
+        prediction["freq"]          = freq
+        prediction["ranks"]         = ranks
+        prediction["total_bytes"]   = total_bytes
 
         if args.autocorrelation:
-            share["b_sampled"] = b_sampled
-            share["freq"] = freq
-            share["t_start"] = prediction["t_start"]
-            share["t_end"] = prediction["t_end"]
+            share["b_sampled"]   = b_sampled
+            share["freq"]        = freq
+            share["t_start"]     = prediction["t_start"]
+            share["t_end"]       = prediction["t_end"]
             share["total_bytes"] = prediction["total_bytes"]
 
         precision_text = ""
@@ -213,7 +212,7 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
 
         text = Group(text, outlier_text, precision_text[:-1])
 
-        if any(x in args.engine for x in ["mat","plot"]):
+        if any(x in args.engine for x in ["mat", "plot"]):
             df_out = prepare_plot_dfs(
                 k,
                 freq,
@@ -225,16 +224,15 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
                 b_sampled,
                 time_b,
                 ranks,
-                N,
                 bandwidth,
             )
         k += 1
 
     elif "wave_disc" in args.transformation:
-        # discrete wavlet decomposition:
+        # discrete wavelet decomposition:
         # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1-Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20-%202010%20-%20Rede_AIASYB2.pdf
         # https://www.youtube.com/watch?v=hAQQwvKsWCY&ab_channel=NathanKutz
-        print("    '-> \033[1;32mPerforming discret wavelet decomposition\033[1;0m")
+        print("    '-> \033[1;32mPerforming discrete wavelet decomposition\033[1;0m")
         wavelet = "db1"  # dmey might be better https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html
         # wavelet = 'haar' # dmey might be better https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html
         coffs = wavelet_disc(b_sampled, wavelet, args.level)
@@ -259,8 +257,8 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
         sys.exit()
 
     elif "wave_cont" in args.transformation:
-        # Continous wavelets
-        print("    '-> \033[1;32mPerforming discret wavelet decomposition\033[1;0m")
+        # Continuous wavelets
+        print("    '-> \033[1;32mPerforming discrete wavelet decomposition\033[1;0m")
         wavelet = "morl"
         # wavelet = 'cmor'
         # wavelet = 'mexh'

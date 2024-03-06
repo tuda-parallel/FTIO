@@ -14,7 +14,7 @@ def merge_predictions(args, pred_dft:dict, pred_auto:dict)-> dict:
 
     Args:
         args (_type_): _description_
-        pred_dft (dict): prediction frequency technqiue
+        pred_dft (dict): prediction frequency technique
         pred_auto (dict): prediction autocorrelation
 
     Returns:

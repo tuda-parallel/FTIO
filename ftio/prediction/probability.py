@@ -11,14 +11,14 @@ CONSOLE = Console()
 def probability(data: list[dict], method:str = "db") -> None:
     """Calculates the conditional probability that expresses
     how probable the frequency (event A) is given that the signal
-    is perodic occurred (prabability B).
+    is periodic occurred (probability B).
     According to Bayes' Theorem, P(A|B) = P(B|A)*P(A)/P(B)
-    P(B|A): Probability that the signal is perodic given that it has a frequency A --> 1
+    P(B|A): Probability that the signal is periodic given that it has a frequency A --> 1
     P(A): Probability that the signal has the frequency A
     P(B): Probability that the signal has is periodic
 
     Args:
-        data (dict): contating predicitions
+        data (dict): contacting predictions
 
     Returns:
         None
@@ -61,5 +61,5 @@ def probability(data: list[dict], method:str = "db") -> None:
                 CONSOLE.print(
                     f"[purple][PREDICTOR]:[/] P([{f_min:.3f},{f_max:.3f}] Hz) = {p_a*100:.2f}%\n"
                     f"[purple][PREDICTOR]:[/] |-> [{f_min:.3f},{f_max:.3f}] Hz = [{1/f_max if f_max != 0 else np.NaN:.3f},{1/f_min if f_min != 0 else np.NaN:.3f}] sec\n"
-                    f"[purple][PREDICTOR]:[/] '-> P([{f_min:.3f},{f_max:.3f}] Hz | perodic) = {p_a_given_b*100:.2f}%"
+                    f"[purple][PREDICTOR]:[/] '-> P([{f_min:.3f},{f_max:.3f}] Hz | periodic) = {p_a_given_b*100:.2f}%"
                 )

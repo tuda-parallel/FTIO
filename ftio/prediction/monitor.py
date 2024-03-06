@@ -54,11 +54,58 @@ def monitor_stat(name: str, _cached_stamp: str, procs: list) -> tuple[str, list]
             stamp = stream.read()
             if stamp != _cached_stamp:
                 CONSOLE.print(
-                    f"\n[purple][PREDICTOR]:[/] [red bold]Stamp changed[/] to {stamp}"
+                    f"\n[purple][PREDICTOR]:[/][red bold]Stamp changed[/] to {stamp}"
                 )
                 sleep(0.2)
                 return stamp, procs
 
+def monitor_list(name: list, n_buffers, _cached_stamp: dict={}, procs: list = []) -> tuple[dict, list]:
+    """Monitors a file for changes
+
+    Args:
+        name (str): _description_
+        _cached_stamp (str): change time stamp
+        procs: list or process
+
+    Returns:
+        str: _description_
+    """
+    if not _cached_stamp:
+        stamp = {}
+        for i in name:
+            stream = os.popen(f"stat -c %z {i} 2>&1")
+            file_stamp = stream.read()
+            stamp[i] = file_stamp
+            CONSOLE.print(
+                f"[purple][PREDICTOR]:[/] Monitoring file {name.index(i)}/{n_buffers} {i}"
+                f"[purple][PREDICTOR]:[/] Stamp is {stamp[i]}"
+                )
+        return stamp, procs
+    else:
+        sleep(1)
+        seen = []
+        counter = n_buffers
+        while True:
+            procs = join_procs(procs)
+            for _,i in enumerate(_cached_stamp):
+                stream = os.popen(f"stat -c %z {i} 2>&1")
+                file_stamp = stream.read()
+                if file_stamp != _cached_stamp[i] and  _cached_stamp[i] not in seen:
+                    counter = counter - 1
+                    seen.append(_cached_stamp[i])
+                    CONSOLE.print(
+                        f"[purple][PREDICTOR]:[/][red bold]Stamp changed[/] to {file_stamp}"
+                        f"[purple][PREDICTOR]:[/] {n_buffers - counter}/{n_buffers} files changed"
+                        )
+
+            if counter == 0:
+                for i in name:
+                    stream = os.popen(f"stat -c %z {i} 2>&1")
+                    file_stamp = stream.read()
+                    _cached_stamp[i] = file_stamp
+                return _cached_stamp, procs
+            
+            sleep(0.2)
 
 #! Method 2
 def monitor_fcntl(name: str, _cached_stamp: str, procs: list) ->  tuple[str, list]:

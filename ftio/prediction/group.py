@@ -1,4 +1,4 @@
-"""Groups predicitions according to frequency step
+"""Groups predictions according to frequency step
 """
 
 from __future__ import annotations
@@ -7,10 +7,10 @@ from sklearn.cluster import DBSCAN
 from ftio.prediction.helper import get_dominant
 
 def group_step(data: list[dict]) -> tuple[list[dict], int]:
-    """generates dict contaiting predictions. Aditionally the entries are grouped according to the frequency resolution between the predicitions.
+    """generates dict contacting predictions. Additionally the entries are grouped according to the frequency resolution between the predictions.
 
     Args:
-        data (dict): predicitions
+        data (dict): predictions
 
     Returns:
         out (dict): data appended with a group field
@@ -44,10 +44,10 @@ def group_step(data: list[dict]) -> tuple[list[dict], int]:
 
 
 def group_dbscan(data: list[dict]) -> tuple[list[dict], int]:
-    """generates dict contaiting predictions. Aditionally the entries are grouped according to dbscan with the frequency resolution as the eps distance.
+    """generates dict contacting predictions. Additionally the entries are grouped according to DBSCAN with the frequency resolution as the eps distance.
 
     Args:
-        data (dict): predicitions
+        data (dict): predictions
 
     Returns:
         out (dict): data appended with a group field
@@ -73,7 +73,7 @@ def group_dbscan(data: list[dict]) -> tuple[list[dict], int]:
             out.append(prediction)
             old_window = time_window
     
-    tol_min = 1/np.std(window) if np.std(window) != 0 else 1e-8
+    tol_min = 1/np.std(window) if window and np.std(window) != 0 else 1e-8
     tol = 2*tol_max if tol_max < 3*tol_min else np.abs(1-(tol_min/np.mean(window)))*tol_max#3 times std means 99 points
     tol = tol if tol > 0 and tol != np.inf else 1e-8 #dbscan expects tol > 0
     # print(f"tol_min is: {tol_min}\ntol_max is: {tol_max}\ntol is: {tol}")

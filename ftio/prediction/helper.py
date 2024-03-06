@@ -1,12 +1,13 @@
 """ Helper functions"""
 from __future__ import annotations
 import numpy as np
+from rich.console import Console
 
 def get_dominant(prediction: dict) -> float:
     """Gets the dominant frequency based on the confidence
 
     Args:
-        prediction (dict): prediction contaiting the dominant frequencies and their confidence
+        prediction (dict): prediction contacting the dominant frequencies and their confidence
 
     Returns:
         float: dominant frequency (only one value!)
@@ -26,7 +27,7 @@ def get_dominant_and_conf(prediction: dict) -> tuple[float, float]:
     """Gets the dominant frequency and its confidence based on the confidence
 
     Args:
-        prediction (dict): prediction contaiting the dominant frequencies and their confidence
+        prediction (dict): prediction contacting the dominant frequencies and their confidence
 
     Returns:
         tuple[float, float]: dominant frequency (only one value!) and corresponding confidence 
@@ -46,10 +47,10 @@ def get_dominant_and_conf(prediction: dict) -> tuple[float, float]:
 
 
 def print_data(data: list[dict]) -> None:
-    """Prints the predicitions in a nice format
+    """Prints the predictions in a nice format
 
     Args:
-        data [dict]: contating the predicitions
+        data [dict]: contacting the predictions
     """
     print("Data collected is:")
     for pred in data:
@@ -62,8 +63,39 @@ def print_data(data: list[dict]) -> None:
         print("{" + string[:-2] + "}")
 
 
+def get_hits(prediction: dict, count: int, hits):
+    """Manges the hit variable. In case a dominant frequency is found, hits is increased. 
+
+    Args:
+        prediction (dict): prediction up till now
+        count (int): number of the prediction
+        hits (Value): how often a dominant frequency was found
+
+    Returns:
+        hits: increased value if a dominant frequency was found, otherwise it is reset to 0
+    """
+    console = Console()
+    text = ''
+    text += f'[purple][PREDICTOR] (#{count}):[/] Freq candidates: \n'
+    for i in range(0,len(prediction['dominant_freq'])):
+        text += (
+            f'[purple][PREDICTOR] (#{count}):[/]    {i}) '
+            f'{prediction["dominant_freq"][i]:.2f} Hz -- conf {prediction["conf"][i]:.2f}\n'
+        )
+    if  len(prediction["dominant_freq"]) == 1:
+        hits.value += 1
+        text += f'[purple][PREDICTOR] (#{count}):[/] Current hits {hits.value}\n'
+    else:
+        hits.value = 0
+        text += f'[purple][PREDICTOR] (#{count}):[/][red bold] Resetting hits {hits.value}[/]\n'
+
+    console.print(text[:-1])
+
+    return hits
+
+
 def export_extrap(data: list[dict], name:str="./freq.jsonl"):
-    """Generates measurment points for Extra-p out of the frequency 
+    """Generates measurement points for Extra-p out of the frequency 
     collected at different phases
 
     Args:
@@ -77,6 +109,7 @@ def export_extrap(data: list[dict], name:str="./freq.jsonl"):
     file = open(name, "w",encoding="utf-8")
     file.write(extrap_string)
 
+
 def format_jsonl(data: list[dict]) -> tuple[str,str]:
     """Formats the metric as in the JSONL format for Extra-P
 
@@ -84,7 +117,7 @@ def format_jsonl(data: list[dict]) -> tuple[str,str]:
         data (list[dict]): List of predictions
 
     Returns:
-        tuple[str, str]: str: formated string and number of ranks
+        tuple[str, str]: formated string and number of ranks
         
     """
     string = ""

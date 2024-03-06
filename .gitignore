@@ -31,4 +31,5 @@ ftio/roofline/
 dist
 build
 info.txt
+info.md
 artifacts/ipdps24/IOR/o*

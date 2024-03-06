@@ -113,13 +113,14 @@ def prepare_plot_dfs(
     b_sampled,
     time_b,
     ranks,
-    N,
     bandwidth,
 ) -> tuple[list, list, list, list]:
     df0 = []
     df1 = []
     df2 = []
     df3 = []
+    N = len(b_sampled)
+
     df3.append(
         pd.DataFrame(
             {
