@@ -14,7 +14,8 @@ def main(args: list[str] = []) -> None:
 
     n_buffers = 4
     args =["-e", "plotly", "-f", "0.01"]
-    path=r'/d/github/FTIO/examples/gekkoFs/JSON/*.json'
+    # path=r'/d/github/FTIO/examples/gekkoFs/JSON/*.json'
+    path=r'/d/github/FTIO/examples/gekkoFs/MSGPACK/write*.msgpack'
     matched_files = glob.glob(path)
 
     # Init

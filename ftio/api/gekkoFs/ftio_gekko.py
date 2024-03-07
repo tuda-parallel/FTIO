@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 from ftio.freq.helper import format_plot
 from ftio.plot.units import set_unit
 
-def run(files:list,argv = ["-e", "plotly", "-f", "0.01"] ):
+def run(files:list,argv = ["-e", "plotly", "-f", "100"] ): #"0.01"] ):
     """Executes ftio on list of files.
 
     Args:
@@ -36,12 +36,16 @@ def run(files:list,argv = ["-e", "plotly", "-f", "0.01"] ):
 
     ## 1) overlap for rank level metrics
     for file in files:
-        data = parse(file,data)
+        data, ext = parse(file,data)
 
-    ## 2) Scale
-    b_rank = np.array(data['avg_thruput_mib'])*1.07*1e+6
-    t_rank_s = np.array(data['start_t_micro'])*1e-3
-    t_rank_e = np.array(data['end_t_micro'])*1e-3
+    ## 2) Scale if JSON
+    scale = [1, 1e-6, 1e-6]
+    if "JSON" in ext.upper(): 
+        scale = [1.07*1e+6, 1e-3, 1e-3]
+    
+    b_rank = np.array(data['avg_thruput_mib'])*scale[0]
+    t_rank_s = np.array(data['start_t_micro'])*scale[1]
+    t_rank_e = np.array(data['end_t_micro'])*scale[2]
 
     ## 3) app level bandwidth
     b,t = overlap(b_rank,t_rank_s, t_rank_e)
@@ -79,6 +83,7 @@ def run(files:list,argv = ["-e", "plotly", "-f", "0.01"] ):
 
 if __name__ == "__main__":
     # absolute path to search all text files inside a specific folder
-    path=r'/d/github/FTIO/examples/gekkoFs/JSON/*.json'
+    # path=r'/d/github/FTIO/examples/gekkoFs/JSON/*.json'
+    path=r'/d/github/FTIO/examples/gekkoFs/MSGPACK/write*.msgpack'
     matched_files = glob.glob(path)
     run(matched_files)

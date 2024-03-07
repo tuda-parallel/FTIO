@@ -31,7 +31,7 @@ def convert_to_class(arr: list, io_type: str) -> list:
 
 
 def convert_to_iosample(arr: list, io_type: str) -> list:
-    """Brings the data into an strucutre similar to Sample/Time 
+    """Brings the data into an structure similar to Sample/Time 
     depending on the type of the I/O (read/write + sync/async | time)
 
     Args:
