@@ -75,8 +75,8 @@ def run(files:list,argv = ["-e", "plotly", "-f", "100"] ): #"0.01"] ):
     prediction, dfs = core([data], args)
 
     # plot and print info
-    convert_and_plot(data, dfs, args)
     display_prediction(["./ftio"], prediction)
+    convert_and_plot(data, dfs, args)
 
     return prediction, args
 
