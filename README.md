@@ -161,7 +161,7 @@ Several flags can be specified. The most relevant settings are:
 |---                          | --- |
 |file                         | file, file list (file 0 ... file n), folder, or folder list (folder 0.. folder n) containing traces  (positional argument)|
 |-h, --help                   | show this help message and exit|
-|-m MODE, --mode MODE         | if the trace file contains several I/O modes, a specific mode can be selected. Supported modes are: async_write, async_read, sync_write, sync_read|
+|-m MODE, --mode MODE         | if the trace file contains several I/O modes, a specific mode can be selected. Supported modes are: write_async, read_async, write_sync, read_sync|
 |-r RENDER, --render RENDER   | specifies how the plots are rendered. Either dynamic (default) or static|
 |-f FREQ, --freq FREQ         | specifies the sampling rate with which the continuous signal is discretized (default=10Hz). This directly affects the highest captured frequency (Nyquist). The value is specified in Hz. In case this value is set to -1, the auto mode is launched which sets the sampling frequency automatically to the smallest change in the bandwidth detected. Note that the lowest allowed frequency in the auto mode is 2000 Hz|
 |-ts TS, --ts TS              | Modifies the start time of the examined time window

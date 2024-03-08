@@ -43,9 +43,9 @@ class FreqPlot:
             D3 = []
             j = 0
             self.check = 0
-            self.modes = ["async_write", "sync_write", "async_read", "sync_read"]
+            self.modes = ["write_async", "write_sync", "read_async", "read_sync"]
             self.s = []
-            mode = "async_write"
+            mode = "write_async"
             if isinstance(argv, list):
                 if len(argv) <= 1:
                     self.paths = ["."]

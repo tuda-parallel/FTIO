@@ -124,13 +124,13 @@ class plot_core:
                 thread.join()
         else:
             if "stat" in args.render:
-                if "async_write" in args.mode:
+                if "write_async" in args.mode:
                     self.plot_io_mode("async write", self.data.df_wat, self.data.df_wab)
-                elif "async_read" in args.mode:
+                elif "read_async" in args.mode:
                     self.plot_io_mode("async read", self.data.df_rat, self.data.df_rab)
-                elif "sync_write" in args.mode:
+                elif "write_sync" in args.mode:
                     self.plot_io_mode("sync write", self.data.df_wst)
-                elif "sync_read" in args.mode:
+                elif "read_sync" in args.mode:
                     self.plot_io_mode("sync read", self.data.df_rst)
                 else:
                     pass
@@ -140,19 +140,19 @@ class plot_core:
                 out.generate_html_core("time.html", self.get_figure("time.html"))
                 self.plot_io_mode("async write", self.data.df_wat, self.data.df_wab)
                 out.generate_html_core(
-                    "async_write.html", self.get_figure("async_write.html")
+                    "write_async.html", self.get_figure("write_async.html")
                 )
                 self.plot_io_mode("async read", self.data.df_rat, self.data.df_rab)
                 out.generate_html_core(
-                    "async_read.html", self.get_figure("async_read.html")
+                    "read_async.html", self.get_figure("read_async.html")
                 )
                 self.plot_io_mode("sync write", self.data.df_wst)
                 out.generate_html_core(
-                    "sync_write.html", self.get_figure("sync_write.html")
+                    "write_sync.html", self.get_figure("write_sync.html")
                 )
                 self.plot_io_mode("sync read", self.data.df_rst)
                 out.generate_html_core(
-                    "sync_read.html", self.get_figure("sync_read.html")
+                    "read_sync.html", self.get_figure("read_sync.html")
                 )
 
         out.generate_html_end()
@@ -168,23 +168,23 @@ class plot_core:
             if "write" in mode:
                 self.plot_io_mode("async write", self.data.df_wat, self.data.df_wab)
                 out.generate_html_core(
-                    "async_write.html", self.get_figure("async_write.html")
+                    "write_async.html", self.get_figure("write_async.html")
                 )
             else:
                 self.plot_io_mode("async read", self.data.df_rat, self.data.df_rab)
                 out.generate_html_core(
-                    "async_read.html", self.get_figure("async_read.html")
+                    "read_async.html", self.get_figure("read_async.html")
                 )
         elif "sync" in mode:
             if "write" in mode:
                 self.plot_io_mode("sync write", self.data.df_wst)
                 out.generate_html_core(
-                    "sync_write.html", self.get_figure("sync_write.html")
+                    "write_sync.html", self.get_figure("write_sync.html")
                 )
             else:
                 self.plot_io_mode("sync read", self.data.df_rst)
                 out.generate_html_core(
-                    "sync_read.html", self.get_figure("sync_read.html")
+                    "read_sync.html", self.get_figure("read_sync.html")
                 )
         else:
             self.plot_time()
@@ -2007,13 +2007,13 @@ class plot_core:
     # **********************************************************************
 
     def get_figure(self, mode):
-        if "async_write" in mode:
+        if "write_async" in mode:
             return self.f_aw
-        if "async_read" in mode:
+        if "read_async" in mode:
             return self.f_ar
-        if "sync_write" in mode:
+        if "write_sync" in mode:
             return self.f_sw
-        if "sync_read" in mode:
+        if "read_sync" in mode:
             return self.f_sr
         if "time" in mode:
             return self.f_t

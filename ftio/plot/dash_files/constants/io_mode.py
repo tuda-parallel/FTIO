@@ -1,9 +1,9 @@
 """Input/output modes"""
 
-ASYNC_READ: str = "async_read"
-ASYNC_WRITE: str = "async_write"
-SYNC_READ: str = "sync_read"
-SYNC_WRITE: str = "sync_write"
+ASYNC_READ: str = "read_async"
+ASYNC_WRITE: str = "write_async"
+SYNC_READ: str = "read_sync"
+SYNC_WRITE: str = "write_sync"
 TIME: str = "time"
 
 ALL_MODES: list[str] = [ASYNC_WRITE, ASYNC_READ, SYNC_WRITE, SYNC_READ, TIME]

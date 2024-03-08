@@ -147,7 +147,10 @@ def extract(file:str) -> list[dict]:
         # Read the binary data
         binary_data = in_file.read()
 
+    data = extract_data(binary_data, data)
 
+
+def extract_data(binary_data, data):
     # Deserialize the MessagePack data into the class instances
     unpacker = msgpack.Unpacker()
     unpacker.feed(binary_data)
@@ -155,7 +158,6 @@ def extract(file:str) -> list[dict]:
         io_type = get_type(item)
         data.extend(convert_to_class(item, io_type))
     return data
-
 
 def main(args) -> None:
     """Pass varibales and call main_core. The extraction of the traces

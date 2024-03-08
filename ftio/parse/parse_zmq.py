@@ -1,8 +1,11 @@
 """Parse zmq message contaiting three fields: 
 the bandwidth, the start time, and the end time.
 """
+import zmq
 from ftio.parse.simrun import Simrun
 from ftio.parse.zmq_reader import extract
+from ftio.parse.msgpack_reader import extract_data
+import msgpack
 
 class ParseZmq:
     """class to parse zmq file
@@ -18,6 +21,19 @@ class ParseZmq:
         Returns:
             Simrun: Simrun object
         """
-        dataframe, ranks = extract(self.msg, args)
+        if len(self.msg) == 0:
+            context = zmq.Context()
+            socket = context.socket(socket_type=zmq.PULL)
+            socket.connect(args.zmq_port)
+            print("waiting for msg")
+            self.msg = socket.recv()
+            print("msg recived")
 
-        return Simrun(dataframe,'txt',str(ranks), args, index)
+        if "direct" in args.zmq_source:
+            dataframe, ranks = extract(self.msg, args)
+            return Simrun(dataframe,'txt',str(ranks), args, index)
+        elif "tmio" in args.zmq_source.lower():
+            data = extract_data(self.msg, [])
+            return Simrun(data,'msgpack', '0', args, index)
+        else:
+            pass

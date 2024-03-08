@@ -10,39 +10,39 @@ class Simrun:
     2. read async
     3. write sync
     4. write async
-    5. I/O time (if avilable)
-    6. I/O percent (if avilable)
+    5. I/O time (if available)
+    6. I/O percent (if available)
     """
     def __init__(self, data, ext: str,  name: str, args, file_index: int = 0):
-        """create Simrun objct
+        """create Simrun object
 
         Args:
             data (array): contains data from simulation
             ext (str): 'json', 'jsonl', 'recorder', 'darshan', 'msgpack', or 'txt'
             name (str): name of simulation (e.g., 192.json)
-            args (argparse): comand line arguments
+            args (argparse): command line arguments
             file_index (int, optional): file index, in case several files have the same name
         """
         self.name       = name
         self.ranks      = self.get_rank(ext)
-        mode            = args.mode if args.mode else ''
+        mode            = self.get_mode(args.mode) if args.mode else ''
         args.file_index = file_index
 
-        #! list = jsonlines
+        #! list = JSONL
         if isinstance(data,list):
-            #! jsonlines need to be converted to a dict
+            #! JSONL need to be converted to a dict
             # if 'Time' in data[-1]:
             if 'jsonl' in ext or 'msgpack' in ext:
-                if mode and mode in ['sync_read', 'sync_write', 'async_read', 'async_write']:
+                if mode and mode in ['read_sync', 'write_sync', 'read_async', 'write_async']:
                     self.reset(args)
                     self.assign(data, args, mode,'jsonl')
                 else:
                     self.read_sync     = self.merge_parts(data,'read_sync', args)
+                    self.write_sync    = self.merge_parts(data,'write_sync', args)
                     self.read_async_t  = self.merge_parts(data,'read_async_t', args)
                     self.read_async_b  = self.merge_parts(data,'read_async_b', args)
                     self.write_async_t = self.merge_parts(data,'write_async_t', args)
                     self.write_async_b = self.merge_parts(data,'write_async_b', args)
-                    self.write_sync    = self.merge_parts(data,'write_sync', args)
                     if any('io_time' in d for d in data):
                         self.io_time       = self.merge_parts(data,'io_time',args)
                         self.io_percent    = Percent(self.io_time)
@@ -58,24 +58,23 @@ class Simrun:
 
         elif 'txt' in ext:
             self.reset(args)
-            mymode = self.getmode(mode)
-            setattr(self,mymode,Sample(data[mymode],mymode,args))
+            setattr(self,mode,Sample(data[mode],mode,args))
             self.io_time           = Time(data['io_time'],self.ranks,args)
 
         #! json files
         else:
             #! for dft to make it faster
-            if mode and mode in ['sync_read', 'sync_write', 'async_read', 'async_write']:
+            if mode and mode in ['read_sync', 'write_sync', 'read_async', 'write_async']:
                 self.reset(args)
                 self.assign(data,args,mode)
                 return
             #! standard json files
             self.read_sync     = Sample(data['read_sync'],    'read_sync',args)
+            self.write_sync    = Sample(data['write_sync'],   'write_sync',args)
             self.read_async_t  = Sample(data['read_async_t'], 'read_async_t',args)
             self.read_async_b  = Sample(data['read_async_b'], 'read_async_b',args)
             self.write_async_t = Sample(data['write_async_t'],'write_async_t',args)
             self.write_async_b = Sample(data['write_async_b'],'write_async_b',args)
-            self.write_sync    = Sample(data['write_sync'],   'write_sync',args)
             if 'io_time' in data:
                 self.io_time       = Time(data['io_time'],self.ranks,args)
                 self.io_percent    = Percent(self.io_time)
@@ -95,14 +94,14 @@ class Simrun:
             format (str, optional): json or jsonl. Defaults to 'json'.
         """
         if 'jsonl' in file_format:
-            if 'sync_read' == mode:
+            if 'read_sync' == mode:
                 self.read_sync     = self.merge_parts(data,'read_sync',args)
-            elif 'async_read' == mode:
+            elif 'read_async' == mode:
                 self.read_async_t  = self.merge_parts(data,'read_async_t',args)
                 self.read_async_b  = self.merge_parts(data,'read_async_b',args)
-            elif 'sync_write' == mode:
+            elif 'write_sync' == mode:
                 self.write_sync     = self.merge_parts(data,'write_sync',args)
-            elif 'async_write' == mode:
+            elif 'write_async' == mode:
                 self.write_async_t  = self.merge_parts(data,'write_async_t',args)
                 self.write_async_b  = self.merge_parts(data,'write_async_b',args)
             else:
@@ -113,13 +112,13 @@ class Simrun:
                 self.io_percent    = Percent(self.io_time)
 
         else:
-            if 'sync_read' == mode:
+            if 'read_sync' == mode:
                 self.read_sync     = Sample(data['read_sync'],    'read_sync',args)
-            elif 'async_read' == mode:
+            elif 'read_async' == mode:
                 self.read_async_t  = Sample(data['read_async_t'], 'read_async_t',args)
-            elif 'async_write' == mode:
+            elif 'write_async' == mode:
                 self.write_async_t = Sample(data['write_async_t'],'write_async_t',args)
-            elif 'sync_write' == mode:
+            elif 'write_sync' == mode:
                 self.write_sync    = Sample(data['write_sync'],   'write_sync',args)
 
 
@@ -139,7 +138,7 @@ class Simrun:
 
 
     def get_rank(self,ext:str) -> int:
-        """Get rank name from exetension
+        """Get rank name from extension
 
         Args:
             ext (str): extension type
@@ -173,7 +172,7 @@ class Simrun:
 
 
     def print_rank(self,file):
-        """print rank maped to POINTS. This is used for 
+        """print rank mapped to POINTS. This is used for 
         Extra-P with the text file format.
 
         Args:
@@ -182,11 +181,11 @@ class Simrun:
         file.write(f"POINTS ( {self.ranks:i} )\n")
 
 
-    def merge_parts(self,data,mode,args):
+    def merge_parts(self, data, mode, args):
         """merge jsonl parts to a single simulation
 
         Args:
-            data (2d array): array fo data elelements
+            data (2d array): array fo data elements
             mode (str): mode to merge
             args (argparse): command line arguments
 
@@ -212,7 +211,7 @@ class Simrun:
     def merge_fields(self,data_array, keys: list[str] = []) -> dict:
         """Merges the metrics field from different files. For example,
         JsonlLines file constantly append new data. To merge the previous 
-        metrics with the new one, this function itterates over the fields 
+        metrics with the new one, this function iterates over the fields 
         and merges them.
 
         Args:
@@ -248,14 +247,14 @@ class Simrun:
 
         return my_dict
 
-    def getmode(self, mode:str) -> str:
+    def get_mode(self, mode:str) -> str:
         if "w" in mode:
             out = "write"
         else:
             out = "read"
             
         if "async" in mode:
-            out = out + "_async_t"
+            out = out + "_async"
         else:
             out = out + "_sync"
 

@@ -50,7 +50,7 @@ class print_html:
         
             #?* create main HTML file
             #*-------------------------
-            # html_files = ["async_write.html","async_read.html","sync_write.html","sync_read.html","time.html"] 
+            # html_files = ["write_async.html","read_async.html","write_sync.html","read_sync.html","time.html"] 
             print(f"\n '-> To see intermediate result call: \n     open {self.path}/main.html \n")
             self.filename = os.path.join(self.path,self.filename)
             print(" '-> Generated main.html ")
@@ -105,7 +105,7 @@ class print_html:
 #**********************************************************************
 #*                       1. figures_to_html
 #**********************************************************************
-def figures_to_html(figs, filename="async_write.html",names=[]) -> None:
+def figures_to_html(figs, filename="write_async.html",names=[]) -> None:
     # conf = {  "toImageButtonOptions": {     "format": "svg", "scale":1  }}
     conf = {  "toImageButtonOptions": {     "format": "png", "scale":2 }}
     template = """

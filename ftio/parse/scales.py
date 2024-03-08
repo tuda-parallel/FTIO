@@ -1,5 +1,6 @@
 """Handels the importing of modules
 """
+
 import json
 import os
 import datetime
@@ -21,9 +22,9 @@ from ftio.parse.args import parse_args
 
 
 class Scales:
-    """load the data. Supports single files (json, jsonl, darshan) or folders (+ recorder)
-    """
-    def __init__(self, argv, msg = ""):
+    """load the data. Supports single files (json, jsonl, darshan) or folders (+ recorder)"""
+
+    def __init__(self, argv, msg=""):
         self.Print_info(argv[0])
         self.render = ""
         self.plot_mode = ""
@@ -48,7 +49,6 @@ class Scales:
         else:
             self.load_setup()
 
-
     def load_setup(self):
         if isinstance(self.args.files, list):
             if len(self.args.files) <= 1:
@@ -66,13 +66,17 @@ class Scales:
             #! load folders
             # Recorder folder
             if "_text" in path[-5:]:
-                console.print(f"\n[cyan]Loading Recorder folder({self.paths.index(path) + 1},{len(self.paths)}):[/] {path}")
+                console.print(
+                    f"\n[cyan]Loading Recorder folder({self.paths.index(path) + 1},{len(self.paths)}):[/] {path}"
+                )
                 run = ParseRecorder(path).to_simrun(self.args)
                 self.s.append(run)
 
             # Folder
-            elif (os.path.isdir(path)):
-                console.print(f"\n[cyan]Loading  folder({self.paths.index(path) + 1},{len(self.paths)}):[/] {path}")
+            elif os.path.isdir(path):
+                console.print(
+                    f"\n[cyan]Loading  folder({self.paths.index(path) + 1},{len(self.paths)}):[/] {path}"
+                )
                 if path[-1] == "/":
                     path = path[:-1]
 
@@ -81,20 +85,29 @@ class Scales:
                         console.print(f"[yellow]Skipping folder:  {root}[/]")
                         continue
                     if "scale.jsonl" in files:
-                        console.print(f"[yellow]Skipping folder:  {root}/scale.jsonl[/]")
+                        console.print(
+                            f"[yellow]Skipping folder:  {root}/scale.jsonl[/]"
+                        )
                         files.remove("scale.jsonl")
                     sorted_files = sorted(files, key=len)
 
                     for file in sorted_files:
-                        if any(ext in file for ext in ['json','darshan','msgpack','txt']):
+                        if any(
+                            ext in file for ext in ["json", "darshan", "msgpack", "txt"]
+                        ):
                             file_path = os.path.join(root, file)
                             # Limit the number of ranks to consider if self.limit is defined
                             try:
-                                if self.args.limit > 0 and get_rank(file) >= self.args.limit:
+                                if (
+                                    self.args.limit > 0
+                                    and get_rank(file) >= self.args.limit
+                                ):
                                     console.print(f"[yellow]Skipping file: {file}[/]")
                                     continue
                             except Exception as error:
-                                console.print(f"[red]Something went wrong with the limit. Error is {error}[/]")
+                                console.print(
+                                    f"[red]Something went wrong with the limit. Error is {error}[/]"
+                                )
                             self.names.append(root[root.rfind("/") + 1 :])
                             console.print(f"[cyan]Current file:[/] {file}")
                             self.load_file(file_path, self.paths.index(path))
@@ -121,8 +134,7 @@ class Scales:
                 if i not in self.names:
                     self.names.append(i)
 
-
-    def load_file(self, file_path:str, file_index = 0) -> None:
+    def load_file(self, file_path: str, file_index=0) -> None:
         """Load file content into an Simrun object
 
         Args:
@@ -132,7 +144,7 @@ class Scales:
         if self.args.custom_file:
             run = ParseCustom(file_path).to_simrun(self.args, file_index)
         elif ".json" in file_path[-5:]:
-            with open(file_path,"rt") as file:
+            with open(file_path, "rt") as file:
                 data = json.load(file)
             run = Simrun(data, "json", file_path, self.args, file_index)
         elif ".jsonl" in file_path[-6:]:
@@ -148,8 +160,7 @@ class Scales:
         self.s.append(run)
 
     def save_call(self, argv):
-        """save the call as a hidden file
-        """
+        """save the call as a hidden file"""
         self.call = ""
         for i in argv:
             self.call = self.call + " " + i
@@ -162,10 +173,15 @@ class Scales:
         )
         f.close()
 
-    def Print_info(self, text:str)-> None:
-        name = text[text.rfind("/") + 1 : ].capitalize()
+    def Print_info(self, text: str) -> None:
+        name = text[text.rfind("/") + 1 :].capitalize()
         console = Console()
-        title = Panel(Text(name, justify="center"), style="bold white on cyan", border_style="white", title_align="left")
+        title = Panel(
+            Text(name, justify="center"),
+            style="bold white on cyan",
+            border_style="white",
+            title_align="left",
+        )
         text = "\n[cyan]Author:[/]  Ahmad Tarraf\n"
         text += f"[cyan]Date:[/]    {str(datetime.date.today())}\n"
         text += f"[cyan]Version:[/]  {__version__}\n"
@@ -188,10 +204,6 @@ class Scales:
         else:
             self.same_path = True
 
-    
-
-
-
     #! ----------------------- Pandas dataset functions ------------------------------
     # **********************************************************************
     # *                       1. get_data
@@ -211,29 +223,29 @@ class Scales:
     # *                       2. get_data_io
     # **********************************************************************
     def get_data_io(self, io_mode="read_sync"):
-        """Extract data from the file(s) and gathers in dataframes. 
-        The fields name are store in "name_[level]" and their values are stored 
+        """Extract data from the file(s) and gathers in dataframes.
+        The fields name are store in "name_[level]" and their values are stored
         in "data_[level]". There are 4 levels provided:
         (1) Application level (overlap or rank matrics): [..]_rank_ovr
         (2) rank level (sum/average of I/O requests): [..]_rank
         (3) high precesion rank level (overlap of I/O requests): [..]_ind_ovr
         (4) I/O request level (lowest level): [..]_rank_over
 
-        if the 'ind' flag is not provieded, level (3) and (4) are skipped as they are 
-        expensive to calculate. 
-        
+        if the 'ind' flag is not provieded, level (3) and (4) are skipped as they are
+        expensive to calculate.
+
 
         Args:
-            io_mode (str, optional): Can be read or write and 
+            io_mode (str, optional): Can be read or write and
             sync or async (required [b] or actual [t]). Supported modes are:
-            "read_sync", "write_sync", "read_async_t", "read_async_b", "write_async_t", 
+            "read_sync", "write_sync", "read_async_t", "read_async_b", "write_async_t",
             and "write_async_b".Defaults to "read_sync".
 
         Returns:
-            tuple[pd.DataFrame,pd.DataFrame, 
-            pd.DataFrame, pd.DataFrame, pd.DataFrame,]: Five dataframes are 
-            returned. The first one contains metrics like total bytes transfered, number 
-            of phases, etc.. The next 4 dataframes contain the I/O data at the 4 
+            tuple[pd.DataFrame,pd.DataFrame,
+            pd.DataFrame, pd.DataFrame, pd.DataFrame,]: Five dataframes are
+            returned. The first one contains metrics like total bytes transfered, number
+            of phases, etc.. The next 4 dataframes contain the I/O data at the 4
             levels explained above
         """
         name = ""
@@ -262,8 +274,10 @@ class Scales:
             # data.append(d0)
         # check if there is data
         if data_metrics.size == 0:
-            raise RuntimeError(f"The mode {self.args.mode} contains no values\nChange the mode by using the -m argument.")
-        
+            raise RuntimeError(
+                f"The mode {self.args.mode} contains no values\nChange the mode by using the -m argument."
+            )
+
         df0 = pd.DataFrame(data_metrics, columns=name)
         df0 = df0.sort_values(by=["number_of_ranks"])
         df1 = pd.DataFrame(data_rank_ovr.transpose(), columns=name_rank_ovr)
@@ -293,8 +307,8 @@ class Scales:
         return df0
 
 
-def check_open(file:str) -> None:
-    """Checks that the file is accessible 
+def check_open(file: str) -> None:
+    """Checks that the file is accessible
 
     Args:
         file (str): filename
@@ -303,14 +317,15 @@ def check_open(file:str) -> None:
         pass
     else:
         console = Console()
-        console.print(f"[red]--- Error  --- [/]\n"
+        console.print(
+            f"[red]--- Error  --- [/]\n"
             f"[red]-> Could not open file [b]{file}[/b]. \n[/]"
             f"[yellow]Make sure [b]{file}[/b] exists in [b]{os.getcwd()}[/b]. \n\n[/]"
         )
         exit()
 
 
-def get_rank(name:str) -> int:
+def get_rank(name: str) -> int:
     """Get the number of ranks from the name of the file
 
     Args:
@@ -323,11 +338,7 @@ def get_rank(name:str) -> int:
         return name
     else:
         start = name.rfind("/")
-        end = max(
-            name.rfind(".json"),
-            name.rfind(".darshan"),
-            name.rfind(".msgpack")
-        )
+        end = max(name.rfind(".json"), name.rfind(".darshan"), name.rfind(".msgpack"))
         rank = name[start + 1 : end]
         strs = ["_", "-", " "]
         if any(x in rank for x in strs):
@@ -338,7 +349,7 @@ def get_rank(name:str) -> int:
         return int(rank)
 
 
-def get_filename(path:str) -> str:
+def get_filename(path: str) -> str:
     """Reutrns filename from absolute path
 
     Args:

@@ -24,10 +24,10 @@ def predictor_with_processes_zmq(
     procs = []
     context = zmq.Context()
     socket = context.socket(zmq.PULL)
-    socket.connect("tcp://127.0.0.1:5555")
-
-    if "-zmq" not in args:
-        args.extend(["--zmq"])
+    socket.connect('tcp://127.0.0.1:5555')
+    
+    if '-zmq' not in args:
+        args.extend(['--zmq'])
     
     # Loop and predict if changes occur
     try:
@@ -44,6 +44,6 @@ def predictor_with_processes_zmq(
     except KeyboardInterrupt:
         print_data(data)
         export_extrap(data)
-        print("-- done -- ")
+        print('-- done -- ')
 
 

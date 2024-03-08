@@ -200,7 +200,7 @@ class Print:
             self.print_data(
                 "io_time",
                 "delta_t_sr",
-                "io_time->total_time->total_app_time->total_io_time->sync_read",
+                "io_time->total_time->total_app_time->total_io_time->read_sync",
                 "Time (s)",
                 print_type=type,
             )
@@ -214,7 +214,7 @@ class Print:
             self.print_data(
                 "io_time",
                 "delta_t_sw",
-                "io_time->total_time->total_app_time->total_io_time->sync_write",
+                "io_time->total_time->total_app_time->total_io_time->write_sync",
                 "Time (s)",
                 print_type=type,
             )
@@ -225,18 +225,18 @@ class Print:
                 "Time (s)",
                 print_type=type,
             )
-            # self.print_data('io_time', 'delta_t_sr',      'io_time->sync_read',       'time', print_type = type)
+            # self.print_data('io_time', 'delta_t_sr',      'io_time->read_sync',       'time', print_type = type)
             self.print_data(
                 "io_time",
                 "delta_t_ara",
-                "io_time->async_read_t",
+                "io_time->read_async_t",
                 "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_arr",
-                "io_time->async_read_b",
+                "io_time->read_async_b",
                 "Time (s)",
                 print_type=type,
             )
@@ -248,18 +248,18 @@ class Print:
                 print_type=type,
             )
 
-            # self.print_data('io_time', 'delta_t_sw',      'io_time->sync_write',      'time', print_type = type)
+            # self.print_data('io_time', 'delta_t_sw',      'io_time->write_sync',      'time', print_type = type)
             self.print_data(
                 "io_time",
                 "delta_t_awa",
-                "io_time->async_write_t",
+                "io_time->write_async_t",
                 "Time (s)",
                 print_type=type,
             )
             self.print_data(
                 "io_time",
                 "delta_t_awr",
-                "io_time->async_write_b",
+                "io_time->write_async_b",
                 "Time (s)",
                 print_type=type,
             )
