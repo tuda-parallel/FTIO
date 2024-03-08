@@ -6,6 +6,7 @@ Below or several examples of this.
 - [API](#api)
 	- [General](#general)
 	- [Metric Proxy](#metric-proxy)
+	- [GekkoFS with Msgpack/JSON support](#gekkofs-with-msgpackjson-support)
 
 ## General
 
@@ -29,5 +30,35 @@ b, t = parse("some_location/filename.json", "metric")
 ```
 
 To suppress the output, the function `display_prediction` can be commented out. Moreover, `argv = ["-e", "plotly"]` can be changed to `["-e", "no"]` to disable the plots.
+
+<p align="right"><a href="#api">⬆</a></p>
+
+## GekkoFS with Msgpack/JSON support
+
+The file [`ftio_gekko.py`](/ftio/api/gekkoFs/ftio_gekko.py) provides an example for `ftio`
+The file [`predictor_gekko.py`](/ftio/api/gekkoFs/predictor_gekko.py) provides an example for `predictor`
+
+For [`ftio_gekko.py`](/ftio/api/gekkoFs/ftio_gekko.py), the path to the files needs to be specified in the code:
+
+```python
+if __name__ == "__main__":
+    # absolute path to search all text files inside a specific folder
+    # path=r'/d/github/FTIO/examples/API/gekkoFs/JSON/*.json' # For JSON
+    path = r"/d/github/FTIO/examples/API/gekkoFs/MSGPACK/write*.msgpack"  # For MSGPCK
+    matched_files = glob.glob(path)
+    run(matched_files)
+```
+
+Similarly, for [`predictor_gekko.py`](/ftio/api/gekkoFs/predictor_gekko.py), the following lines can be adjusted:
+
+```python
+def main(args: list[str] = []) -> None:
+
+    n_buffers = 4 # number of buffers 
+    args = ["-e", "plotly", "-f", "0.01"] #arguments for ftio
+    # path=r'/d/github/FTIO/examples/API/gekkoFs/JSON/*.json' # For JSON
+    path = r"/d/github/FTIO/examples/API/gekkoFs/MSGPACK/write*.msgpack"  # For MSGPCK
+    matched_files = glob.glob(path)
+```
 
 <p align="right"><a href="#api">⬆</a></p>
