@@ -82,7 +82,7 @@ def run(files: list, argv=["-e", "plotly", "-f", "100"]):  # "0.01"] ):
 
 if __name__ == "__main__":
     # absolute path to search all text files inside a specific folder
-    # path=r'/d/github/FTIO/examples/gekkoFs/JSON/*.json'
-    path = r"/d/github/FTIO/examples/gekkoFs/MSGPACK/write*.msgpack"
+    # path=r'/d/github/FTIO/examples/API/gekkoFs/JSON/*.json'
+    path = r"/d/github/FTIO/examples/API/gekkoFs/MSGPACK/write*.msgpack"
     matched_files = glob.glob(path)
     run(matched_files)

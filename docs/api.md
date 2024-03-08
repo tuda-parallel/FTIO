@@ -9,7 +9,7 @@ Below or several examples of this.
 
 ## General
 
-The file [`ftio_api.py`](/examples/API/ftio_api.py) provides an example
+The file [`ftio_api.py`](/examples/API/test_api.py) provides an example
 
 <p align="right"><a href="#api">⬆</a></p>
 
