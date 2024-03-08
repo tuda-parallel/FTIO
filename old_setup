@@ -4,13 +4,13 @@ with open(file="README.md", encoding="utf8") as fh:
     long_description = fh.read()
 
 info = {}
-with open("ftio/__init__.py","r",encoding="utf-8") as fp:
+with open("ftio/__init__.py", "r", encoding="utf-8") as fp:
     exec(fp.read(), info)
 
 setup(
     name="ftio-hpc",
-    version=info['__version__'],
-    packages=find_packages(include=('ftio', 'ftio.*')),
+    version=info["__version__"],
+    packages=find_packages(include=("ftio", "ftio.*")),
     author="Ahmad Tarraf",
     author_email="ahmad.tarraf@tu-darmstadt.de",
     # description=info['__description__'],
@@ -22,11 +22,9 @@ setup(
             "ftio = ftio.cli.ftio_core:run",
             "predictor = ftio.cli.predictor:main",
             "ioplot = ftio.util.ioplot:main",
-            "ioparse = ftio.util.ioparse:main"
+            "ioparse = ftio.util.ioparse:main",
         ],
-
-        "gui_scripts": [
-        ]
+        "gui_scripts": [],
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -45,7 +43,7 @@ setup(
         "Topic :: Software Development",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-    python_requires='>=3.8',
+    python_requires=">=3.8",
     include_package_data=True,
     install_requires=[
         "scikit-learn",
@@ -65,5 +63,6 @@ setup(
         "msgpack",
         "rich",
         "dash_extensions",
-    ]
+        "pytest",
+    ],
 )

@@ -30,6 +30,7 @@ dependencies = [
 	"msgpack",
 	"rich",
 	"dash_extensions",
+	"pytest",
 ]
 requires-python = ">=3.8"
 authors = [

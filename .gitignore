@@ -23,6 +23,7 @@ ftio/util/afine.py
 ftio/util/freq_plot.py
 ftio/util/playback.py
 ftio/util/ppm.py
+ftio/api/test_api.py
 ftio_hpc.egg-info/
 ftio/ftio_hpc.egg-info/
 ftio/iomodel/

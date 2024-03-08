@@ -1,11 +1,11 @@
 
-all: silent clean
+all: verbose clean
 
 silent:
-	python3 -m unittest -b 
+	python3 -m pytest -qq 
 
 verbose:
-	python3 -m unittest 
+	python3 -m  pytest 
 
 clean:
-	rm io_results __pycache__ -r
+	@rm -f io_results __pycache__ *.json* -r

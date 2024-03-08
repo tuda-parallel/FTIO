@@ -1,6 +1,7 @@
 # API
 
-The API allows interacting with `ftio` directly, rather than using the command line interface provided in the [`cli`](/ftio/cli/) folder. Bellow or several examples of this.
+The API allows interacting with `ftio` directly, rather than using the command line interface provided in the [`cli`](/ftio/cli/) folder.
+Below or several examples of this.
 
 - [API](#api)
 	- [General](#general)
@@ -8,13 +9,13 @@ The API allows interacting with `ftio` directly, rather than using the command l
 
 ## General
 
-The file [`ftio_api.py`](/ftio/api/ftio_api.py) provides an example
+The file [`ftio_api.py`](/examples/API/ftio_api.py) provides an example
 
 <p align="right"><a href="#api">⬆</a></p>
 
 ## Metric Proxy
 
-This API allows interacting with the [metric proxy](https://github.com/besnardjb/proxy_v2). Once executed, the proxy outputs a JSON file which can be directly used with this API.
+This API allows interaction with the [metric proxy](https://github.com/besnardjb/proxy_v2). Once executed, the proxy outputs a JSON file which can be directly used with this API.
 The file [`proxy.py`](/ftio/api/metric_proxy/proxy.py) provides an example. To execute it, simply call:
 
 ```sh

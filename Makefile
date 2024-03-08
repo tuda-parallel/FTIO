@@ -63,7 +63,7 @@ test_all:
 	@rm -rf ./quicktest/*
 
 test:
-	cd test && python3 -m unittest
+	cd test && python3 -m pytest && make clean
 
 quick_test:
 	$(PWD)/.venv/bin/ftio -e no -h 
