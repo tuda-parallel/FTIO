@@ -13,7 +13,7 @@ class Bandwidth:
 
         3) Application level metrics:  subscripted overlap. Calculated by
         overlapping the previous metrics. The most accurate one is ind, however,
-        it has the higest overhead.
+        it has the highest overhead.
     """
 
     def __init__(self, b, io_type, args):  # b = values["bandwidth"]

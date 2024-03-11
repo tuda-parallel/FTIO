@@ -141,7 +141,6 @@ def extract(file:str) -> list[dict]:
         list[dict]: file content
     """
     data = []
-    # print(f"File is {file}")
     # Open the MessagePack binary file for reading
     with open(file, "rb") as in_file:
         # Read the binary data
@@ -160,11 +159,11 @@ def extract_data(binary_data, data):
     return data
 
 def main(args) -> None:
-    """Pass varibales and call main_core. The extraction of the traces
+    """Pass variables and call main_core. The extraction of the traces
     and the parsing of the arguments is done in this function.
     """
     file = args[1]
-    _ = extract(file)
+    extract(file)
 
 
 if __name__ == "__main__":

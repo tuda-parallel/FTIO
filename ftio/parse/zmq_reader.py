@@ -1,12 +1,12 @@
 import time
 import msgpack
-from ftio.parse.input_template import init_data
 from rich.console import Console
+from ftio.parse.input_template import init_data
 
 
 def extract(msg, args:list) -> tuple[dict, int]:
     # init
-    start = time.time()
+    start = time.time() 
     ranks = 0
     mode, io_data, io_time = init_data(args)
 
@@ -18,8 +18,7 @@ def extract(msg, args:list) -> tuple[dict, int]:
     ts              = unpacked_data["ts"]
     te              = unpacked_data["te"]
     # received_float  = unpacked_data["floatData"]
-
-
+    
     io_data["bandwidth"]["b_rank_avr"] = b
     io_data["bandwidth"]["t_rank_s"]   = ts
     io_data["bandwidth"]["t_rank_e"]   = te

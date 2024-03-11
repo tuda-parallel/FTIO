@@ -11,20 +11,21 @@ from ftio.freq.helper import format_plot
 from ftio.plot.units import set_unit
 
 
-def run(files: list, argv=["-e", "plotly", "-f", "100"]):  # "0.01"] ):
-    """Executes ftio on list of files.
+def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app = [], t_app = []):  # "0.01"] ):
+    """Executes ftio on list of files_or_msgs.
 
     Args:
-        files (list): _description_
+        files_or_msgs (list): _description_
         argv: command line arguments from ftio
+        data_rank
     """
 
     # parse args
     args = parse_args(argv, "ftio")
-    ranks = len(files)
+    ranks = len(files_or_msgs)
 
     # Set up data
-    data = {
+    data_rank = {
         "avg_thruput_mib": [],
         "end_t_micro": [],
         "start_t_micro": [],
@@ -36,28 +37,44 @@ def run(files: list, argv=["-e", "plotly", "-f", "100"]):  # "0.01"] ):
     }
 
     ## 1) overlap for rank level metrics
-    for file in files:
-        data, ext = parse(file, data)
+    for file_or_msg in files_or_msgs:
+        data_rank, ext = parse(file_or_msg, data_rank)
 
-    ## 2) Scale if JSON
-    scale = [1, 1e-6, 1e-6]
-    if "JSON" in ext.upper():
-        scale = [1.07 * 1e6, 1e-3, 1e-3]
+    ## 2)a) Scale if JSON or MsgPack
+        scale = [1, 1, 1]
+        if "JSON" in ext.upper():
+            scale = [1.07 * 1e6, 1e-3, 1e-3]
+        elif "MSG" in ext.upper():
+            scale = [1, 1e-6, 1e-6]
+            
+        b_rank   = np.array(data_rank["avg_thruput_mib"]) * scale[0]
+        t_rank_s = np.array(data_rank["start_t_micro"]) * scale[1]
+        t_rank_e = np.array(data_rank["end_t_micro"]) * scale[2]
 
-    b_rank = np.array(data["avg_thruput_mib"]) * scale[0]
-    t_rank_s = np.array(data["start_t_micro"]) * scale[1]
-    t_rank_e = np.array(data["end_t_micro"]) * scale[2]
+        ## 3) app level bandwidth
+        b, t = overlap(b_rank, t_rank_s, t_rank_e)
+        
+    ## 2)b) Extend for ZMQ
+    if "ZMQ" in ext.upper():
+        # extend data
+        b_app.extend(list(b))
+        t_app.extend((t))
+        t = np.array(list(t_app))
+        b = np.array(list(b_app))
+    else:
+        t = np.array(list(b))
+        b = np.array(list(t))
 
-    ## 3) app level bandwidth
-    b, t = overlap(b_rank, t_rank_s, t_rank_e)
-    t = np.array(t)
-    b = np.array(b)
+    
+
+
+        
 
     ## 4) plot to check:
     if any(x in args.engine for x in ["mat", "plot"]):
         fig = go.Figure()
         unit, order = set_unit(b)
-        fig.add_trace(go.Scatter(x=t, y=b * order, name="App Bandwidth"))
+        fig.add_trace(go.Scatter(x=t, y=b * order, name="App Bandwidth",line={"shape": "hv"}))
         fig.update_layout(xaxis_title="Time (s)", yaxis_title=f"Bandwidth ({unit})")
         fig = format_plot(fig)
         fig.show()
@@ -66,7 +83,7 @@ def run(files: list, argv=["-e", "plotly", "-f", "100"]):  # "0.01"] ):
     data = {
         "time": t,
         "bandwidth": b,
-        "total_bytes": data["total_bytes"],
+        "total_bytes": data_rank["total_bytes"],
         "ranks": ranks,
     }
 
@@ -81,8 +98,8 @@ def run(files: list, argv=["-e", "plotly", "-f", "100"]):  # "0.01"] ):
 
 
 if __name__ == "__main__":
-    # absolute path to search all text files inside a specific folder
+    # absolute path to search all text files_or_msgs inside a specific folder
     # path=r'/d/github/FTIO/examples/API/gekkoFs/JSON/*.json'
     path = r"/d/github/FTIO/examples/API/gekkoFs/MSGPACK/write*.msgpack"
-    matched_files = glob.glob(path)
-    run(matched_files)
+    matched_files_or_msgs = glob.glob(path)
+    run(matched_files_or_msgs,{})

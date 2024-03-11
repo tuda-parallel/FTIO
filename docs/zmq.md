@@ -1,5 +1,6 @@
 
-### ZMQ with generic format
+### ZMQ with a generic format
+
 ```sh
 predictor --zmq
 ```
@@ -91,6 +92,4 @@ For `predictor`, execute:
 predictor --zmq --zmq_source tmio -m write_async -f 100
 ```
 
-
-```
-<p align="right"><a href="#file-formats-and-tools">⬆</a></p>
+<p align="right"><a href="#zmq-with-a-generic-format">⬆</a></p>

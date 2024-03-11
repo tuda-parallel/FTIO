@@ -70,6 +70,9 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, floa
     error = (abs(v_a - v_0)) / v_0 if v_0 > 0 else 0
     text += f"Abstraction error: {error:.5f}\n"
 
+    if len(b_sampled) == 0:
+        raise RuntimeError("No data in sampled bandwidth.\n Try increasing the sampling frequency")
+
     return b_sampled, freq, text[:-1]
 
 
@@ -80,7 +83,7 @@ def sample_data_same_size(b: np.ndarray, t:np.ndarray, freq=-1, n_bins=-1) -> tu
         b (array): bandwidth
         t (array): time
         freq (int, optional): sampling frequency. Defaults to -1, calculates the optimal sampling
-        frequency inside this funciton
+        frequency inside this function
         n_bins (int,optinal): number of desired bins
 
     Returns:

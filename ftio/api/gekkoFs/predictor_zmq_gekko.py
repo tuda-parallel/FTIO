@@ -1,23 +1,30 @@
 import glob
 from multiprocessing import Manager
 from rich.console import Console
-import ftio.prediction.monitor as pm
+import zmq
 from ftio.prediction.helper import print_data, export_extrap
 from ftio.prediction.async_process import handle_in_process
 from ftio.prediction.probability import probability
 from ftio.prediction.helper import get_dominant, get_hits
 from ftio.api.gekkoFs.ftio_gekko import run
 from ftio.prediction.analysis import display_result, save_data, data_analysis
+from ftio.prediction.async_process import join_procs
+from ftio.freq.helper import MyConsole
 
+CONSOLE = MyConsole()
+CONSOLE.set(True)
 
 def main(args: list[str] = []) -> None:
 
-    n_buffers = 4
-    args = ["-e", "plotly", "-f", "0.01"]
-    # path=r'/d/github/FTIO/examples/API/gekkoFs/JSON/*.json'
-    path = r"/d/github/FTIO/examples/API/gekkoFs/MSGPACK/write*.msgpack"
-    # path = r"/tmp/gkfs_client_metrics/write*.msgpack"
-    matched_files = glob.glob(path)
+    ranks = 0
+    args = ["-e", "plotly", "-f", "10"]
+    context = zmq.Context()
+    socket = context.socket(socket_type=zmq.PULL)
+    socket.bind("tcp://*:5555")
+
+    # can be extended to listen to multiple sockets
+    poller = zmq.Poller()
+    poller.register(socket, zmq.POLLIN)
 
     # Init
     manager = Manager()
@@ -28,20 +35,50 @@ def main(args: list[str] = []) -> None:
     start_time = manager.Value("d", 0.0)
     count = manager.Value("i", 0)
     procs = []
+    b_app = manager.list()
+    t_app = manager.list()
 
-    # Init: Monitor a file
-    stamp, _ = pm.monitor_list(matched_files, n_buffers)
+    if '-zmq' not in args:
+        args.extend(['--zmq'])
 
     # Loop and predict if changes occur
     try:
         while True:
-            # monitor
-            stamp, procs = pm.monitor_list(matched_files, n_buffers, stamp, procs)
+            if procs:
+                procs = join_procs(procs)
+
+            #1) just a single msg
+            # msg = socket.recv(zmq.NOBLOCK)  
+
+            #2) Loop and accept messages from both channels, acting accordingly
+            # if socks:
+            #     if socks.get(socket) == zmq.POLLIN:
+            #         print(f"got message ",{socket.recv(zmq.NOBLOCK)})
+            # else:
+            #     print("No message received")
+            #     continue
+            
+            #3) Loop and accept messages from both channels, acting accordingly
+            
+            msgs = []
+            ranks = 0
+            socks = dict(poller.poll(1000))
+            while(socks):
+                if socks.get(socket) == zmq.POLLIN:
+                    msg = socket.recv(zmq.NOBLOCK)
+                    msgs.append(msg)
+                    # CONSOLE.print(f"[cyan]Got message {ranks}:[/] {msg}")
+                    ranks += 1
+                socks = dict(poller.poll(1000))
+            if not msgs:
+                CONSOLE.print("[red]No messages[/]")
+                continue
+            CONSOLE.print("[green]All message received[/]")
 
             # launch prediction_process
             procs.append(
                 handle_in_process(
-                    prediction_process,
+                    prediction_zmq_process,
                     args=(
                         data,
                         queue,
@@ -50,8 +87,9 @@ def main(args: list[str] = []) -> None:
                         start_time,
                         aggregated_bytes,
                         args,
-                        matched_files,
-                        n_buffers,
+                        msgs,
+                        b_app,
+                        t_app
                     ),
                 )
             )
@@ -61,16 +99,17 @@ def main(args: list[str] = []) -> None:
         print("-- done -- ")
 
 
-def prediction_process(
+def prediction_zmq_process(
     data,
     queue,
     count,
-    hits:int,
+    hits,
     start_time,
-    aggregated_bytes:int,
+    aggregated_bytes,
     args: list[str],
-    matched_files:list[str],
-    n_buffers:int,
+    msg,
+    b_app,
+    t_app
 ) -> None:
     console = Console()
     console.print(f"[purple][PREDICTOR] (#{count.value}):[/]  Started")
@@ -78,12 +117,8 @@ def prediction_process(
     args.extend(["-e", "no"])
     args.extend(["-ts", f"{start_time.value:.2f}"])
 
-    # set up data
-    if len(matched_files) != n_buffers:
-        raise RuntimeError("Error, number of buffers does not match number of files")
-
     # Perform prediction
-    prediction, args = run(matched_files, args)
+    prediction, args  = run(msg, args, b_app,t_app)
 
     # get data
     freq = get_dominant(prediction)  # just get a single dominant value

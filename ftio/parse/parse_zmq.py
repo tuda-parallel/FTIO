@@ -1,11 +1,10 @@
-"""Parse zmq message contaiting three fields: 
+"""Parse zmq message containing three fields: 
 the bandwidth, the start time, and the end time.
 """
 import zmq
 from ftio.parse.simrun import Simrun
 from ftio.parse.zmq_reader import extract
 from ftio.parse.msgpack_reader import extract_data
-import msgpack
 
 class ParseZmq:
     """class to parse zmq file
@@ -24,12 +23,15 @@ class ParseZmq:
         if len(self.msg) == 0:
             context = zmq.Context()
             socket = context.socket(socket_type=zmq.PULL)
-            socket.connect(args.zmq_port)
+            # socket.connect(args.zmq_port)
+            socket.bind(args.zmq_port)
             print("waiting for msg")
             self.msg = socket.recv()
-            print("msg recived")
+            print("msg received")
 
-        if "direct" in args.zmq_source:
+        if isinstance(self.msg,Simrun):
+            pass #TODO: add Simrun extend and append TMIO in predictor_zmq
+        elif "direct" in args.zmq_source:
             dataframe, ranks = extract(self.msg, args)
             return Simrun(dataframe,'txt',str(ranks), args, index)
         elif "tmio" in args.zmq_source.lower():

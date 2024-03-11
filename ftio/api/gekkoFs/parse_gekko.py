@@ -1,14 +1,40 @@
+from pathlib import Path
 import json
 import msgpack
-from pathlib import Path
 import numpy as np
 
-def parse(file_path, data):
-    extension = Path(file_path).suffix
-    if "JSON" in extension.upper(): 
-        with open(file_path, 'r') as json_file:
-                json_data = json.load(json_file)
+def parse(file_path_or_msg, data):
+    if isinstance(file_path_or_msg,bytes):
+        extension = "ZMQ"
+    else:
+        extension = Path(file_path_or_msg).suffix
 
+    # ZMQ
+    if "ZMQ" in extension.upper():
+        unpacked_data = msgpack.unpackb(file_path_or_msg)
+        data_fields = ["init_t", "hostname", "pid", "start_t_micro", "end_t_micro", "req_size", "total_iops","total_bytes"]
+        index = 0
+        for item in unpacked_data:
+            if index in [3,4,5]:
+                data[data_fields[index]].extend(unpacked_data[item])
+            else:
+                data[data_fields[index]] = unpacked_data[item]
+            index += 1
+
+        b = np.array(data["req_size"])/(np.array(data["end_t_micro"]) - np.array(data["start_t_micro"]))
+
+        
+        if np.isnan(b).any() or np.isnan(b).any():
+            print(f'b_rank : {b} \nt_rank_s : {data["start_t_micro"]} \nt_rank_e : {data["end_t_micro"]} \n')
+            b[b==np.nan] = 0
+            b[b==np.inf] = 0
+            
+        data['avg_thruput_mib'].extend(b)
+
+    # JSON
+    elif "JSON" in extension.upper(): 
+        with open(file_path_or_msg, 'r') as json_file:
+                json_data = json.load(json_file)
         for key, value in json_data.items():
             if 'avg_thruput_mib' in key :
                 data['avg_thruput_mib'].extend(value)
@@ -20,16 +46,17 @@ def parse(file_path, data):
                 data['req_size'].extend(value)
             elif 'hostname' in key :
                 data['hostname'] = value
-            elif 'pid' in key :
+            elif 'pid' in key : 
                 data['pid'] = value
             elif 'total_bytes' in key :
                 data['total_bytes'] += value
             elif 'total_iops' in key :
                 data['total_iops'] += value
 
+    # MsgPack
     elif "MSG" in extension.upper():
         # Read the binary data
-        with open(file_path, "rb") as in_file:
+        with open(file_path_or_msg, "rb") as in_file:
             binary_data = in_file.read()
             
         # Deserialize the MessagePack data 
@@ -43,10 +70,10 @@ def parse(file_path, data):
             else:
                 data[data_fields[index]] = item
             index += 1
-
+            
         b = np.array(data["req_size"])/(np.array(data["end_t_micro"]) - np.array(data["start_t_micro"]))
         data['avg_thruput_mib'].extend(b)
-        # calculate the bandwidth
+
     else:
         raise RuntimeError("Unsupported file format specified")
 
