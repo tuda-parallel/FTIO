@@ -32,6 +32,8 @@ b, t = parse("some_location/filename.json", "metric")
 
 To suppress the output, the function `display_prediction` can be commented out. Moreover, `argv = ["-e", "plotly"]` can be changed to `["-e", "no"]` to disable the plots.
 
+Furthermore, at the end of [`proxy.py`](/ftio/api/metric_proxy/proxy.py), postprocessing occurs to label the phases according to the function label_phases from [`processing.py`](/ftio/post/processing.py).
+
 <p align="right"><a href="#api">⬆</a></p>
 
 ## GekkoFS with Msgpack/JSON support
