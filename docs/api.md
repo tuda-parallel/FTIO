@@ -7,6 +7,7 @@ Below or several examples of this.
 	- [General](#general)
 	- [Metric Proxy](#metric-proxy)
 	- [GekkoFS with Msgpack/JSON support](#gekkofs-with-msgpackjson-support)
+	- [GekkoFS with ZSH](#gekkofs-with-zsh)
 
 ## General
 
@@ -35,8 +36,8 @@ To suppress the output, the function `display_prediction` can be commented out. 
 
 ## GekkoFS with Msgpack/JSON support
 
-The file [`ftio_gekko.py`](/ftio/api/gekkoFs/ftio_gekko.py) provides an example for `ftio`
-The file [`predictor_gekko.py`](/ftio/api/gekkoFs/predictor_gekko.py) provides an example for `predictor`
+The file [`ftio_gekko.py`](/ftio/api/gekkoFs/ftio_gekko.py) provides an example for the adapted `ftio` api for gekkoFs.
+The file [`predictor_gekko.py`](/ftio/api/gekkoFs/predictor_gekko.py) provides an example for `predictor`.
 
 For [`ftio_gekko.py`](/ftio/api/gekkoFs/ftio_gekko.py), the path to the files needs to be specified in the code:
 
@@ -59,6 +60,25 @@ def main(args: list[str] = []) -> None:
     # path=r'/d/github/FTIO/examples/API/gekkoFs/JSON/*.json' # For JSON
     path = r"/d/github/FTIO/examples/API/gekkoFs/MSGPACK/write*.msgpack"  # For MSGPCK
     matched_files = glob.glob(path)
+```
+
+## GekkoFS with ZSH
+
+The file [`predictor_zmq_gekko`](https://github.com/tuda-parallel/FTIO/blob/main/ftio/api/gekkoFs/predictor_zmq_gekko.py) deploys this functionality. 
+
+Download and compile the file [`test_mpi.cxx`](https://github.com/tuda-parallel/TMIO/blob/main/test/zmq/test_mpi.cxx) from the `TMIO` repo. Then either execute it with a single rank (interactive) or with multiple ranks (with sleep). Simply execute the [Makefile](https://github.com/tuda-parallel/TMIO/blob/main/test/zmq) in the folder:
+
+```sh
+make test_mpi
+
+make run_mpi # or run_single_mpi
+```
+
+for `ftio`, first navigate to the script and then execute it:
+
+```sh
+cd ftio/api/gekkoFs
+python3 predictor_zmq_gekko.py 
 ```
 
 <p align="right"><a href="#api">⬆</a></p>
