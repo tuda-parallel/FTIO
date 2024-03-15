@@ -36,5 +36,4 @@ display_prediction(["./ftio"], prediction)
 # Post processing
 if prediction and len(prediction["dominant_freq"])!= 0:
     phases, time = label_phases(prediction,args)
-
     print(f"phases: {phases}\ntime: {time}\n")

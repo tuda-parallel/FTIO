@@ -31,13 +31,13 @@ from ftio.freq.time_window import data_in_time_window
 CONSOLE = MyConsole()
 
 
-def main(cmd_input: list[str], msg=""):  # -> dict[Any, Any]:
+def main(cmd_input: list[str], msgs=None):  # -> dict[Any, Any]:
     """Pass variables and call main_core. The extraction of the traces
     and the parsing of the arguments is done in this function.
     """
     # prepare data
     start = time.time()
-    data = Scales(cmd_input, msg)
+    data = Scales(cmd_input, msgs)
     data.get_data()
     args = data.args
     df = get_mode(data, args.mode)

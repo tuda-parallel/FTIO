@@ -1,4 +1,3 @@
-import glob
 from multiprocessing import Manager
 from rich.console import Console
 import zmq
@@ -47,19 +46,7 @@ def main(args: list[str] = []) -> None:
             if procs:
                 procs = join_procs(procs)
 
-            #1) just a single msg
-            # msg = socket.recv(zmq.NOBLOCK)  
-
-            #2) Loop and accept messages from both channels, acting accordingly
-            # if socks:
-            #     if socks.get(socket) == zmq.POLLIN:
-            #         print(f"got message ",{socket.recv(zmq.NOBLOCK)})
-            # else:
-            #     print("No message received")
-            #     continue
-            
-            #3) Loop and accept messages from both channels, acting accordingly
-            
+            # get all messages    
             msgs = []
             ranks = 0
             socks = dict(poller.poll(1000))
@@ -93,6 +80,7 @@ def main(args: list[str] = []) -> None:
                     ),
                 )
             )
+
     except KeyboardInterrupt:
         print_data(data)
         export_extrap(data=data)

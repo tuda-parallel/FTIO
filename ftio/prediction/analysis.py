@@ -7,7 +7,7 @@ from ftio.cli import ftio_core
 from ftio.prediction.helper import get_dominant, get_hits
 
 
-def ftio_process(queue: Queue, count, hits, start_time, aggregated_bytes, args, msg="") -> None:
+def ftio_process(queue: Queue, count, hits, start_time, aggregated_bytes, args, msgs=None) -> None:
     """Perform a single prediction
 
     Args:
@@ -26,7 +26,7 @@ def ftio_process(queue: Queue, count, hits, start_time, aggregated_bytes, args, 
     args.extend(['-ts', f'{start_time.value:.2f}'])
     
     # perform prediction
-    prediction, args = ftio_core.main(args,msg)
+    prediction, args = ftio_core.main(args,msgs)
     
     # get data
     freq = get_dominant(prediction) #just get a single dominant value

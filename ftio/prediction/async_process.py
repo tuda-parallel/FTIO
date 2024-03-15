@@ -22,7 +22,7 @@ def handle_in_process(function: Callable, args) -> Process:
     return process
 
 def join_procs(procs:list) -> list:
-    """joins procs by itterating over list and testing
+    """joins procs by iterating over list and testing
     that the process finished before joining
 
     Args:

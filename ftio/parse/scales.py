@@ -24,7 +24,7 @@ from ftio.parse.args import parse_args
 class Scales:
     """load the data. Supports single files (json, jsonl, darshan) or folders (+ recorder)"""
 
-    def __init__(self, argv, msg=""):
+    def __init__(self, argv, msg=None):
         self.Print_info(argv[0])
         self.render = ""
         self.plot_mode = ""
@@ -49,7 +49,7 @@ class Scales:
         else:
             self.load_setup()
 
-    def load_setup(self):
+    def load_setup(self)-> None:
         if isinstance(self.args.files, list):
             if len(self.args.files) <= 1:
                 self.paths = ["."]

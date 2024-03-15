@@ -4,7 +4,7 @@ from __future__ import annotations
 import sys
 from multiprocessing import Manager
 from ftio.prediction.pools import predictor_with_pools
-from ftio.prediction.pred_zmq import predictor_with_processes_zmq
+from ftio.prediction.processes_zmq import predictor_with_processes_zmq
 from ftio.prediction.processes import predictor_with_processes
 
 def main(args: list[str] = sys.argv) -> None:
@@ -22,7 +22,9 @@ def main(args: list[str] = sys.argv) -> None:
     hits = manager.Value("d", 0.0)
     start_time = manager.Value("d", 0.0)
     count = manager.Value('i', 0)
-
+    b_app = manager.list()
+    t_app = manager.list()
+    
     mode = "procs" # "procs" or "pool"
     
     if "pool" in mode.lower():
@@ -31,7 +33,7 @@ def main(args: list[str] = sys.argv) -> None:
     else:
         if any("zmq" in x for x in args):
             # prediction with Processes of process and a callback mechanism + zmq
-            predictor_with_processes_zmq(data, queue, count, hits, start_time, aggregated_bytes, args)
+            predictor_with_processes_zmq(data, queue, count, hits, start_time, aggregated_bytes, args, b_app, t_app)
         else:
             # prediction with Processes of process and a callback mechanism
             predictor_with_processes(filename, data, queue, count, hits, start_time, aggregated_bytes, args)

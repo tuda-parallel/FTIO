@@ -4,13 +4,13 @@ from rich.console import Console
 from ftio.parse.input_template import init_data
 
 
-def extract(msg, args:list) -> tuple[dict, int]:
+def extract(msgs, args:list) -> tuple[dict, int]:
     # init
     start = time.time() 
     ranks = 0
     mode, io_data, io_time = init_data(args)
 
-    unpacked_data = msgpack.unpackb(msg)
+    unpacked_data = msgpack.unpackb(msgs)
 
     # Access the data
     ranks           = unpacked_data["ranks"]

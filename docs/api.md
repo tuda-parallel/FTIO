@@ -7,7 +7,7 @@ Below or several examples of this.
 	- [General](#general)
 	- [Metric Proxy](#metric-proxy)
 	- [GekkoFS with Msgpack/JSON support](#gekkofs-with-msgpackjson-support)
-	- [GekkoFS with ZSH](#gekkofs-with-zsh)
+	- [GekkoFS with ZMQ](#gekkofs-with-zmq)
 
 ## General
 
@@ -64,7 +64,7 @@ def main(args: list[str] = []) -> None:
     matched_files = glob.glob(path)
 ```
 
-## GekkoFS with ZSH
+## GekkoFS with ZMQ
 
 The file [`predictor_zmq_gekko`](https://github.com/tuda-parallel/FTIO/blob/main/ftio/api/gekkoFs/predictor_zmq_gekko.py) deploys this functionality. 
 

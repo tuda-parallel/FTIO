@@ -36,11 +36,11 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         "total_iops": 0,
     }
 
-    ## 1) overlap for rank level metrics
+    # 1) overlap for rank level metrics
     for file_or_msg in files_or_msgs:
         data_rank, ext = parse(file_or_msg, data_rank)
 
-    ## 2)a) Scale if JSON or MsgPack
+    # 2) Scale if JSON or MsgPack
         scale = [1, 1, 1]
         if "JSON" in ext.upper():
             scale = [1.07 * 1e6, 1e-3, 1e-3]
@@ -51,10 +51,10 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         t_rank_s = np.array(data_rank["start_t_micro"]) * scale[1]
         t_rank_e = np.array(data_rank["end_t_micro"]) * scale[2]
 
-        ## 3) app level bandwidth
+        # 3) app level bandwidth
         b, t = overlap(b_rank, t_rank_s, t_rank_e)
         
-    ## 2)b) Extend for ZMQ
+    # 4) Extend for ZMQ
     if "ZMQ" in ext.upper():
         # extend data
         b_app.extend(list(b))
@@ -65,12 +65,7 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         t = np.array(list(b))
         b = np.array(list(t))
 
-    
-
-
-        
-
-    ## 4) plot to check:
+    # 5) plot to check:
     if any(x in args.engine for x in ["mat", "plot"]):
         fig = go.Figure()
         unit, order = set_unit(b)
@@ -79,7 +74,7 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         fig = format_plot(fig)
         fig.show()
 
-    # set up data
+    # 6) set up data
     data = {
         "time": t,
         "bandwidth": b,
@@ -87,10 +82,10 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         "ranks": ranks,
     }
 
-    # perform prediction
+    # 7) perform prediction
     prediction, dfs = core([data], args)
 
-    # plot and print info
+    # 8) plot and print info
     display_prediction(["./ftio"], prediction)
     convert_and_plot(data, dfs, args)
 
@@ -102,4 +97,4 @@ if __name__ == "__main__":
     # path=r'/d/github/FTIO/examples/API/gekkoFs/JSON/*.json'
     path = r"/d/github/FTIO/examples/API/gekkoFs/MSGPACK/write*.msgpack"
     matched_files_or_msgs = glob.glob(path)
-    run(matched_files_or_msgs,{})
+    run(matched_files_or_msgs)

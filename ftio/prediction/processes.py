@@ -47,7 +47,7 @@ def predictor_with_processes(
 
 
 def prediction_process(
-    data, queue, count, hits, start_time, aggregated_bytes, args: list[str], msg='') -> None:
+    data, queue, count, hits, start_time, aggregated_bytes, args: list[str], msgs=None) -> None:
     """Performs prediction made up of two part: (1) Executes FTIO and (2) appends to data the value
 
     Args:
@@ -59,7 +59,7 @@ def prediction_process(
         aggregated_bytes (Manager().Value): total bytes transferred so far
         args (list[str]): additional arguments passed to ftio.py
     """
-    ftio_process(queue, count, hits, start_time, aggregated_bytes, args, msg)
+    ftio_process(queue, count, hits, start_time, aggregated_bytes, args, msgs)
     while not queue.empty():
         data.append(queue.get())
 
