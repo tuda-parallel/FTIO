@@ -49,18 +49,18 @@ def extract_data(path:str, args)-> tuple[list, int]:
             # data.extend([k for k in f if 'MPI_File_w' in k or 'MPI_File_r' in k])
             data.extend([k for k in current_file if ' write ' in k or ' read ' in k])
         rank = max([int(x.replace(".txt", "")) for x in files])+1
-        break #no recusive walk
+        break #no recursive walk
     return data, rank
 
 
 def extract_recorder(data:list, ranks:int) -> tuple[dict, dict]:
-    """Extract reorcer traces
+    """Extract recorder traces
 
     Args:
         data (array): simulation data
 
     Returns:
-        w,r: returns two dicts contaiting the data
+        w,r: returns two dicts containing the data
     """
     # FIXME: This needs to ne b_ind t_ind_s and t_ind_e, however required ind overlaping alorithm in bandiwdth.py 
     write ={'number_of_ranks': ranks, 'bandwidth':{'b_rank_sum': [], 'b_rank_avr': [] ,'t_rank_s':[], 't_rank_e':[] }}
