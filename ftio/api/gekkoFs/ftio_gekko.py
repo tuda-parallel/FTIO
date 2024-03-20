@@ -31,6 +31,7 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         "start_t_micro": [],
         "hostname": "",
         "pid": 0,
+        "io_type":"",
         "req_size": [],
         "total_bytes": 0,
         "total_iops": 0,
@@ -44,7 +45,7 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         scale = [1, 1, 1]
         if "JSON" in ext.upper():
             scale = [1.07 * 1e6, 1e-3, 1e-3]
-        elif "MSG" in ext.upper():
+        elif any(x in ext.upper() for x in ["MSG", "ZMQ"]): 
             scale = [1, 1e-6, 1e-6]
             
         b_rank   = np.array(data_rank["avg_thruput_mib"]) * scale[0]

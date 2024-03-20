@@ -16,11 +16,11 @@ CONSOLE.set(True)
 def main(args: list[str] = []) -> None:
 
     ranks = 0
-    args = ["-e", "plotly", "-f", "10"]
+    args = ["-e", "no", "-f", "10"]
     context = zmq.Context()
     socket = context.socket(socket_type=zmq.PULL)
-    socket.bind("tcp://*:5555")
-
+    # socket.bind("tcp://*:5555")
+    socket.bind("tcp://127.0.0.1:5555")
     # can be extended to listen to multiple sockets
     poller = zmq.Poller()
     poller.register(socket, zmq.POLLIN)
@@ -46,11 +46,11 @@ def main(args: list[str] = []) -> None:
             if procs:
                 procs = join_procs(procs)
 
-            # get all messages    
+            # get all messages
             msgs = []
             ranks = 0
             socks = dict(poller.poll(1000))
-            while(socks):
+            while socks:
                 if socks.get(socket) == zmq.POLLIN:
                     msg = socket.recv(zmq.NOBLOCK)
                     msgs.append(msg)
