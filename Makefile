@@ -25,8 +25,8 @@ venv:
 
 
 clean:
-	${PYTHON} -m pip uninstall --yes ftio-hpc
-	pip uninstall --yes ftio-hpc || echo "no installation of ftio found"
+	echo "Cleaning old installation"
+	${PYTHON} -m pip uninstall --yes ftio-hpc || echo "no installation of ftio found"
 
 clean_all: clean
 	rm -rf .venv

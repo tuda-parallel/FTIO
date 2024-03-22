@@ -42,26 +42,26 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         data_rank, ext = parse(file_or_msg, data_rank)
 
     # 2) Scale if JSON or MsgPack
-        scale = [1, 1, 1]
-        if "JSON" in ext.upper():
-            scale = [1.07 * 1e6, 1e-3, 1e-3]
-        elif any(x in ext.upper() for x in ["MSG", "ZMQ"]): 
-            scale = [1, 1e-6, 1e-6]
-            
-        b_rank   = np.array(data_rank["avg_thruput_mib"]) * scale[0]
-        t_rank_s = np.array(data_rank["start_t_micro"]) * scale[1]
-        t_rank_e = np.array(data_rank["end_t_micro"]) * scale[2]
+    scale = [1, 1, 1]
+    if "JSON" in ext.upper():
+        scale = [1.07 * 1e6, 1e-3, 1e-3]
+    elif any(x in ext.upper() for x in ["MSG", "ZMQ"]): 
+        scale = [1, 1e-6, 1e-6]
+        
+    b_rank   = np.array(data_rank["avg_thruput_mib"]) * scale[0]
+    t_rank_s = np.array(data_rank["start_t_micro"]) * scale[1]
+    t_rank_e = np.array(data_rank["end_t_micro"]) * scale[2]
 
-        # 3) app level bandwidth
-        b, t = overlap(b_rank, t_rank_s, t_rank_e)
+    # 3) app level bandwidth
+    b, t = overlap(b_rank, t_rank_s, t_rank_e)
         
     # 4) Extend for ZMQ
     if "ZMQ" in ext.upper():
         # extend data
-        b_app.extend(list(b))
-        t_app.extend((t))
-        t = np.array(list(t_app))
-        b = np.array(list(b_app))
+        b_app.extend(b)
+        t_app.extend(t)
+        t = np.array(t_app[:])
+        b = np.array(b_app[:])
     else:
         t = np.array(list(b))
         b = np.array(list(t))

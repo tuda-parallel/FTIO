@@ -101,6 +101,7 @@ def prediction_zmq_process(
 ) -> None:
     console = Console()
     console.print(f"[purple][PREDICTOR] (#{count.value}):[/]  Started")
+
     # Modify the arguments
     args.extend(["-e", "no"])
     args.extend(["-ts", f"{start_time.value:.2f}"])
@@ -120,6 +121,7 @@ def prediction_zmq_process(
     text, start_time.value = data_analysis(args, prediction, freq, count, hits, text)
     console.print(text)
     count.value += 1
+    
     while not queue.empty():
         data.append(queue.get())
 
