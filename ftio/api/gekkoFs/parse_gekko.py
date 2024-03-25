@@ -11,24 +11,23 @@ def parse(file_path_or_msg, data):
 
     # ZMQ
     if "ZMQ" in extension.upper():
-        unpacked_data = msgpack.unpackb(file_path_or_msg)
-        data_fields = ["init_t", "hostname", "pid", "start_t_micro", "end_t_micro", "req_size", "total_iops","total_bytes"]
-        index = 0
-        for item in unpacked_data:
-            if index in [3,4,5]:
-                data[data_fields[index]].extend(unpacked_data[item])
-            else:
-                data[data_fields[index]] = unpacked_data[item]
-            index += 1
+        # if data is no struct:
+        # unpacked_data = msgpack.unpackb(file_path_or_msg)
+        # else:
+        unpacker = msgpack.Unpacker()
+        unpacker.feed(file_path_or_msg)
+        data = assign(data, unpacker)
 
-        b = np.array(data["req_size"])/(np.array(data["end_t_micro"]) - np.array(data["start_t_micro"]))
-
-        if np.isnan(b).any() or np.isnan(b).any():
-            print(f'b_rank : {b} \nt_rank_s : {data["start_t_micro"]} \nt_rank_e : {data["end_t_micro"]} \n')
-            b[b==np.nan] = 0
-            b[b==np.inf] = 0
+    # MsgPack
+    elif "MSG" in extension.upper():
+        # Read the binary data
+        with open(file_path_or_msg, "rb") as in_file:
+            binary_data = in_file.read()
             
-        data['avg_thruput_mib'].extend(b)
+        # Deserialize the MessagePack data 
+        unpacker = msgpack.Unpacker()
+        unpacker.feed(binary_data)
+        data = assign(data, unpacker)
 
     # JSON
     elif "JSON" in extension.upper(): 
@@ -51,29 +50,33 @@ def parse(file_path_or_msg, data):
                 data['total_bytes'] += value
             elif 'total_iops' in key :
                 data['total_iops'] += value
-
-    # MsgPack
-    elif "MSG" in extension.upper():
-        # Read the binary data
-        with open(file_path_or_msg, "rb") as in_file:
-            binary_data = in_file.read()
-            
-        # Deserialize the MessagePack data 
-        unpacker = msgpack.Unpacker()
-        unpacker.feed(binary_data)
-        data_fields = ["init_t", "hostname", "pid", "start_t_micro", "end_t_micro", "req_size", "total_iops","total_bytes"]
-        index = 0
-        for item in unpacker:
-            if index in [3,4,5]:
-                data[data_fields[index]].extend(item)
-            else:
-                data[data_fields[index]] = item
-            index += 1
-            
-        b = np.array(data["req_size"])/(np.array(data["end_t_micro"]) - np.array(data["start_t_micro"]))
-        data['avg_thruput_mib'].extend(b)
+            elif 'io_type' in key :
+                data['io_type'] += value
 
     else:
         raise RuntimeError("Unsupported file format specified")
 
     return data, extension
+
+
+def assign(data:dict,unpacker)->dict:
+    data_fields = ["init_t", "hostname", "pid", "io_type","start_t_micro", "end_t_micro", "req_size", "total_iops","total_bytes"]
+    index = 0
+    for item in unpacker:
+        if isinstance(item,dict):
+            item = item[data_fields[index]]
+        if index in [4,5,6]:
+            data[data_fields[index]].extend(item)
+        else:
+            data[data_fields[index]] = item
+        index += 1
+
+    b = np.array(data["req_size"])/(np.array(data["end_t_micro"]) - np.array(data["start_t_micro"]))
+    if np.isnan(b).any() or np.isnan(b).any():
+        print(f'b_rank : {b} \nt_rank_s : {data["start_t_micro"]} \nt_rank_e : {data["end_t_micro"]} \n')
+        b[b==np.nan] = 0
+        b[b==np.inf] = 0
+
+    data['avg_thruput_mib'].extend(b)
+
+    return data

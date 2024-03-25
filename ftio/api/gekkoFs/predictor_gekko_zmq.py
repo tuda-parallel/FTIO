@@ -16,9 +16,10 @@ CONSOLE.set(True)
 def main(args: list[str] = []) -> None:
 
     ranks = 0
-    args = ["-e", "plotly", "-f", "10"]
+    args = ["-e", "no", "-f", "10"]
     context = zmq.Context()
     socket = context.socket(socket_type=zmq.PULL)
+    # socket.bind("tcp://127.0.0.1:5555")
     socket.bind("tcp://*:5555")
     # socket.bind("tcp://10.81.2.141:5555")
 
@@ -47,11 +48,11 @@ def main(args: list[str] = []) -> None:
             if procs:
                 procs = join_procs(procs)
 
-            # get all messages    
+            # get all messages
             msgs = []
             ranks = 0
             socks = dict(poller.poll(1000))
-            while(socks):
+            while socks:
                 if socks.get(socket) == zmq.POLLIN:
                     msg = socket.recv(zmq.NOBLOCK)
                     msgs.append(msg)
@@ -103,6 +104,7 @@ def prediction_zmq_process(
 ) -> None:
     console = Console()
     console.print(f"[purple][PREDICTOR] (#{count.value}):[/]  Started")
+
     # Modify the arguments
     args.extend(["-e", "no"])
     args.extend(["-ts", f"{start_time.value:.2f}"])
@@ -122,6 +124,7 @@ def prediction_zmq_process(
     text, start_time.value = data_analysis(args, prediction, freq, count, hits, text)
     console.print(text)
     count.value += 1
+    
     while not queue.empty():
         data.append(queue.get())
 

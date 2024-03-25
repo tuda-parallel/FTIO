@@ -1,16 +1,17 @@
 PYTHON = .venv/bin/python3
+SHELL := /bin/bash
 
 all: install  
 
 install: venv ftio
-	@echo "\nftio was installed in an python environment in .venv" 
-	@echo "To activate it call:\nsource $(PWD)/.venv/bin/activate\n"
-	@echo "Afterwards, you can just call 'ftio [filename]'"
+	@echo -e "\nftio was installed in an python environment in .venv" 
+	@echo -e "To activate it call:\nsource $(PWD)/.venv/bin/activate\n"
+	@echo -e "Afterwards, you can just call 'ftio [filename]'"
 
 debug:
 	mv old_setup setup.py
 	mv pyproject.toml pyproject
-	pip install -e .
+	pip install -e . || (mv pyproject pyproject.toml && mv setup.py old_setup)
 	mv pyproject pyproject.toml
 	mv setup.py old_setup
 
@@ -20,10 +21,12 @@ ftio_core:
 	${PYTHON} -m pip install . 
 
 venv: 
-	python3 -m venv .venv
+	python3 -m venv .venv 
+
 
 clean:
-	pip uninstall --yes ftio-hpc
+	echo "Cleaning old installation"
+	${PYTHON} -m pip uninstall --yes ftio-hpc || echo "no installation of ftio found"
 
 clean_all: clean
 	rm -rf .venv

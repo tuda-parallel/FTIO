@@ -99,13 +99,15 @@ void sent_data_gekko(int rank, double shift = 0){
     msgpack::packer<msgpack::sbuffer> packer(&buffer);
 
     // Pack the data into the MessagePack buffer
-    packer.pack_map(8);
+    packer.pack_map(9);
     packer.pack("init_t");
     packer.pack(rank);
 	packer.pack("hostname");
     packer.pack("electric");
 	packer.pack("pid");
     packer.pack(0);
+    packer.pack("io_type");
+    packer.pack("write");
 
 	packer.pack("start_t_micro");
     packer.pack_array(5);
