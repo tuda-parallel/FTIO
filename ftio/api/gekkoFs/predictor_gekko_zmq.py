@@ -20,6 +20,7 @@ def main(args: list[str] = []) -> None:
     context = zmq.Context()
     socket = context.socket(socket_type=zmq.PULL)
     socket.bind("tcp://*:5555")
+    # socket.bind("tcp://10.81.2.141:5555")
 
     # can be extended to listen to multiple sockets
     poller = zmq.Poller()
@@ -57,6 +58,7 @@ def main(args: list[str] = []) -> None:
                     # CONSOLE.print(f"[cyan]Got message {ranks}:[/] {msg}")
                     ranks += 1
                 socks = dict(poller.poll(1000))
+            CONSOLE.print(f"[cyan]Got message from {ranks}:[/]")
             if not msgs:
                 CONSOLE.print("[red]No messages[/]")
                 continue
