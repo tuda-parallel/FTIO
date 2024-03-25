@@ -59,10 +59,11 @@ def main(args: list[str] = []) -> None:
                     # CONSOLE.print(f"[cyan]Got message {ranks}:[/] {msg}")
                     ranks += 1
                 socks = dict(poller.poll(1000))
-            CONSOLE.print(f"[cyan]Got message from {ranks}:[/]")
+
             if not msgs:
                 CONSOLE.print("[red]No messages[/]")
                 continue
+            CONSOLE.print(f"[cyan]Got message from {ranks}:[/]")
             CONSOLE.print("[green]All message received[/]")
 
             # launch prediction_process
