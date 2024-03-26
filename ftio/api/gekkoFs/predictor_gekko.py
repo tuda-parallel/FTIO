@@ -4,7 +4,7 @@ from rich.console import Console
 import ftio.prediction.monitor as pm
 from ftio.prediction.helper import print_data, export_extrap
 from ftio.prediction.async_process import handle_in_process
-from ftio.prediction.probability import probability
+from ftio.prediction.probability_analysis import find_probability
 from ftio.prediction.helper import get_dominant, get_hits
 from ftio.api.gekkoFs.ftio_gekko import run
 from ftio.prediction.analysis import display_result, save_data, data_analysis
@@ -100,7 +100,7 @@ def prediction_process(
     while not queue.empty():
         data.append(queue.get())
 
-    probability(data)
+    _ = find_probability(data)
 
 
 if __name__ == "__main__":

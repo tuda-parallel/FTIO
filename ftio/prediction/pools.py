@@ -2,7 +2,7 @@
 from __future__ import annotations
 from concurrent.futures import ProcessPoolExecutor
 import ftio.prediction.monitor as pm
-from ftio.prediction.probability import probability
+from ftio.prediction.probability_analysis import find_probability
 from ftio.prediction.helper import  print_data
 from ftio.prediction.analysis import ftio_process
 # from ftio.prediction.async_process import handle_in_process
@@ -61,7 +61,7 @@ def probability_callback(future):
     Args:
         future (Future): _description_
     """
-    probability(future.result()) #the queue
+    _ = find_probability(future.result()) #the queue
 
 
 

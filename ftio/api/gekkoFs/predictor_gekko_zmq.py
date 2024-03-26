@@ -6,7 +6,7 @@ import numpy as np
 import zmq
 from ftio.prediction.helper import print_data, export_extrap
 from ftio.prediction.async_process import handle_in_process
-from ftio.prediction.probability import probability
+from ftio.prediction.probability_analysis import find_probability
 from ftio.prediction.helper import get_dominant_and_conf, get_hits
 from ftio.api.gekkoFs.ftio_gekko import run
 from ftio.prediction.analysis import display_result, save_data, data_analysis
@@ -140,10 +140,16 @@ def prediction_zmq_process(
     while not queue.empty():
         data.append(queue.get())
 
-    probability(data)
+    prob = find_probability(data)
+
+    probability = -1
+    for p in prob:
+        if p.get_freq_prob(freq):
+            probability = p.p_freq_given_periodic
+            break
 
     if CARGO and not np.isnan(freq):
-        os.system(f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c {conf} -p -1 -t {1/freq} ")
+        os.system(f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c {conf} -p {probability} -t {1/freq} ")
 
 if __name__ == "__main__":
     main()
