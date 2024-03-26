@@ -71,7 +71,7 @@ def predictor_with_processes_zmq(
             CONSOLE.print(f"[green]All message received from {ranks} ranks[/]")
 
             # launch prediction_process
-            # TODO:  append b_app and t_app
+            # TODO: append b_app and t_app
             procs.append(
                 handle_in_process(
                     prediction_process,

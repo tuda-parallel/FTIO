@@ -1,35 +1,38 @@
 import numpy as np
 import pandas as pd
 
-def set_unit(arr:np.ndarray) -> tuple[str, float]:
+def set_unit(arr:np.ndarray, suffix = "B/s") -> tuple[str, float]:
     """set unit for the plots
 
     Args:
         arr (np.ndarray): array
+        unit (optional): default B/s
 
     Returns:
         unit (string): unit in GB/s, MB/s, KB/s or B/s
         arr: scaled array according to the unit
     """
-    unit = "B/s"
+    unit = suffix
     order = 1e-0
     if isinstance(arr, np.ndarray):
         pass
     elif isinstance(arr, pd.DataFrame):
         arr = arr.to_numpy()
+    elif isinstance(arr,float) or isinstance(arr,int):
+        arr = np.array(arr)
     
     if arr.size > 0 and np.max(arr) > 0:
         order = np.log10(np.max(arr))
 
     if order > 9:
         order = 1e-9
-        unit = "GB/s"
+        unit = "G"+suffix
     elif order > 6:
         order = 1e-6
-        unit = "MB/s"
+        unit = "M"+suffix
     elif order > 3:
         order = 1e-3
-        unit = "KB/s"
+        unit = "K"+suffix
     else:
         pass
 

@@ -3,7 +3,20 @@ import json
 import msgpack
 import numpy as np
 
-def parse(file_path_or_msg, data):
+def parse(file_path_or_msg, data, io_type = "w") -> tuple[dict, str]:
+    """Parses data from gekko
+
+    Args:
+        file_path_or_msg (_type_): list of files or messages (ZMQ)
+        data (_type_): data to append to 
+        io_type (str, optional): Can be w for write or r for read. Defaults to "w".
+
+    Raises:
+        RuntimeError: _description_
+
+    Returns:
+        tuple[dict, str]: _description_
+    """
     if isinstance(file_path_or_msg,bytes):
         extension = "ZMQ"
     else:
@@ -27,7 +40,7 @@ def parse(file_path_or_msg, data):
         # Deserialize the MessagePack data 
         unpacker = msgpack.Unpacker()
         unpacker.feed(binary_data)
-        data = assign(data, unpacker)
+        data = assign(data, unpacker, io_type)
 
     # JSON
     elif "JSON" in extension.upper(): 
@@ -59,9 +72,11 @@ def parse(file_path_or_msg, data):
     return data, extension
 
 
-def assign(data:dict,unpacker)->dict:
+def assign(data:dict,unpacker, io_type = "w")->dict:
     data_fields = ["init_t", "hostname", "pid", "io_type","start_t_micro", "end_t_micro", "req_size", "total_iops","total_bytes"]
     index = 0
+    skip = False
+    
     for item in unpacker:
         if isinstance(item,dict):
             item = item[data_fields[index]]
@@ -69,14 +84,21 @@ def assign(data:dict,unpacker)->dict:
             data[data_fields[index]].extend(item)
         else:
             data[data_fields[index]] = item
+            # exit if it is not the right mode
+            if index == 3 and item != io_type:
+                skip = True
+                break
         index += 1
 
-    b = np.array(data["req_size"])/(np.array(data["end_t_micro"]) - np.array(data["start_t_micro"]))
-    if np.isnan(b).any() or np.isnan(b).any():
-        print(f'b_rank : {b} \nt_rank_s : {data["start_t_micro"]} \nt_rank_e : {data["end_t_micro"]} \n')
-        b[b==np.nan] = 0
-        b[b==np.inf] = 0
+    if not skip:
+        b = np.array(object=data["req_size"])/(np.array(data["end_t_micro"]) - np.array(data["start_t_micro"]))
+        if np.isnan(b).any() or np.isnan(b).any():
+            print(f'b_rank : {b} \nt_rank_s : {data["start_t_micro"]} \nt_rank_e : {data["end_t_micro"]} \n')
+            b[b==np.nan] = 0
+            b[b==np.inf] = 0
 
-    data['avg_thruput_mib'].extend(b)
+        data['avg_thruput_mib'].extend(b)
+    else: 
+        print("Skipping ... ")
 
     return data

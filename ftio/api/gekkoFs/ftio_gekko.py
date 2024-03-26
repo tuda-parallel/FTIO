@@ -9,7 +9,10 @@ from ftio.api.gekkoFs.parse_gekko import parse
 import plotly.graph_objects as go
 from ftio.freq.helper import format_plot
 from ftio.plot.units import set_unit
+from ftio.freq.helper import MyConsole
 
+CONSOLE = MyConsole()
+CONSOLE.set(True)
 
 def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app = [], t_app = []):  # "0.01"] ):
     """Executes ftio on list of files_or_msgs.
@@ -39,9 +42,16 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
 
     # 1) overlap for rank level metrics
     for file_or_msg in files_or_msgs:
-        data_rank, ext = parse(file_or_msg, data_rank)
+        data_rank, ext = parse(file_or_msg, data_rank, io_type = args.mode[0])
 
-    # 2) Scale if JSON or MsgPack
+    # 2) exit if no new data
+    if not data_rank["avg_thruput_mib"]:
+        CONSOLE.print("[red]Terminating prediction ... [/]")
+        exit(0)
+    
+    
+    
+    # 3) Scale if JSON or MsgPack
     scale = [1, 1, 1]
     if "JSON" in ext.upper():
         scale = [1.07 * 1e6, 1e-3, 1e-3]
@@ -52,10 +62,10 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
     t_rank_s = np.array(data_rank["start_t_micro"]) * scale[1]
     t_rank_e = np.array(data_rank["end_t_micro"]) * scale[2]
 
-    # 3) app level bandwidth
+    # 4) app level bandwidth
     b, t = overlap(b_rank, t_rank_s, t_rank_e)
         
-    # 4) Extend for ZMQ
+    # 5) Extend for ZMQ
     if "ZMQ" in ext.upper():
         # extend data
         b_app.extend(b)
@@ -66,7 +76,7 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         t = np.array(list(b))
         b = np.array(list(t))
 
-    # 5) plot to check:
+    # 6) plot to check:
     if any(x in args.engine for x in ["mat", "plot"]):
         fig = go.Figure()
         unit, order = set_unit(b)
@@ -75,7 +85,7 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         fig = format_plot(fig)
         fig.show()
 
-    # 6) set up data
+    # 7) set up data
     data = {
         "time": t,
         "bandwidth": b,
@@ -83,10 +93,10 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         "ranks": ranks,
     }
 
-    # 7) perform prediction
+    # 8) perform prediction
     prediction, dfs = core([data], args)
 
-    # 8) plot and print info
+    # 9) plot and print info
     display_prediction(["./ftio"], prediction)
     convert_and_plot(data, dfs, args)
 

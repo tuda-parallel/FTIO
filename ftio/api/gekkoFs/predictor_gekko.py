@@ -90,7 +90,7 @@ def prediction_process(
     hits = get_hits(prediction, count.value, hits)
 
     # save prediction results
-    save_data(queue, aggregated_bytes, prediction, count, hits)
+    save_data(queue, prediction, aggregated_bytes, count, hits)
     # display results
     text = display_result(freq, prediction, count, aggregated_bytes)
     # data analysis to decrease window

@@ -7,7 +7,7 @@ from plotly_resampler import FigureResampler
 from plotly_resampler.aggregation import MinMaxAggregator, MinMaxOverlapAggregator, NoGapHandler
 
 # -------
-# TODO: Check if this problem is still not fixed or feature is now implemented
+# > Check if this problem is still not fixed or feature is now implemented
 # Solves a problem for a still open issue
 # Issue: line plot ends cutoff after last visible point #257
 # https://github.com/predict-idlab/plotly-resampler/issues/257

@@ -5,7 +5,7 @@ from rich.console import Console
 import numpy as np
 from ftio.cli import ftio_core
 from ftio.prediction.helper import get_dominant, get_hits
-
+from ftio.plot.units import set_unit
 
 def ftio_process(queue: Queue, count, hits, start_time, aggregated_bytes, args, msgs=None) -> None:
     """Perform a single prediction
@@ -33,7 +33,7 @@ def ftio_process(queue: Queue, count, hits, start_time, aggregated_bytes, args, 
     hits = get_hits(prediction,count.value,hits)
 
     # save prediction results
-    save_data(queue, aggregated_bytes, prediction, count, hits)
+    save_data(queue, prediction, aggregated_bytes, count, hits)
     # display results
     text = display_result(freq ,prediction ,count, aggregated_bytes)
     # data analysis to decrease window
@@ -50,11 +50,14 @@ def data_analysis(args, prediction, freq, count, hits, text:str) -> tuple[str, f
     if not np.isnan(freq):
         n_phases = (t_e-t_s)*freq
         avr_bytes = int(total_bytes/float(n_phases))
+        unit, order = set_unit(avr_bytes,'B')
+        avr_bytes = order *avr_bytes
+        
         #FIXME this needs to compensate for a smaller windows
         if not args.window_adaptation:
             text += (
                 f'[purple][PREDICTOR] (#{count.value}):[/] Estimated phases {n_phases:.2f}\n'
-                f'[purple][PREDICTOR] (#{count.value}):[/] Average transferred {avr_bytes:.3f} B\n'
+                f'[purple][PREDICTOR] (#{count.value}):[/] Average transferred {avr_bytes:.0f} {unit}\n'
             )
         
         # adaptive time window
@@ -76,9 +79,10 @@ def data_analysis(args, prediction, freq, count, hits, text:str) -> tuple[str, f
     return text, t_s
 
 
-def save_data(queue, aggregated_bytes, prediction, count, hits):
+def save_data(queue, prediction, aggregated_bytes, count, hits):
+
     # safe total transferred bytes
-    aggregated_bytes.value = prediction['total_bytes']
+    aggregated_bytes.value += prediction['total_bytes']
     
     # save data
     queue.put(
@@ -103,11 +107,26 @@ def display_result(freq: float ,prediction: dict ,count, aggregated_bytes):
     if not np.isnan(freq):
         text = f'[purple][PREDICTOR] (#{count.value}):[/] Dominant freq {freq:.3f} \n'
 
+    # time window
     text += (
-        f'[purple][PREDICTOR] (#{count.value}):[/] Time window {prediction["t_end"]-prediction["t_start"]:.3f} sec ([{prediction["t_start"]:.3f},{prediction["t_end"]:.3f}] sec)\n'
-        f'[purple][PREDICTOR] (#{count.value}):[/] Total bytes {prediction["total_bytes"]:.3f} B\n'
-        f'[purple][PREDICTOR] (#{count.value}):[/] Bytes transferred since last '
-        f'time {abs(prediction["total_bytes"]-aggregated_bytes.value):.3f} B\n'
-        )
+        f'[purple][PREDICTOR] (#{count.value}):[/] Time window {prediction["t_end"]-prediction["t_start"]:.3f} sec ([{prediction["t_start"]:.3f},{prediction["t_end"]:.3f}] sec)\n')
 
+    # total bytes
+    total_bytes = aggregated_bytes.value
+    # total_bytes =  prediction["total_bytes"]
+    unit, order = set_unit(total_bytes,'B')
+    total_bytes = order*total_bytes
+    text += (
+        f'[purple][PREDICTOR] (#{count.value}):[/] Total bytes {total_bytes:.0f} {unit}\n')
+
+    # Bytes since last time
+    # tmp = abs(prediction["total_bytes"] -aggregated_bytes.value)
+    tmp = abs(aggregated_bytes.value)
+    unit, order = set_unit(tmp,'B')
+    tmp = order *tmp
+    text += (
+        f'[purple][PREDICTOR] (#{count.value}):[/] Bytes transferred since last '
+        f'time {tmp:.0f} {unit}\n'
+        )
+    
     return text

@@ -1,22 +1,32 @@
+import time
+import os
 from multiprocessing import Manager
 from rich.console import Console
+import numpy as np
 import zmq
 from ftio.prediction.helper import print_data, export_extrap
 from ftio.prediction.async_process import handle_in_process
 from ftio.prediction.probability import probability
-from ftio.prediction.helper import get_dominant, get_hits
+from ftio.prediction.helper import get_dominant_and_conf, get_hits
 from ftio.api.gekkoFs.ftio_gekko import run
 from ftio.prediction.analysis import display_result, save_data, data_analysis
 from ftio.prediction.async_process import join_procs
 from ftio.freq.helper import MyConsole
 
+
+
 CONSOLE = MyConsole()
 CONSOLE.set(True)
+CARGO = False
+CARGO_PATH = "/beegfs/home/Shared/admire/JIT/iodeps/bin"
+CARGO_SERVER = "tcp://127.0.0.1:62000"
 
 def main(args: list[str] = []) -> None:
-
+    if CARGO:
+        os.system(f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c -1 -p -1 -t 10000")
+        os.system(f"{CARGO_PATH}/cpp --server {CARGO_SERVER} --input /data --output ~/stage-out --if gekkofs --of parallel")
     ranks = 0
-    args = ["-e", "no", "-f", "10"]
+    args = ["-e", "plotly", "-f", "10", "-m", "write"]
     context = zmq.Context()
     socket = context.socket(socket_type=zmq.PULL)
     # socket.bind("tcp://127.0.0.1:5555")
@@ -39,8 +49,8 @@ def main(args: list[str] = []) -> None:
     b_app = manager.list()
     t_app = manager.list()
 
-    if '-zmq' not in args:
-        args.extend(['--zmq'])
+    if "-zmq" not in args:
+        args.extend(["--zmq"])
 
     # Loop and predict if changes occur
     try:
@@ -52,7 +62,8 @@ def main(args: list[str] = []) -> None:
             msgs = []
             ranks = 0
             socks = dict(poller.poll(1000))
-            while socks:
+            start = time.time()
+            while socks and time.time() < start + 0.5:
                 if socks.get(socket) == zmq.POLLIN:
                     msg = socket.recv(zmq.NOBLOCK)
                     msgs.append(msg)
@@ -80,7 +91,7 @@ def main(args: list[str] = []) -> None:
                         args,
                         msgs,
                         b_app,
-                        t_app
+                        t_app,
                     ),
                 )
             )
@@ -101,7 +112,7 @@ def prediction_zmq_process(
     args: list[str],
     msg,
     b_app,
-    t_app
+    t_app,
 ) -> None:
     console = Console()
     console.print(f"[purple][PREDICTOR] (#{count.value}):[/]  Started")
@@ -111,26 +122,28 @@ def prediction_zmq_process(
     args.extend(["-ts", f"{start_time.value:.2f}"])
 
     # Perform prediction
-    prediction, args  = run(msg, args, b_app,t_app)
+    prediction, args = run(msg, args, b_app, t_app)
 
     # get data
-    freq = get_dominant(prediction)  # just get a single dominant value
+    freq, conf = get_dominant_and_conf(prediction)  # just get a single dominant value
     hits = get_hits(prediction, count.value, hits)
 
     # save prediction results
-    save_data(queue, aggregated_bytes, prediction, count, hits)
+    save_data(queue, prediction, aggregated_bytes, count, hits)
     # display results
     text = display_result(freq, prediction, count, aggregated_bytes)
     # data analysis to decrease window
     text, start_time.value = data_analysis(args, prediction, freq, count, hits, text)
     console.print(text)
     count.value += 1
-    
+
     while not queue.empty():
         data.append(queue.get())
 
     probability(data)
 
+    if CARGO and not np.isnan(freq):
+        os.system(f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c {conf} -p -1 -t {1/freq} ")
 
 if __name__ == "__main__":
     main()

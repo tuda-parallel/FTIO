@@ -1,7 +1,7 @@
 """This functions calculates the frequency based on the input data provided. 
-Currently darshan, recorder, and traces generated with our internal tool are supported. 
+Currently Darshan, recorder, and traces generated with our internal tool are supported. 
 
-call ftio -h to see list of suppoerted argurmnts. 
+call ftio -h to see list of supported arguments. 
 """
 
 from __future__ import annotations
