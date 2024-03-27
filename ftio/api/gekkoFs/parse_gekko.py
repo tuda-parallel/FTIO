@@ -57,7 +57,9 @@ def parse(file_path_or_msg, data, io_type = "w") -> tuple[dict, str]:
                 data['req_size'].extend(value)
             elif 'hostname' in key :
                 data['hostname'] = value
-            elif 'pid' in key : 
+            elif 'flush_t' in key :
+                data['flush_t'] = value
+            elif 'pid' in key: 
                 data['pid'] = value
             elif 'total_bytes' in key :
                 data['total_bytes'] += value
@@ -73,7 +75,7 @@ def parse(file_path_or_msg, data, io_type = "w") -> tuple[dict, str]:
 
 
 def assign(data:dict,unpacker, io_type = "w")->dict:
-    data_fields = ["init_t", "hostname", "pid", "io_type","start_t_micro", "end_t_micro", "req_size", "total_iops","total_bytes"]
+    data_fields = ["flush_t", "hostname", "pid", "io_type","start_t_micro", "end_t_micro", "req_size", "total_iops","total_bytes"]
     index = 0
     skip = False
     
@@ -82,6 +84,8 @@ def assign(data:dict,unpacker, io_type = "w")->dict:
             item = item[data_fields[index]]
         if index in [4,5,6]:
             data[data_fields[index]].extend(item)
+        elif index == 0: #find max flush time
+            data[data_fields[index]] = max(data[data_fields[index]],item)
         else:
             data[data_fields[index]] = item
             # exit if it is not the right mode

@@ -23,6 +23,7 @@ setup(
             "predictor = ftio.cli.predictor:main",
             "ioplot = ftio.util.ioplot:main",
             "ioparse = ftio.util.ioparse:main",
+            "ftio_gekko = ftio.api.gekkoFs.predictor_gekko_zmq:main",
         ],
         "gui_scripts": [],
     },

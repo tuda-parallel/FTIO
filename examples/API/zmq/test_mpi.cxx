@@ -100,7 +100,7 @@ void sent_data_gekko(int rank, double shift = 0){
 
     // Pack the data into the MessagePack buffer
     packer.pack_map(9);
-    packer.pack("init_t");
+    packer.pack("flush_t");
     packer.pack(rank);
 	packer.pack("hostname");
     packer.pack("electric");

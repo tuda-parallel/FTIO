@@ -117,7 +117,7 @@ def format_jsonl(data: list[dict]) -> tuple[str,str]:
         data (list[dict]): List of predictions
 
     Returns:
-        tuple[str, str]: formated string and number of ranks
+        tuple[str, str]: formatted string and number of ranks
         
     """
     string = ""

@@ -38,6 +38,7 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         "req_size": [],
         "total_bytes": 0,
         "total_iops": 0,
+        "flush_t": 0, 
     }
 
     # 1) overlap for rank level metrics
@@ -49,8 +50,6 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
         CONSOLE.print("[red]Terminating prediction ... [/]")
         exit(0)
     
-    
-    
     # 3) Scale if JSON or MsgPack
     scale = [1, 1, 1]
     if "JSON" in ext.upper():
@@ -61,6 +60,8 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
     b_rank   = np.array(data_rank["avg_thruput_mib"]) * scale[0]
     t_rank_s = np.array(data_rank["start_t_micro"]) * scale[1]
     t_rank_e = np.array(data_rank["end_t_micro"]) * scale[2]
+    if "flush_t" in data_rank:
+        data_rank["flush_t"] = data_rank["flush_t"]* scale[2]
 
     # 4) app level bandwidth
     b, t = overlap(b_rank, t_rank_s, t_rank_e)
@@ -100,7 +101,7 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
     display_prediction(["./ftio"], prediction)
     convert_and_plot(data, dfs, args)
 
-    return prediction, args
+    return prediction, args, data_rank["flush_t"]
 
 
 if __name__ == "__main__":

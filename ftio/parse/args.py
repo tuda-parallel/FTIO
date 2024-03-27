@@ -101,8 +101,8 @@ Full documentation:
         parser.set_defaults(zmq=False)
         parser.add_argument('--zmq_source',         type = str, help = 'the source of zmq: TMIO, direct, etc.')
         parser.set_defaults(zmq_source = 'direct')
-        parser.add_argument('--zmq_port', '--zmq_port',         type = str, help = 'zmq port for communication')
-        parser.set_defaults(zmq_port = 'tcp://127.0.0.1:5555')
+        parser.add_argument('--zmq_addr', '--zmq_addr',         type = str, help = 'zmq port for communication')
+        parser.set_defaults(zmq_addr = 'tcp://127.0.0.1:5555')
 
     #! IOPLOT Settings
     if 'plot' in name.lower():
