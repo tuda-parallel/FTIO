@@ -98,7 +98,8 @@ def assign(data:dict,unpacker, io_type = "w")->dict:
             b[b==np.inf] = 0
 
         data['avg_thruput_mib'].extend(b)
-    else: 
-        print("Skipping ... ")
+    else:
+        # print("Skipping ... ")
+        pass
 
     return data

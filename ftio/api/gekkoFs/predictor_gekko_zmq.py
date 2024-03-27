@@ -30,8 +30,8 @@ def main(args: list[str] = []) -> None:
     context = zmq.Context()
     socket = context.socket(socket_type=zmq.PULL)
     # socket.bind("tcp://127.0.0.1:5555")
-    socket.bind("tcp://*:5555")
-    # socket.bind("tcp://10.81.2.141:5555")
+    # socket.bind("tcp://*:5555")
+    socket.bind("tcp://10.81.4.159:5555")
 
     # can be extended to listen to multiple sockets
     poller = zmq.Poller()
@@ -54,47 +54,50 @@ def main(args: list[str] = []) -> None:
 
     # Loop and predict if changes occur
     try:
-        while True:
-            if procs:
-                procs = join_procs(procs)
+        with CONSOLE.status("[gree] started\n",spinner="arrow3") as status:
+            while True:
+                if procs:
+                    procs = join_procs(procs)
 
-            # get all messages
-            msgs = []
-            ranks = 0
-            socks = dict(poller.poll(1000))
-            start = time.time()
-            while socks and time.time() < start + 0.5:
-                if socks.get(socket) == zmq.POLLIN:
-                    msg = socket.recv(zmq.NOBLOCK)
-                    msgs.append(msg)
-                    # CONSOLE.print(f"[cyan]Got message {ranks}:[/] {msg}")
-                    ranks += 1
+                # get all messages
+                msgs = []
+                ranks = 0
                 socks = dict(poller.poll(1000))
+                start = time.time()
+                while socks and time.time() < start + 0.5:
+                    if socks.get(socket) == zmq.POLLIN:
+                        msg = socket.recv(zmq.NOBLOCK)
+                        msgs.append(msg)
+                        # CONSOLE.print(f"[cyan]Got message {ranks}:[/] {msg}")
+                        ranks += 1
+                    socks = dict(poller.poll(1000))
 
-            if not msgs:
-                CONSOLE.print("[red]No messages[/]")
-                continue
-            CONSOLE.print(f"[cyan]Got message from {ranks}:[/]")
-            CONSOLE.print("[green]All message received[/]")
+                if not msgs:
+                    # CONSOLE.print("[red]No messages[/]")
+                    status.update("[bold cyan] Waiting for messages\n",spinner="dots")
+                    continue
+                status.update("")
+                CONSOLE.print(f"[cyan]Got message from {ranks}:[/]")
+                CONSOLE.print("[green]All message received[/]")
 
-            # launch prediction_process
-            procs.append(
-                handle_in_process(
-                    prediction_zmq_process,
-                    args=(
-                        data,
-                        queue,
-                        count,
-                        hits,
-                        start_time,
-                        aggregated_bytes,
-                        args,
-                        msgs,
-                        b_app,
-                        t_app,
-                    ),
+                # launch prediction_process
+                procs.append(
+                    handle_in_process(
+                        prediction_zmq_process,
+                        args=(
+                            data,
+                            queue,
+                            count,
+                            hits,
+                            start_time,
+                            aggregated_bytes,
+                            args,
+                            msgs,
+                            b_app,
+                            t_app,
+                        ),
+                    )
                 )
-            )
 
     except KeyboardInterrupt:
         print_data(data)
