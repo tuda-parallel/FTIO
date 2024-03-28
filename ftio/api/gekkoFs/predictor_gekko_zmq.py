@@ -5,7 +5,7 @@ from multiprocessing import Manager
 from rich.console import Console
 import numpy as np
 import zmq
-from ftio.prediction.helper import print_data, export_extrap
+from ftio.prediction.helper import print_data#, export_extrap
 from ftio.prediction.async_process import handle_in_process
 from ftio.prediction.probability_analysis import find_probability
 from ftio.prediction.helper import get_dominant_and_conf, get_hits
@@ -124,7 +124,7 @@ def main(args: list[str] = []) -> None:
     except KeyboardInterrupt:
         trigger.join()
         print_data(data)
-        export_extrap(data=data)
+        # export_extrap(data=data)
         print("-- done -- ")
 
 
@@ -216,20 +216,20 @@ def trigger_cargo(sync_trigger):
         sync_trigger (_type_): _description_
     """
     while True:
-        try:         
+        try:
             if not sync_trigger.empty():
                 skip_flag = False 
                 prediction = sync_trigger.get()
                 t = time.time() - prediction['t_wait']  # add this time to t_flush (i.e., the time waiting)
                 # CONSOLE.print(f"[bold green][Trigger] queue wait time = {t:.3f} s[/]\n")
                 if not np.isnan(prediction['freq']):
-                    # # Find estimated number of phases and skip in case less than 1
+                    #? 1) Find estimated number of phases and skip in case less than 1
                     # n_phases = (prediction['t_end']- prediction['t_start'])*prediction['freq']
                     # if n_phases <= 1:
                     #     CONSOLE.print(f"[bold green][Trigger] Skipping this prediction[/]\n")
                     #     continue
                     
-                    # Time analysis to find the right instance when to send the data
+                    #? 2) Time analysis to find the right instance when to send the data
                     target_time = prediction['t_end'] + 1/prediction['freq']
                     geko_elapsed_time = prediction['t_flush'] + t  # t  is the waiting time in this function
                     remaining_time = (target_time - geko_elapsed_time ) 
@@ -239,12 +239,10 @@ def trigger_cargo(sync_trigger):
                         # wait till the time elapses:
                         while time.time() < countdown:
                             pass
-                            # # Skip in case new prediction is available  
+                            #? 3) Skip in case new prediction is available  
                             # if not sync_trigger.empty():
                             #     skip_flag = True
 
-                        # send the stuff
-                        # TODO: Could check if there is a new value in the queue and if so, skip this prediction
                         if not skip_flag:
                             if CARGO:
                                 os.system(f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']} ")
