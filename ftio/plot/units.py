@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-def set_unit(arr:np.ndarray, suffix = "B/s") -> tuple[str, float]:
+def set_unit(arr:np.ndarray|float, suffix = "B/s") -> tuple[str, float]:
     """set unit for the plots
 
     Args:

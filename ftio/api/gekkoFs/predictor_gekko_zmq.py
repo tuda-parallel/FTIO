@@ -141,6 +141,21 @@ def prediction_zmq_process(
     t_app,
     sync_trigger
 ) -> None:
+    """performs prediction
+
+    Args:
+        data (_type_): _description_
+        queue (_type_): _description_
+        count (_type_): _description_
+        hits (_type_): _description_
+        start_time (_type_): _description_
+        aggregated_bytes (_type_): _description_
+        args (list[str]): _description_
+        msg (_type_): _description_
+        b_app (_type_): _description_
+        t_app (_type_): _description_
+        sync_trigger (_type_): _description_
+    """
     t_prediction = time.time()
     console = Console()
     console.print(f"[purple][PREDICTOR] (#{count.value}):[/]  Started")
@@ -183,6 +198,7 @@ def prediction_zmq_process(
         {
     't_wait':  time.time() ,
     't_end':  prediction['t_end'],
+    't_start':  prediction['t_start'],
     't_flush': t_flush + (t_prediction- time.time()),
     'freq': freq,
     'conf': conf,
@@ -194,34 +210,52 @@ def prediction_zmq_process(
 
 
 def trigger_cargo(sync_trigger):
-    """sends cargo calls
+    """sends cargo calls. For that in extracts the predictions from `sync_trigger` and examines it. 
 
     Args:
         sync_trigger (_type_): _description_
     """
-    #Maybe needs Mutex
-    # TODO: replace sync_trigger by a queue, as freq can be overwritten by the most recent prediction
     while True:
-        try:            
+        try:         
             if not sync_trigger.empty():
-                element = sync_trigger.get()
-                t = time.time() - element['t_wait']  # add this time to t_flush (i.e., the time waiting)
+                skip_flag = False 
+                prediction = sync_trigger.get()
+                t = time.time() - prediction['t_wait']  # add this time to t_flush (i.e., the time waiting)
                 # CONSOLE.print(f"[bold green][Trigger] queue wait time = {t:.3f} s[/]\n")
-                if not np.isnan(element['freq']): 
-                    target_time = element['t_end'] + 1/element['freq']
-                    geko_elapsed_time = element['t_flush'] + t  # t  is the waiting time in this function
+                if not np.isnan(prediction['freq']):
+                    # # Find estimated number of phases and skip in case less than 1
+                    # n_phases = (prediction['t_end']- prediction['t_start'])*prediction['freq']
+                    # if n_phases <= 1:
+                    #     CONSOLE.print(f"[bold green][Trigger] Skipping this prediction[/]\n")
+                    #     continue
+                    
+                    # Time analysis to find the right instance when to send the data
+                    target_time = prediction['t_end'] + 1/prediction['freq']
+                    geko_elapsed_time = prediction['t_flush'] + t  # t  is the waiting time in this function
                     remaining_time = (target_time - geko_elapsed_time ) 
-                    CONSOLE.print(f"[bold green][Trigger] Target time = {target_time:.3f} -- Gekko time = {geko_elapsed_time:.3f} -> sending message in {remaining_time:.3f} s[/]\n")
+                    CONSOLE.print(f"[bold green][Trigger][/][green] Target time = {target_time:.3f} -- Gekko time = {geko_elapsed_time:.3f} -> sending cmd in {remaining_time:.3f} s[/]")
                     if remaining_time > 0:
                         countdown = time.time() + remaining_time
-                        # wait till the time elapses 
+                        # wait till the time elapses:
                         while time.time() < countdown:
                             pass
+                            # # Skip in case new prediction is available  
+                            # if not sync_trigger.empty():
+                            #     skip_flag = True
+
                         # send the stuff
-                        # TODO: could check if there is a new value in the queue and if so, skip this prediction
-                        if CARGO:
-                            os.system(f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c {element['conf']} -p {element['probability']} -t {1/element['freq']} ")
-                        CONSOLE.print(f"[bold green][Trigger] >>>> Executed cargo_ftio: {CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c {element['conf']:.3f} -p {element['probability']:.3f} -t {1/element['freq']:.3f}  [/]\n")
+                        # TODO: Could check if there is a new value in the queue and if so, skip this prediction
+                        if not skip_flag:
+                            if CARGO:
+                                os.system(f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']} ")
+
+                            CONSOLE.print(f"[bold green][Trigger][/][green] Executed cargo_ftio: {CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c {prediction['conf']:.3f} -p {prediction['probability']:.3f} -t {1/prediction['freq']:.3f}  [/]\n")
+                        else:
+                            CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, new prediction is ready[/]\n")
+
+                    else:
+                        CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, not in time[/]\n")
+
             time.sleep(0.01)
         except KeyboardInterrupt:
             exit()

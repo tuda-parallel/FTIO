@@ -79,8 +79,16 @@ def data_analysis(args, prediction, freq, count, hits, text:str) -> tuple[str, f
     return text, t_s
 
 
-def save_data(queue, prediction, aggregated_bytes, count, hits):
+def save_data(queue, prediction, aggregated_bytes, count, hits) -> None:
+    """Put all data from `prediction` in a `queue`. The total bytes are as well saved here. 
 
+    Args:
+        queue (Manager.queue): queue containing the data from the prediction 
+        prediction (dict): result from FTIO
+        aggregated_bytes (_type_): total bytes transferred over entire runtime 
+        count (_type_): prediction number
+        hits (_type_): home many times a dominant frequency was found
+    """
     # safe total transferred bytes
     aggregated_bytes.value += prediction['total_bytes']
     
@@ -102,7 +110,7 @@ def save_data(queue, prediction, aggregated_bytes, count, hits):
     )
 
 
-def display_result(freq: float ,prediction: dict ,count, aggregated_bytes):
+def display_result(freq: float ,prediction: dict ,count, aggregated_bytes) -> str:
     text = ''
     if not np.isnan(freq):
         text = f'[purple][PREDICTOR] (#{count.value}):[/] Dominant freq {freq:.3f} \n'
@@ -128,5 +136,5 @@ def display_result(freq: float ,prediction: dict ,count, aggregated_bytes):
         f'[purple][PREDICTOR] (#{count.value}):[/] Bytes transferred since last '
         f'time {tmp:.0f} {unit}\n'
         )
-    
+
     return text

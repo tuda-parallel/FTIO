@@ -1,19 +1,16 @@
 # LAMMPS With 3072 Ranks
 
-Extract the tar archive lammps.tar.gz:
-```sh
-tar -xf lammps.tar.gz
-```
-The folder contains:
+Either [analyzing the provided trace file](#analyzing-the-provided-trace-file)) or [Repeat the experiment on your cluster](#repeating-the-experiment-on-your-cluster) as described below. In both cases, you first need to extract the needed traces or scripts. For that, 
+download and extract the file data.zip as described [here](/artifacts/ipdps24/README.md#extracting-the-data-set).
+Once extracted, you can find the required files under `data/application_traces/LAMMPS`.
+This folder contains:
 1. Tracing file generated with TMIO: lammps_3072.json
 2. Input simulation file and sbatch script in case you want to repeat the experiment on your cluster
 
-Alternatively, download and extract the file data.zip as described [here](/artifacts/ipdps24/README.md#extracting-the-data-set).
-Once extracted, you can find the LAMMPS trace under `application_traces/LAMMPS`.
-
 ## Analyzing the provided trace file
 
-[Install FTIO](https://github.com/tuda-parallel/FTIO#installation). To get the dominant frequency with `ftio` simply call:
+If you didn't install `ftio`, first check out version 0.0.1 as described [here](/artifacts/ipdps24/README.md#ftio-version), then install it as described [here](https://github.com/tuda-parallel/FTIO#installation).
+To get the dominant frequency with `ftio` simply call:
 
 ```sh
 ftio lammps_3072.json
@@ -25,7 +22,7 @@ ftio lammps_3072.json
 First, install the required software on your cluster:
 - [Install TMIO](https://github.com/tuda-parallel/TMIO#installation) 
 - [Install FTIO](https://github.com/tuda-parallel/FTIO#installation) 
-- [Install LAMMPS](https://docs.lammps.org/Install.html) with MPI suppoort
+- [Install LAMMPS](https://docs.lammps.org/Install.html) with MPI support
 
 For this experiment, we executed LAMMPS on the Lichtenberg cluster with the following sbatch.sh script:
 ```sh
@@ -103,10 +100,14 @@ dump 3 all custom/mpiio 20 dump.*.mpiio x y z
 run		300
 ```
  
-After setting this up, generate the TMIO library (`libtmio.so`) via calling:
+After setting this up, generate the TMIO library (`libtmio.so`). For that, first navigate to the root directory of the cloned TMIO repo, then execute:
+
 ```sh
+cd build
 make library
 ```
+
+This is also described in the [TMIO Github]( version 0.0.1 as described [here](/artifacts/ipdps24/README.md#ftio-version)). 
 
 Copy the library `libtmio.so`, the LAMMPS executable, the input file `in.flow.pois`, and the sbatch script `sbatch.sh` to the same folder. 
 Now, simply call the sbatch command:

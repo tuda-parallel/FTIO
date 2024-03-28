@@ -2,7 +2,9 @@
 Aside from [`ftio`](https://github.com/tuda-parallel/FTIO#usage) or [`predictor`](https://github.com/tuda-parallel/FTIO/blob/main/docs/approach.md#online-prediction), the FTIO repository offers several more tools for various purposes: 
 
 - [`ioplot`](#ioplot) generates interactive plots in HTML
-- [`parse`](#parse) parses and merges several traces to an [Extra-P](https://github.com/extra-p/extrap) supported file format
+- [`parse`](#parse) parses and merges several traces to an [Extra-P](https://github.com/extra-p/extrap)-supported file format
+
+The tools are automatically generated when installing FTIO, for example, by calling `make install` as described [here](https://github.com/tuda-parallel/FTIO#installation)
 
 ## ioplot
 This tool generates interactive plots using Plotly. Supported file formats are described [here](./file_formats.md)

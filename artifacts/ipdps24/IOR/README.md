@@ -1,9 +1,16 @@
 # IOR
 
-Either [generate](#execute-the-experiment-on-your-system) or [extract](#extract-the-provided-trace-file) the provided trace file.
+Either [extract](#extract-the-provided-trace-file) or [generate](#generate-the-experiment-on-your-system) the trace files as described below. 
 Afterward, [run ftio](#run-ftio) on the trace file.
 
-## Execute the experiment on your system:
+## Extract the provided trace files
+Download and extract the file data.zip as described [here](/artifacts/ipdps24/README.md#extracting-the-data-set).
+Once extracted, you can find the IOR trace under `data/application_traces/IOR`.
+
+<p align="right"><a href="#ior">⬆</a></p>
+
+## Generate the experiment on your system:
+
 Install IOR as described [here](https://ior.readthedocs.io/en/latest/userDoc/install.html)
 
 For our experiments on the Lichtenberg cluster, we used the following sbatch script (`sbatch.s`):
@@ -27,20 +34,16 @@ Next simply submit the sbatch script via:
 sbatch sbatch.sh
 ```
 
-Once the simulation is completed, the file `9216.json` should be generated in the current folder. 
+Once the simulation is completed, the file `9216.json` should be generated in the current folder.
 Next, run `ftio` on the trace file as described [here](#run-ftio).
 
 <p align="right"><a href="#ior">⬆</a></p>
 
-## Extract the provided trace file
-Download and extract the file data.zip as described [here](/artifacts/ipdps24/README.md#extracting-the-data-set).
-Once extracted, you can find the HACC-IO trace under `application_traces/IOR`.
 
-<p align="right"><a href="#ior">⬆</a></p>
 
 ## Run FTIO
-[Install FTIO](https://github.com/tuda-parallel/FTIO#installation).
-The instructions below assume that the trace file is called `9216.json`.
+If you didn't install `ftio`, first check out version 0.0.1 as described [here](/artifacts/ipdps24/README.md#ftio-version), then install it as described [here](https://github.com/tuda-parallel/FTIO#installation).
+The instructions below assume that the trace file is called `9216.json`, which after [extracting](#extract-the-provided-trace-file) the trace file, should be located in `data/application_traces/IOR`.
 
 To get the dominant frequency with `ftio` simply call:
 ```sh
@@ -53,7 +56,6 @@ Now lower the threshold from 0.8 (default) to 0.45:
 ftio 9216.json  -e no  -t 0.45
 ```
 
-
 To gain further confidence, execute ftio with autocorrelation (`-c`):
 ```sh
 ftio 9216.json  -e no  -t 0.45 -c 
@@ -65,12 +67,12 @@ ftio 9216.json  -e no  -t 0.45 -c
 ## Tracing Library Overhead
 
 ### Detection Mode:
-Download and extract the file data.zip
+Download and extract the file data.zip as described [here](/artifacts/ipdps24/README.md#extracting-the-data-set).
 
-Navigate to application_traces/IOR/overhead/detection and call [`ioplot`](https://github.com/tuda-parallel/FTIO/blob/main/docs/tools.md#ioplot):
+Navigate to `data/application_traces/IOR/overhead/detection` and call [`ioplot`](https://github.com/tuda-parallel/FTIO/blob/main/docs/tools.md#ioplot):
 
 ```sh
-cd application_traces/IOR/overhead/detection
+cd data/application_traces/IOR/overhead/detection
 ioplot 
 ```
 
@@ -82,10 +84,10 @@ Now examine the plots in your browser by selecting "Time". If your browser does 
 
 Download and extract the file data.zip
 
-Navigate to application_traces/IOR/overhead/prediction and call [`ioplot`](https://github.com/tuda-parallel/FTIO/blob/main/docs/tools.md#ioplot):
+Navigate to `data/application_traces/IOR/overhead/prediction` and call [`ioplot`](https://github.com/tuda-parallel/FTIO/blob/main/docs/tools.md#ioplot):
 
 ```sh
-cd application_traces/IOR/overhead/detection
+cd data/application_traces/IOR/overhead/detection
 ioplot run_*
 ```
 Now examine the plots in your browser by selecting "Time". If your browser does not open automatically, open the `file io_results/time.html` or `file io_results/main.html` and select time.
