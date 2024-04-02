@@ -36,7 +36,7 @@ Remove `-e no` if you want to obtain figures (Fig 12 and 14 from the paper).
 - If you didn't install `ftio`, first check out version 0.0.1 as described [here](/artifacts/ipdps24/README.md#ftio-version), then install it as described [here](https://github.com/tuda-parallel/FTIO#installation).
 
 In case you are interested in the original, it is [here](https://github.com/glennklockwood/hacc-io). For our experiments, we modified the code such that it is executed in a loop.
-Navigate to the folder where the source code of the _modified_ version of HACC-IO is presented in  `data/application_traces/HACC-IO/src`. Modify the provided Makefile to point to your TMIO git repository:
+Navigate to the folder where the source code of the _modified_ version of HACC-IO is presented in `data/application_traces/HACC-IO/src`. Modify the provided Makefile to point to your TMIO git repository:
 
 ```bash
 ⋮
@@ -59,6 +59,6 @@ execute this call and then submit your `sbatch.sh` script with:
 ```bash
 sbatch sbatch.sh
 ```
-This generates online predictions during the runtime of HACC-IO. Additionally add the `-w` flag to the call of `predictor`, in case you want to utilize the automatic time window adaption as we did in the paper. With the `-x 3` flag, you can trigger the time window adaption after three hits, which is the default behavior.
+`ftio` is called internally in `predictor` whenever new traces are appended to the monitored fill x.jsonl. This yields online predictions during the runtime of HACC-IO. Additionally add the `-w` flag to the call of `predictor`, in case you want to utilize the automatic time window adaption as we did in the paper. With the `-x 3` flag, you can trigger the time window adaption after three hits, which is the default behavior.
 
 <p align="right"><a href="#ior">⬆</a></p>
