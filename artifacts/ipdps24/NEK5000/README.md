@@ -1,7 +1,6 @@
 # NEK5000
 
-The trace can be downloaded from: <https://hpcioanalysis.zdv.uni-mainz.de/trace/64ed13e0f9a07cf8244e45cc>.
-<!-- In case it is no longer available, the trace can be simply extracted from the provided tar archive.  -->
+The trace can be downloaded directly from: <https://hpcioanalysis.zdv.uni-mainz.de/trace/64ed13e0f9a07cf8244e45cc>, or can be found in `data/application_traces/NEK5000` after extracting [data.zip](/artifacts/ipdps24/README.md#extracting-the-data-set).
 
 After downloading, rename the file to `nek_2048.darshan`. `ftio` can now be called on the complete trace via:
 

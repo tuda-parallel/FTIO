@@ -1,7 +1,6 @@
 # LAMMPS With 3072 Ranks
 
-Either [analyzing the provided trace file](#analyzing-the-provided-trace-file)) or [Repeat the experiment on your cluster](#repeating-the-experiment-on-your-cluster) as described below. In both cases, you first need to extract the needed traces or scripts. For that, 
-download and extract the file data.zip as described [here](/artifacts/ipdps24/README.md#extracting-the-data-set).
+You can either [repeat the experiment on your cluster](#repeating-the-experiment-on-your-cluster) or [analyze the provided trace file](#analyzing-the-provided-trace-file) as described below. In either case, you first need to extract the needed traces or scripts. For that, download and extract the file data.zip as described [here](/artifacts/ipdps24/README.md#extracting-the-data-set).
 Once extracted, you can find the required files under `data/application_traces/LAMMPS`.
 This folder contains:
 1. Tracing file generated with TMIO: lammps_3072.json
@@ -100,15 +99,14 @@ dump 3 all custom/mpiio 20 dump.*.mpiio x y z
 run		300
 ```
  
-After setting this up, generate the TMIO library (`libtmio.so`). For that, first navigate to the root directory of the cloned TMIO repo, then execute:
+After setting this up, generate the TMIO library (`libtmio.so`). For that, navigate to the root directory of the cloned TMIO repo, then execute:
 
 ```sh
 cd build
 make library
 ```
 
-This is also described in the [TMIO Github]( version 0.0.1 as described [here](/artifacts/ipdps24/README.md#ftio-version)). 
-
+This is also described in the [TMIO Github](https://github.com/tuda-parallel/TMIO/?tab=readme-ov-file#installation). 
 Copy the library `libtmio.so`, the LAMMPS executable, the input file `in.flow.pois`, and the sbatch script `sbatch.sh` to the same folder. 
 Now, simply call the sbatch command:
 ```sh

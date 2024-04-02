@@ -18,22 +18,30 @@ from ftio.freq.helper import MyConsole
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
-CARGO = False
-CARGO_PATH = "/beegfs/home/Shared/admire/JIT/iodeps/bin"
-CARGO_SERVER = "tcp://127.0.0.1:62000"
+CARGO = True
+CARGO_PATH = "/lustre/project/nhr-admire/vef/cargo/build/cli"
+# CARGO_SERVER = "tcp://127.0.0.1:62000"
+CARGO_SERVER = "ofi+sockets://127.0.0.1:62000"
 T_S = time.time()
 
 def main(args: list[str] = []) -> None:
     if CARGO:
-        os.system(f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c -1 -p -1 -t 10000")
-        os.system(f"{CARGO_PATH}/cpp --server {CARGO_SERVER} --input /data --output ~/stage-out --if gekkofs --of parallel")
+        call = f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER}"
+        CONSOLE.print("[bold green][Init][/][green]" +call+"\n")
+        os.system(call)
+         
+         #input is relative from GekokFS
+        call = f"{CARGO_PATH}/ccp --server {CARGO_SERVER} --input / --output /lustre/project/nhr-admire/tarraf/stage-out --if gekkofs --of parallel"
+        CONSOLE.print("[bold green][Init][/][green]" +call+"\n")
+        os.system(call)
+        
     ranks = 0
     args.extend(["-e", "plotly", "-f", "10", "-m", "write"])
     context = zmq.Context()
     socket = context.socket(socket_type=zmq.PULL)
     # addr = "*"
-    addr = "127.0.0.1"
-    # addr = "10.81.3.158"
+    # addr = "127.0.0.1"
+    addr = "10.81.3.98"    
     port = "5555"
     
     try:
@@ -233,7 +241,7 @@ def trigger_cargo(sync_trigger):
                     target_time = prediction['t_end'] + 1/prediction['freq']
                     geko_elapsed_time = prediction['t_flush'] + t  # t  is the waiting time in this function
                     remaining_time = (target_time - geko_elapsed_time ) 
-                    CONSOLE.print(f"[bold green][Trigger][/][green] Target time = {target_time:.3f} -- Gekko time = {geko_elapsed_time:.3f} -> sending cmd in {remaining_time:.3f} s[/]")
+                    CONSOLE.print(f"[bold green][Trigger][/][green] Target time = {target_time:.3f} -- Gekko time = {geko_elapsed_time:.3f} -> sending cmd in {remaining_time:.3f} s[/]\n")
                     if remaining_time > 0:
                         countdown = time.time() + remaining_time
                         # wait till the time elapses:
@@ -245,9 +253,11 @@ def trigger_cargo(sync_trigger):
 
                         if not skip_flag:
                             if CARGO:
-                                os.system(f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']} ")
+                                # call = f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']}"
+                                call = f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} --run"
+                                os.system(call)
 
-                            CONSOLE.print(f"[bold green][Trigger][/][green] Executed cargo_ftio: {CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c {prediction['conf']:.3f} -p {prediction['probability']:.3f} -t {1/prediction['freq']:.3f}  [/]\n")
+                            CONSOLE.print("[bold green][Trigger][/][green]" +call+"\n")
                         else:
                             CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, new prediction is ready[/]\n")
 

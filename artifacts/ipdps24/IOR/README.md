@@ -28,7 +28,7 @@ For our experiments on the Lichtenberg cluster, we used the following sbatch scr
 export LD_PRELOAD=./libtmio.so  
 srun ./ior  -N ${SLURM_NPROCS} -t 2m -b 10m -s 2 -i 8 -a MPIIO
 ```
-Modify this script if needed according to your system specifications. 
+Modify this script if needed according to your system specifications.
 Next simply submit the sbatch script via:
 ```sh
 sbatch sbatch.sh

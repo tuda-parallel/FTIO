@@ -16,9 +16,9 @@ The experiments are divided into four parts:
 	- [Artifacts](#artifacts)
 		- [1. Running Example and Overhead](#1-running-example-and-overhead)
 		- [2. Case Studies](#2-case-studies)
-			- [LAMMPS](#lammps)
-			- [Nek5000](#nek5000)
-			- [Modified HACC-IO](#modified-hacc-io)
+			- [2.1. LAMMPS](#21-lammps)
+			- [2.2 Nek5000](#22-nek5000)
+			- [2.3 Modified HACC-IO](#23-modified-hacc-io)
 		- [3. Limitations of FTIO](#3-limitations-of-ftio)
 		- [4. Use Case: I/O Scheduling](#4-use-case-io-scheduling)
 	- [Citation](#citation)
@@ -72,7 +72,7 @@ Throughout Section II of the paper "Capturing Periodic I/O Using Frequency Techn
 ### 2. Case Studies
 Bellow instructions are provided on how to recreate the case studies from Section III-B. As mentioned [above](#ftio-version), `ftio` version 0.0.1 was used for all examples here. 
 
-#### LAMMPS
+#### 2.1. LAMMPS
 
 This experiment was executed on the Lichtenberg cluster with 3072 ranks. 
 Follow the instructions provided in the [LAMMPS/README.md](/artifacts/ipdps24/LAMMPS/README.md) to reconstruct this experiment. 
@@ -81,13 +81,13 @@ Follow the instructions provided in the [LAMMPS/README.md](/artifacts/ipdps24/LA
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
 
-#### Nek5000
+#### 2.2 Nek5000
 The trace can be downloaded from [here](https://hpcioanalysis.zdv.uni-mainz.de/trace/64ed13e0f9a07cf8244e45cc).
 After downloading, instructions on how to reproduce the results are provided in the [NEK5000/README](/artifacts/ipdps24/NEK5000/README.md).
 
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
-#### Modified HACC-IO
+#### 2.3 Modified HACC-IO
 Navigate to [HACC-IO/README](/artifacts/ipdps24/HACC-IO/README.md) and follow the provided instructions. 
 
 
