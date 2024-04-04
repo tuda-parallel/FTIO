@@ -7,7 +7,7 @@ FTIO supports two modes:
 	- [Online Prediction](#online-prediction)
 
 ## Offline Detection
-the Python implementation of FTIO ([`ftio`](https://github.com/tuda-parallel/FTIO/tree/main/ftio/cli/ftio_core.py)) takes the traces that contain the bandwidth over time to find the period of the I/O phases (if any). 
+The Python implementation of FTIO ([`ftio`](https://github.com/tuda-parallel/FTIO/tree/main/ftio/cli/ftio_core.py)) takes the traces that contain the bandwidth over time to find the period of the I/O phases (if any). 
 An overview of `ftio` is provided in the image below:
 
 <br />

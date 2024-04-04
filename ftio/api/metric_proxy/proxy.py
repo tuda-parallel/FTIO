@@ -4,27 +4,27 @@ from ftio.freq._dft import display_prediction
 from ftio.freq.freq_plot_core import convert_and_plot
 from ftio.api.metric_proxy.parse_proxy import parse
 from ftio.post.processing import label_phases
+from ftio.freq.helper import MyConsole
 
-#---------------------------------
+CONSOLE = MyConsole()
+CONSOLE.set(True)
+
+# ---------------------------------
 # Modification Area
-#---------------------------------
+# ---------------------------------
 b, t = parse("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", "total___mpi___size_total")
+# b, t = parse("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", "mpi___size___mpi_allgather")
 ranks = 32
 
 # command line arguments
-argv = ["-e", "plotly"]  #["-e", "no"] to disable the plot
-#---------------------------------
+argv = ["-e", "plotly"]  # ["-e", "no"] to disable the plot
+# ---------------------------------
 
 # set up data
-data= {
-        "time": t,
-        "bandwidth": b,
-        "total_bytes": 0,
-        "ranks": ranks 
-        }
+data = {"time": t, "bandwidth": b, "total_bytes": 0, "ranks": ranks}
 
-#parse args
-args = parse_args(argv,"ftio")
+# parse args
+args = parse_args(argv, "ftio")
 
 # perform prediction
 prediction, dfs = core([data], args)
@@ -34,6 +34,8 @@ convert_and_plot(data, dfs, args)
 display_prediction(["./ftio"], prediction)
 
 # Post processing
-if prediction and len(prediction["dominant_freq"])!= 0:
-    phases, time = label_phases(prediction,args)
-    print(f"phases: {phases}\ntime: {time}\n")
+if prediction and len(prediction["dominant_freq"]) != 0:
+    phases, time = label_phases(prediction, args, b, t)
+    CONSOLE.print(
+        f"[cyan]Phases[/]: {phases}\n[cyan]Start time[/]: {time['t_s']}\n[cyan]End time[/]: {time['t_e']}\n"
+    )

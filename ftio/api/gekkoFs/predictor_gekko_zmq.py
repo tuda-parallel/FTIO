@@ -76,8 +76,6 @@ def main(args: list[str] = []) -> None:
     # for Cargo trigger process:
     sync_trigger = manager.Queue()
     trigger = handle_in_process(trigger_cargo, args=(sync_trigger,)) 
-    
-    
 
     if "-zmq" not in args:
         args.extend(["--zmq"])
