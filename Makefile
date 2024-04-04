@@ -3,26 +3,31 @@ SHELL := /bin/bash
 
 all: install  
 
-install: venv ftio
-	@echo -e "\nftio was installed in an python environment in .venv" 
-	@echo -e "To activate it call:\nsource $(PWD)/.venv/bin/activate\n"
-	@echo -e "Afterwards, you can just call 'ftio [filename]'"
 
-debug:
+
+install: venv clean ftio msg 
+
+debug: venv ftio_debug msg 
+
+ftio_debug: 
 	mv old_setup setup.py
 	mv pyproject.toml pyproject
-	pip install -e . || (mv pyproject pyproject.toml && mv setup.py old_setup)
+	${PYTHON} -m pip install -e . || (mv pyproject pyproject.toml && mv setup.py old_setup)
 	mv pyproject pyproject.toml
 	mv setup.py old_setup
+	
 
-ftio: clean ftio_core 
-
-ftio_core: 
+ftio: 
 	${PYTHON} -m pip install . 
 
 venv: 
 	python3 -m venv .venv 
 
+
+msg: 
+	@echo -e "\nftio was installed in an python environment in .venv" 
+	@echo -e "To activate python from this venv, call:\nsource $(PWD)/.venv/bin/activate\n"
+	@echo -e "Afterwards, you can just call 'ftio [filename]'"
 
 clean:
 	echo "Cleaning old installation"
