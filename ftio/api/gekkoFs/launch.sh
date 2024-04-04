@@ -128,8 +128,8 @@ function start_cargo() {
 
 function start_ftio() {
 	echo -e "${GREEN}Starting FTIO ${BLACK}\n"
-	source /lustre/project/nhr-admire/tarraf/github/FTIO/.venv/bin/activate
-	ftio_gekko \
+	source /lustre/project/nhr-admire/tarraf/FTIO/.venv/bin/activate
+	predictor_gekko \
 	# 2>&1 | tee  ./ftio_${PROCS}.txt
 }
 
