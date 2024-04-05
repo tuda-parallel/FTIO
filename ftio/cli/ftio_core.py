@@ -198,6 +198,19 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
         prediction["ranks"]         = ranks
         prediction["total_bytes"]   = total_bytes
 
+        #? save up to n_freq from the top candidates
+        if args.n_freq > 0:
+            #TODO use amp instead of conf
+            arr = amp[0:int(np.ceil(len(amp)/2))]
+            top_candidates = np.argsort(-arr) # from max to min
+            n_freq = int(min(len(arr),args.n_freq))
+            prediction["top_freq"] = {
+                "freq": freq_arr[top_candidates[0:n_freq]],
+                "conf": conf[top_candidates[0:n_freq]],
+                "amp":  amp[top_candidates[0:n_freq]],
+                "phi":  phi[top_candidates[0:n_freq]]
+            }
+            
         if args.autocorrelation:
             share["b_sampled"]   = b_sampled
             share["freq"]        = freq

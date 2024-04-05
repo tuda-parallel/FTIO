@@ -62,16 +62,16 @@ function is_port_in_use() {
 	port_output=$(netstat -tlpn | grep ":$port_number ")
 	if [[ ! -z "$port_output" ]]; then
 		# Port is in use
-		echo "Error: Port $port_number is already in use..."
+		echo -e "${RED}Error: Port $port_number is already in use...${BLACK}"
 	else
 		# Port is free
-		echo "Port $port_number is available."
+		echo -e "${BLUE}Port $port_number is available.${BLACK}"
 	fi
 }
 
 # Check if port is available
 if is_port_in_use $port; then
-	echo "Error: Port $port is already in use on $address. Terminating existing process..."
+	echo -e "${RED}Error: Port $port is already in use on $address. Terminating existing process...${BLACK}"
 
 	# Use ss command for potentially more reliable process identification (uncomment)
 	# process_id=$(ss -tlpn | grep :"$port " | awk '{print $NF}')
@@ -80,19 +80,20 @@ if is_port_in_use $port; then
 	process_id=$(netstat -tlpn | grep :"$port " | awk '{print $7}')
 
 	if [[ ! -z "$process_id" ]]; then
-		echo "Terminating process with PID: $process_id"
+		echo -e "${YELLOW}Terminating process with PID: $process_id${BLACK}"
 		kill "${process_id%/*}"
 	else
-		echo "Failed to identify process ID for port $port."
+		echo "${RED}Failed to identify process ID for port $port.${BLACK}"
 	fi
 else
-	echo "Port $port is available on $address."
+	echo "${GREEN}Port $port is available on $address.${BLACK}"
 fi
 
 # Start the Server
 function start_geko() {
 
 	echo -e "${GREEN}GKFS DEOMON started ${BLACK}\n"
+	# Geko Demon call
 	GKFS_DAEMON_LOG_PATH=/tmp/gkfs_daemon.log \
 		GKFS_DAEMON_LOG_LEVEL=info \
 		/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/bin/gkfs_daemon \
@@ -102,9 +103,10 @@ function start_geko() {
 		-H ${HOSTFILE} 
 }
 
-# IOR
+# Application call
 function start_application() {
 	echo -e "${CYAN}Executing Application ${BLACK}\n"
+	# application with Geko LD_PRELOAD
 	mpiexec -np $PROCS --oversubscribe \
 		-x LIBGKFS_HOSTS_FILE=${HOSTFILE} \
 		-x LIBGKFS_LOG=none \
@@ -117,6 +119,7 @@ function start_application() {
 
 function start_cargo() {
 	echo -e "${GREEN}Starting Cargo ${BLACK}\n"
+	# start Cargo
 	mpiexec -np 2 --oversubscribe \
 		--map-by node \
 		-x LIBGKFS_HOS_FILE=${HOSTFILE} \
@@ -126,12 +129,14 @@ function start_cargo() {
 		>> ./cargo_${PROCS}.txt
 }
 
+
 function start_ftio() {
 	echo -e "${GREEN}Starting FTIO ${BLACK}\n"
 	source /lustre/project/nhr-admire/tarraf/FTIO/.venv/bin/activate
 	predictor_gekko \
 	# 2>&1 | tee  ./ftio_${PROCS}.txt
 }
+
 
 # Only proceed if port is free
 if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free port)

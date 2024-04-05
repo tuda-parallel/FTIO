@@ -8,6 +8,15 @@ def test_ftio():
     prediction, dfs = core([], args)
     assert True
 
+def test_ftio_autocorrelation():
+    args = parse_args(["-e", "no", "-c"], "ftio")
+    prediction, dfs = core([], args)
+    assert True
+
+def test_ftio_n_freq():
+    args = parse_args(["-e", "no", "-n", "5"], "ftio")
+    prediction, dfs = core([], args)
+    assert True
 
 def test_ftio_zscore():
     file = "../examples/8.jsonl"

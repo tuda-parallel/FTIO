@@ -89,6 +89,8 @@ Full documentation:
         parser.set_defaults(reconstruction=False)
         parser.add_argument('-np','--no-psd', dest='psd', action='store_false', help='if set, replace the power density spectrum (a*a/N) with the amplitude spectrum (a)')
         parser.set_defaults(psd=True)
+        parser.add_argument('-n', '--n_freq', dest= 'n_freq',   type = float, help ='number of frequencies to extract. By default FTIO finds the dominant frequency. With this flag, up to "n_freq" can be extracted from FTIO')
+        parser.set_defaults(n_freq =  0)
         parser.add_argument('-c', '--autocorrelation', dest='autocorrelation', action='store_true', help ='if set, autocorrelation is calculated in addition to DFT. The results are merged to a single prediction at the end')
         parser.set_defaults(autocorrelation=False)
         parser.add_argument('-w', '--window_adaptation', dest='window_adaptation', action='store_true', help ='online time window adaptation. If set to true, the time window is shifted on X hits to X times the previous phases from the current instance. X corresponds to frequency_hits')
@@ -103,6 +105,7 @@ Full documentation:
         parser.set_defaults(zmq_source = 'direct')
         parser.add_argument('--zmq_addr', '--zmq_addr',         type = str, help = 'zmq port for communication')
         parser.set_defaults(zmq_addr = 'tcp://127.0.0.1:5555')
+        
 
     #! IOPLOT Settings
     if 'plot' in name.lower():

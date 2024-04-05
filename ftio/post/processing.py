@@ -20,9 +20,9 @@ def label_phases(
     """
     # just take the dominant or consider more than one
     only0ne = False
-    t = np.arange(
-            prediction["t_start"], prediction["t_end"], 1 / prediction["freq"]
-        )
+    n_waves = 1
+
+    t = np.arange(prediction["t_start"], prediction["t_end"], 1 / prediction["freq"])
 
     if only0ne:
         dominant_index = np.argmax(prediction["conf"])
@@ -36,17 +36,37 @@ def label_phases(
         cosine_wave = 2 * amp / n * np.cos(2 * np.pi * f * t + phi)
     else:
         cosine_wave = np.zeros(len(t))
-        print(f"merging {len(prediction['conf'])} frequencies")
+        n_waves = len(prediction["conf"]) if args.n_freq == 0 else len(prediction["top_freq"]["freq"])
+        print(f"merging {n_waves} frequencies")
 
-        for index in range(0, len(prediction["conf"])):
+        # iterate over all dominant frequencies or take the top_frequencies if args.n_freq is above 0
+        for index, _ in enumerate(
+            prediction["conf"] if args.n_freq == 0 else prediction["top_freq"]["freq"]
+        ):
             # conf = prediction["conf"][index]
-            f = prediction["dominant_freq"][index]
-            amp = prediction["amp"][index]
-            phi = prediction["phi"][index]
+            f = (
+                prediction["dominant_freq"][index]
+                if args.n_freq == 0
+                else prediction["top_freq"]["freq"][index]
+            )
+            amp = (
+                prediction["amp"][index]
+                if args.n_freq == 0
+                else prediction["top_freq"]["amp"][index]
+            )
+            phi = (
+                prediction["phi"][index]
+                if args.n_freq == 0
+                else prediction["top_freq"]["phi"][index]
+            )
             n = np.floor(
                 (prediction["t_end"] - prediction["t_start"]) * prediction["freq"]
             )
 
+            #skip frequency at 0
+            if f == 0 and args.n_freq != 0:
+                continue
+            
             ## create cosine wave
             cosine_wave = cosine_wave + 2 * amp / n * np.cos(2 * np.pi * f * t + phi)
 
@@ -85,22 +105,31 @@ def label_phases(
         time = {"t_s": [], "t_e": []}
 
     ## Plot
-    fig = plot_classification(args, cosine_wave, t, time, b0,t0)
+    _ = plot_classification(args, cosine_wave, t, time, n_waves, b0, t0)
 
     return phases, time
 
 
-def plot_classification(args, cosine_wave, t, time, b0,t0)  -> go.Figure | None:
+def plot_classification(args, cosine_wave, t, time, n_waves = 0, b0 =np.array([]), t0=np.array([])) -> go.Figure | None:
     fig = None
     if any(x in args.engine for x in ["mat", "plot"]):
         fig = go.Figure()
+        if n_waves == 1:
+            name = "Dominant wave" 
+        elif args.n_freq == 0:
+            name = "Dominant waves"
+        else:
+            name = f"{n_waves} superposed <br>cosine waves"
         fig.add_trace(
-            go.Scatter(x=t, y=cosine_wave, name="FTIO cosine wave", marker_color="red")
+            go.Scatter(x=t, y=cosine_wave, name=name, marker_color="red")
         )
         # fig.add_trace(go.Scatter(x=t, y=square_wave, name="square wave"))
         fig.add_hline(y=0, line_width=1, line_color="gray")
         colors = px.colors.qualitative.Plotly + px.colors.qualitative.G10
         for i, _ in enumerate(time["t_s"]):
+            if i == len(colors):
+                print("Not enough colors")
+                break
             fig.add_vrect(
                 x0=time["t_s"][i],
                 x1=time["t_e"][i],
