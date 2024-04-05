@@ -165,14 +165,19 @@ def prepare_plot_dfs(
     return df0, df1, df2, df3
 
 
-def display_prediction(argv: list[str], prediction: dict) -> None:
+def display_prediction(argv: list[str]|str, prediction: dict) -> None:
     """Displays the result of the prediction from ftio
 
     Args:
         argv (list[str]): command line arguments
         prediction (dict): the result from ftio
     """
-    func_name = argv[0][argv[0].rfind("/") + 1:]
+
+    if isinstance(argv,list):
+        func_name = argv[0][argv[0].rfind("/") + 1:]
+    else:
+        func_name = argv
+
     if "ftio" in func_name:
         if prediction:
             freq, conf = get_dominant_and_conf(prediction)

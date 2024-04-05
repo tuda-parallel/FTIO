@@ -32,7 +32,7 @@ prediction, dfs = core([data], args)
 
 # plot and print info
 convert_and_plot(data, dfs, args)
-display_prediction(["./ftio"], prediction)
+display_prediction("ftio", prediction)
 
 # Post processing
 if prediction and len(prediction["dominant_freq"]) != 0:

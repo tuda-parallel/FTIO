@@ -24,7 +24,7 @@ b,t = overlap(b_rank,t_rank_s, t_rank_e)
 argv = ["-e", "no"] #["-e", "mat"]
 
 # set up data
-data= {
+data = {
         "time": np.array(t),
         "bandwidth": np.array(b),
         "total_bytes": total_bytes,
@@ -40,4 +40,4 @@ prediction, dfs = core([data], args)
 
 # plot and print info
 convert_and_plot(data, dfs, args)
-display_prediction(["./ftio"], prediction)
+display_prediction("ftio", prediction)

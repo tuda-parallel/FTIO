@@ -73,5 +73,5 @@ def test_api():
     prediction, dfs = core([data], args)
     # plot and print info
     convert_and_plot(data, dfs, args)
-    display_prediction(["./ftio"], prediction)
+    display_prediction("ftio", prediction)
     assert True

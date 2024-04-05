@@ -98,7 +98,7 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
     prediction, dfs = core([data], args)
 
     # 9) plot and print info
-    display_prediction(["./ftio"], prediction)
+    display_prediction("ftio", prediction)
     convert_and_plot(data, dfs, args)
 
     return prediction, args, data_rank["flush_t"]
