@@ -15,6 +15,10 @@ echo -e "${GREEN}---- Started Script ----${BLACK}"
 # Set default values. Check if enviromental variables are set
 # cluster or local mode?
 CLUSTER=false
+if [ -n "$(hostname | grep cpu)" ]; then
+	CLUSTER=true
+fi
+
 
 ###################
 # Common variables
@@ -47,7 +51,7 @@ GKFS_HOSTFILE="${HOME}/gkfs_hosts.txt"
 CARGO=${CARGO:-"/lustre/project/nhr-admire/vef/cargo/build/src/cargo"}
 
 # APP call 
-APP_CALL="ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
+APP_CALL="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
 
 # install location in case -i option is provided to the script
 install_location=${install_location:-"/beegfs/home/Shared/admire/JIT"}

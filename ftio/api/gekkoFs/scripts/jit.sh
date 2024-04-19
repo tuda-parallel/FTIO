@@ -28,16 +28,16 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	# check_finish
 	
 	# 1. Allocate resources
-	allocate
+	allocate;
 	
 	# 2. Start FTIO
-	start_ftio &
+	start_ftio 
 
 	# 3. Start Gekko Server
-	start_geko &
+	start_geko 
 
 	# 4. Start Cargo Server
-	start_cargo &
+	start_cargo 
 
 	# 5. Start application with Gekko intercept
 	start_application

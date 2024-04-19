@@ -46,7 +46,7 @@ fi
 function allocate(){
 	
 	if [ "$CLUSTER" = true ]; then
-		salloc -N $NODES -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire
+		salloc -N $NODES -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT
 	fi
 }
 
@@ -57,7 +57,7 @@ function start_geko() {
 	if [ "$CLUSTER" = true ]; then
 		srun --disable-status -N 1 --ntasks=1 --cpus-per-task=128 \
 		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
-		--partition parallel -A nhr-admire \ 
+		--partition parallel -A nhr-admire 	--job-name GEKKO_SERVER \
 		${GKFS_DEMON}  \
 		-r /dev/shm/tarraf_gkfs_rootdir \
 		-m /dev/shm/tarraf_gkfs_mountdir \
@@ -76,13 +76,12 @@ function start_geko() {
 # Application call
 function start_application() {
 	echo -e "${CYAN}Executing Application ${BLACK}"
-	
+	set -x
 	# application with Geko LD_PRELOAD
 	if [ "$CLUSTER" = true ]; then
 		srun --disable-status -N $NODES --ntasks=1 --cpus-per-task=128 \
 			--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
-			--partition parallel -A nhr-admire \ 
-			--job-name APPXGEKKO \
+			--partition parallel -A nhr-admire 	--job-name APPXGEKKO \
 			-x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
 			-x LIBGKFS_LOG=none \
 			-x LIBGKFS_ENABLE_METRICS=on \
@@ -99,12 +98,13 @@ function start_application() {
 			${APP_CALL}
 		echo -e "${CYAN}Application finished ${BLACK}\n"
 	fi 
+	set -o xtrace
 	FINISH=true
 }
 
 function start_cargo() {
 	echo -e "${GREEN}####### Starting Cargo ${BLACK}"
-	
+	set -x
 	if [ "$CLUSTER" = true ]; then
 		srun --disable-status -N 1 --ntasks=1 --cpus-per-task=128 \
 			--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
@@ -123,23 +123,25 @@ function start_cargo() {
 			ofi+sockets://127.0.0.1:62000 \
 			>> ./cargo_${NODES}.txt
 	fi
+	set -o xtrace
 }
 
 
 function start_ftio() {
 	echo -e "${GREEN}####### Starting FTIO ${BLACK}\n"
-
+	set -x
 	if [ "$CLUSTER" = true ]; then
 		source ${FTIO_ACTIVATE}
 		srun --disable-status -N 1 --ntasks=1 --cpus-per-task=128 \
 		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
-		--partition parallel -A nhr-admire \ 
+		--partition parallel -A nhr-admire 	--job-name FTIO \
 		predictor_gekko  --zmq_address ${ADDRESS} --zmq_port ${PORT}
 		# Change CARGO path in predictor_gekko_zmq.py if needed
 	else
 		predictor_gekko  > "ftio_${NODES}.out" 2> "ftio_${NODES}.err"
 		# 2>&1 | tee  ./ftio_${NODES}.txt
 	fi 
+	set -o xtrace
 }
 
 # Function to handle SIGINT (Ctrl+C)
