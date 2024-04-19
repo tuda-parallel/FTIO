@@ -5,6 +5,7 @@ from ftio.prediction.async_process import join_procs
 from ftio.prediction.processes import prediction_process
 from ftio.prediction.helper import print_data, export_extrap
 from ftio.prediction.async_process import handle_in_process
+from ftio.parse.args import parse_args
 from ftio.freq.helper import MyConsole
 
 CONSOLE = MyConsole()
@@ -28,8 +29,9 @@ def predictor_with_processes_zmq(
     procs = []
     context = zmq.Context()
     socket = context.socket(socket_type=zmq.PULL)
-    socket.bind("tcp://*:5555")
-
+    tmp_args = parse_args(args)
+    socket.bind(f'tcp://{tmp_args.zmq_address}:{tmp_args.zmq_port}')
+    
     # can be extended to listen to multiple sockets
     poller = zmq.Poller()
     poller.register(socket, zmq.POLLIN)
@@ -71,7 +73,8 @@ def predictor_with_processes_zmq(
             CONSOLE.print(f"[green]All message received from {ranks} ranks[/]")
 
             # launch prediction_process
-            # TODO: append b_app and t_app
+            # TODO: append b_app and t_app like predictor_gekko_zmq use the flag --zmq to indicate this
+            # put all in msgs and call it zmq_data
             procs.append(
                 handle_in_process(
                     prediction_process,

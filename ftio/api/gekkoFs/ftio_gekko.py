@@ -67,7 +67,7 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
     b, t = overlap(b_rank, t_rank_s, t_rank_e)
         
     # 5) Extend for ZMQ
-    if "ZMQ" in ext.upper():
+    if "ZMQ" in ext.upper(): # or use args.zmq
         # extend data
         b_app.extend(b)
         t_app.extend(t)

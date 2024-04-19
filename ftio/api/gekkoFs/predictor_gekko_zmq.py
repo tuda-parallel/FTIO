@@ -1,3 +1,4 @@
+import sys
 import time
 import os
 import subprocess
@@ -13,36 +14,41 @@ from ftio.api.gekkoFs.ftio_gekko import run
 from ftio.prediction.analysis import display_result, save_data, data_analysis
 from ftio.prediction.async_process import join_procs
 from ftio.freq.helper import MyConsole
+from ftio.parse.args import parse_args
 
 
-
+T_S = time.time()
 CONSOLE = MyConsole()
 CONSOLE.set(True)
 CARGO = True
 CARGO_PATH = "/lustre/project/nhr-admire/vef/cargo/build/cli"
-# CARGO_SERVER = "tcp://127.0.0.1:62000"
+CARGO_STAGE_OUT_PATH ="/lustre/project/nhr-admire/tarraf/stage-out"
 CARGO_SERVER = "ofi+sockets://127.0.0.1:62000"
-T_S = time.time()
 
-def main(args: list[str] = []) -> None:
+
+def main(args: list[str] = sys.argv) -> None:
+    #parse arguments
+    tmp_args = parse_args(args)
+    # addr = "10.81.3.98"    
+    # port = "5555"
+    addr = tmp_args.zmq_address
+    port = tmp_args.zmq_port
+
     if CARGO:
         call = f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER}"
         CONSOLE.print("[bold green][Init][/][green]" +call+"\n")
         os.system(call)
-         
-         #input is relative from GekokFS
-        call = f"{CARGO_PATH}/ccp --server {CARGO_SERVER} --input / --output /lustre/project/nhr-admire/tarraf/stage-out --if gekkofs --of parallel"
+
+        #input is relative from GekokFS
+        call = f"{CARGO_PATH}/ccp --server {CARGO_SERVER} --input / --output {CARGO_STAGE_OUT_PATH} --if gekkofs --of parallel"
         CONSOLE.print("[bold green][Init][/][green]" +call+"\n")
         os.system(call)
-        
+
     ranks = 0
     args.extend(["-e", "plotly", "-f", "10", "-m", "write"])
     context = zmq.Context()
     socket = context.socket(socket_type=zmq.PULL)
-    # addr = "*"
-    # addr = "127.0.0.1"
-    addr = "10.81.3.98"    
-    port = "5555"
+
     
     try:
         socket.bind(f"tcp://{addr}:{port}")
@@ -268,4 +274,4 @@ def trigger_cargo(sync_trigger):
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)

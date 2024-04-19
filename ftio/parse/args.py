@@ -99,13 +99,15 @@ Full documentation:
         parser.set_defaults(frequency_hits =  3)
         parser.add_argument('-v', '--verbose', dest= 'verbose',   action = 'store_true', help ='sets verbose on or off (default=False)')
         parser.set_defaults(verbose =  False)
-        parser.add_argument('--zmq', action='store_true', help='avoids opening the generated HTML file')
+        parser.add_argument('--zmq', action='store_true', help='avoids opening the generated HTML file since zmq is used')
         parser.set_defaults(zmq=False)
         parser.add_argument('--zmq_source',         type = str, help = 'the source of zmq: TMIO, direct, etc.')
         parser.set_defaults(zmq_source = 'direct')
-        parser.add_argument('--zmq_addr', '--zmq_addr',         type = str, help = 'zmq port for communication')
-        parser.set_defaults(zmq_addr = 'tcp://127.0.0.1:5555')
-        
+        parser.add_argument('--zmq_address', '--zmq_address', dest='zmq_address', type = str, help = 'zmq address for communication')
+        parser.set_defaults(zmq_address = '*')
+        parser.add_argument('--zmq_port', '--zmq_port', dest='zmq_port', type = str, help = 'zmq port for communication')
+        parser.set_defaults(zmq_port = '5555')
+
 
     #! IOPLOT Settings
     if 'plot' in name.lower():
