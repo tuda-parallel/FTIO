@@ -57,13 +57,13 @@ function start_geko() {
 	if [ "$CLUSTER" = true ]; then
 		srun --disable-status -N 1 --ntasks=1 --cpus-per-task=128 \
 		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
+		--partition parallel -A nhr-admire \ 
 		${GKFS_DEMON}  \
 		-r /dev/shm/tarraf_gkfs_rootdir \
 		-m /dev/shm/tarraf_gkfs_mountdir \
 		-H ${GKFS_HOSTFILE}  -c -l ib0
 	else
 		# Geko Demon call
-		GKFS_DAEMON_LOG_PATH=/tmp/gkfs_daemon.log \
 			GKFS_DAEMON_LOG_LEVEL=info \
 			${GKFS_DEMON} \
 			-r /tmp/gkfs_rootdir \
@@ -81,6 +81,8 @@ function start_application() {
 	if [ "$CLUSTER" = true ]; then
 		srun --disable-status -N $NODES --ntasks=1 --cpus-per-task=128 \
 			--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
+			--partition parallel -A nhr-admire \ 
+			--job-name APPXGEKKO \
 			-x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
 			-x LIBGKFS_LOG=none \
 			-x LIBGKFS_ENABLE_METRICS=on \
@@ -106,6 +108,7 @@ function start_cargo() {
 	if [ "$CLUSTER" = true ]; then
 		srun --disable-status -N 1 --ntasks=1 --cpus-per-task=128 \
 			--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
+			--partition parallel -A nhr-admire \ 
 			--map-by node \
 			-x LIBGKFS_HOS_FILE=${GKFS_HOSTFILE} \
 			--hostfile /lustre/project/nhr-admire/tarraf/hostfile \
@@ -130,6 +133,7 @@ function start_ftio() {
 		source ${FTIO_ACTIVATE}
 		srun --disable-status -N 1 --ntasks=1 --cpus-per-task=128 \
 		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
+		--partition parallel -A nhr-admire \ 
 		predictor_gekko  --zmq_address ${ADDRESS} --zmq_port ${PORT}
 		# Change CARGO path in predictor_gekko_zmq.py if needed
 	else
@@ -184,7 +188,6 @@ function install_all(){
 	# Build GKFS
 	gekkofs/scripts/gkfs_dep.sh iodeps/git iodeps
 	cd gekkofs && mkdir build && cd build
-	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${install_location}/iodeps -DGKFS_BUILD_TESTS=OFF  -DCMAKE_INSTALL_PREFIX=${install_location}/iodeps -DGKFS_ENABLE_CLIENT_METRICS=ON ..
 	make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
 	echo -e "${GREEN}>>> GEKKO installed${BLACK}"
 
@@ -193,7 +196,6 @@ function install_all(){
 	cd ${install_location}
 	git clone https://github.com/USCiLab/cereal
 	cd cereal && mkdir build && cd build
-	cmake -DCMAKE_PREFIX_PATH=${install_location}/iodeps \
 	-DCMAKE_INSTALL_PREFIX=${install_location}/iodeps ..
 	make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
 	
@@ -201,7 +203,6 @@ function install_all(){
 	cd ${install_location}
 	git clone https://github.com/mochi-hpc/mochi-thallium
 	cd mochi-thallium && mkdir build && cd build
-	cmake -DCMAKE_PREFIX_PATH=${install_location}/iodeps \
 	-DCMAKE_INSTALL_PREFIX=${install_location}/iodeps ..
 	make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
 
@@ -214,7 +215,6 @@ function install_all(){
 
 	# build cargo 
 	cd cargo && mkdir build && cd build
-	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${install_location}/iodeps 	-DCMAKE_INSTALL_PREFIX=${install_location}/iodeps ..
 	make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
 	# GekkoFS should be found in the cargo CMAKE configuration.
 	echo -e "${GREEN}>>> Cargon installed${BLACK}"
@@ -231,7 +231,6 @@ function install_all(){
 
 
 	echo -e "call these two lines: \n 
-	export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${install_location}/iodeps/lib:${install_location}/iodeps/lib64
 	source ${install_location}/FTIO/.venv/activate
 
 	read to go
@@ -240,11 +239,12 @@ function install_all(){
 
 function parse_options(){
 	# Parse command-line arguments using getopts
-	while getopts ":a:p:n:i:h" opt; do
+	while getopts ":a:p:n:t:i:h" opt; do
 		case $opt in
 		a) ADDRESS="$OPTARG" ;;
 		p) PORT="$OPTARG" ;;
 		n) NODES="$OPTARG" ;;
+		t) MAX_TIME="$OPTARG" ;;
 		i) 
 			install_location="$OPTARG" 
 			install_all 
@@ -266,3 +266,99 @@ function parse_options(){
 	shift $((OPTIND - 1))
 }
 
+function find_time(){
+
+	n=$1
+	tm=0
+    if [ $n -lt 101 ]; then
+        tm=05
+    elif [ $n -lt 1001 ]; then
+        tm=30
+    elif [ $n -lt 5001 ]; then
+        tm=10   
+    elif [ $n -lt 10001 ]; then
+        tm=30   
+    else
+        #tm=$(($n / 100))
+        tm=60
+    fi
+
+	return $tm
+}
+
+function get_id(){
+	trueIdid=$(squeue | grep "APPXGEKKO" |awk '{print $(1) }')
+	return $trueIdid
+}
+
+function info(){
+	trueID=$(get_id)
+	echo -e "${BLUE}\nWorking directory is -> $PWD ${BLACK}"
+	echo -e "${BLUE}Target nodes ---------> $NODES ${BLACK}"
+	echo -e "${BLUE}Max time -------------> $MAX_TIME ${BLACK}"
+	echo -e "${BLUE}Job id ---------------> ${RED}$trueId \n ${BLACK}"
+}
+
+
+function progress(){
+	Animationflag=0
+	trueID=$(get_id)
+	status=$(squeue| grep $trueId | awk '{print $5 }' | tail -1 )
+	job_nodes=$(squeue  | grep $trueId | awk '{print $(9) }' | tail -1 )
+	time_limit=$(squeue | grep $trueId | awk '{print $(7) }' | tail -1 )
+	while [[ $status != "C" ]] &&  [[ $status != "F" ]] &&  [[ $status != "S" ]] && [[ ! -z $status ]]; do
+        if [[ $status == *R* ]]; then
+            if [[ flag -eq 0 ]]; then
+		start_time="$(date -u +%s)"
+		flag=1
+                echo -e "\n${BLUE}  RUNNING on $job_nodes nodes${BLACK}"
+            fi
+            end_time="$(date -u +%s)"
+            echo -en "\r${CYAN}  Running --> elapsed time:[ $(($end_time - $start_time)) / $(($((10#$tm)) * 60 + $((10#$th)) * 3600)) ] seconds ${BLACK}"
+        
+        elif [[ $status == *PD* ]]; then
+            if [[ $Animationflag -eq 0 ]]; then
+                echo -en "\r  PENDING  \  "
+                Animationflag=1
+            elif [[ $Animationflag -eq 1 ]]; then
+                echo -en "\r  PENDING  |  "
+                Animationflag=2
+            elif [[ $Animationflag -eq 2 ]]; then
+                echo -en "\r  PENDING  /  "
+                Animationflag=3
+            else
+                echo -en "\r  PENDING  -  "
+                Animationflag=0
+            fi
+        
+        elif [[ $status == *C* ]]; then
+            echo -e "\n  CONFIGURING  "
+        
+        elif [[ $status == *F* ]]; then
+            echo "  --FAILED--"
+            #break
+            exit [0]
+        
+        else
+            echo "  $status"
+        fi
+
+        # Sleep for few seconds
+        #if [[ $((tm / 5)) -eq 0 ]]; then
+        if [[ $MAX_TIME -lt 60 ]]; then
+			sleep 1
+        else
+            sleep $(  echo "($MAX_TIME)/20" | bc -l )
+	fi
+
+	status=$(squeue| grep $trueId | awk '{print $5 }' | tail -1 )
+    done
+
+    echo -e "${GREEN}\n  ---- Simulation complete ----${BLACK}"
+    
+    time=$(squeue | grep $trueId | awk '{print $(6) }' |  tail -1 )
+    if [[ -z "$time" ]]; then
+		time=$(squeue | awk '{print $(6) }' |  tail -1 )
+    fi
+	echo -e "${BLUE}  Finished run with $job_nodes nodes in $time / $time_limit${BLACK}"
+}
