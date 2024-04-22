@@ -10,6 +10,7 @@ FINISH=false #set using export in
 JIT_ID=""
 FTIO_NODE=""
 ALL_NODES=""
+EXCLUDE=""
 
 echo -e "\n"
 echo -e "${GREEN}---- Started Script ----${BLACK}"

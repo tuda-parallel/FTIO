@@ -47,9 +47,24 @@ function allocate(){
 	
 	if [ "$CLUSTER" = true ]; then
 		salloc -N $NODES -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT
-		JIT_ID=$(squeue | grep "APPXGEKKO" |awk '{print $(1) }')
-		ALL_NODES=#TODO: command to list all nodes
-		echo -e "${CYAN}JIT job id: ${JIT_ID} ${BLACK}"		
+		JIT_ID=$(squeue | grep "JIT" |awk '{print $(1) }')
+		ALL_NODES=$(squeue --me -l |  head -n 3| tail -1 |awk '{print $NF}')
+		# create array with start and end nodes
+		NODES_ARR=($(echo $ALL_NODES | grep -Po '[\d]*'))
+		# assign FTIO to the last node
+		FTIO_NODE="cpu${NODES_ARR[-1]}"
+
+		echo "${#start[@]}"
+		if [ "${#ALL_NODES[@]}" -gt "1" ]; then
+			EXCLUDE="--exclude=cpu${FTIO_NODE}"
+		fi
+
+		echo -e "
+			${CYAN}JIT Job Id: ${JIT_ID} ${BLACK}\n
+			${CYAN}Allocated Nodes: ${ALL_NODES} ${BLACK}\n
+			${CYAN}FTIO Node: ${FTIO_NODE} ${BLACK}\n
+			${CYAN}Exclude command: ${EXCLUDE} ${BLACK}\n\n
+			"
 	fi
 }
 
@@ -57,13 +72,12 @@ function allocate(){
 # Start FTIO
 function start_ftio() {
 	echo -e "${GREEN}####### Starting FTIO ${BLACK}\n"
-	set -x
+	# set -x
 	if [ "$CLUSTER" = true ]; then
 		source ${FTIO_ACTIVATE}
 		# One node is only for FTIO
 		echo -e "${GREEN}FTIO started on node, remainng nodes for the application:${NODES} ${BLACK}\n"
 		NODES=$((${NODES} - 1))
-		FTIO_NODE=#TODO: specify FTIO node
 		srun --jobid=${JIT_ID} --nodelist=${FTIO_NODE} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} \
 		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
 		predictor_gekko  --zmq_address ${ADDRESS} --zmq_port ${PORT}
@@ -72,16 +86,15 @@ function start_ftio() {
 		predictor_gekko  > "ftio_${NODES}.out" 2> "ftio_${NODES}.err"
 		# 2>&1 | tee  ./ftio_${NODES}.txt
 	fi 
-	set -o xtrace
+	# set -o xtrace
 }
 
 # Start the Server
 function start_geko() {
 	echo -e "${GREEN}####### GKFS DEOMON started ${BLACK}"
-	set -x
+	# set -x
 	if [ "$CLUSTER" = true ]; then
-		# all nodes except FTIO: allocate nodes where FTIO is NOT running NODES-1, --exclude 
-		srun --jobid=${JIT_ID} --exclude=${FTIO_NODE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
 		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
 		${GKFS_DEMON}  \
 		-r /dev/shm/tarraf_gkfs_rootdir \
@@ -96,13 +109,13 @@ function start_geko() {
 			-c --auto-sm \
 			-H ${GKFS_HOSTFILE} 
 	fi
-	set -o xtrace
+	# set -o xtrace
 }
 
 # Application call
 function start_application() {
 	echo -e "${CYAN}Executing Application ${BLACK}"
-	set -x
+	# set -x
 	# application with Geko LD_PRELOAD
 	# Same a comment as start_gekko like the dmon
 	if [ "$CLUSTER" = true ]; then
@@ -111,7 +124,7 @@ function start_application() {
 			LIBGKFS_ENABLE_METRICS=on \
 			LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} \
 			LD_PRELOAD=${GKFS_INERCEPT} \
-			srun --jobid=${JIT_ID} --exclude=${FTIO_NODE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+			srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
 			--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
 			${APP_CALL}
 	else
@@ -124,17 +137,17 @@ function start_application() {
 			${APP_CALL}
 		echo -e "${CYAN}Application finished ${BLACK}\n"
 	fi 
-	set -o xtrace
+	# set -o xtrace
 	FINISH=true
 }
 
 function start_cargo() {
 	echo -e "${GREEN}####### Starting Cargo ${BLACK}"
-	set -x
+	# set -x
 	if [ "$CLUSTER" = true ]; then
 		# One instance per node
 		LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
-			srun --jobid=${JIT_ID} --exclude=${FTIO_NODE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+			srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
 			--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
 			--hostfile /lustre/project/nhr-admire/tarraf/hostfile \
 			${CARGO} --listen \
@@ -148,7 +161,7 @@ function start_cargo() {
 			ofi+sockets://127.0.0.1:62000 \
 			>> ./cargo_${NODES}.txt
 	fi
-	set -o xtrace
+	# set -o xtrace
 }
 
 
@@ -299,11 +312,14 @@ function find_time(){
 function shut_down(){
 	local name=$1
 	local PID=$2
-	echo "Shutting down ${name}"
-	if [[ -n ${PID} ]]; then
-		kill -s SIGINT ${PID} &
+	echo "Shutting down ${name} with PID ${PID}"
+	if [[ -n ${PID}]]; then
+		# kill -s SIGINT ${PID} &
+		kill ${PID} 
 		wait ${PID}
+	fi
 }
+
 
 function get_id(){
 	trueIdid=$(squeue | grep "APPXGEKKO" |awk '{print $(1) }')

@@ -27,7 +27,7 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	# check_finish
 	
 	# 1. Allocate resources
-	allocate;
+	allocate
 	
 	# 2. Start FTIO
 	start_ftio &
