@@ -7,7 +7,9 @@ RED="\033[1;31m"
 BLUE="\033[1;34m"
 CYAN="\033[1;36m"
 FINISH=false #set using export in
-
+JIT_ID=""
+FTIO_NODE=""
+ALL_NODES=""
 
 echo -e "\n"
 echo -e "${GREEN}---- Started Script ----${BLACK}"
@@ -19,6 +21,7 @@ if [ -n "$(hostname | grep cpu)" ]; then
 	CLUSTER=true
 fi
 
+ip=$(ip addr | grep ib0 | awk '{print $4}' | tail -1)
 
 ###################
 # Common variables
@@ -26,6 +29,7 @@ fi
 ADDRESS=${ADDRESS:-"127.0.0.1"} 
 PORT=${PORT:-"5555"}
 NODES=${NODES:-"2"}
+PROCS=${PROCS:-"128"}
 MAX_TIME=${MAX_TIME:-"30"}
 
 ###################
@@ -55,3 +59,7 @@ APP_CALL="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_
 
 # install location in case -i option is provided to the script
 install_location=${install_location:-"/beegfs/home/Shared/admire/JIT"}
+
+# TODO: Bind sockets to CPU numactl --cpunodebind=0,1 --membind=0,1 (particular sockets are faster)
+# TODO: remove FTIO from node list and exlude it from others (see functions.sh)
+# TODO: Gekko Proxy

@@ -9,7 +9,7 @@ EXECUTABLE="jit.sh"
 
 
 # Nodes
-nodes=(1 24 48 96 192 384 768 1536 3072 6144 12288 24576)
+nodes=(1 2 4 8 16) # 256)
 
 
 #------------------------------------------------------------------------------------------------------------
@@ -18,14 +18,12 @@ nodes=(1 24 48 96 192 384 768 1536 3072 6144 12288 24576)
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source ${SCRIPT_DIR}/default.sh
 
-
-
 #------------------------------------------------------------------------------------------------------------
 # Main
 #------------------------------------------------------------------------------------------------------------
 echo -e "${GREEN}\n--------------------   Loop   -------------------\n${BLACK}Executable name: ${BLUE}${EXECUTABLE}\n${BLACK}\n\n "
 echo -e "Enter a number great than 0 to run a single run.\nA number bellow 0 will launch a code specific for loop. "
-echo -e "Suggestions:  ${YELLOW}1 24 48 96 192 384 768 1536 3072 6144 12288 24576 ...${BLACK}"
+echo -e "Suggestions:  ${YELLOW}1 2 4 8 16 ...${BLACK}"
 read -p "Enter number of process: " n
 
 #direct run

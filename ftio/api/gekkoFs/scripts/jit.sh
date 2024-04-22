@@ -30,17 +30,23 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	allocate;
 	
 	# 2. Start FTIO
-	start_ftio 
+	start_ftio &
+	FTIO_PID=$!
 
 	# 3. Start Gekko Server
-	start_geko 
+	start_geko &
+	GEKKO_PID=$!
 
 	# 4. Start Cargo Server
-	start_cargo 
+	start_cargo &
+	CARGO_PID=$!
 
 	# 5. Start application with Gekko intercept
 	start_application
 	
+	shut_down "FTIO" ${FTIO_PID}
+	shut_down "GEKKO" ${GEKKO_PID}
+	shut_down "CARGO" ${CARGO_PID}
 
 	echo "Commands completed."
 	exit 0

@@ -47,17 +47,42 @@ function allocate(){
 	
 	if [ "$CLUSTER" = true ]; then
 		salloc -N $NODES -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT
+		JIT_ID=$(squeue | grep "APPXGEKKO" |awk '{print $(1) }')
+		ALL_NODES=#TODO: command to list all nodes
+		echo -e "${CYAN}JIT job id: ${JIT_ID} ${BLACK}"		
 	fi
+}
+
+
+# Start FTIO
+function start_ftio() {
+	echo -e "${GREEN}####### Starting FTIO ${BLACK}\n"
+	set -x
+	if [ "$CLUSTER" = true ]; then
+		source ${FTIO_ACTIVATE}
+		# One node is only for FTIO
+		echo -e "${GREEN}FTIO started on node, remainng nodes for the application:${NODES} ${BLACK}\n"
+		NODES=$((${NODES} - 1))
+		FTIO_NODE=#TODO: specify FTIO node
+		srun --jobid=${JIT_ID} --nodelist=${FTIO_NODE} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} \
+		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
+		predictor_gekko  --zmq_address ${ADDRESS} --zmq_port ${PORT}
+		# Change CARGO path in predictor_gekko_zmq.py if needed
+	else
+		predictor_gekko  > "ftio_${NODES}.out" 2> "ftio_${NODES}.err"
+		# 2>&1 | tee  ./ftio_${NODES}.txt
+	fi 
+	set -o xtrace
 }
 
 # Start the Server
 function start_geko() {
 	echo -e "${GREEN}####### GKFS DEOMON started ${BLACK}"
-	
+	set -x
 	if [ "$CLUSTER" = true ]; then
-		srun --disable-status -N 1 --ntasks=1 --cpus-per-task=128 \
+		# all nodes except FTIO: allocate nodes where FTIO is NOT running NODES-1, --exclude 
+		srun --jobid=${JIT_ID} --exclude=${FTIO_NODE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
 		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
-		--partition parallel -A nhr-admire 	--job-name GEKKO_SERVER \
 		${GKFS_DEMON}  \
 		-r /dev/shm/tarraf_gkfs_rootdir \
 		-m /dev/shm/tarraf_gkfs_mountdir \
@@ -71,6 +96,7 @@ function start_geko() {
 			-c --auto-sm \
 			-H ${GKFS_HOSTFILE} 
 	fi
+	set -o xtrace
 }
 
 # Application call
@@ -78,15 +104,15 @@ function start_application() {
 	echo -e "${CYAN}Executing Application ${BLACK}"
 	set -x
 	# application with Geko LD_PRELOAD
+	# Same a comment as start_gekko like the dmon
 	if [ "$CLUSTER" = true ]; then
-		srun --disable-status -N $NODES --ntasks=1 --cpus-per-task=128 \
+		LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
+			LIBGKFS_LOG=none \
+			LIBGKFS_ENABLE_METRICS=on \
+			LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} \
+			LD_PRELOAD=${GKFS_INERCEPT} \
+			srun --jobid=${JIT_ID} --exclude=${FTIO_NODE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
 			--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
-			--partition parallel -A nhr-admire 	--job-name APPXGEKKO \
-			-x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
-			-x LIBGKFS_LOG=none \
-			-x LIBGKFS_ENABLE_METRICS=on \
-			-x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} \
-			-x LD_PRELOAD=${GKFS_INERCEPT} \
 			${APP_CALL}
 	else
 		mpiexec -np $NODES --oversubscribe \
@@ -106,43 +132,25 @@ function start_cargo() {
 	echo -e "${GREEN}####### Starting Cargo ${BLACK}"
 	set -x
 	if [ "$CLUSTER" = true ]; then
-		srun --disable-status -N 1 --ntasks=1 --cpus-per-task=128 \
+		# One instance per node
+		LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
+			srun --jobid=${JIT_ID} --exclude=${FTIO_NODE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
 			--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
-			--partition parallel -A nhr-admire \ 
-			--map-by node \
-			-x LIBGKFS_HOS_FILE=${GKFS_HOSTFILE} \
 			--hostfile /lustre/project/nhr-admire/tarraf/hostfile \
-			${CARGI} --listen \
+			${CARGO} --listen \
 			ofi+sockets://127.0.0.1:62000 \
 	else
 		mpiexec -np 2 --oversubscribe \
 			--map-by node \
-			-x LIBGKFS_HOS_FILE=${GKFS_HOSTFILE} \
+			-x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
 			--hostfile /lustre/project/nhr-admire/tarraf/hostfile \
-			${CARGI} --listen \
+			${CARGO} --listen \
 			ofi+sockets://127.0.0.1:62000 \
 			>> ./cargo_${NODES}.txt
 	fi
 	set -o xtrace
 }
 
-
-function start_ftio() {
-	echo -e "${GREEN}####### Starting FTIO ${BLACK}\n"
-	set -x
-	if [ "$CLUSTER" = true ]; then
-		source ${FTIO_ACTIVATE}
-		srun --disable-status -N 1 --ntasks=1 --cpus-per-task=128 \
-		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
-		--partition parallel -A nhr-admire 	--job-name FTIO \
-		predictor_gekko  --zmq_address ${ADDRESS} --zmq_port ${PORT}
-		# Change CARGO path in predictor_gekko_zmq.py if needed
-	else
-		predictor_gekko  > "ftio_${NODES}.out" 2> "ftio_${NODES}.err"
-		# 2>&1 | tee  ./ftio_${NODES}.txt
-	fi 
-	set -o xtrace
-}
 
 # Function to handle SIGINT (Ctrl+C)
 function handle_sigint {
@@ -288,6 +296,15 @@ function find_time(){
 	return $tm
 }
 
+function shut_down(){
+	local name=$1
+	local PID=$2
+	echo "Shutting down ${name}"
+	if [[ -n ${PID} ]]; then
+		kill -s SIGINT ${PID} &
+		wait ${PID}
+}
+
 function get_id(){
 	trueIdid=$(squeue | grep "APPXGEKKO" |awk '{print $(1) }')
 	return $trueIdid
@@ -301,6 +318,21 @@ function info(){
 	echo -e "${BLUE}Job id ---------------> ${RED}$trueId \n ${BLACK}"
 }
 
+
+wait_for_gkfs_daemons() {
+	sleep 2
+    local server_wait_cnt=0
+    local nodes=${NODES}
+    until [ $(($(wc -l "${GKFS_HOSTFILE}"  2> /dev/null | awk '{print $1}') + 0)) -eq "${nodes}" ]
+    do
+        sleep 2
+        server_wait_cnt=$((server_wait_cnt+1))
+        if [ ${server_wait_cnt} -gt 600 ]; then
+            echo "Server failed to start. Exiting ..."
+            exit 1
+        fi
+    done
+}
 
 function progress(){
 	Animationflag=0
