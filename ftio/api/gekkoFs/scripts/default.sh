@@ -18,8 +18,9 @@ echo -e "${GREEN}---- Started Script ----${BLACK}"
 # Set default values. Check if enviromental variables are set
 # cluster or local mode?
 CLUSTER=false
-if [ -n "$(hostname | grep cpu)" ]; then
+if [ -n "$(hostname | grep 'cpu\|mogon')" ]; then
 	CLUSTER=true
+	echo -e "${GREEN}> Cluster Mode: on${BLACK}"
 fi
 
 ip=$(ip addr | grep ib0 | awk '{print $4}' | tail -1)
@@ -27,7 +28,7 @@ ip=$(ip addr | grep ib0 | awk '{print $4}' | tail -1)
 ###################
 # Common variables
 ###################
-ADDRESS=${ADDRESS:-"127.0.0.1"} 
+ADDRESS=${ADDRESS:-"127.0.0.1"} # usually obtained automatically before executing FTIO
 PORT=${PORT:-"5555"}
 NODES=${NODES:-"2"}
 PROCS=${PROCS:-"128"}
