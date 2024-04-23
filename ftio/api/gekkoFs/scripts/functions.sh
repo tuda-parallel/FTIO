@@ -364,11 +364,11 @@ function create_hostfile(){
 	echo -e "${CYAN}>> Cleaning Hostfile: ${GKFS_HOSTFILE} ${BLACK}"
 	rm -f ${GKFS_HOSTFILE} || echo -e "${BLUE}>> No Hostfile found ${BLACK}"
 	
-	echo -e "${CYAN}>> Creating Hostfile: ${GKFS_HOSTFILE} ${BLACK}"
-	touch ${GKFS_HOSTFILE}
-	for i in "${NODES_ARR[@]::${#NODES_ARR[@]}-1}"; do #exclude last element as this is FTIO_NODE
-   		echo "cpu$i" >> ${GKFS_HOSTFILE}
-	done
+	# echo -e "${CYAN}>> Creating Hostfile: ${GKFS_HOSTFILE} ${BLACK}"
+	# touch ${GKFS_HOSTFILE}
+	# for i in "${NODES_ARR[@]::${#NODES_ARR[@]}-1}"; do #exclude last element as this is FTIO_NODE
+   	# 	echo "cpu$i" >> ${GKFS_HOSTFILE}
+	# done
 }
 
 function check_error_free(){
