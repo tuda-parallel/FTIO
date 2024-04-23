@@ -98,13 +98,26 @@ function start_geko() {
 	echo -e "${GREEN}####### Starting GKFS DEOMON ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
-        srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+        # Demon
+		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
         ${GKFS_DEMON}  \
         -r /dev/shm/tarraf_gkfs_rootdir \
         -m /dev/shm/tarraf_gkfs_mountdir \
-        -H ${GKFS_HOSTFILE}  -c -l ib0
+        -H ${GKFS_HOSTFILE}  -c -l ib0 \
+		-P ofi+sockets -p ofi+verbs -L ib0
+		# Display Demon
 		echo -e "${CYAN}>> Executed: srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON} -r /dev/shm/tarraf_gkfs_rootdir -m /dev/shm/tarraf_gkfs_mountdir -H ${GKFS_HOSTFILE}  -c -l ib0 ${BLACK}"
+		
+		# Proxy
+		echo -e "${CYAN}>> Starting Proxy${BLACK}"
+		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+        --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
+        ${GKFS_PROXY}  \
+		 -H /lustre/project/nhr-admire/vef/gkfs_hostfile -p ofi+verbs -P ${GKFS_PROXYFILE}
+		# Display Proxy
+		echo -e "${CYAN}>> Executed: 
+		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H /lustre/project/nhr-admire/vef/gkfs_hostfile -p ofi+verbs -P ${GKFS_PROXYFILE} ${BLACK}"
     else
         # Geko Demon call
         GKFS_DAEMON_LOG_LEVEL=info \
@@ -125,9 +138,10 @@ function start_application() {
     # application with Geko LD_PRELOAD
     # Same a comment as start_gekko like the dmon
     if [ "$CLUSTER" = true ]; then
-		echo -e "${CYAN}>> Executing: LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} LIBGKFS_LOG=none LIBGKFS_ENABLE_METRICS=on LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} LD_PRELOAD=${GKFS_INERCEPT} srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${APP_CALL} ${BLACK}"
+		echo -e "${CYAN}>> Executing: LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} LIBGKFS_LOG=none LIBGKFS_ENABLE_METRICS=on LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} LD_PRELOAD=${GKFS_INERCEPT} srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${APP_CALL} ${BLACK}"
         
 		LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
+		LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE}\
         LIBGKFS_LOG=none \
         LIBGKFS_ENABLE_METRICS=on \
         LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} \
