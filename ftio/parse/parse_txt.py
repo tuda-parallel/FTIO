@@ -1,4 +1,4 @@
-"""Parse text file contaiting three fields: 
+"""Parse text file containing three fields: 
 the bandwidth, the start time, and the end time.
 """
 from ftio.parse.simrun import Simrun

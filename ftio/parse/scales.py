@@ -75,20 +75,27 @@ class Scales:
             # Folder
             elif os.path.isdir(path):
                 console.print(
-                    f"\n[cyan]Loading  folder({self.paths.index(path) + 1},{len(self.paths)}):[/] {path}"
+                    f"\n[cyan]Loading folder({self.paths.index(path) + 1},{len(self.paths)}):[/] {path}"
                 )
                 if path[-1] == "/":
                     path = path[:-1]
 
                 for root, _, files in os.walk(path):
+                    # remove unneeded folders
                     if "io_results" in root or "exported_images" in root:
                         console.print(f"[yellow]Skipping folder:  {root}[/]")
                         continue
-                    if "scale.jsonl" in files:
-                        console.print(
-                            f"[yellow]Skipping folder:  {root}/scale.jsonl[/]"
-                        )
-                        files.remove("scale.jsonl")
+
+                    # remove unneeded files
+                    skip_files = ["scale.jsonl",".call.txt"]
+                    for unwanted in skip_files:
+                        if unwanted in files:
+                            console.print(
+                                f"[yellow]Skipping file: {root}/{unwanted}[/]"
+                            )
+                            files.remove(unwanted)
+
+                    # sort the files
                     sorted_files = sorted(files, key=len)
 
                     for file in sorted_files:

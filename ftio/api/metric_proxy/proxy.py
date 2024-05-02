@@ -18,7 +18,7 @@ ranks = 32
 
 # command line arguments
 argv = ["-e", "plotly"]  # ["-e", "no"] to disable the plot
-argv.extend(["-n","5"]) # finds up to n frequencies. Comment this out to go back to the default version
+argv.extend(["-n","15"]) # finds up to n frequencies. Comment this out to go back to the default version
 # ---------------------------------
 
 # set up data
