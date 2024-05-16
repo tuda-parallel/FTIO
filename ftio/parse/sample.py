@@ -22,7 +22,7 @@ class Sample:
         self.max_io_ops_in_phase         = self.assign(values,"max_io_ops_in_phase")
         self.total_io_ops                = self.assign(values,"total_io_ops")
         self.number_of_ranks             = self.assign(values,"number_of_ranks")
-        self.bandwidth                   = Bandwidth(values["bandwidth"], io_type, args)
+        self.bandwidth                   = self.assign_bandwidth(values, io_type, args)
         self.file_index                  = args.file_index
 
     def get_data(self):
@@ -61,6 +61,12 @@ class Sample:
             return values[name]
         else:
             return float('NaN')
+    
+    def assign_bandwidth(self, values, name, args):
+        if "bandwidth" in values:
+            return Bandwidth(values["bandwidth"], name, args)
+        else:
+            return Bandwidth({}, name, args)
 
     def find_data(self,name,common):
         #remove empty:

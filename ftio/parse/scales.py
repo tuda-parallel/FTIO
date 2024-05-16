@@ -233,12 +233,12 @@ class Scales:
         """Extract data from the file(s) and gathers in dataframes.
         The fields name are store in "name_[level]" and their values are stored
         in "data_[level]". There are 4 levels provided:
-        (1) Application level (overlap or rank matrics): [..]_rank_ovr
+        (1) Application level (overlap or rank metrics): [..]_rank_ovr
         (2) rank level (sum/average of I/O requests): [..]_rank
-        (3) high precesion rank level (overlap of I/O requests): [..]_ind_ovr
+        (3) high precision rank level (overlap of I/O requests): [..]_ind_ovr
         (4) I/O request level (lowest level): [..]_rank_over
 
-        if the 'ind' flag is not provieded, level (3) and (4) are skipped as they are
+        if the 'ind' flag is not provided, level (3) and (4) are skipped as they are
         expensive to calculate.
 
 
@@ -251,7 +251,7 @@ class Scales:
         Returns:
             tuple[pd.DataFrame,pd.DataFrame,
             pd.DataFrame, pd.DataFrame, pd.DataFrame,]: Five dataframes are
-            returned. The first one contains metrics like total bytes transfered, number
+            returned. The first one contains metrics like total bytes transferred, number
             of phases, etc.. The next 4 dataframes contain the I/O data at the 4
             levels explained above
         """

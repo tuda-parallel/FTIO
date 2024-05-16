@@ -34,12 +34,12 @@ class Time:
         self.delta_t_rank0_app                   = self.assign(data,"delta_t_rank0_app") 
         self.delta_t_rank0_overhead_post_runtime = self.assign(data,"delta_t_rank0_overhead_post_runtime") 
         self.delta_t_rank0_overhead_peri_runtime = self.assign(data,name="delta_t_rank0_overhead_peri_runtime") 
-        # TODO: compatibility mode with erlier versions
+        # TODO: compatibility mode with earlier versions
         if "delta_t_rank0_overhead_peri_runtime" not in data:
             self.delta_t_rank0_overhead_peri_runtime = self.assign(data,name="delta_t_rank0_overhead_runtime") 
 
     def get_data(self):
-		#! append list is much faster than appen data frame
+		#! append list is much faster than append data frame
         name0 = []
         data0 = []
         name0.append("number_of_ranks")

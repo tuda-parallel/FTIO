@@ -26,7 +26,6 @@ from ftio.freq.freq_html import create_html
 
 matplotlib.rcParams["backend"] = "TkAgg"
 
-
 class FreqPlot:
     """For plotting the result of ftio"""
 
@@ -352,7 +351,8 @@ class FreqPlot:
             name_dominant = ""
             # set the unit and order
             unit, order = set_unit(self.D.data_df[index_data]["b_sampled"])
-            # unit = "MB/s" compatibility with old version
+            #
+            # unit, order = set_unit(self.D.data_df[index_data]["b_sampled"]*1000) #compatibility with old version (For BWLIMIT)
             for k in samples:
                 x = (
                     (1 / len(samples))

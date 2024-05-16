@@ -15,6 +15,10 @@ from ftio.plot.print_html import print_html
 from ftio.plot.helper import *  
 from ftio.plot.plot_error import plot_error_bar, plot_time_error_bar
 from ftio.plot.units import find_unit
+from ftio.freq.helper import MyConsole
+
+
+CONSOLE = MyConsole()
 
 def _find_free_port():
     sock = socket.socket()
@@ -124,14 +128,16 @@ class plot_core:
                 thread.join()
         else:
             if "stat" in args.render:
-                if "write_async" in args.mode:
-                    self.plot_io_mode("async write", self.data.df_wat, self.data.df_wab)
-                elif "read_async" in args.mode:
-                    self.plot_io_mode("async read", self.data.df_rat, self.data.df_rab)
-                elif "write_sync" in args.mode:
-                    self.plot_io_mode("sync write", self.data.df_wst)
-                elif "read_sync" in args.mode:
-                    self.plot_io_mode("sync read", self.data.df_rst)
+                if "async" in args.mode:
+                    if "write" in args.mode:
+                        self.plot_io_mode("async write", self.data.df_wat, self.data.df_wab)
+                    else:
+                        self.plot_io_mode("async read", self.data.df_rat, self.data.df_rab)
+                elif "sync" in args.mode:
+                    if "write" in args.mode:
+                        self.plot_io_mode("sync write", self.data.df_wst)
+                    else:
+                        self.plot_io_mode("sync read", self.data.df_rst)
                 else:
                     pass
                 exit(0)
@@ -464,9 +470,12 @@ class plot_core:
                     f.append(go.Figure())
                     index2 = df_t[1]["file_index"][index].isin([j])
                     index2_ind = df_t[3]["file_index"][index_ind].isin([j])
-
                     # finder the order and unit of the plots on y-axis
                     unit, order = find_unit(df_t,index,index2,index_ind,index2_ind,args)
+                    # # compatibility mode with earlier version
+                    # CONSOLE.info(f"[yellow]WARNING:[/] Compatibility Mode")
+                    # unit, order = find_unit(df_t,index,index2,index_ind,index2_ind,args,pow(10,6)) 
+                    # order = order*pow(10,6)
                     # ? Avr plot
                     if args.avr:
                         if df_t:
@@ -475,23 +484,23 @@ class plot_core:
                                     x=df_t[1]["t_overlap"][index][index2],
                                     y=df_t[1]["b_overlap_avr"][index][index2]*order,
                                     mode="lines",
-                                    name="$T_A$",
+                                    name="$T_A$", #name="$T$", # For BW limit paper
                                     line={"shape": "hv"},
                                     fill="tozeroy",
                                 )
                             )
-                            # f[-1].add_trace(go.Scatter(x=df_t[1]['t_overlap'][index][index2], y=df_t[1]['b_overlap_avr'][index][index2],  mode = 'lines',name = '$T$',line={"shape": 'hv'}, fill='tozeroy'))
+
                         if df_b:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_b[1]["t_overlap"][index][index2],
                                     y=df_b[1]["b_overlap_avr"][index][index2]*order,
                                     mode="lines",
-                                    name="$B_A$",
+                                    name="$B_A$", #name="$B_L$", # For BW limit paper
                                     line={"shape": "hv"},
                                     fill="tozeroy",
                                 )
-                            )  # , visible='legendonly'))#, "dash": "dash"}))
+                            )
 
                     # ? Sum plot
                     if args.sum:
@@ -504,16 +513,16 @@ class plot_core:
                                     name="$T_S$",
                                     line={"shape": "hv"},
                                     fill="tozeroy",
-                                )
-                            )  # , visible='legendonly'))
-                            pass
+                                    )
+                                )  
+
                         if df_b:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_b[1]["t_overlap"][index][index2],
                                     y=df_b[1]["b_overlap_sum"][index][index2]*order,
                                     mode="lines",
-                                    name="$B_S$",
+                                    name="$B_S$",#name="$B$", # For BW limit paper
                                     line={"shape": "hv"},
                                     fill="tozeroy",
                                 )
@@ -531,8 +540,8 @@ class plot_core:
                                     line={"shape": "hv"},
                                     fill="tozeroy",
                                 )
-                            )  # , visible='legendonly')),
-                            # f[-1].add_trace(go.Scatter(x=df_t_ind['t'], y=df_t_ind['b'],  mode = 'lines',name = '$T_E$',line={"shape": 'hv'}, fill='tozeroy' ))#, visible='legendonly')),
+                            ) 
+
                         if df_b:
                             f[-1].add_trace(
                                 go.Scatter(
@@ -543,20 +552,22 @@ class plot_core:
                                     line={"shape": "hv"},
                                     fill="tozeroy",
                                 )
-                            )  # , visible='legendonly' ))
+                            )  
+
                     f[-1].update_layout(
                         barmode="stack",
                         xaxis_title="Time (s)",
                         yaxis_title=f"Transfer Rate ({unit})",
                         width=self.width,
                         height=self.height,
+                        showlegend=True,
                         title=f"{i} Ranks (Run {j})",
                     )
                     f[-1] = format_plot(f[-1])
-
+                    
                     if self.names and (args.avr or args.sum or args.ind):
                         f[-1].update_layout(
-                            title=f"{i} Ranks (Run {j}: {self.names[j]})"
+                            title=f"{i} Ranks (Run {j}: {self.names[j]})",
                         )
 
                     if args.avr or args.sum or args.ind:

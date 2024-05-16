@@ -15,7 +15,6 @@ class FileData:
         self._run = run
         self._rank = rank
         self._name = name
-
         self._data_actual = data_actual
         self._data_required = data_required
         self._init_masks()
@@ -91,70 +90,75 @@ class DataSource:
     def __init__(self, plot_core, io_mode: str):
         self._io_mode = io_mode
         self._plot_core = plot_core
-        self._names = plot_core.names
+
         self._data = plot_core.data
 
         self._init_data_actual_and_required()
-        self._init_ranks()
+        self._init_names_and_ranks()
         self._init_file_data_dictionary()
 
     def _init_data_actual_and_required(self):
         match self.io_mode:
             case io_mode.ASYNC_READ:
-                self._data_actual = (
+                self._data_actual: list[pd.DataFrame] = (
                     self._data.df_rat
                     if not (self._data.df_rat is None or self._data.df_rat[1].empty)
                     else []
                 )
-                self._data_required = (
+                self._data_required: list[pd.DataFrame] = (
                     self._data.df_rab
                     if not (self._data.df_rab is None or self._data.df_rab[1].empty)
                     else []
                 )
             case io_mode.ASYNC_WRITE:
-                self._data_actual = (
+                self._data_actual: list[pd.DataFrame] = (
                     self._data.df_wat
                     if not (self._data.df_wat is None or self._data.df_wat[1].empty)
                     else []
                 )
-                self._data_required = (
+                self._data_required: list[pd.DataFrame] = (
                     self._data.df_wab
                     if not (self._data.df_wab is None or self._data.df_wab[1].empty)
                     else []
                 )
             case io_mode.SYNC_READ:
-                self._data_actual = (
+                self._data_actual: list[pd.DataFrame] = (
                     self._data.df_rst
                     if not (self._data.df_rst is None or self._data.df_rst[1].empty)
                     else []
                 )
-                self._data_required = []
+                self._data_required: list[pd.DataFrame] = []
             case io_mode.SYNC_WRITE:
-                self._data_actual = (
+                self._data_actual: list[pd.DataFrame] = (
                     self._data.df_wst
                     if not (self._data.df_wst is None or self._data.df_wst[1].empty)
                     else []
                 )
-                self._data_required = []
+                self._data_required: list[pd.DataFrame] = []
             case _:
                 raise Exception("invalid mode")
 
-    def _init_ranks(self) -> None:
-        self._ranks = []
+    def _init_names_and_ranks(self) -> None:
+        self._ranks: pd.Series = pd.Series()
         if len(self._data_actual) != 0:
-            self._ranks = self._data_actual[0]["number_of_ranks"]
+            self._ranks = self._data_actual[0]["number_of_ranks"].astype(int)
         elif len(self._data_required) != 0:
-            self._ranks = self._data_required[0]["number_of_ranks"]
-        self._ranks: list[int] = pd.unique(self._ranks).astype(int).tolist()
-        self._ranks.sort()
+            self._ranks = self._data_required[0]["number_of_ranks"].astype(int)
+        names_and_ranks_df = pd.concat(
+            [pd.Series(self._plot_core.names, name="filenames"), self._ranks], axis=1
+        )
+        self._filenames = names_and_ranks_df["filenames"].to_list()
+        self._ranks = names_and_ranks_df["number_of_ranks"].to_list()
+        self._ranks_unique = pd.unique(self.ranks)
+        self._ranks_unique.sort()
 
     def _init_file_data_dictionary(self):
-        self._file_data_by_file: dict[str, FileData] = dict()
-        for idx, file in enumerate(self._data.paths):
-            self._file_data_by_file[file] = FileData(
+        self._file_data_by_filename: dict[str, FileData] = dict()
+        for idx, filename in enumerate(self._filenames):
+            self._file_data_by_filename[filename] = FileData(
                 idx,
                 self._ranks[idx],
-                self.names[idx],
+                self._filenames[idx],
                 self._data_actual,
                 self._data_required,
             )
@@ -164,16 +168,24 @@ class DataSource:
         return self._io_mode
 
     @property
-    def names(self) -> list[str]:
-        return self._names
+    def filenames(self) -> list[str]:
+        return self._filenames
+
+    @property
+    def ranks(self) -> list[int]:
+        return self._ranks
+
+    @property
+    def ranks_unique(self) -> list[int]:
+        return self._ranks_unique
 
     @property
     def fontfamily(self) -> str:
-        return self._plot_core.fontfamily
+        return "Courier New, monospace"
 
     @property
     def fontsize(self) -> int:
-        return self._plot_core.size
+        return 17
 
     @property
     def width_figure(self) -> int:
@@ -184,12 +196,8 @@ class DataSource:
         return self._plot_core.height
 
     @property
-    def ranks(self) -> list[int]:
-        return self._ranks
-
-    @property
-    def file_data_by_file(self) -> dict[str, FileData]:
-        return self._file_data_by_file
+    def file_data_by_filename(self) -> dict[str, FileData]:
+        return self._file_data_by_filename
 
     @property
     def individual_is_selected(self) -> bool:

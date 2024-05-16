@@ -7,7 +7,7 @@ from plotly_resampler import FigureResampler
 from plotly_resampler.aggregation import MinMaxAggregator, MinMaxOverlapAggregator, NoGapHandler
 
 # -------
-# > Check if this problem is still not fixed or feature is now implemented
+# TODO: Check if this problem is still not fixed or feature is now implemented
 # Solves a problem for a still open issue
 # Issue: line plot ends cutoff after last visible point #257
 # https://github.com/predict-idlab/plotly-resampler/issues/257
@@ -39,8 +39,8 @@ figure_resampler_interface.PlotlyAggregatorParser = patched_parser
 # -------
 
 
-def _create_id_figure(data: DataSource, file: str = ""):
-    return f"{data.io_mode}-{file}"
+def _create_id_figure(data: DataSource, filename: str = ""):
+    return f"{data.io_mode}-{filename}"
 
 
 def _find_x_min_and_max(file_data: FileData, data: DataSource) -> tuple[float, float]:
@@ -182,7 +182,7 @@ def _update_layout(fig: FigureResampler, file_data: FileData, data: DataSource) 
         yaxis_rangemode="nonnegative",
         barmode="stack",
         xaxis_title="Time (s)",
-        yaxis_title="Transfer Rate (B/s)",
+        yaxis_title="Transfer Rate (MB/s)",
         font=dict(family=data.fontfamily, size=data.fontsize),
         width=data.width_figure,
         height=data.height_figure,
@@ -217,11 +217,11 @@ def _update_axes(fig: FigureResampler) -> None:
     )
 
 
-def _create_separate_figures(files: list[str], data: DataSource) -> dict:
+def _create_separate_figures(filenames: list[str], data: DataSource) -> dict:
     figure_by_id_figure = dict()
 
-    for file in files:
-        file_data = data.file_data_by_file[file]
+    for filename in filenames:
+        file_data = data.file_data_by_filename[filename]
         fig = FigureResampler(
             default_n_shown_samples=data.n_shown_samples,
             default_downsampler=MinMaxAggregator(),
@@ -232,12 +232,12 @@ def _create_separate_figures(files: list[str], data: DataSource) -> dict:
         _update_layout(fig, file_data, data)
         _update_axes(fig)
 
-        id_figure = _create_id_figure(data, file)
+        id_figure = _create_id_figure(data, filename)
         figure_by_id_figure[id_figure] = fig
     return figure_by_id_figure
 
 
-def _create_one_figure(files: list[str], data: DataSource) -> dict:
+def _create_one_common_figure(filenames: list[str], data: DataSource) -> dict:
     figure_by_id_figure = dict()
 
     fig = FigureResampler(
@@ -246,8 +246,8 @@ def _create_one_figure(files: list[str], data: DataSource) -> dict:
         default_gap_handler=NoGapHandler(),
     )
 
-    for file in files:
-        file_data = data.file_data_by_file[file]
+    for filename in filenames:
+        file_data = data.file_data_by_filename[filename]
         _add_traces(fig, file_data, data)
 
     _update_layout(fig, file_data, data)
@@ -258,7 +258,7 @@ def _create_one_figure(files: list[str], data: DataSource) -> dict:
 
 
 def _append_merged_plot(
-    div_children: html.Div, figure_by_id_figure: dict[str, FigureResampler], data: DataSource
+    div_children: list[html.Div], figure_by_id_figure: dict[str, FigureResampler], data: DataSource
 ) -> html.Div:
     id_figure = _create_id_figure(data)
     new_child = html.Div(
@@ -266,7 +266,7 @@ def _append_merged_plot(
             dcc.Graph(
                 id={"type": id.TYPE_DYNAMIC_GRAPH, "index": id_figure},
                 figure=figure_by_id_figure[id_figure],
-                mathjax=True,
+                mathjax=True, responsive=True,
             ),
             TraceUpdater(
                 id={
@@ -284,20 +284,20 @@ def _append_merged_plot(
 def _append_each_figure_separately(
     div_children: list[html.Div],
     figure_by_id_figure: dict[str, FigureResampler],
-    files: list[str],
+    filenames: list[str],
     data: DataSource,
 ) -> html.Div:
-    for rank in data.ranks:
-        for file in files:
-            if data.file_data_by_file[file].rank != rank:
+    for rank in data.ranks_unique:
+        for filename in filenames:
+            if data.file_data_by_filename[filename].rank != rank:
                 continue
-            id_figure = _create_id_figure(data, file)
+            id_figure = _create_id_figure(data, filename)
             new_child = html.Div(
                 children=[
                     dcc.Graph(
                         id={"type": id.TYPE_DYNAMIC_GRAPH, "index": id_figure},
                         figure=figure_by_id_figure[id_figure],
-                        mathjax=True,
+                        mathjax=True, responsive=True,
                     ),
                     TraceUpdater(
                         id={
@@ -324,13 +324,13 @@ def get_io_mode_specific_callbacks(app: DashProxy, data: DataSource) -> None:
         Output(id.STORE_FIGURES_BY_IO_MODE[data.io_mode], "data"),
         Input(id.DROPDOWN_FILE, "options"),
     )
-    def create_figures(files: list[str]) -> dict[str, FigureResampler]:
+    def create_figures(filenames: list[str]) -> dict[str, FigureResampler]:
         figure_by_id_figure = dict()
 
         if data.merge_plots_is_selected:
-            figure_by_id_figure = _create_one_figure(files, data)
+            figure_by_id_figure = _create_one_common_figure(filenames, data)
         else:
-            figure_by_id_figure = _create_separate_figures(files, data)
+            figure_by_id_figure = _create_separate_figures(filenames, data)
 
         return Serverside(figure_by_id_figure)
 
@@ -344,7 +344,7 @@ def get_io_mode_specific_callbacks(app: DashProxy, data: DataSource) -> None:
     )
     def fill_div_graph(
         io_modes: list[str],
-        files: list[str],
+        filenames: list[str],
         figure_by_id_figure: dict[str, FigureResampler],
         n_clicks: int,
     ):
@@ -364,7 +364,7 @@ def get_io_mode_specific_callbacks(app: DashProxy, data: DataSource) -> None:
             div_children = _append_merged_plot(div_children, figure_by_id_figure, data)
         else:
             div_children = _append_each_figure_separately(
-                div_children, figure_by_id_figure, files, data
+                div_children, figure_by_id_figure, filenames, data
             )
 
         return div_children
