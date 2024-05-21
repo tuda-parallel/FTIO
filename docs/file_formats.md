@@ -1,7 +1,7 @@
 # File Formats and Tools
-Below, we describe the supported file formats. Aside these formats, `ftio` and `predictor` support ZMQ as described [here](/docs/zmq.md), which avoids creating intermediate files. Furthermore, `ftio` also provides and API to different Tools (e.g., [GekkoFS](/docs/api.md#gekkofs-with-zmq)) or direct use the Python functions as described [here](/docs/api.md#general).
+Below, we describe the supported file formats. Aside from these formats, `ftio` and `predictor` support ZMQ as described [here](/docs/zmq.md), which avoids creating intermediate files. Furthermore, `ftio` also provides an API to different Tools (e.g., [GekkoFS](/docs/api.md#gekkofs-with-zmq)) and allows easy and direct use of the Python functions as described and demonstrated [here](/docs/api.md#general).
 
-Supported File Formats are:
+The currently supported file Formats are:
 - [File Formats and Tools](#file-formats-and-tools)
 	- [JSON](#json)
 		- [Custom JSON Files](#custom-json-files)
@@ -16,11 +16,13 @@ Supported File Formats are:
 	- [Recorder](#recorder)
 	- [Parsing custom File Formats](#parsing-custom-file-formats)
 
+All units in the files are by default SI units. 
+
 ## JSON
-`ftio` supports the JSON format. These files can be either from [TMIO](https://github.com/tuda-parallel/TMIO), or custom-generated. Below, we explain both and provide links to some examples. All units in this file format are by default SI units.
+`ftio` supports JSON files. These files can be either from [TMIO](https://github.com/tuda-parallel/TMIO), or custom-generated. Below, we explain both and provide links to some examples. 
 
 ### Custom JSON Files
-This is one of the easiest ways to provide data into `ftio`. A JSON file can be provided that has the following structure:
+This is one of the easiest ways to provide data into `ftio`. The JSON file provided to `ftio` should have the following structure:
 
 ```python
 {
@@ -60,18 +62,20 @@ This is one of the easiest ways to provide data into `ftio`. A JSON file can be 
 
 }
 ```
-The associated example is provided [here](https://github.com/tuda-parallel/FTIO/tree/main/examples/custom/JSON/custom.json), which can be simply executed 
-using:
+The associated example is provided [here](https://github.com/tuda-parallel/FTIO/tree/main/examples/custom/JSON/custom.json), which can be simply executed using:
 ```bash
-ftio custom.json
+ftio custom.json 
+# or explicit specify the mode
+ftio custom.json -m write_sync
 ```
 
+The `-m`flags allows to pick the desired mode from the trace. In case the JSON file only contains a single mode (as in this example), the `-m` flag is not strictly needed.  
 
-`ftio` automatically detects the source of the JSON file. To skip this test, the source can be also specified with the `-s|--source` flag for tmio `-s "tmio"` or custom `-s "custom"`. 
+`ftio` automatically detects the source of the JSON file. To skip this test, the source can be specified with the `-s|--source` flag, that is, for tmio `-s "tmio"` or custom `-s "custom"`. 
+
 Several fields in the above example are self-explanatory. The metrics with `_rank_`in their names represent the rank-level metrics. As FTIO operates on the 
 application level, these metrics are internally overlapped. The application-level metrics can also be provided directly. As example 
-[custom_app.json](https://github.com/tuda-parallel/FTIO/tree/main/examples/custom/JSON/custom_app.json) shows, the three rank 
-level metrics for the bandwidth, are simply replaced by two metrics `b_overlap_avr` and `t_overlap`:
+[custom_app.json](https://github.com/tuda-parallel/FTIO/tree/main/examples/custom/JSON/custom_app.json) shows, the three rank level metrics for the bandwidth, are simply replaced by two metrics `b_overlap_avr` and `t_overlap`:
 ```python
 {
 	"write_sync":{
@@ -88,7 +92,7 @@ With:
 - `b_overlap_avr` represents the bandwidth at the application-level
 - `t_overlap` represents the time when new values for the application-level bandwidth are attained. This means for the above example, that the bandwidth at time 1 s was 1 GB, at 2 s this changed to 2 GB, and so on.
 
-Several fields shown here are optional. In its simplest form, a custom JSON file only news the fields in bandwidth, and thus has the following form:
+Several fields shown here are optional. In its simplest form, a custom JSON file only needs the field `bandwidth`, and thus has the following form:
 ```python
 {
 	"bandwidth": {
@@ -124,7 +128,7 @@ Several fields shown here are optional. In its simplest form, a custom JSON file
 ```
 
 ### TMIO JSON Files
-In the offline mode of TMIO, a JSON file is generated that contains 7 fields. Besides the standard fields: *read sync*, *write sync*, *read async* and *write async*, TMIO also generated fields for the required bandwidth in case of asynchronous I/O. Furthermore, the I/O time is also captured. Consequently, a JSON file has the following structure:
+In the offline mode of TMIO, a JSON file is generated that contains 7 fields. Besides the standard fields: *read sync*, *write sync*, _read async_, and _write async_*, TMIO also generated fields for the required bandwidth in case of asynchronous I/O. Furthermore, the I/O time is also captured. Consequently, a JSON file has the following structure:
 ```python
 {
 	"read_sync":{
@@ -164,7 +168,7 @@ In the offline mode of TMIO, a JSON file is generated that contains 7 fields. Be
 ## JSONL
 
 ### TMIO JSONL Files
-An example with 8 ranks is located [here](https://github.com/tuda-parallel/FTIO/tree/main/examples/tmio/8.jsonl)
+An example with 8 ranks is located [here](https://github.com/tuda-parallel/FTIO/tree/main/examples/tmio/JSONL/8.jsonl)
 
 ### Custom JSONL Files
 TBD

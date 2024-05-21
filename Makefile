@@ -42,7 +42,7 @@ docker:
 
 
 docker_run:
-	cd docker && docker run -v "$$PWD/8.jsonl:/freq_io/8.jsonl" -t freq_io:1.0 ftio 8.jsonl -e no 
+	cd docker && docker run -v "$$PWD/examples/tmio/JSONL/8.jsonl:/freq_io/8.jsonl" -t freq_io:1.0 ftio 8.jsonl -e no 
 
 
 docker_interactive:
@@ -62,7 +62,7 @@ profile2:
 # test
 test_all:
 	mkdir quicktest
-	cp examples/tmio/8.jsonl quicktest
+	cp examples/tmio/JSONL/8.jsonl quicktest
 	@cd quicktest && ftio 8.jsonl -e no && echo "--- passed ftio ---" || echo "--- failed ftio ---"
 	@cd quicktest && ftio 8.jsonl -e no -o dbscan && echo "--- passed ftio ---" || echo "--- failed ftio ---"
 	@cd quicktest && ftio 8.jsonl -e no -o lof && echo "--- passed ftio ---" || echo "--- failed ftio ---"
