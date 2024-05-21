@@ -15,34 +15,34 @@ def test_ftio_autocorrelation():
     assert True
 
 def test_ftio_n_freq():
-    file = "../examples/8.jsonl"
+    file = "../examples/tmio/8.jsonl"
     args = ["ftio", file, "-e", "no", "-n", "5"]
     _, args = main(args)
     assert True
 
 def test_ftio_zscore():
-    file = "../examples/8.jsonl"
+    file = "../examples/tmio/8.jsonl"
     args = ["ftio", file, "-e", "no"]
     prediction, args = main(args)
     assert prediction["t_start"] == 0.05309
 
 
 def test_ftio_dbscan():
-    file = "../examples/8.jsonl"
+    file = "../examples/tmio/8.jsonl"
     args = ["ftio", file, "-e", "no", "-o", "dbscan"]
     prediction, args = main(args)
     assert prediction["t_start"] == 0.05309
 
 
 def test_ftio_lof():
-    file = "../examples/8.jsonl"
+    file = "../examples/tmio/8.jsonl"
     args = ["ftio", file, "-e", "no", "-o", "lof"]
     prediction, args = main(args)
     assert prediction["t_start"] == 0.05309
 
 
 def test_ftio_plot():
-    file = "../examples/8.jsonl"
+    file = "../examples/tmio/8.jsonl"
     args = ["ftio", file, "-e", "no"]
     prediction, args = main(args)
     _ = label_phases(prediction, args)
@@ -50,7 +50,7 @@ def test_ftio_plot():
 
 
 def test_ftio_display_prediction():
-    file = "../examples/8.jsonl"
+    file = "../examples/tmio/8.jsonl"
     args = ["ftio", file, "-e", "no"]
     prediction, args = main(args)
     display_prediction("ftio", prediction)

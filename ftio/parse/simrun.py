@@ -1,9 +1,10 @@
 from __future__ import annotations
+import re 
 import statistics as st
 from ftio.parse.sample import Sample
 from ftio.parse.time_io import Time
 from ftio.parse.percent import Percent
-import re 
+from ftio.parse.helper import match_mode
 class Simrun:
     """Stores the result from a single simulation including the:
     1. read sync
@@ -25,15 +26,16 @@ class Simrun:
         """
         self.name       = name
         self.ranks      = self.get_rank(ext)
-        mode            = self.get_mode(args.mode) if args.mode else ''
+        mode            = match_mode(args.mode) if args.mode else ''
         args.file_index = file_index
-
+        supported_modes = ['read_sync', 'write_sync', 'read_async', 'write_async']
+        
         #! list = JSONL
         if isinstance(data,list):
             #! JSONL need to be converted to a dict
             # if 'Time' in data[-1]:
             if 'jsonl' in ext or 'msgpack' in ext:
-                if mode and mode in ['read_sync', 'write_sync', 'read_async', 'write_async']:
+                if mode and mode in supported_modes:
                     self.reset(args)
                     self.assign(data, args, mode,'jsonl')
                 else:
@@ -66,7 +68,7 @@ class Simrun:
         #! json files
         else:
             #! for dft to make it faster
-            if mode and mode in ['read_sync', 'write_sync', 'read_async', 'write_async']:
+            if mode and mode in supported_modes:
                 self.reset(args)
                 self.assign(data,args,mode)
                 return
@@ -196,7 +198,7 @@ class Simrun:
             args (argparse): command line arguments
 
         Returns:
-            io_sampe object: iosample of the whole simulation
+            io_sample object: iosample of the whole simulation
         """
         data_array     = [item[mode] for item in data if mode in item]
         out = []
@@ -252,16 +254,3 @@ class Simrun:
                         my_dict[field] = st.mean(x[field] for x in data_array)
 
         return my_dict
-
-    def get_mode(self, mode:str) -> str:
-        if "w" in mode:
-            out = "write"
-        else:
-            out = "read"
-            
-        if "async" in mode:
-            out = out + "_async"
-        else:
-            out = out + "_sync"
-
-        return out 

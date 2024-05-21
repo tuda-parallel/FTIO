@@ -62,7 +62,7 @@ profile2:
 # test
 test_all:
 	mkdir quicktest
-	cp examples/8.jsonl quicktest
+	cp examples/tmio/8.jsonl quicktest
 	@cd quicktest && ftio 8.jsonl -e no && echo "--- passed ftio ---" || echo "--- failed ftio ---"
 	@cd quicktest && ftio 8.jsonl -e no -o dbscan && echo "--- passed ftio ---" || echo "--- failed ftio ---"
 	@cd quicktest && ftio 8.jsonl -e no -o lof && echo "--- passed ftio ---" || echo "--- failed ftio ---"

@@ -48,28 +48,6 @@ def get_sim(data, mode):
     raise Exception("undefined mode set")
 
 
-def match_modes(mode):
-    mode = mode.lower()
-    if isinstance(mode, list):
-        for i in range(0, len(mode)):
-            mode[i] = match(mode[i])
-    else:
-        mode = [match(mode)]
-    return mode
-
-
-def match(mode):
-    if "read" in mode:
-        if "async" in mode:
-            return "read_async"
-        elif "sync" in mode:
-            return "read_sync"
-    if "write" in mode:
-        if "async" in mode:
-            return "write_async"
-        elif "sync" in mode:
-            return "write_sync"
-
 
 def format_plot(fig) -> go.Figure:
     """makes plots uniform

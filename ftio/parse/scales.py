@@ -1,17 +1,16 @@
-"""Handels the importing of modules
+"""Handles the importing of modules
 """
 
-import json
 import os
 import datetime
-import jsonlines
 import pandas as pd
 import numpy as np
 from rich.panel import Panel
 from rich.console import Console
 from rich.text import Text
 from ftio import __version__
-from ftio.parse.simrun import Simrun
+from ftio.parse.parse_json import ParseJson
+from ftio.parse.parse_jsonl import ParseJsonl
 from ftio.parse.parse_recorder import ParseRecorder
 from ftio.parse.parse_darshan import ParseDarshan
 from ftio.parse.parse_msgpack import ParseMsgpack
@@ -151,13 +150,9 @@ class Scales:
         if self.args.custom_file:
             run = ParseCustom(file_path).to_simrun(self.args, file_index)
         elif ".json" in file_path[-5:]:
-            with open(file_path, "rt") as file:
-                data = json.load(file)
-            run = Simrun(data, "json", file_path, self.args, file_index)
+            run = ParseJson(file_path).to_simrun(self.args, file_index)
         elif ".jsonl" in file_path[-6:]:
-            with jsonlines.open(file_path, "r") as jsonl_f:
-                data = [obj for obj in jsonl_f]
-            run = Simrun(data, "jsonl", file_path, self.args, file_index)
+            run = ParseJsonl(file_path).to_simrun(self.args, file_index)
         elif "darshan" in file_path[-10:]:
             run = ParseDarshan(file_path).to_simrun(self.args, file_index)
         elif "msgpack" in file_path[-10:]:

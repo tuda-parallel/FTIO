@@ -54,6 +54,8 @@ Full documentation:
         parser.add_argument('files', metavar='files', type = str, nargs='+', help='file, file list (file 0 ... file n), folder, or folder list (folder 0.. folder n)')    
 
     parser.add_argument('-m', '--mode', dest = 'mode',      type = str ,  help ='if the trace file contains several I/O modes, a specific mode can be selected. Supported modes are: write_async, read_async, write_sync, read_sync')
+    parser.add_argument('-s','--source', dest='source', type = str, help = 'the source of the files: tmio, or custom. See https://github.com/tuda-parallel/FTIO/blob/main/docs/file_formats.md')
+    parser.set_defaults(source = 'unspecified')
     
     #! PARSE Settings
     if 'parse' not in name.lower():
@@ -130,16 +132,16 @@ Full documentation:
         parser.set_defaults(scale=False)    
 
     #! Data modes (for all)
-    parser.add_argument('-s', '--sum', action='store_true', help ='sum plot: True (default) or False')
-    parser.add_argument('-ns', '--no_sum', dest='sum', action='store_false')
+    parser.add_argument('--sum', action='store_true', help ='sum plot: True (default) or False')
+    parser.add_argument('--no_sum', dest='sum', action='store_false')
     parser.set_defaults(sum=True)
-    parser.add_argument('-a', '--avr', action='store_true', help ='avr plot: True (default) or False')
-    parser.add_argument('-na', '--no_avr', dest='avr', action='store_false')
+    parser.add_argument('--avr', action='store_true', help ='avr plot: True (default) or False')
+    parser.add_argument('--no_avr', dest='avr', action='store_false')
     parser.set_defaults(avr=True)
-    parser.add_argument('-i', '--ind', action='store_true', help ='ind plot: True or False (default)')
-    parser.add_argument('-ni', '--no_ind', dest='ind', action='store_false')
+    parser.add_argument('--ind', action='store_true', help ='ind plot: True or False (default)')
+    parser.add_argument('--no_ind', dest='ind', action='store_false')
     parser.set_defaults(ind=False)
-    parser.add_argument('-cf', '--custom_file',   type = str, help = 'passes a [path/filename.py] file containing the translation and pattern for a custom file format similar to:\n https://github.com/tuda-parallel/FTIO/blob/main/examples/txt/custom_input.py')
+    parser.add_argument('-cf', '--custom_file',   type = str, help = 'passes a [path/filename.py] file containing the translation and pattern for a custom file format similar to:\n https://github.com/tuda-parallel/FTIO/blob/main/examples/custom/txt/custom_input.py')
     parser.set_defaults(custom_file = '')
     parser.add_argument('-x', '--dxt_mode', dest='dxt_mode',  type = str ,  help ='select data to extract from Darshan traces (DXT_POSIX or DXT_MPIIO (default))')
     parser.set_defaults(dxt_mode='DXT_MPIIO')
