@@ -3,8 +3,8 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10670270.svg)](https://doi.org/10.5281/zenodo.10670270)
 
 
-This file describes how to reproduce the experiments in the Paper entitled:
-"Capturing Periodic I/O Using Frequency Techniques" which was published at the IPDPS 2024
+Below, we describe how to reproduce the experiments in the Paper entitled:
+"Capturing Periodic I/O Using Frequency Techniques," which was published at the IPDPS 2024
 
 Before you start, first set up the correct [FTIO version](#ftio-version).
 The experiments are divided into four parts:
@@ -30,7 +30,7 @@ Before you start, there are two prerequisites:
 
 ### FTIO Version
 
-For all the cases below, `ftio` first needs to be installed (see [Installation](https://github.com/tuda-parallel/FTIO?tab=readme-ov-file#installation)). We used `ftio` version 0.0.1 for the experiment in the paper. To get this version simply execute the following code:
+For all the cases below, `ftio` first needs to be installed (see [Installation](https://github.com/tuda-parallel/FTIO?tab=readme-ov-file#installation)). We used `ftio` version 0.0.1 for the experiment in the paper. To get this version, simply execute the following code:
 ```sh
 git checkout v0.0.1 
 ```
@@ -95,17 +95,17 @@ Navigate to [HACC-IO/README](/artifacts/ipdps24/HACC-IO/README.md) and follow th
 
 ### 3. Limitations of FTIO
 
-The details for this experiment are provided here: 
-<br>
-<https://gitlab.inria.fr/hpc_io/ftio_paper_exps_with_synthetic_traces>
+The details for this experiment are provided here: <https://gitlab.inria.fr/hpc_io/ftio_paper_exps_with_synthetic_traces>
+<br> 
+Alternatively, the details are also provided in the README.md file in the folder `exps_with_synthetic_traces` from the [Zenodo](https://doi.org/10.5281/zenodo.10670270) dataset.
 
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
 
 ### 4. Use Case: I/O Scheduling
-The details for this experiment are provided here:
-<br>
-<https://gitlab.inria.fr/hpc_io/iosets-ftio-experiments>
+The details for this experiment are provided here: <https://gitlab.inria.fr/hpc_io/iosets-ftio-experiments>
+<br> 
+Alternatively, the details are also provided in the README.md file in the folder `iosets_ftio_experiments` from the [Zenodo](https://doi.org/10.5281/zenodo.10670270) dataset.
 
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
