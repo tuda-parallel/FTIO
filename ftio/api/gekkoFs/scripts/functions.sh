@@ -251,7 +251,7 @@ function install_all(){
     cd ..
     
     # Build GKFS
-    gekkofs/scripts/gkfs_dep.sh ${install_location}/iodeps/git ${install_location}/iodeps
+    gekkofs/scripts/gkfs_dep.sh -p default_zmq ${install_location}/iodeps/git ${install_location}/iodeps
     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${install_location}/iodeps -DGKFS_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=${install_location}/iodeps -DGKFS_ENABLE_CLIENT_METRICS=ON ..
 	cd gekkofs && mkdir build && cd build
     make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
