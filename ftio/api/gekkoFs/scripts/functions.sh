@@ -98,6 +98,8 @@ function start_geko() {
 	echo -e "${GREEN}####### Starting GKFS DEOMON ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
+		# Display Demon
+		echo -e "${CYAN}>> Executing: srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 ${BLACK}"
         # Demon
 		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
@@ -106,18 +108,16 @@ function start_geko() {
         -m ${GKFS_MNTDIR} \
         -H ${GKFS_HOSTFILE}  -c -l ib0 \
 		-P ofi+sockets -p ofi+verbs -L ib0
-		# Display Demon
-		echo -e "${CYAN}>> Executed: srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 ${BLACK}"
 		
 		# Proxy
 		echo -e "${CYAN}>> Starting Proxy${BLACK}"
+		echo -e "${CYAN}>> Executing: 
+		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE} ${BLACK}"
 		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
         ${GKFS_PROXY}  \
 		 -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
 		# Display Proxy
-		echo -e "${CYAN}>> Executed: 
-		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE} ${BLACK}"
     else
         # Geko Demon call
         GKFS_DAEMON_LOG_LEVEL=info \
@@ -138,8 +138,11 @@ function start_application() {
     # application with Geko LD_PRELOAD
     # Same a comment as start_gekko like the dmon
     if [ "$CLUSTER" = true ]; then
-		echo -e "${CYAN}>> Executing: LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} LIBGKFS_LOG=none LIBGKFS_ENABLE_METRICS=on LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} LD_PRELOAD=${GKFS_INERCEPT} srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${APP_CALL} ${BLACK}"
+		echo -e "${CYAN}>> Executing: 
+		LIBGKFS_LOG=errors,warnings LIBGKFS_LOG_OUTPUT=/dev/shm/tarraf_gkfs_client.log LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} LIBGKFS_LOG=none LIBGKFS_ENABLE_METRICS=on LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} LD_PRELOAD=${GKFS_INERCEPT} srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${APP_CALL} ${BLACK}"
         
+		LIBGKFS_LOG=errors,warnings \
+		LIBGKFS_LOG_OUTPUT=/dev/shm/tarraf_gkfs_client.log \
 		LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
 		LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE}\
         LIBGKFS_LOG=none \
@@ -169,12 +172,12 @@ function start_cargo() {
     echo -e "${GREEN}####### Starting Cargo ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
+		echo -e "${CYAN}>> Executed: LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO} --listen ofi+sockets://127.0.0.1:62000  ${BLACK}"
         # One instance per node
         LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
         srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
 		${CARGO} --listen ofi+sockets://127.0.0.1:62000 
-		echo -e "${CYAN}>> Executed: LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO} --listen ofi+sockets://127.0.0.1:62000  ${BLACK}"
     else
         mpiexec -np 2 --oversubscribe \
         --map-by node \
@@ -248,13 +251,19 @@ function install_all(){
     cd gekkofs
     # git checkout main fmt10
     git pull --recurse-submodules
-    cd ..
+	cd ..
+    
+
+	# Workaround for lib fabric
+	echo -e "${RED}>>> Work around for libfabric${BLACK}"
+	sed  -i '/\[\"libfabric/d' ${install_location}/gekkofs/scripts/profiles/latest/default_zmq.specs
+	sed  -i 's/\"libfabric\"//g' ${install_location}/gekkofs/scripts/profiles/latest/default_zmq.specs
     
     # Build GKFS
     gekkofs/scripts/gkfs_dep.sh -p default_zmq ${install_location}/iodeps/git ${install_location}/iodeps
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${install_location}/iodeps -DGKFS_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=${install_location}/iodeps -DGKFS_ENABLE_CLIENT_METRICS=ON ..
 	cd gekkofs && mkdir build && cd build
-    make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${install_location}/iodeps -DGKFS_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=${install_location}/iodeps -DGKFS_ENABLE_CLIENT_METRICS=ON ..
+    make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"	
     echo -e "${GREEN}>>> GEKKO installed${BLACK}"
     
     #Cardo DEPS: CEREAL
