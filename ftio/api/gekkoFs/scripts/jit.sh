@@ -28,7 +28,7 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	ADDRESS=$(get_address)
 
 	# 2. Start FTIO
-	start_ftio &
+	start_ftio #&
 	FTIO_PID=$!
 	sleep 2
 
@@ -36,12 +36,12 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	create_hostfile
 
 	# 3. Start Gekko Server
-	start_geko &
+	start_geko #&
 	GEKKO_PID=$!
 	sleep 2
 
 	# 4. Start Cargo Server
-	start_cargo &
+	start_cargo #&
 	CARGO_PID=$!
 	sleep 2
 

@@ -50,7 +50,7 @@ function allocate(){
         salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell
 		
 		JIT_ID=$(squeue | grep "JIT" |awk '{print $(1) }')
-        ALL_NODES=$(squeue --me -l |  head -n 3| tail -1 |awk '{print $NF}')
+        ALL_NODES=$(squeue --me -l |  head -n 3| tail -1 |awk '{print $NF}| tail -1')
         # create array with start and end nodes
         NODES_ARR=($(echo $ALL_NODES | grep -Po '[\d]*'))
         # assign FTIO to the last node
@@ -79,11 +79,13 @@ function start_ftio() {
 		echo -e "${CYAN}>> FTIO is listening node is ${ADDRESS}:${PORT} ${BLACK}"
 
 		# call
-		srun --jobid=${JIT_ID} --nodelist=${FTIO_NODE} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} \
-        --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
+		echo -e "${CYAN}>> Executing: srun --jobid=${JIT_ID} --nodelist=${FTIO_NODE} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_gekko  --zmq_address ${ADDRESS} --zmq_port ${PORT} ${BLACK}"
+		srun --jobid=${JIT_ID} --nodelist=${FTIO_NODE} --disable-status -N 1 \
+		--ntasks=1 --cpus-per-task=${PROCS} \
+        --ntasks-per-node=1 --overcommit --overlap \
+		--oversubscribe --mem=0 \
         predictor_gekko  --zmq_address ${ADDRESS} --zmq_port ${PORT}
         # Change CARGO path in predictor_gekko_zmq.py if needed
-		echo -e "${CYAN}>> Executed: srun --jobid=${JIT_ID} --nodelist=${FTIO_NODE} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_gekko  --zmq_address ${ADDRESS} --zmq_port ${PORT} ${BLACK}"
 
     else
         predictor_gekko  > "ftio_${NODES}.out" 2> "ftio_${NODES}.err"
@@ -112,12 +114,11 @@ function start_geko() {
 		
 		# Proxy
 		echo -e "${CYAN}>> Starting Proxy${BLACK}"
-		echo -e "${CYAN}>> Executing: 
-		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE} ${BLACK}"
+		echo -e "${CYAN}>> Executing: srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE} ${BLACK}"
 		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
         ${GKFS_PROXY}  \
-		 -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
+		-H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
 		# Display Proxy
     else
 		mkdir -p /dev/shm/tarraf_gkfs_mountdir
