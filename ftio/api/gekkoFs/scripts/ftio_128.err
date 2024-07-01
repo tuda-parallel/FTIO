@@ -1,0 +1,2 @@
+./launch_laptop.sh: line 135: /lustre/project/nhr-admire/tarraf/FTIO/.venv/bin/activate: No such file or directory
+./launch_laptop.sh: line 137: /d/github/FTIO/.venv/bin/predictor_gekko: cannot execute: required file not found

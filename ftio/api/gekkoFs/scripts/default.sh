@@ -20,8 +20,8 @@ echo -e "${GREEN}---- Started Script ----${BLACK}"
 CLUSTER=false
 if [ -n "$(hostname | grep 'cpu\|mogon')" ]; then
 	CLUSTER=true
-	echo -e "${GREEN}> Cluster Mode: on${BLACK}"
 fi
+echo -e "${GREEN}> Cluster Mode: ${CLUSTER}${BLACK}"
 
 ip=$(ip addr | grep ib0 | awk '{print $4}' | tail -1)
 
@@ -34,37 +34,8 @@ NODES=${NODES:-"2"}
 PROCS=${PROCS:-"128"}
 MAX_TIME=${MAX_TIME:-"30"}
 
-###################
-# FTIO variables
-###################
-FTIO_ACTIVATE=${FTIO_ACTIVATE:-"/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin/activate"}
-
-###################
-# Gekko variables
-###################
-# Gekko Demon
-GKFS_DEMON=${GKFS_DEMON:-"/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/bin/gkfs_daemon"}
-#Gekko intercept call
-GKFS_INERCEPT=${GKFS_INERCEPT:-"/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"}
-#Gekko mount directory
-GKFS_MNTDIR=${GKFS_MNTDIR:-"/dev/shm/tarraf_gkfs_mountdir"}
-#Gekko root directory
-GKFS_ROOTDIR=${GKFS_ROOTDIR:-"/dev/shm/tarraf_gkfs_rootdir"}
-# Host file location
-GKFS_HOSTFILE="/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
-# Gekko Proxy
-GKFS_PROXY=${GKFS_PROXY:-"/lustre/project/nhr-admire/vef/gekkofs/build/src/proxy/gkfs_proxy"}
-# Gekko Proxy file
-GKFS_PROXYFILE=${GKFS_PROXYFILE:-"/dev/shm/vef_gkfs_proxy.pid"}
-###################
-
-CARGO=${CARGO:-"/lustre/project/nhr-admire/vef/cargo/build/src/cargo"}
-
-# APP call 
-APP_CALL="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
-
-# install location in case -i option is provided to the script
-install_location=${install_location:-"/beegfs/home/Shared/admire/JIT"}
+# import flags
+source ${SCRIPT_DIR}/flags.sh
 
 # TODO: Bind sockets to CPU numactl --cpunodebind=0,1 --membind=0,1 (particular sockets are faster)
 # TODO: remove FTIO from node list and exlude it from others (see functions.sh)

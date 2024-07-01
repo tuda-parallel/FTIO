@@ -54,9 +54,11 @@ docker_interactive:
 profile:
 	rm -f test.pstats
 	${PYTHON} -m cProfile -o test.pstats ftio/cli/ftio_core.py -h
+	${PYTHON} -m pip install snakeviz
 	snakeviz test.pstats
 
 profile2:
+	${PYTHON} -m pip install pyinstrument
 	${PYTHON} -m pyinstrument ftio/cli/ftio_core.py  -h
 
 # test

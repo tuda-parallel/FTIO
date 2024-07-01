@@ -13,7 +13,7 @@ from rich.text import Text
 import matplotlib
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-import plotly.offline
+# import plotly.offline
 import plotly.express as px
 from plotly.subplots import make_subplots
 

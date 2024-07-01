@@ -1,7 +1,7 @@
 import os
 from sys import platform
 from threading import Thread
-import plotly.offline
+from plotly.offline import get_plotlyjs
 from rich.console import Console
 
 def create_html(figs:list,render :str,configuration:dict,name:str="freq") -> None:
@@ -27,7 +27,7 @@ def create_html(figs:list,render :str,configuration:dict,name:str="freq") -> Non
             # s = s + fig.to_html(include_plotlyjs=False) + "\n"
             s= s + fig.to_html(config=configuration,include_plotlyjs=False) + "\n"
         template = template.format(
-            plotly=plotly.offline.get_plotlyjs(), plots=s
+            plotly=get_plotlyjs(), plots=s
         )
         with open(f"{name}.html", "a") as file:
             file.write(template)

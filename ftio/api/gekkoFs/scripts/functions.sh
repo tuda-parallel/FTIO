@@ -222,7 +222,11 @@ function error_usage(){
 }
 
 function install_all(){
-    
+    #create dir
+	echo -e "${GREEN}>> Installation stated${BLACK}"
+	echo -e "${GREEN}>>> Creating directory${BLACK}"
+	mkdir -p ${install_location}
+
     # Clone GKFS
     echo -e "${GREEN}>>> Installing GEKKO${BLACK}"
     cd ${install_location}
@@ -233,8 +237,9 @@ function install_all(){
     cd ..
     
     # Build GKFS
-    gekkofs/scripts/gkfs_dep.sh iodeps/git iodeps
-    cd gekkofs && mkdir build && cd build
+    gekkofs/scripts/gkfs_dep.sh ${install_location}/iodeps/git ${install_location}/iodeps
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${install_location}/iodeps -DGKFS_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=${install_location}/iodeps -DGKFS_ENABLE_CLIENT_METRICS=ON ..
+	cd gekkofs && mkdir build && cd build
     make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
     echo -e "${GREEN}>>> GEKKO installed${BLACK}"
     
@@ -243,14 +248,14 @@ function install_all(){
     cd ${install_location}
     git clone https://github.com/USCiLab/cereal
     cd cereal && mkdir build && cd build
-    -DCMAKE_INSTALL_PREFIX=${install_location}/iodeps ..
+    cmake -DCMAKE_PREFIX_PATH=${install_location}/iodeps -DCMAKE_INSTALL_PREFIX=${install_location}/iodeps ..
     make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
     
     #Cargo DEPS: THALLIUM
     cd ${install_location}
     git clone https://github.com/mochi-hpc/mochi-thallium
     cd mochi-thallium && mkdir build && cd build
-    -DCMAKE_INSTALL_PREFIX=${install_location}/iodeps ..
+	cmake -DCMAKE_PREFIX_PATH=${install_location}/iodeps -DCMAKE_INSTALL_PREFIX=${install_location}/iodeps ..    
     make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
     
     # clone cargo:
@@ -262,25 +267,33 @@ function install_all(){
     
     # build cargo
     cd cargo && mkdir build && cd build
+	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${install_location}iodeps -DCMAKE_INSTALL_PREFIX=${install_location}iodeps ..
     make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
     # GekkoFS should be found in the cargo CMAKE configuration.
     echo -e "${GREEN}>>> Cargon installed${BLACK}"
     
-    # build FTIO:
-    echo -e "${GREEN}>>> Installing FTIO${BLACK}"
-    cd ${install_location}
-    git clone https://github.com/tuda-parallel/FTIO.git
-    ml lang/Python/3.10.8-GCCcore-12.2.0 || echo "skipping module load";
-    cd FTIO
-    # Install FTIO
-    make install  || echo -e "${RED}>>> Error encountered${BLACK}"
-    echo -e "${GREEN}>>> FTIO installed${BLACK}"
+    ## build FTIO:
+    # echo -e "${GREEN}>>> Installing FTIO${BLACK}"
+    # cd ${install_location}
+    # git clone https://github.com/tuda-parallel/FTIO.git
+    # ml lang/Python/3.10.8-GCCcore-12.2.0 || echo "skipping module load";
+    # cd FTIO
+    # # Install FTIO
+    # make install  || echo -e "${RED}>>> Error encountered${BLACK}"
+    # echo -e "${GREEN}>>> FTIO installed${BLACK}"
     
-    
-    echo -e "call these two lines: \n
-	source ${install_location}/FTIO/.venv/activate
+    #build IOR
+	cd ${install_location}
+	git clone https://github.com/hpc/ior.git
+	cd ior 
+	./bootstrap
+	./configure
+	make && make -j 4 install 
 
-	read to go
+	echo -e "${GREEN}>> Installation finished${BLACK}"
+    echo -e "\n
+	>> read to go <<
+	call: ./jit.sh  -n NODES -t MAX_TIME 
     "
 }
 
@@ -460,8 +473,11 @@ function progress(){
 
 function get_address(){
 	# get Address and port
-	out=$(srun --jobid=${JIT_ID} --nodelist=${FTIO_NODE} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 \
-    --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{print $4}' | tail -1)
-
+	if [ "$CLUSTER" = true ]; then
+		out=$(srun --jobid=${JIT_ID} --nodelist=${FTIO_NODE} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 \
+		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{print $4}' | tail -1)
+	else
+		out="$ADDRESS"
+	fi 
 	echo ${out}
 }
