@@ -10,7 +10,7 @@ FTIO_ACTIVATE=${FTIO_ACTIVATE:-"/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin
 # Gekko Demon
 GKFS_DEMON=${GKFS_DEMON:-"/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/bin/gkfs_daemon"}
 #Gekko intercept call
-GKFS_INERCEPT=${GKFS_INERCEPT:-"/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"}
+GKFS_INERCEPT=${GKFS_INERCEPT:-"/lustre/project/nhr-admire/vef/gekkofs/build/src/client/libgkfs_intercept.so"}
 #Gekko mount directory
 GKFS_MNTDIR=${GKFS_MNTDIR:-"/dev/shm/tarraf_gkfs_mountdir"}
 #Gekko root directory
@@ -20,7 +20,8 @@ GKFS_HOSTFILE="/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
 # Gekko Proxy
 GKFS_PROXY=${GKFS_PROXY:-"/lustre/project/nhr-admire/vef/gekkofs/build/src/proxy/gkfs_proxy"}
 # Gekko Proxy file
-GKFS_PROXYFILE=${GKFS_PROXYFILE:-"/dev/shm/vef_gkfs_proxy.pid"}
+GKFS_PROXYFILE=${GKFS_PROXYFILE:-"
+/dev/shm/vef_gkfs_proxy.pid"}
 
 
 ###################
