@@ -141,7 +141,7 @@ function start_application() {
     # Same a comment as start_gekko like the dmon
     if [ "$CLUSTER" = true ]; then
 		echo -e "${CYAN}>> Executing: 
-		mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors,warnings -x LD_PRELOAD=${GKFS_INERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} 		-x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE}	taskset -c 0-63 ${APP_CALL} ${BLACK}"
+		mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} -x LIBGKFS_LOG=errors,warnings -x LD_PRELOAD=${GKFS_INERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} taskset -c 0-63 ${APP_CALL} ${BLACK}"
         
 		# LIBGKFS_LOG=errors,warnings \
 		# LIBGKFS_LOG_OUTPUT=/dev/shm/tarraf_gkfs_client.log \
@@ -161,7 +161,9 @@ function start_application() {
 		# run mpi
 		mpiexec -np ${PROCS} --oversubscribe \
 		--hostfile ~/hostfile_mpi \
-		--map-by node -x LIBGKFS_LOG=errors,warnings -x LD_PRELOAD=${GKFS_INERCEPT}\
+		--map-by node -x LIBGKFS_LOG=errors,warnings \
+		-x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT}\
+		-x LD_PRELOAD=${GKFS_INERCEPT}\
 		-x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE}\
 		-x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE}\
 		taskset -c 0-63 \

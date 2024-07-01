@@ -20,8 +20,7 @@ GKFS_HOSTFILE="/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
 # Gekko Proxy
 GKFS_PROXY=${GKFS_PROXY:-"/lustre/project/nhr-admire/vef/gekkofs/build/src/proxy/gkfs_proxy"}
 # Gekko Proxy file
-GKFS_PROXYFILE=${GKFS_PROXYFILE:-"
-/dev/shm/vef_gkfs_proxy.pid"}
+GKFS_PROXYFILE=${GKFS_PROXYFILE:-"/dev/shm/vef_gkfs_proxy.pid"}
 
 
 ###################
