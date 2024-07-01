@@ -102,28 +102,28 @@ function start_geko() {
 		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
         ${GKFS_DEMON}  \
-        -r /dev/shm/tarraf_gkfs_rootdir \
-        -m /dev/shm/tarraf_gkfs_mountdir \
+        -r ${GKFS_ROOTDIR} \
+        -m ${GKFS_MNTDIR} \
         -H ${GKFS_HOSTFILE}  -c -l ib0 \
 		-P ofi+sockets -p ofi+verbs -L ib0
 		# Display Demon
-		echo -e "${CYAN}>> Executed: srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON} -r /dev/shm/tarraf_gkfs_rootdir -m /dev/shm/tarraf_gkfs_mountdir -H ${GKFS_HOSTFILE}  -c -l ib0 ${BLACK}"
+		echo -e "${CYAN}>> Executed: srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 ${BLACK}"
 		
 		# Proxy
 		echo -e "${CYAN}>> Starting Proxy${BLACK}"
 		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
         ${GKFS_PROXY}  \
-		 -H /lustre/project/nhr-admire/vef/gkfs_hostfile -p ofi+verbs -P ${GKFS_PROXYFILE}
+		 -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
 		# Display Proxy
 		echo -e "${CYAN}>> Executed: 
-		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H /lustre/project/nhr-admire/vef/gkfs_hostfile -p ofi+verbs -P ${GKFS_PROXYFILE} ${BLACK}"
+		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE} ${BLACK}"
     else
         # Geko Demon call
         GKFS_DAEMON_LOG_LEVEL=info \
         ${GKFS_DEMON} \
-        -r /tmp/gkfs_rootdir \
-        -m /tmp/gkfs_mountdir \
+        -r ${GKFS_ROOTDIR} \
+		-m ${GKFS_MNTDIR}\
         -c --auto-sm \
         -H ${GKFS_HOSTFILE}
     fi

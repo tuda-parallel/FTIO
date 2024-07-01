@@ -51,7 +51,7 @@ GKFS_MNTDIR=${GKFS_MNTDIR:-"/dev/shm/tarraf_gkfs_mountdir"}
 #Gekko root directory
 GKFS_ROOTDIR=${GKFS_ROOTDIR:-"/dev/shm/tarraf_gkfs_rootdir"}
 # Host file location
-GKFS_HOSTFILE="${HOME}/gkfs_hosts.txt"
+GKFS_HOSTFILE="/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
 # Gekko Proxy
 GKFS_PROXY=${GKFS_PROXY:-"/lustre/project/nhr-admire/vef/gekkofs/build/src/proxy/gkfs_proxy"}
 # Gekko Proxy file
