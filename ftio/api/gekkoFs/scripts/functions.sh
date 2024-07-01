@@ -49,8 +49,8 @@ function allocate(){
 		echo -e "Executing: ${CYAN}salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell${BLACK}"
         salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell
 		
-		JIT_ID=$(squeue | grep "JIT" |awk '{print $(1) }')
-        ALL_NODES=$(squeue --me -l |  head -n 3| tail -1 |awk '{print $NF}| tail -1')
+		JIT_ID=$(squeue | grep "JIT" |awk '{print $(1)}' | tail -1)
+        ALL_NODES=$(squeue --me -l |  head -n 3| tail -1 |awk '{print $NF}')
         # create array with start and end nodes
         NODES_ARR=($(echo $ALL_NODES | grep -Po '[\d]*'))
         # assign FTIO to the last node

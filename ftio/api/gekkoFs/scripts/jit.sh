@@ -36,7 +36,7 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	create_hostfile
 
 	# 3. Start Gekko Server
-	start_geko #&
+	start_geko &
 	GEKKO_PID=$!
 	sleep 2
 
