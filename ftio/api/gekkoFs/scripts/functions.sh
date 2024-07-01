@@ -221,8 +221,22 @@ function error_usage(){
     "
 }
 
+abort()
+{
+    echo >&2 '
+***************
+*** ABORTED ***
+***************
+'
+    echo "An error occurred. Exiting..." >&2
+    exit 1
+}
+
 function install_all(){
     #create dir
+	trap 'abort' 0
+	set -e #exit on fail
+
 	echo -e "${GREEN}>> Installation stated${BLACK}"
 	echo -e "${GREEN}>>> Creating directory${BLACK}"
 	mkdir -p ${install_location}
@@ -232,7 +246,7 @@ function install_all(){
     cd ${install_location}
     git clone --recurse-submodules https://storage.bsc.es/gitlab/hpc/gekkofs.git
     cd gekkofs
-    git checkout fmt10
+    # git checkout main fmt10
     git pull --recurse-submodules
     cd ..
     
@@ -295,6 +309,7 @@ function install_all(){
 	>> read to go <<
 	call: ./jit.sh  -n NODES -t MAX_TIME 
     "
+	trap : 0
 }
 
 function parse_options(){
