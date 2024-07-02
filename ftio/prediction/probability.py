@@ -38,7 +38,7 @@ class Probability():
     def display(self):
         CONSOLE.print(
                     f"[purple][PREDICTOR]:[/] P([{self.freq_min:.3f},{self.freq_max:.3f}] Hz) = {self.p_periodic*100:.2f}%\n"
-                    f"[purple][PREDICTOR]:[/] |-> [{self.freq_min:.3f},{self.freq_max:.3f}] Hz = [{1/self.freq_max if self.freq_max != 0 else np.NaN:.3f},{1/self.freq_min if self.freq_min != 0 else np.NaN:.3f}] sec\n"
+                    f"[purple][PREDICTOR]:[/] |-> [{self.freq_min:.3f},{self.freq_max:.3f}] Hz = [{1/self.freq_max if self.freq_max != 0 else np.nan:.3f},{1/self.freq_min if self.freq_min != 0 else np.nan:.3f}] sec\n"
                     f"[purple][PREDICTOR]:[/] '-> P([{self.freq_min:.3f},{self.freq_max:.3f}] Hz | periodic) = {self.p_freq_given_periodic*100:.2f}%\n"
                 )
 

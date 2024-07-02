@@ -48,10 +48,10 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
         }
         # print("    '-> \033[1;32mExecuting Autocorrelation")
         b_sampled = np.array([])
-        freq = np.NaN
-        t_s = np.NaN
-        t_e = np.NaN
-        total_bytes = np.NaN
+        freq = np.nan
+        t_s = np.nan
+        t_e = np.nan
+        total_bytes = np.nan
         # Ckeck if figure is on
         if any(x in args.engine for x in ["mat","plot"]):
             fig.append(go.Figure())

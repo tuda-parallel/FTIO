@@ -15,7 +15,7 @@ def get_dominant(prediction: dict) -> float:
     dominant_freq = prediction["dominant_freq"]
     conf = prediction["conf"]
     dominant_index = -1
-    out = np.NaN
+    out = np.nan
     if len(dominant_freq) != 0:
         dominant_index = np.argmax(conf)
         out = dominant_freq[dominant_index]
@@ -36,8 +36,8 @@ def get_dominant_and_conf(prediction: dict) -> tuple[float, float]:
     dominant_freq = prediction["dominant_freq"]
     conf = prediction["conf"]
     dominant_index = -1
-    out_freq = np.NaN
-    out_conf = np.NaN
+    out_freq = np.nan
+    out_conf = np.nan
     if len(dominant_freq) != 0:
         dominant_index = np.argmax(conf)
         out_freq = dominant_freq[dominant_index]
@@ -121,11 +121,11 @@ def format_jsonl(data: list[dict]) -> tuple[str,str]:
         
     """
     string = ""
-    out_ranks = np.NaN
+    out_ranks = np.nan
     for pred in data:
-        ranks = np.NaN
+        ranks = np.nan
         call_path = "main"
-        dominant_freq = np.NaN
+        dominant_freq = np.nan
         for keys, values in pred.items():
             if "dominant_freq" in keys:
                 dominant_freq,_ = get_dominant_and_conf(pred)
