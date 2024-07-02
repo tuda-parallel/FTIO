@@ -10,7 +10,7 @@ FTIO_ACTIVATE=${FTIO_ACTIVATE:-"/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin
 # Gekko Demon
 GKFS_DEMON=${GKFS_DEMON:-"/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/bin/gkfs_daemon"}
 #Gekko intercept call
-GKFS_INERCEPT=${GKFS_INERCEPT:-"/lustre/project/nhr-admire/vef/gekkofs/build/src/client/libgkfs_intercept.so"}
+GKFS_INTERCEPT=${GKFS_INTERCEPT:-"/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"}
 #Gekko mount directory
 GKFS_MNTDIR=${GKFS_MNTDIR:-"/dev/shm/tarraf_gkfs_mountdir"}
 #Gekko root directory
@@ -27,7 +27,6 @@ GKFS_PROXYFILE=${GKFS_PROXYFILE:-"/dev/shm/vef_gkfs_proxy.pid"}
 # CARGO variables
 ###################
 CARGO=${CARGO:-"/lustre/project/nhr-admire/vef/cargo/build/src/cargo"}
-
 
 ###################
 # APP call 
@@ -51,7 +50,7 @@ if [ "$CLUSTER" = false ]; then
 	# Gekko Demon
 	GKFS_DEMON=${GKFS_DEMON:-"${install_location}/deps/gekkofs_zmq_install/bin/gkfs_daemon"}
 	#Gekko intercept call
-	GKFS_INERCEPT=${GKFS_INERCEPT:-"${install_location}/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"}
+	GKFS_INTERCEPT=${GKFS_INTERCEPT:-"${install_location}/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"}
 	#Gekko mount directory
 	GKFS_MNTDIR=${GKFS_MNTDIR:-"/tmp/JIT/tarraf_gkfs_mountdir"}
 	#Gekko root directory

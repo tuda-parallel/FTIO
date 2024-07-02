@@ -49,21 +49,33 @@ function allocate(){
 		echo -e "Executing: ${CYAN}salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell${BLACK}"
         salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell
 		
+		# #old
 		JIT_ID=$(squeue | grep "JIT" |awk '{print $(1)}' | tail -1)
-        ALL_NODES=$(squeue --me -l |  head -n 3| tail -1 |awk '{print $NF}')
-        # create array with start and end nodes
-        NODES_ARR=($(echo $ALL_NODES | grep -Po '[\d]*'))
-        # assign FTIO to the last node
-        FTIO_NODE="cpu${NODES_ARR[-1]}"
+        # ALL_NODES=$(squeue --me -l |  head -n 3| tail -1 |awk '{print $NF}')
+        # # create array with start and end nodes
+		# only works for continous 
+        # NODES_ARR=($(echo $ALL_NODES | grep -Po '[\d]*'))
+		# better solution
+		NODES_ARR=($(scontrol show hostname $(squeue -j ${JIT_ID} -o "%N" | tail -n +2)))
+		scontrol show hostname $(squeue -j ${JIT_ID} -o "%N" | tail -n +2) > ~/hostfile_mpi
+		# scontrol show hostname $(squeue -j $SLURM_JOB_ID -o "%N" | tail -n +2) > ~/hostfile_mpi
+        
+		# old 
+		# FTIO_NODE="cpu${NODES_ARR[-1]}"
+		FTIO_NODE="${NODES_ARR[-1]}"
+		
         if [ "${#NODES_ARR[@]}" -gt "1" ]; then
             EXCLUDE="--exclude=${FTIO_NODE}"
+			EXCLUDE_FTIO="--exclude=$(echo ${NODES_ARR[@]/${FTIO_NODE}} | tr ' ' ',' )"
 			NODES=$((${NODES} - 1))
+			sed  -i "/${FTIO_NODE}/d" ~/hostfile_mpi
         fi
         
         echo -e "${CYAN}> JIT Job Id: ${JIT_ID} ${BLACK}"
-		echo -e "${CYAN}> Allocated Nodes: ${ALL_NODES} ${BLACK}"
+		echo -e "${CYAN}> Allocated Nodes: "${#NODES_ARR[@]}" ${BLACK}"
+		echo -e "${CYAN}> Exclude command: ${EXCLUDE} ${BLACK}"
 		echo -e "${CYAN}> FTIO Node: ${FTIO_NODE} ${BLACK}"
-		echo -e "${CYAN}> Exclude command: ${EXCLUDE} ${BLACK}\n"
+		echo -e "${YELLOW}> App Nodes: $(cat ~/hostfile_mpi) ${BLACK}\n"
     fi
 }
 
@@ -79,8 +91,8 @@ function start_ftio() {
 		echo -e "${CYAN}>> FTIO is listening node is ${ADDRESS}:${PORT} ${BLACK}"
 
 		# call
-		echo -e "${CYAN}>> Executing: srun --jobid=${JIT_ID} --nodelist=${FTIO_NODE} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_gekko  --zmq_address ${ADDRESS} --zmq_port ${PORT} ${BLACK}"
-		srun --jobid=${JIT_ID} --nodelist=${FTIO_NODE} --disable-status -N 1 \
+		echo -e "${CYAN}>> Executing: srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_gekko  --zmq_address ${ADDRESS} --zmq_port ${PORT} ${BLACK}"
+		srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 \
 		--ntasks=1 --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap \
 		--oversubscribe --mem=0 \
@@ -101,7 +113,7 @@ function start_geko() {
     # set -x
     if [ "$CLUSTER" = true ]; then
 		# Display Demon
-		srun mkdir -p /dev/shm/tarraf_gkfs_mountdir
+		srun mkdir -p ${GKFS_MNTDIR}
 		echo -e "${CYAN}>> Executing: srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 ${BLACK}"
         # Demon
 		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
@@ -136,40 +148,35 @@ function start_geko() {
 
 # Application call
 function start_application() {
-    echo -e "${CYAN}Executing Application ${BLACK}"
+    echo -e "${GREEN}####### Executing application ${BLACK}"
     # set -x
     # application with Geko LD_PRELOAD
     # Same a comment as start_gekko like the dmon
     if [ "$CLUSTER" = true ]; then
-		echo -e "${CYAN}>> Executing: 
-		mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} -x LIBGKFS_LOG=errors,warnings -x LD_PRELOAD=${GKFS_INERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} taskset -c 0-63 ${APP_CALL} ${BLACK}"
+		
+		
+		echo -e "${CYAN}>> Executing: mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} -x LIBGKFS_LOG=errors,warnings -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} taskset -c 0-63 ${APP_CALL} ${BLACK}"
         
-		# LIBGKFS_LOG=errors,warnings \
-		# LIBGKFS_LOG_OUTPUT=/dev/shm/tarraf_gkfs_client.log \
-		# LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
-		# LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE}\
-        # LIBGKFS_LOG=none \
-        # LIBGKFS_ENABLE_METRICS=on \
-        # LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} \
-        # LD_PRELOAD=${GKFS_INERCEPT} \
+		srun mkdir -p /dev/shm/tarraf_gkfs_mountdir/
+
         # srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         # --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
+		# --export=LIBGKFS_LOG=errors,warnings,LIBGKFS_LOG_OUTPUT=/dev/shm/tarraf_gkfs_client.log,LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE},LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT},LD_PRELOAD=${GKFS_INTERCEPT},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
         # ${APP_CALL}
 
-		#create file with node list
-		scontrol show hostname $(squeue -j $SLURM_JOB_ID -o "%N" | tail -n +2) > ~/hostfile_mpi
 		
 		# run mpi
 		mpiexec -np ${PROCS} --oversubscribe \
 		--hostfile ~/hostfile_mpi \
 		--map-by node -x LIBGKFS_LOG=errors,warnings \
+		-x LIBGKFS_ENABLE_METRICS=on \
 		-x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT}\
-		-x LD_PRELOAD=${GKFS_INERCEPT}\
+		-x LD_PRELOAD=${GKFS_INTERCEPT}\
 		-x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE}\
 		-x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE}\
 		taskset -c 0-63 \
 		${APP_CALL}
-		# /lustre/project/nhr-admire/vef/run/io500/io500/build/ior/src/ior -C -Q 1 -g -e -o /dev/shm/vef_gkfs_mountdir/ior_file_easy -t 4m -b 128m -F -w -r -R -a POSIX -v
+		
 		
     else
         mpiexec -np $NODES --oversubscribe \
@@ -177,7 +184,7 @@ function start_application() {
         -x LIBGKFS_LOG=none \
         -x LIBGKFS_ENABLE_METRICS=on \
         -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} \
-        -x LD_PRELOAD=${GKFS_INERCEPT} \
+        -x LD_PRELOAD=${GKFS_INTERCEPT} \
         ${APP_CALL}
         echo -e "${CYAN}Application finished ${BLACK}\n"
     fi
@@ -190,12 +197,15 @@ function start_cargo() {
     echo -e "${GREEN}####### Starting Cargo ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
-		echo -e "${CYAN}>> Executed: LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO} --listen ofi+sockets://127.0.0.1:62000  ${BLACK}"
-        # One instance per node
-        LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
-        srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
-        --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
-		${CARGO} --listen ofi+sockets://127.0.0.1:62000 
+		echo -e "${CYAN}>> Executed: srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} --export=LD_LIBRARY_PATH=${LD_LIBRARY_PATH} --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES}--ntasks=${NODES} --cpus-per-task=${PROCS}--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO} --listen ofi+sockets://127.0.0.1:62000 
+				${BLACK}"
+        
+		# One instance per node
+        srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
+		--jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} \
+		--ntasks=${NODES} --cpus-per-task=${PROCS} \
+        --ntasks-per-node=1 --overcommit --overlap --oversubscribe \
+		--mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000 
     else
         mpiexec -np 2 --oversubscribe \
         --map-by node \
@@ -516,8 +526,8 @@ function progress(){
 function get_address(){
 	# get Address and port
 	if [ "$CLUSTER" = true ]; then
-		out=$(srun --jobid=${JIT_ID} --nodelist=${FTIO_NODE} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 \
-		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{print $4}' | tail -1)
+		out=$(srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 \
+		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{print $2}'| cut -d'/' -f1 | tail -1)
 	else
 		out="$ADDRESS"
 	fi 

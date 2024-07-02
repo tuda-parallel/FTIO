@@ -26,24 +26,26 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	
 	#1.2 get the address
 	ADDRESS=$(get_address)
-
-	# 2. Start FTIO
-	start_ftio #&
-	FTIO_PID=$!
-	sleep 2
-
-	# 2.1 create hostfile 
+	
+	# 1.3 create (clean) hostfile 
 	create_hostfile
 
-	# 3. Start Gekko Server
+	# 2. Start Gekko Server
 	start_geko &
 	GEKKO_PID=$!
-	sleep 2
-
-	# 4. Start Cargo Server
-	start_cargo #&
+	sleep 15
+	
+	# 3. Start Cargo Server
+	start_cargo &
 	CARGO_PID=$!
-	sleep 2
+	sleep 15
+	
+	
+	# 4. Start FTIO
+	start_ftio &
+	FTIO_PID=$!
+	sleep 12
+
 
 	# 5. Start application with Gekko intercept
 	start_application
