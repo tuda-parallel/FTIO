@@ -31,7 +31,7 @@ ip=$(ip addr | grep ib0 | awk '{print $4}' | tail -1)
 ADDRESS=${ADDRESS:-"127.0.0.1"} # usually obtained automatically before executing FTIO
 PORT=${PORT:-"5555"}
 NODES=${NODES:-"2"}
-PROCS=${PROCS:-"16"}
+PROCS=${PROCS:-"128"}
 MAX_TIME=${MAX_TIME:-"30"}
 
 # import flags

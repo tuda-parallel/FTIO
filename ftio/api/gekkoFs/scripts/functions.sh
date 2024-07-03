@@ -46,7 +46,8 @@ function check_port(){
 function allocate(){
     
     if [ "$CLUSTER" = true ]; then
-		echo -e "Executing: ${CYAN}salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell${BLACK}"
+		echo -e "\n${GREEN}####### Allocating resources FTIO ${BLACK}"
+		echo -e ">> Executing: ${CYAN}salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell${BLACK}"
         salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell
 		
 		# #old
@@ -82,7 +83,7 @@ function allocate(){
 
 # Start FTIO
 function start_ftio() {
-    echo -e "${GREEN}####### Starting FTIO ${BLACK}"
+    echo -e "\n${GREEN}####### Starting FTIO ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
         source ${FTIO_ACTIVATE}
@@ -109,11 +110,13 @@ function start_ftio() {
 
 # Start the Server
 function start_geko() {
-	echo -e "${GREEN}####### Starting GKFS DEOMON ${BLACK}"
+	echo -e "\n${GREEN}####### Starting GKFS DEOMON ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
 		# Display Demon
-		srun mkdir -p ${GKFS_MNTDIR}
+		echo -e "${BLUE}>> Creating directory ${GKFS_MNTDIR}${BLACK}"
+		srun --jobid=${JIT_ID} mkdir -p ${GKFS_MNTDIR}
+		
 		echo -e "${CYAN}>> Executing: srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 ${BLACK}"
         # Demon
 		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
@@ -133,7 +136,7 @@ function start_geko() {
 		-H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
 		# Display Proxy
     else
-		mkdir -p /dev/shm/tarraf_gkfs_mountdir
+		mkdir -p /dev/shm/tarraf_gkfs_mountdir/
         # Geko Demon call
         GKFS_DAEMON_LOG_LEVEL=info \
         ${GKFS_DEMON} \
@@ -148,16 +151,14 @@ function start_geko() {
 
 # Application call
 function start_application() {
-    echo -e "${GREEN}####### Executing application ${BLACK}"
+    echo -e "\n${GREEN}####### Executing application ${BLACK}"
     # set -x
     # application with Geko LD_PRELOAD
     # Same a comment as start_gekko like the dmon
     if [ "$CLUSTER" = true ]; then
 		
-		
+		echo -e "${YELLOW}> Hostfile cotains: $(cat ~/hostfile_mpi) ${BLACK}\n"
 		echo -e "${CYAN}>> Executing: mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} -x LIBGKFS_LOG=errors,warnings -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} taskset -c 0-63 ${APP_CALL} ${BLACK}"
-        
-		srun mkdir -p /dev/shm/tarraf_gkfs_mountdir/
 
         # srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         # --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
@@ -194,7 +195,7 @@ function start_application() {
 }
 
 function start_cargo() {
-    echo -e "${GREEN}####### Starting Cargo ${BLACK}"
+    echo -e "\n${GREEN}####### Starting Cargo ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
 		echo -e "${CYAN}>> Executed: srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} --export=LD_LIBRARY_PATH=${LD_LIBRARY_PATH} --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES}--ntasks=${NODES} --cpus-per-task=${PROCS}--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO} --listen ofi+sockets://127.0.0.1:62000 
@@ -283,9 +284,9 @@ function install_all(){
     
 
 	# Workaround for lib fabric
-	echo -e "${RED}>>> Work around for libfabric${BLACK}"
-	sed  -i '/\[\"libfabric/d' ${install_location}/gekkofs/scripts/profiles/latest/default_zmq.specs
-	sed  -i 's/\"libfabric\"//g' ${install_location}/gekkofs/scripts/profiles/latest/default_zmq.specs
+	# echo -e "${RED}>>> Work around for libfabric${BLACK}"
+	# sed  -i '/\[\"libfabric/d' ${install_location}/gekkofs/scripts/profiles/latest/default_zmq.specs
+	# sed  -i 's/\"libfabric\"//g' ${install_location}/gekkofs/scripts/profiles/latest/default_zmq.specs
     
     # Build GKFS
     gekkofs/scripts/gkfs_dep.sh -p default_zmq ${install_location}/iodeps/git ${install_location}/iodeps
@@ -313,7 +314,7 @@ function install_all(){
     cd ${install_location}
     git clone https://storage.bsc.es/gitlab/hpc/cargo.git
     cd cargo
-    git checkout rnou/40-interface-with-ftio
+    git checkout main
     cd ..
     
     # build cargo

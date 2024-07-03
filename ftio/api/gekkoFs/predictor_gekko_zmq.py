@@ -45,7 +45,8 @@ def main(args: list[str] = sys.argv) -> None:
         os.system(call)
 
     ranks = 0
-    args.extend(["-e", "plotly", "-f", "10", "-m", "write"])
+    args.extend(["-e", "no", "-f", "10", "-m", "write"])
+    # args.extend(["-e", "plotly", "-f", "10", "-m", "write"])
     context = zmq.Context()
     socket = context.socket(socket_type=zmq.PULL)
 
@@ -272,6 +273,9 @@ def trigger_cargo(sync_trigger):
         except KeyboardInterrupt:
             exit()
 
+
+def run():
+    _ = main(sys.argv[1:])
 
 if __name__ == "__main__":
     main(sys.argv)
