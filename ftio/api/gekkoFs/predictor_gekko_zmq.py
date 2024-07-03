@@ -26,9 +26,9 @@ CARGO_STAGE_OUT_PATH ="/lustre/project/nhr-admire/tarraf/stage-out"
 CARGO_SERVER = "ofi+sockets://127.0.0.1:62000"
 
 
-def main(args: list[str] = sys.argv) -> None:
+def main(args: list[str] = sys.argv[1:]) -> None:
     #parse arguments
-    tmp_args = parse_args(args)
+    tmp_args = parse_args(args,'ftio JIT')
     # addr = "10.81.3.98"    
     # port = "5555"
     addr = tmp_args.zmq_address
@@ -176,6 +176,7 @@ def prediction_zmq_process(
     # Modify the arguments
     args.extend(["-e", "no"])
     args.extend(["-ts", f"{start_time.value:.2f}"])
+    
 
     # Perform prediction
     prediction, args, t_flush = run(msg, args, b_app, t_app)
@@ -273,9 +274,6 @@ def trigger_cargo(sync_trigger):
         except KeyboardInterrupt:
             exit()
 
-
-def run():
-    _ = main(sys.argv[1:])
 
 if __name__ == "__main__":
     main(sys.argv)

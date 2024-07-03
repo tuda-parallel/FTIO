@@ -314,12 +314,12 @@ function install_all(){
     cd ${install_location}
     git clone https://storage.bsc.es/gitlab/hpc/cargo.git
     cd cargo
-    git checkout main
-    cd ..
+    git checkout main 
+	cd ..
     
     # build cargo
     cd cargo && mkdir build && cd build
-	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${install_location}iodeps -DCMAKE_INSTALL_PREFIX=${install_location}iodeps ..
+	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${install_location}/iodeps -DCMAKE_INSTALL_PREFIX=${install_location}/iodeps ..
     make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
     # GekkoFS should be found in the cargo CMAKE configuration.
     echo -e "${GREEN}>>> Cargon installed${BLACK}"
