@@ -92,16 +92,16 @@ function start_ftio() {
 		echo -e "${CYAN}>> FTIO is listening node is ${ADDRESS}:${PORT} ${BLACK}"
 
 		# call
-		echo -e "${CYAN}>> Executing: srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_gekko  --zmq_address ${ADDRESS} --zmq_port ${PORT} ${BLACK}"
+		echo -e "${CYAN}>> Executing: srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT} ${BLACK}"
 		srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 \
 		--ntasks=1 --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap \
 		--oversubscribe --mem=0 \
-        predictor_gekko  --zmq_address ${ADDRESS} --zmq_port ${PORT}
-        # Change CARGO path in predictor_gekko_zmq.py if needed
+        predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}
+        # Change CARGO path in predictor_jit_zmq.py if needed
 
     else
-        predictor_gekko  > "ftio_${NODES}.out" 2> "ftio_${NODES}.err"
+        predictor_jit  > "ftio_${NODES}.out" 2> "ftio_${NODES}.err"
         # 2>&1 | tee  ./ftio_${NODES}.txt
     fi
     # set -o xtrace
