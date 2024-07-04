@@ -74,6 +74,7 @@ Join the [Slack channel](https://join.slack.com/t/ftioworkspace/shared_invite/zt
 ## Installation
 
 FTIO is available on PYPI and can be easily installed via pip:
+
 ```sh
 pip install ftio-hpc
 ```
@@ -84,6 +85,7 @@ for the virtual environment, `python3.11-venv` is needed, which can be installed
 ```sh
 apt install python3.11-venv
 ```
+
 Note there are currently issues with pyDarshan on Mac, that can be solved as mentioned [here](https://github.com/darshan-hpc/darshan/issues/930)
 
 ### Automated installation
@@ -91,10 +93,16 @@ Note there are currently issues with pyDarshan on Mac, that can be solved as men
 Simply call the make command:
 
 ```sh
+# uses by default python3 
 make install
+
+# or using a specific python version,
+# which is often needed on a cluster 
+make install PYTHON=python3.12
 ```
 
 This generates a virtual environment in the current directory, sources `.venv/bin/activate`, and installs FTIO as a module.
+If you are working on an HPC cluster, you first need to load the Python module (e.g., `module load python/3.12`) and eventually add `~/.loacl/bin` to your PATH (e.g., `export PATH=$PATH:~/.local/bin`) in case it's not there yet.
 
 If you don't need a dedicated environment, just call:
 

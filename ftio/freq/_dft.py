@@ -165,11 +165,11 @@ def prepare_plot_dfs(
     return df0, df1, df2, df3
 
 
-def display_prediction(argv: list[str]|str, prediction: dict) -> None:
+def display_prediction(argv: list[str], prediction: dict) -> None:
     """Displays the result of the prediction from ftio
 
     Args:
-        argv (list[str]): command line arguments
+        argv (list[str]|str): command line arguments
         prediction (dict): the result from ftio
     """
 

@@ -1,6 +1,16 @@
 PYTHON = .venv/bin/python3
 SHELL := /bin/bash
 
+#check if python exist in venv, otherwise fallback to default
+ifeq ("${PYTHON}",".venv/bin/python3")
+ifeq ("$(wildcard ${PYTHON})","")
+$(warning Python not found in .venv, falling back to default)
+PYTHON=python3
+endif
+else 
+$(info Using python: ${PYTHON})
+endif
+
 all: install  
 
 
@@ -21,7 +31,7 @@ ftio:
 	${PYTHON} -m pip install . 
 
 venv: 
-	python3 -m venv .venv 
+	${PYTHON} -m venv .venv 
 
 
 msg: 
