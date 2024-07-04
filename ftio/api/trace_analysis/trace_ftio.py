@@ -5,10 +5,11 @@ from ftio.freq._dft import display_prediction
 from ftio.freq.freq_plot_core import convert_and_plot
 from ftio.parse.bandwidth import overlap
 from ftio.parse.csv_reader import read_csv_file
-
+import os 
 
 # Example usage
-full_path = '/d/github/FTIO/ftio/api/trace_analysis/data.csv'
+
+full_path = f'{os.getcwd()}/data.csv'
 arrays = read_csv_file(full_path)
 
 # Print the arrays
