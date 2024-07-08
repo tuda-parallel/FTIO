@@ -122,7 +122,7 @@ function start_ftio() {
 }
 
 # Start the Server
-function start_geko() {
+function start_geko_demon() {
 	echo -e "\n${GREEN}####### Starting GKFS DEOMON ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
@@ -131,7 +131,6 @@ function start_geko() {
 		srun --jobid=${JIT_ID} mkdir -p ${GKFS_MNTDIR}
 		
 		# Demon call
-		echo -e "${CYAN}>>> Starting Demon${BLACK}"
 		call="${PRECALL} srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} \
 		--ntasks=${NODES} --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap \
@@ -150,20 +149,6 @@ function start_geko() {
         # -m ${GKFS_MNTDIR} \
         # -H ${GKFS_HOSTFILE}  -c -l ib0 \
 		# -P ofi+sockets -p ofi+verbs -L ib0
-		
-		# Proxy call
-		echo -e "${CYAN}>>> Starting Proxy${BLACK}"
-		call="srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
-        --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
-        ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}"
-		echo -e "${CYAN}>> Executing: ${call} ${BLACK}"
-		eval " ${call}"
-		#
-		# old
-		# srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
-        # --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
-        # ${GKFS_PROXY}  \
-		# -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
     else
 		mkdir -p /dev/shm/tarraf_gkfs_mountdir/
         # Geko Demon call
@@ -177,13 +162,33 @@ function start_geko() {
     # set -o xtrace
 	echo -e "\n\n"
 }
+function start_geko_proxy() {
+	echo -e "\n${GREEN}####### Starting GKFS PROXY ${BLACK}"
+    if [ "$CLUSTER" = true ]; then
+		# Proxy call
+		call="srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+        --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
+        ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}"
+		echo -e "${CYAN}>> Executing: ${call} ${BLACK}"
+		eval " ${call}"
+		#
+		# old
+		# srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+        # --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
+        # ${GKFS_PROXY}  \
+		# -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
+    else
+		mkdir -p /dev/shm/tarraf_gkfs_mountdir/
+        # Geko Proxy call
+        ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
+    fi
+}
+
 
 # Application call
 function start_application() {
     echo -e "\n${GREEN}####### Executing application ${BLACK}"
     # set -x
-    # application with Geko LD_PRELOAD
-    # Same a comment as start_gekko like the dmon
     if [ "$CLUSTER" = true ]; then
 		# display hostfile
 		echo -e "${YELLOW}> Hostfile cotains: $(cat ~/hostfile_mpi) ${BLACK}\n"
@@ -242,7 +247,11 @@ function start_application() {
     fi
     # set -o xtrace
     FINISH=true
-	echo -e "\n\n"
+	echo -e "\n\n${GREEN}\
+	#######################################\
+	# Application finished                #\
+	#######################################\
+	${BLACK}\n\n"
 }
 
 function start_cargo() {
