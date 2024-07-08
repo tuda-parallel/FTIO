@@ -46,9 +46,9 @@ function check_port(){
 function allocate(){
     
     if [ "$CLUSTER" = true ]; then
-		echo -e "\n${GREEN}####### Allocating resources FTIO ${BLACK}"
-		call="${PRECALL} salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell"
-		echo -e ">> Executing: ${CYAN} ${call} ${BLACK}"
+		echo -e "\n${BLUE}####### Allocating resources FTIO ${BLACK}"
+		call="salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell"
+		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
         # salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell
 		eval " ${call}"
 		
@@ -86,7 +86,7 @@ function allocate(){
 
 # Start FTIO
 function start_ftio() {
-    echo -e "\n${GREEN}####### Starting FTIO ${BLACK}"
+    echo -e "\n${BLUE}[JIT] ####### Starting FTIO ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
         source ${FTIO_ACTIVATE}
@@ -96,8 +96,8 @@ function start_ftio() {
 		echo -e "${CYAN}>> FTIO is listening node is ${ADDRESS}:${PORT} ${BLACK}"
 
 		# call
-		call="${PRECALL} srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}"
-		echo -e "${CYAN}>> Executing: ${call} ${BLACK}"
+		call="srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}"
+		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
 		eval " ${call}"
 		#
 		# old
@@ -119,7 +119,7 @@ function start_ftio() {
 
 # Start the Server
 function start_geko_demon() {
-	echo -e "\n${GREEN}####### Starting GKFS DEOMON ${BLACK}"
+	echo -e "\n${BLUE}[JIT] ####### Starting GKFS DEOMON ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
 		# Display Demon
@@ -127,8 +127,8 @@ function start_geko_demon() {
 		srun --jobid=${JIT_ID} mkdir -p ${GKFS_MNTDIR}
 		
 		# Demon call
-		call="${PRECALL} srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON}  -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 -P ofi+sockets -p ofi+verbs -L ib0"
-		echo -e "${CYAN}>> Executing: ${call} ${BLACK}"
+		call="srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON}  -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 -P ofi+sockets -p ofi+verbs -L ib0"
+		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
 		eval " ${call}"
         # #
 		# # old
@@ -153,11 +153,11 @@ function start_geko_demon() {
 	echo -e "\n\n"
 }
 function start_geko_proxy() {
-	echo -e "\n${GREEN}####### Starting GKFS PROXY ${BLACK}"
+	echo -e "\n${BLUE}[JIT] ####### Starting GKFS PROXY ${BLACK}"
     if [ "$CLUSTER" = true ]; then
 		# Proxy call
-		call="${PRECALL} srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}"
-		echo -e "${CYAN}>> Executing: ${call} ${BLACK}"
+		call="srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}"
+		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
 		eval " ${call}"
 		#
 		# old
@@ -175,7 +175,7 @@ function start_geko_proxy() {
 
 # Application call
 function start_application() {
-    echo -e "\n${GREEN}####### Executing application ${BLACK}"
+    echo -e "\n${BLUE}####### Executing application ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
 		# display hostfile
@@ -198,11 +198,11 @@ function start_application() {
 		
 		# app call
 		call="${PRECALL} mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors,warnings -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} taskset -c 0-63 ${APP_CALL}"
-		echo -e "${CYAN}>> Executing: ${call} ${BLACK}"
-		start=`date +%s.%N`
+		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
+		start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
 		eval " ${call}"
-		end=`date +%s.%N`
-		runtime=$((${end%.*}.${end#*.}-${start%.*}.${start#*.}))
+		end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
+		runtime=$(echo  "${end} - ${start}" | bc | awk '{printf "%f\n", $0}')
 
 		# run and measure App
 		# ${PRECALL} mpiexec -np ${PROCS} --oversubscribe \
@@ -235,13 +235,13 @@ function start_application() {
 }
 
 function start_cargo() {
-    echo -e "\n${GREEN}####### Starting Cargo ${BLACK}"
+    echo -e "\n${BLUE}[JIT] ####### Starting Cargo ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
         
 		# One instance per node
-		call="${PRECALL} srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000"
-		echo -e "${CYAN}>> Executing: ${call} ${BLACK}"
+		call="srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000"
+		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
 		eval " ${call}"
 		#
 		# old
@@ -263,35 +263,46 @@ function start_cargo() {
 }
 
 function stage_out() {
-	echo -e "\n${Yellow}####### Stagin out ${BLACK}"
+	echo -e "\n${YELLOW}[JIT] ####### Stagin out ${BLACK}"
 	
-	# stage out call
-	call="${PRCALL} ${CARGO_PATH}/cargo_ftio --server ofi+sockets://127.0.0.1:62000 --run"
+	# stage out call on any compute node
+	call="${PRCALL} srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_PATH}/cargo_ftio --server ofi+sockets://127.0.0.1:62000 --run"
 	
 	echo -e "${CYAN}> Satgging out: ${call} ${BLACK}"
-	start=`date +%s.%N`
+	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
 	eval " ${call}"
-	end=`date +%s.%N`
-	runtime=$((${end%.*}.${end#*.}-${start%.*}.${start#*.}))
+	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
+	runtime=$(echo  "${end} - ${start}" | bc | awk '{printf "%f\n", $0}')
 	runtime_formated=$(format_time ${runtime})
-	echo -e "\n\n${BLUE}#######################################\n# Stage out\n# time: ${GREEN}${runtime_formated} ${BLACK}\n# ${runtime} seconds" 
+	echo -e "\n\n${BLUE}#######################################\n# Stage out\n# time: ${GREEN}${runtime_formated} ${BLACK}\n# ${GREEN}${runtime}${BLUE} seconds\n#######################################${BLACK}\n\n" 
 }
 
 function stage_in() {
-	echo -e "\n${Yellow}####### Stagin in ${BLACK}"
+	echo -e "\n${YELLOW}[JIT] ####### Stagin in ${BLACK}"
 	
-	# stage in call
-	call="${PRCALL} ${CARGO_PATH}/ccp --server ofi+sockets://127.0.0.1:62000 --output / --input ${STAGE_IN_PATH} --of gekkofs --if parallel"
+	# stage in call on any compute node
+	call="${PRCALL} srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_PATH}/ccp --server ofi+sockets://127.0.0.1:62000 --output / --input ${STAGE_IN_PATH} --of gekkofs --if parallel"
 	
 	echo -e "${CYAN}> Satgging in: ${call} ${BLACK}"
-	start=`date +%s.%N`
+	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
 	eval " ${call}"
-	end=`date +%s.%N`
-	runtime=$((${end%.*}.${end#*.}-${start%.*}.${start#*.}))
+	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
+	runtime=$(echo  "${end} - ${start}" | bc | awk '{printf "%f\n", $0}')
 	runtime_formated=$(format_time ${runtime})
-	echo -e "\n\n${BLUE}#######################################\n# Stage out\n# time: ${GREEN}${runtime_formated} ${BLACK}\n# ${runtime} seconds" 
+	echo -e "\n\n${BLUE}#######################################\n# Stage in\n# time: ${GREEN}${runtime_formated} ${BLACK}\n# ${GREEN}${runtime}${BLUE} seconds\n#######################################${BLACK}\n\n" 
 }
 
+function soft_kill() {
+	echo -e "\n${BLUE}[JIT] ####### Soft kill ${BLACK}"
+	shut_down "FTIO" ${FTIO_PID} &
+	shut_down "GEKKO" ${GEKKO_PID} &
+	shut_down "CARGO" ${CARGO_PID} &
+}
+
+function hard_kill() {
+	echo -e "\n${BLUE}[JIT] ####### Hard kill ${BLACK}"
+	scancel ${JIT_ID} || true 
+}
 # Function to handle SIGINT (Ctrl+C)
 function handle_sigint {
     echo "Keyboard interrupt detected. Exiting script."
@@ -609,10 +620,14 @@ function get_address(){
 }
 
 function format_time() {
- h=$(bc <<< "${1}/3600")
- m=$(bc <<< "(${1}%3600)/60")
- s=$(bc <<< "${1}%60")
- out=$(printf "%02d:%02d:%05.2f\n" $h $m $s)
+ local int_time=${${1}%.*} 
+ local nanos=${${1}#*.}
+ local h=$(bc <<< "${int_time}/3600")
+ local m=$(bc <<< "(${int_time}%3600)/60")
+ local s=$(bc <<< "${int_time}%60")
+ local nanos=$(bc <<< "${${s}#*.} + ${nanos}")
+#  out=$(printf "%02d:%02d:%2.10f\n" $h $m $s)
+ local out=$(printf "%02d:%02d:%02d.%d\n" $h $m $s $nanos)
  
  echo ${out}
 }

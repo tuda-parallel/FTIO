@@ -64,14 +64,13 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	stage_out | tee ${LOG_DIR}/stage_out.log 
 
 	# 8. soft kill
-	shut_down "FTIO" ${FTIO_PID}
-	shut_down "GEKKO" ${GEKKO_PID}
-	shut_down "CARGO" ${CARGO_PID}
+	soft_kill
+	sleep 5
 	
 	# 7. over kill
-	scancel ${JIT_ID} || true 
+	hard_kill
 
-	echo "Commands completed."
+	echo -e "${GREEN}------------- Commands completed ------------- ${BLACK}"
 	exit 0
 fi
 

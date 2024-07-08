@@ -12,8 +12,7 @@ FTIO_NODE=""
 ALL_NODES=""
 EXCLUDE=""
 
-echo -e "\n"
-echo -e "${GREEN}---- Started Script ----${BLACK}"
+echo -e "${BLUE}---- Started Script JIT ----${BLACK}"
 
 # Set default values. Check if enviromental variables are set
 # cluster or local mode?
