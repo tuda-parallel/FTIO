@@ -47,24 +47,25 @@ function allocate(){
     
     if [ "$CLUSTER" = true ]; then
 		echo -e "\n${GREEN}####### Allocating resources FTIO ${BLACK}"
-		call="salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell"
+		call="${PRECALL} salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell"
 		echo -e ">> Executing: ${CYAN} ${call} ${BLACK}"
         # salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell
 		eval " ${call}"
 		
-		# #old
 		JIT_ID=$(squeue | grep "JIT" |awk '{print $(1)}' | tail -1)
+		# #old
         # ALL_NODES=$(squeue --me -l |  head -n 3| tail -1 |awk '{print $NF}')
         # # create array with start and end nodes
 		# only works for continous 
         # NODES_ARR=($(echo $ALL_NODES | grep -Po '[\d]*'))
 		# better solution
 		NODES_ARR=($(scontrol show hostname $(squeue -j ${JIT_ID} -o "%N" | tail -n +2)))
+		
+		# MPI needs to know the nodes to run on --> create hostfile
 		scontrol show hostname $(squeue -j ${JIT_ID} -o "%N" | tail -n +2) > ~/hostfile_mpi
 		# scontrol show hostname $(squeue -j $SLURM_JOB_ID -o "%N" | tail -n +2) > ~/hostfile_mpi
         
-		# old 
-		# FTIO_NODE="cpu${NODES_ARR[-1]}"
+		# Get FTIO node
 		FTIO_NODE="${NODES_ARR[-1]}"
 		
         if [ "${#NODES_ARR[@]}" -gt "1" ]; then
@@ -89,17 +90,27 @@ function start_ftio() {
     # set -x
     if [ "$CLUSTER" = true ]; then
         source ${FTIO_ACTIVATE}
-        # One node is only for FTIO
+        
+		# One node is only for FTIO
         echo -e "${CYAN}>> FTIO started on node ${FTIO_NODE}, remainng nodes for the application: ${NODES} each with ${PROCS} processes ${BLACK}"
 		echo -e "${CYAN}>> FTIO is listening node is ${ADDRESS}:${PORT} ${BLACK}"
 
 		# call
-		echo -e "${CYAN}>> Executing: srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT} ${BLACK}"
-		srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 \
+		call="${PRECALL} srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 \
 		--ntasks=1 --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap \
 		--oversubscribe --mem=0 \
-        predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}
+        predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}"
+		echo -e "${CYAN}>> Executing: ${call} ${BLACK}"
+		eval " ${call}"
+		#
+		# old
+		# srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 \
+		# --ntasks=1 --cpus-per-task=${PROCS} \
+        # --ntasks-per-node=1 --overcommit --overlap \
+		# --oversubscribe --mem=0 \
+        # predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}
+		#
         # Change CARGO path in predictor_jit_zmq.py if needed
 
     else
@@ -119,24 +130,40 @@ function start_geko() {
 		echo -e "${BLUE}>> Creating directory ${GKFS_MNTDIR}${BLACK}"
 		srun --jobid=${JIT_ID} mkdir -p ${GKFS_MNTDIR}
 		
-		echo -e "${CYAN}>> Executing: srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 ${BLACK}"
-        # Demon
-		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
-        --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
-        ${GKFS_DEMON}  \
-        -r ${GKFS_ROOTDIR} \
-        -m ${GKFS_MNTDIR} \
+		# Demon call
+		echo -e "${CYAN}>>> Starting Demon${BLACK}"
+		call="${PRECALL} srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} \
+		--ntasks=${NODES} --cpus-per-task=${PROCS} \
+        --ntasks-per-node=1 --overcommit --overlap \
+		--oversubscribe --mem=0 ${GKFS_DEMON}  \
+        -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} \
         -H ${GKFS_HOSTFILE}  -c -l ib0 \
-		-P ofi+sockets -p ofi+verbs -L ib0
+		-P ofi+sockets -p ofi+verbs -L ib0"
+		echo -e "${CYAN}>> Executing: ${call} ${BLACK}"
+		eval " ${call}"
+        # #
+		# # old
+		# srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+        # --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
+        # ${GKFS_DEMON}  \
+        # -r ${GKFS_ROOTDIR} \
+        # -m ${GKFS_MNTDIR} \
+        # -H ${GKFS_HOSTFILE}  -c -l ib0 \
+		# -P ofi+sockets -p ofi+verbs -L ib0
 		
-		# Proxy
-		echo -e "${CYAN}>> Starting Proxy${BLACK}"
-		echo -e "${CYAN}>> Executing: srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE} ${BLACK}"
-		srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+		# Proxy call
+		echo -e "${CYAN}>>> Starting Proxy${BLACK}"
+		call="srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
-        ${GKFS_PROXY}  \
-		-H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
-		# Display Proxy
+        ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}"
+		echo -e "${CYAN}>> Executing: ${call} ${BLACK}"
+		eval " ${call}"
+		#
+		# old
+		# srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+        # --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
+        # ${GKFS_PROXY}  \
+		# -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
     else
 		mkdir -p /dev/shm/tarraf_gkfs_mountdir/
         # Geko Demon call
@@ -158,10 +185,11 @@ function start_application() {
     # application with Geko LD_PRELOAD
     # Same a comment as start_gekko like the dmon
     if [ "$CLUSTER" = true ]; then
-		
+		# display hostfile
 		echo -e "${YELLOW}> Hostfile cotains: $(cat ~/hostfile_mpi) ${BLACK}\n"
-		echo -e "${CYAN}>> Executing: time mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} -x LIBGKFS_LOG=errors,warnings -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} taskset -c 0-63 ${APP_CALL} ${BLACK}"
 
+		
+		# with srun
         # srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         # --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
 		# --export=LIBGKFS_LOG=errors,warnings,LIBGKFS_LOG_OUTPUT=/dev/shm/tarraf_gkfs_client.log,LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE},LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT},LD_PRELOAD=${GKFS_INTERCEPT},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
@@ -175,10 +203,8 @@ function start_application() {
 		#?              [---nek5000---]
 		
 		
-		#measure stag-in 
-
-		# run and measure App
-		${PRECALL} mpiexec -np ${PROCS} --oversubscribe \
+		# app call
+		call="${PRECALL} mpiexec -np ${PROCS} --oversubscribe \
 		--hostfile ~/hostfile_mpi \
 		--map-by node -x LIBGKFS_LOG=errors,warnings \
 		-x LIBGKFS_ENABLE_METRICS=on \
@@ -186,8 +212,21 @@ function start_application() {
 		-x LD_PRELOAD=${GKFS_INTERCEPT}\
 		-x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE}\
 		-x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE}\
-		taskset -c 0-63 \
-		${APP_CALL}
+		taskset -c 0-63 ${APP_CALL}"
+		echo -e "${CYAN}>> Executing: ${call} ${BLACK}"
+		eval " ${call}"
+
+		# run and measure App
+		# ${PRECALL} mpiexec -np ${PROCS} --oversubscribe \
+		# --hostfile ~/hostfile_mpi \
+		# --map-by node -x LIBGKFS_LOG=errors,warnings \
+		# -x LIBGKFS_ENABLE_METRICS=on \
+		# -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT}\
+		# -x LD_PRELOAD=${GKFS_INTERCEPT}\
+		# -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE}\
+		# -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE}\
+		# taskset -c 0-63 \
+		# ${APP_CALL}
 		
 		# measure stage-out
 
@@ -214,11 +253,20 @@ function start_cargo() {
 				${BLACK}"
         
 		# One instance per node
-        srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
+		call="${PRECALL} srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
 		--jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} \
 		--ntasks=${NODES} --cpus-per-task=${PROCS} \
         --ntasks-per-node=1 --overcommit --overlap --oversubscribe \
-		--mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000 
+		--mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000"
+		echo -e "${CYAN}>> Executing: ${call} ${BLACK}"
+		eval " ${call}"
+		#
+		# old
+        # srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
+		# --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} \
+		# --ntasks=${NODES} --cpus-per-task=${PROCS} \
+        # --ntasks-per-node=1 --overcommit --overlap --oversubscribe \
+		# --mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000 
     else
         mpiexec -np 2 --oversubscribe \
         --map-by node \
