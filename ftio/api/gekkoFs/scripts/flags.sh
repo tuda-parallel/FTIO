@@ -30,6 +30,15 @@ CARGO=${CARGO:-"/lustre/project/nhr-admire/vef/cargo/build/src/cargo"}
 
 
 ###################
+# Stag in/out variables
+###################
+CARGO_PATH="/lustre/project/nhr-admire/vef/cargo/build/cli"
+STAGE_IN_PATH="/lustre/project/nhr-admire/vef/admire/turbPipe/run_gkfs/input"
+##? not used yet. Must be provided to FTIO CARGO_STAGE_OUT_PATH
+#STAGE_OUT_PATH="/lustre/project/nhr-admire/tarraf/stage-out"
+
+
+###################
 # Pre call 
 ###################
 # execute as ${PRCALL} ${Other_calls}
@@ -43,11 +52,6 @@ APP_CALL="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_
 
 # install location in case -i option is provided to the script
 install_location=${install_location:-"/beegfs/home/Shared/admire/JIT"}
-
-
-
-
-
 
 if [ "$CLUSTER" = false ]; then
 	# install location used to find stuff 

@@ -11,14 +11,10 @@ source ${SCRIPT_DIR}/functions.sh
 #parse  options
 parse_options "$@"
 
-if [ -z "$SCRIPT" ]
-then 
-    script log.txt bash -c "$0 $*"
-    exit 0
-fi
 # check port and address are free
 # Fixme: Move the line bellow to FTIO command
 # check_port
+
 
 # Only proceed if PORT is free
 if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free PORT)
@@ -26,38 +22,48 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	
 	# 1. Allocate resources
 	allocate
+
 	# 1.1 Check allocation was successful
 	check_error_free "Allocation"
 	
-	#1.2 get the address
+	# create folder for logs
+	LOG_DIR="logs_n${NODES}_id${JIT_ID}"
+	mkdir -p ${LOG_DIR} && echo -e "${BLUE} Logs dir: ${LOG_DIR}${BLACK}"  
+
+	#1.3 get the address
 	ADDRESS=$(get_address)
 	
-	# 1.3 create (clean) hostfile 
+	# 1.4 create (clean) hostfile 
 	create_hostfile
 
 	# 2. Start Gekko Server (Demon)
 	start_geko_demon &
 	GEKKO_PID=$!
 	sleep 5
-	start_geko_proxy
+	start_geko_proxy &
 	sleep 15
 	
 	# 3. Start Cargo Server
-	start_cargo &
+	start_cargo | tee ${LOG_DIR}/cargo.log &
 	CARGO_PID=$!
 	sleep 15
 	
-	
-	# 4. Start FTIO
-	start_ftio &
+	# 4. Stage in
+	stage_in | tee ${LOG_DIR}/stage_in.log 
+
+	# 5. Start FTIO
+	start_ftio | tee ${LOG_DIR}/ftio.log &
 	FTIO_PID=$!
 	sleep 12
 
 
-	# 5. Start application with Gekko intercept
-	start_application
+	# 6. Start application with Gekko intercept
+	start_application | tee ${LOG_DIR}/app.log 
 	
-	# 6. soft kill
+	# 7. stage out
+	stage_out | tee ${LOG_DIR}/stage_out.log 
+
+	# 8. soft kill
 	shut_down "FTIO" ${FTIO_PID}
 	shut_down "GEKKO" ${GEKKO_PID}
 	shut_down "CARGO" ${CARGO_PID}
