@@ -202,7 +202,7 @@ function start_application() {
 		start=`date +%s.%N`
 		eval " ${call}"
 		end=`date +%s.%N`
-		runtime=$((end-start))
+		runtime=$((${end%.*}.${end#*.}-${start%.*}.${start#*.}))
 
 		# run and measure App
 		# ${PRECALL} mpiexec -np ${PROCS} --oversubscribe \
@@ -272,7 +272,7 @@ function stage_out() {
 	start=`date +%s.%N`
 	eval " ${call}"
 	end=`date +%s.%N`
-	runtime=$((end-start))
+	runtime=$((${end%.*}.${end#*.}-${start%.*}.${start#*.}))
 	runtime_formated=$(format_time ${runtime})
 	echo -e "\n\n${BLUE}#######################################\n# Stage out\n# time: ${GREEN}${runtime_formated} ${BLACK}\n# ${runtime} seconds" 
 }
@@ -287,7 +287,7 @@ function stage_in() {
 	start=`date +%s.%N`
 	eval " ${call}"
 	end=`date +%s.%N`
-	runtime=$((end-start))
+	runtime=$((${end%.*}.${end#*.}-${start%.*}.${start#*.}))
 	runtime_formated=$(format_time ${runtime})
 	echo -e "\n\n${BLUE}#######################################\n# Stage out\n# time: ${GREEN}${runtime_formated} ${BLACK}\n# ${runtime} seconds" 
 }
