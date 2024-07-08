@@ -263,7 +263,7 @@ function start_cargo() {
 }
 
 function stage_out() {
-	echo -e "\n${GREEN}####### Stagin out ${BLACK}"
+	echo -e "\n${Yellow}####### Stagin out ${BLACK}"
 	
 	# stage out call
 	call="${PRCALL} ${CARGO_PATH}/cargo_ftio --server ofi+sockets://127.0.0.1:62000 --run"
@@ -278,7 +278,7 @@ function stage_out() {
 }
 
 function stage_in() {
-	echo -e "\n${GREEN}####### Stagin in ${BLACK}"
+	echo -e "\n${Yellow}####### Stagin in ${BLACK}"
 	
 	# stage in call
 	call="${PRCALL} ${CARGO_PATH}/ccp --server ofi+sockets://127.0.0.1:62000 --output / --input ${STAGE_IN_PATH} --of gekkofs --if parallel"
