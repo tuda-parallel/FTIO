@@ -28,6 +28,13 @@ GKFS_PROXYFILE=${GKFS_PROXYFILE:-"/dev/shm/vef_gkfs_proxy.pid"}
 ###################
 CARGO=${CARGO:-"/lustre/project/nhr-admire/vef/cargo/build/src/cargo"}
 
+
+###################
+# Pre call 
+###################
+# execute as ${PRCALL} ${Other_calls}
+PRECALL="time"
+
 ###################
 # APP call 
 ###################

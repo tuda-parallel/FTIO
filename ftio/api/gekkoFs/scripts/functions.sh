@@ -47,8 +47,10 @@ function allocate(){
     
     if [ "$CLUSTER" = true ]; then
 		echo -e "\n${GREEN}####### Allocating resources FTIO ${BLACK}"
-		echo -e ">> Executing: ${CYAN}salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell${BLACK}"
-        salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell
+		call="salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell"
+		echo -e ">> Executing: ${CYAN} ${call} ${BLACK}"
+        # salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell
+		eval " ${call}"
 		
 		# #old
 		JIT_ID=$(squeue | grep "JIT" |awk '{print $(1)}' | tail -1)
@@ -158,16 +160,25 @@ function start_application() {
     if [ "$CLUSTER" = true ]; then
 		
 		echo -e "${YELLOW}> Hostfile cotains: $(cat ~/hostfile_mpi) ${BLACK}\n"
-		echo -e "${CYAN}>> Executing: mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} -x LIBGKFS_LOG=errors,warnings -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} taskset -c 0-63 ${APP_CALL} ${BLACK}"
+		echo -e "${CYAN}>> Executing: time mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} -x LIBGKFS_LOG=errors,warnings -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} taskset -c 0-63 ${APP_CALL} ${BLACK}"
 
         # srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         # --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
 		# --export=LIBGKFS_LOG=errors,warnings,LIBGKFS_LOG_OUTPUT=/dev/shm/tarraf_gkfs_client.log,LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE},LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT},LD_PRELOAD=${GKFS_INTERCEPT},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
         # ${APP_CALL}
 
+		# without FTIO
+		#? [--stag in--]               [--stag out--]
+		#?              [---nek5000---]
+		# with FTIO
+		#? [--stag in--]   [so]  [so] ... [so]
+		#?              [---nek5000---]
 		
-		# run mpi
-		mpiexec -np ${PROCS} --oversubscribe \
+		
+		#measure stag-in 
+
+		# run and measure App
+		${PRECALL} mpiexec -np ${PROCS} --oversubscribe \
 		--hostfile ~/hostfile_mpi \
 		--map-by node -x LIBGKFS_LOG=errors,warnings \
 		-x LIBGKFS_ENABLE_METRICS=on \
@@ -178,7 +189,8 @@ function start_application() {
 		taskset -c 0-63 \
 		${APP_CALL}
 		
-		
+		# measure stage-out
+
     else
         mpiexec -np $NODES --oversubscribe \
         -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
@@ -314,7 +326,7 @@ function install_all(){
     cd ${install_location}
     git clone https://storage.bsc.es/gitlab/hpc/cargo.git
     cd cargo
-    git checkout main 
+    git checkout rnou/fmt10
 	cd ..
     
     # build cargo
@@ -340,7 +352,7 @@ function install_all(){
 	cd ior 
 	./bootstrap
 	./configure
-	make && make -j 4 install 
+	make -j 4 #&& make -j 4 install 
 
 	echo -e "${GREEN}>> Installation finished${BLACK}"
     echo -e "\n
