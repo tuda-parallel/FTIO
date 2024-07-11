@@ -86,7 +86,8 @@ for the virtual environment, `python3.11-venv` is needed, which can be installed
 apt install python3.11-venv
 ```
 
-Note there are currently issues with pyDarshan on Mac, that can be solved as mentioned [here](https://github.com/darshan-hpc/darshan/issues/930)
+> [!note]
+> Note there are currently issues with pyDarshan on Mac, that can be solved as mentioned [here](https://github.com/darshan-hpc/darshan/issues/930)
 
 ### Automated installation
 
@@ -125,11 +126,12 @@ Install all tools provided in this repository simply by using pip:
 pip install .
 ```
 
-Note: you need to activate the environment to use `ftio` and the other tools using:
-
-```sh
-source path/to/venv/bin/activate
-```
+> [!note]
+> Note: you need to activate the environment to use `ftio` and the other tools using:
+>
+> ```sh
+> source path/to/venv/bin/activate
+> ```
 
 <p align="right"><a href="#ftio">⬆</a></p>
 
