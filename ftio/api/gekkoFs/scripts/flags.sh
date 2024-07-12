@@ -28,11 +28,10 @@ GKFS_PROXYFILE=${GKFS_PROXYFILE:-"/dev/shm/vef_gkfs_proxy.pid"}
 ###################
 CARGO=${CARGO:-"/lustre/project/nhr-admire/vef/cargo/build/src/cargo"}
 
-
 ###################
 # Stag in/out variables
 ###################
-CARGO_PATH="/lustre/project/nhr-admire/vef/cargo/build/cli"
+CARGO_CLI="/lustre/project/nhr-admire/vef/cargo/build/cli"
 STAGE_IN_PATH="/lustre/project/nhr-admire/vef/admire/turbPipe/run_gkfs/input"
 # TODO: pass this to FTIO
 #STAGE_OUT_PATH="/lustre/project/nhr-admire/tarraf/stage-out"
@@ -49,30 +48,36 @@ PRECALL="time"
 ###################
 APP_CALL="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
 
-
-# install location in case -i option is provided to the script
-install_location=${install_location:-"/beegfs/home/Shared/admire/JIT"}
+if [ "$CLUSTER" = true ]; then
+	# install location in case -i option is provided to the script
+	install_location=${install_location:-"/beegfs/home/Shared/admire/JIT"}
+fi
 
 if [ "$CLUSTER" = false ]; then
 	# install location used to find stuff 
 	install_location=${install_location:-"/d/github/JIT"}
 	
-	FTIO_ACTIVATE=${FTIO_ACTIVATE:-"/d/github/FTIO/.venv/bin/activate"}
+	FTIO_ACTIVATE="/d/github/FTIO/.venv/bin/activate"
 	# Gekko Demon
-	GKFS_DEMON=${GKFS_DEMON:-"${install_location}/deps/gekkofs_zmq_install/bin/gkfs_daemon"}
+	GKFS_DEMON="${install_location}/iodeps/bin/gkfs_daemon"
 	#Gekko intercept call
-	GKFS_INTERCEPT=${GKFS_INTERCEPT:-"${install_location}/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"}
+	GKFS_INTERCEPT="${install_location}/iodeps/lib/libgkfs_intercept.so"
 	#Gekko mount directory
-	GKFS_MNTDIR=${GKFS_MNTDIR:-"/tmp/JIT/tarraf_gkfs_mountdir"}
+	GKFS_MNTDIR="/tmp/JIT/tarraf_gkfs_mountdir"
 	#Gekko root directory
-	GKFS_ROOTDIR=${GKFS_ROOTDIR:-"/tmp/JIT/tarraf_gkfs_rootdir"}
+	GKFS_ROOTDIR="/tmp/JIT/tarraf_gkfs_rootdir"
 	# Host file location
 	GKFS_HOSTFILE="~/gkfs_hosts.txt"
 	# Gekko Proxy
-	GKFS_PROXY=${GKFS_PROXY:-"${install_location}/gekkofs/build/src/proxy/gkfs_proxy"}
+	GKFS_PROXY="${install_location}/gekkofs/build/src/proxy/gkfs_proxy"
 	# Gekko Proxy file
-	GKFS_PROXYFILE=${GKFS_PROXYFILE:-"/tmp/JIT/vef_gkfs_proxy.pid"}
+	GKFS_PROXYFILE="/tmp/JIT/vef_gkfs_proxy.pid"
 	# Cargo 
-	CARGO=${CARGO:-"${install_location}/cargo/build/src/cargo"}
+	CARGO="${install_location}/cargo/build/src/cargo"
+	CARGO_CLI="${install_location}/cargo/build/src/cargo/build/cli"
+	STAGE_IN_PATH="~/input"
+	# App
 	APP_CALL="${install_location}/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
 fi 
+
+

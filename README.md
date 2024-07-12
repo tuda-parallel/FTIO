@@ -127,7 +127,7 @@ pip install .
 ```
 
 > [!note]
-> Note: you need to activate the environment to use `ftio` and the other tools using:
+> You need to activate the environment to use `ftio` and the other tools using:
 >
 > ```sh
 > source path/to/venv/bin/activate
@@ -163,7 +163,7 @@ usage: ftio [-h] [-m MODE] [-r RENDER] [-f FREQ] [-ts TS] [-te TE] [-tr TRANSFOR
 
 1. DFT + outlier detection (Z-score, DB-Scan, Isolation forest, peak detection, or LOF)​
 2. Optionally: Autocorrelation + Peak detection (`-c` flag)
-3. If step 2. is performed, the results from both predictions aer merged automatically
+3. If step 2. is performed, the results from both predictions are merged automatically
 
 Several flags can be specified. The most relevant settings are:
 

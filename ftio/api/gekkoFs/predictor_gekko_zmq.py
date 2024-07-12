@@ -21,7 +21,7 @@ T_S = time.time()
 CONSOLE = MyConsole()
 CONSOLE.set(True)
 CARGO = True
-CARGO_PATH = "/lustre/project/nhr-admire/vef/cargo/build/cli"
+CARGO_CLI = "/lustre/project/nhr-admire/vef/cargo/build/cli"
 CARGO_STAGE_OUT_PATH ="/lustre/project/nhr-admire/tarraf/stage-out"
 CARGO_SERVER = "ofi+sockets://127.0.0.1:62000"
 
@@ -35,12 +35,12 @@ def main(args: list[str] = sys.argv[1:]) -> None:
     port = tmp_args.zmq_port
 
     if CARGO:
-        call = f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER}"
+        call = f"{CARGO_CLI}/cargo_ftio --server {CARGO_SERVER}"
         CONSOLE.print("[bold green][Init][/][green]" +call+"\n")
         os.system(call)
 
         #input is relative from GekokFS
-        call = f"{CARGO_PATH}/ccp --server {CARGO_SERVER} --input / --output {CARGO_STAGE_OUT_PATH} --if gekkofs --of parallel"
+        call = f"{CARGO_CLI}/ccp --server {CARGO_SERVER} --input / --output {CARGO_STAGE_OUT_PATH} --if gekkofs --of parallel"
         CONSOLE.print("[bold green][Init][/][green]" +call+"\n")
         os.system(call)
 
@@ -259,8 +259,8 @@ def trigger_cargo(sync_trigger):
 
                         if not skip_flag:
                             if CARGO:
-                                # call = f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']}"
-                                call = f"{CARGO_PATH}/cargo_ftio --server {CARGO_SERVER} --run"
+                                # call = f"{CARGO_CLI}/cargo_ftio --server {CARGO_SERVER} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']}"
+                                call = f"{CARGO_CLI}/cargo_ftio --server {CARGO_SERVER} --run"
                                 os.system(call)
 
                             CONSOLE.print("[bold green][Trigger][/][green]" +call+"\n")

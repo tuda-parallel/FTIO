@@ -8,6 +8,7 @@ source ${SCRIPT_DIR}/default.sh
 #get needed functions 
 source ${SCRIPT_DIR}/functions.sh
 
+
 #parse  options
 parse_options "$@"
 
@@ -21,32 +22,37 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	
 	
 	# 1. Allocate resources
-	allocate
+	allocate 
 
 	# 1.1 Check allocation was successful
 	check_error_free "Allocation"
 	
-	# create folder for logs
+	# 1.2 create folder for logs
 	LOG_DIR="logs_n${NODES}_id${JIT_ID}"
-	mkdir -p ${LOG_DIR} && echo -e "${BLUE} Logs dir: ${LOG_DIR}${BLACK}"  
+	mkdir -p ${LOG_DIR}
+	
+	# 1.3
+	# print settings
+	print_settings | tee ${LOG_DIR}/settings.log &
 
-	#1.3 get the address
+	#1.4 get the address
 	ADDRESS=$(get_address)
 	
-	# 1.4 create (clean) hostfile 
+	# 1.5 create (clean) hostfile 
 	create_hostfile
 
 	# 2. Start Gekko Server (Demon)
 	start_geko_demon &
-	GEKKO_PID=$!
+	GEKKO_DEMON_PID=$!
 	sleep 5
 	start_geko_proxy &
-	sleep 15
+	GEKKO_PROXY_PID=$!
+	sleep 5
 	
 	# 3. Start Cargo Server
 	start_cargo | tee ${LOG_DIR}/cargo.log &
 	CARGO_PID=$!
-	sleep 15
+	sleep 10
 	
 	# 4. Stage in
 	stage_in | tee ${LOG_DIR}/stage_in.log 

@@ -14,6 +14,9 @@ EXCLUDE=""
 
 echo -e "${BLUE}---- Started Script JIT ----${BLACK}"
 
+# by default FTIO is included in the setup
+EXCLUDE_FTIO=false
+
 # Set default values. Check if enviromental variables are set
 # cluster or local mode?
 CLUSTER=false

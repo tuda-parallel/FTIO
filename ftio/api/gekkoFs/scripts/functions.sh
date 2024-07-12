@@ -27,11 +27,12 @@ function check_port(){
         # process_id=$(ss -tlpn | grep :"$PORT " | awk '{print $NF}')
         
         # Use netstat if ss is unavailable (uncomment)
-        process_id=$(netstat -tlpn | grep :"$PORT " | awk '{print $7}')
+        # process_id=$(netstat -tlpn | grep :"$PORT " | awk '{print $7}' | cut -d'/' -f1)
+		process_id=$(netstat -nlp | grep :"$PORT " | awk '{print $7}' | cut -d'/' -f1)
         
         if [[ ! -z "$process_id" ]]; then
             echo -e "${YELLOW}Terminating process with PID: $process_id${BLACK}"
-            kill "${process_id%/*}" && echo -e "${GREEN}Using $PORT on $ADDRESS.${BLACK}"
+            kill ${process_id} && echo -e "${GREEN}Using $PORT on $ADDRESS.${BLACK}"
             return 0
         else
             echo -e "${RED}Failed to identify process ID for PORT $PORT.${BLACK}"
@@ -86,35 +87,42 @@ function allocate(){
 
 # Start FTIO
 function start_ftio() {
-    echo -e "\n${BLUE}[JIT] ####### Starting FTIO ${BLACK}"
-    # set -x
-    if [ "$CLUSTER" = true ]; then
-        source ${FTIO_ACTIVATE}
-        
-		# One node is only for FTIO
-        echo -e "${CYAN}>> FTIO started on node ${FTIO_NODE}, remainng nodes for the application: ${NODES} each with ${PROCS} processes ${BLACK}"
-		echo -e "${CYAN}>> FTIO is listening node is ${ADDRESS}:${PORT} ${BLACK}"
+	if [ "$EXCLUDE_FTIO" = true ]; then
+		echo -e "\n${YELLOW}[JIT] ####### Skipping FTIO ${BLACK}"
+	else		
+		echo -e "\n${BLUE}[JIT] ####### Starting FTIO ${BLACK}"
+		# set -x
+		if [ "$CLUSTER" = true ]; then
+			source ${FTIO_ACTIVATE}
+			
+			# One node is only for FTIO
+			echo -e "${CYAN}>> FTIO started on node ${FTIO_NODE}, remainng nodes for the application: ${NODES} each with ${PROCS} processes ${BLACK}"
+			echo -e "${CYAN}>> FTIO is listening node is ${ADDRESS}:${PORT} ${BLACK}"
 
-		# call
-		call="srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}"
+			# call
+			call="srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}"
+			#
+			# old
+			# srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 \
+			# --ntasks=1 --cpus-per-task=${PROCS} \
+			# --ntasks-per-node=1 --overcommit --overlap \
+			# --oversubscribe --mem=0 \
+			# predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}
+			#
+			# Change CARGO path in predictor_jit_zmq.py if needed
+
+		else
+			#clean port 
+			check_port
+			
+			call="predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}"
+			# 2>&1 | tee  ./ftio_${NODES}.txt
+		fi
+		# set -o xtrace
 		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
 		eval " ${call}"
-		#
-		# old
-		# srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 \
-		# --ntasks=1 --cpus-per-task=${PROCS} \
-        # --ntasks-per-node=1 --overcommit --overlap \
-		# --oversubscribe --mem=0 \
-        # predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}
-		#
-        # Change CARGO path in predictor_jit_zmq.py if needed
-
-    else
-        predictor_jit  > "ftio_${NODES}.out" 2> "ftio_${NODES}.err"
-        # 2>&1 | tee  ./ftio_${NODES}.txt
-    fi
-    # set -o xtrace
-	echo -e "\n\n"
+		echo -e "\n\n"
+	fi 
 }
 
 # Start the Server
@@ -128,8 +136,6 @@ function start_geko_demon() {
 		
 		# Demon call
 		call="srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON}  -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 -P ofi+sockets -p ofi+verbs -L ib0"
-		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
-		eval " ${call}"
         # #
 		# # old
 		# srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
@@ -140,16 +146,17 @@ function start_geko_demon() {
         # -H ${GKFS_HOSTFILE}  -c -l ib0 \
 		# -P ofi+sockets -p ofi+verbs -L ib0
     else
-		mkdir -p /dev/shm/tarraf_gkfs_mountdir/
+		echo -e "${BLUE}>> Creating directory ${GKFS_MNTDIR}${BLACK}"
+		mkdir -p ${GKFS_MNTDIR}
+
         # Geko Demon call
-        GKFS_DAEMON_LOG_LEVEL=info \
-        ${GKFS_DEMON} \
-        -r ${GKFS_ROOTDIR} \
-		-m ${GKFS_MNTDIR}\
-        -c --auto-sm \
-        -H ${GKFS_HOSTFILE}
+        # call="GKFS_DAEMON_LOG_LEVEL=info ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE} -p ofi+tcp" 
+		call="GKFS_DAEMON_LOG_LEVEL=info ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE} -l lo -c -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp"
+		#-c --auto-sm
     fi
-    # set -o xtrace
+    echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
+	eval " ${call}"
+	# set -o xtrace
 	echo -e "\n\n"
 }
 function start_geko_proxy() {
@@ -157,8 +164,6 @@ function start_geko_proxy() {
     if [ "$CLUSTER" = true ]; then
 		# Proxy call
 		call="srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}"
-		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
-		eval " ${call}"
 		#
 		# old
 		# srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
@@ -166,10 +171,11 @@ function start_geko_proxy() {
         # ${GKFS_PROXY}  \
 		# -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
     else
-		mkdir -p /dev/shm/tarraf_gkfs_mountdir/
-        # Geko Proxy call
-        ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
+        
+		call="${GKFS_PROXY} -H ${GKFS_HOSTFILE} -p ofi+tcp -P ${GKFS_PROXYFILE}" 
     fi
+	echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
+	eval " ${call}"
 }
 
 
@@ -198,11 +204,6 @@ function start_application() {
 		
 		# app call
 		call="${PRECALL} mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors,warnings -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} taskset -c 0-63 ${APP_CALL}"
-		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
-		start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
-		eval " ${call}"
-		end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
-		runtime=$(echo  "${end} - ${start}" | bc | awk '{printf "%f\n", $0}')
 
 		# run and measure App
 		# ${PRECALL} mpiexec -np ${PROCS} --oversubscribe \
@@ -219,19 +220,17 @@ function start_application() {
 		# measure stage-out
 
     else
-        mpiexec -np $NODES --oversubscribe \
-        -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
-        -x LIBGKFS_LOG=none \
-        -x LIBGKFS_ENABLE_METRICS=on \
-        -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} \
-        -x LD_PRELOAD=${GKFS_INTERCEPT} \
-        ${APP_CALL}
-        echo -e "${CYAN}Application finished ${BLACK}\n"
+        # app call
+		call="mpiexec -np $NODES --oversubscribe -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_LOG=none -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} -x LD_PRELOAD=${GKFS_INTERCEPT} ${APP_CALL}"
     fi
-    # set -o xtrace
+
+	echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
+	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
+	eval " ${call}"
+	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
     FINISH=true
-	runtime_formated=$(format_time ${runtime})
-	echo -e "\n\n${BLUE}#######################################\n# Application finished\n# time: ${GREEN}${runtime_formated} ${BLACK}\n# ${runtime} seconds passed\n#######################################${BLACK}\n\n"
+	
+	elapsed_time "Application finished" ${start} ${end}
 }
 
 function start_cargo() {
@@ -241,8 +240,7 @@ function start_cargo() {
         
 		# One instance per node
 		call="srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000"
-		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
-		eval " ${call}"
+
 		#
 		# old
         # srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
@@ -251,14 +249,11 @@ function start_cargo() {
         # --ntasks-per-node=1 --overcommit --overlap --oversubscribe \
 		# --mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000 
     else
-        mpiexec -np 2 --oversubscribe \
-        --map-by node \
-        -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} \
-        ${CARGO} --listen \
-        ofi+sockets://127.0.0.1:62000 \
-        >> ./cargo_${NODES}.txt
+        call="mpiexec -np 1 --oversubscribe -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} ${CARGO} --listen ofi+sockets://127.0.0.1:62000"
     fi
     # set -o xtrace
+	echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
+	eval " ${call}"
 	echo -e "\n\n"
 }
 
@@ -266,42 +261,56 @@ function stage_out() {
 	echo -e "\n${YELLOW}[JIT] ####### Stagin out ${BLACK}"
 	
 	# stage out call on any compute node
-	call="${PRCALL} srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_PATH}/cargo_ftio --server ofi+sockets://127.0.0.1:62000 --run"
+	if [ "$CLUSTER" = true ]; then
+		call="${PRCALL} srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/cargo_ftio --server ofi+sockets://127.0.0.1:62000 --run"
+	else
+		call="${PRCALL} mpiexec -np 1 --oversubscribe ${CARGO_CLI}/cargo_ftio --server ofi+sockets://127.0.0.1:62000 --run"
+	fi
 	
 	echo -e "${CYAN}> Satgging out: ${call} ${BLACK}"
 	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
 	eval " ${call}"
 	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
-	runtime=$(echo  "${end} - ${start}" | bc | awk '{printf "%f\n", $0}')
-	runtime_formated=$(format_time ${runtime})
-	echo -e "\n\n${BLUE}#######################################\n# Stage out\n# time: ${GREEN}${runtime_formated} ${BLACK}\n# ${GREEN}${runtime}${BLUE} seconds\n#######################################${BLACK}\n\n" 
+	elapsed_time "Stage out" ${start} ${end}
+	
 }
 
 function stage_in() {
 	echo -e "\n${YELLOW}[JIT] ####### Stagin in ${BLACK}"
 	
 	# stage in call on any compute node
-	call="${PRCALL} srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_PATH}/ccp --server ofi+sockets://127.0.0.1:62000 --output / --input ${STAGE_IN_PATH} --of gekkofs --if parallel"
+	if [ "$CLUSTER" = true ]; then
+		call="${PRCALL} srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/ccp --server ofi+sockets://127.0.0.1:62000 --output / --input ${STAGE_IN_PATH} --of gekkofs --if parallel"
+	else
+		call="${PRCALL} mpiexec -np 1 --oversubscribe ${CARGO_CLI}/ccp --server ofi+sockets://127.0.0.1:62000 --output / --input ${STAGE_IN_PATH} --of gekkofs --if parallel"
+	fi
 	
 	echo -e "${CYAN}> Satgging in: ${call} ${BLACK}"
 	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
 	eval " ${call}"
 	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
-	runtime=$(echo  "${end} - ${start}" | bc | awk '{printf "%f\n", $0}')
-	runtime_formated=$(format_time ${runtime})
-	echo -e "\n\n${BLUE}#######################################\n# Stage in\n# time: ${GREEN}${runtime_formated} ${BLACK}\n# ${GREEN}${runtime}${BLUE} seconds\n#######################################${BLACK}\n\n" 
+	elapsed_time "Stage in" ${start} ${end}
 }
 
 function soft_kill() {
 	echo -e "\n${BLUE}[JIT] ####### Soft kill ${BLACK}"
 	shut_down "FTIO" ${FTIO_PID} &
-	shut_down "GEKKO" ${GEKKO_PID} &
+	shut_down "GEKKO" ${GEKKO_DEMON_PID} &
+	shut_down "GEKKO" ${GEKKO_PROXY_PID} &
 	shut_down "CARGO" ${CARGO_PID} &
 }
 
 function hard_kill() {
-	echo -e "\n${BLUE}[JIT] ####### Hard kill ${BLACK}"
-	scancel ${JIT_ID} || true 
+	if [ "$CLUSTER" = true ]; then
+		echo -e "\n${BLUE}[JIT] ####### Hard kill ${BLACK}"
+		scancel ${JIT_ID} || true 
+	else 
+		echo -e "\n${BLUE}[JIT] ####### Hard kill ${BLACK}"
+		kill $(ps -aux | grep ${GKFS_DEMON}| grep -v grep | awk '{print $2}')
+		kill $(ps -aux | grep ${GKFS_PROXY}| grep -v grep | awk '{print $2}')
+		kill $(ps -aux | grep ${CARGO}| grep -v grep | awk '{print $2}')
+		kill $(ps -aux | grep "$(dirname "$FTIO_ACTIVATE")/predictor_jit"| grep -v grep | awk '{print $2}')
+	fi
 }
 # Function to handle SIGINT (Ctrl+C)
 function handle_sigint {
@@ -327,12 +336,36 @@ function check_finish() {
 
 function error_usage(){
     echo -e "Usage: $0 -a X.X.X.X -p X -n X \n
-	-a: X.X.X.X (ip address <string>: ${BLUE}${ADDRESS}${BLACK})
-	-p: XXXX (port <int>: ${BLUE}${PORT}${BLACK})
-	-n: X (nodes <int>: ${BLUE}${NODES}${BLACK})
-	-t: X (max time <int>: ${BLUE}${NODES}${BLACK})
+	-a | --address: X.X.X.X <string>
+		Adress where FTIO is executed 
+		default: ${BLUE}${ADDRESS}${BLACK}
+		on a cluster, this is found automatically by determining
+		the adrees of node where FTIO runs 
 
-	-i install everyting
+	-p | --port: XXXX <int>
+		port for ftio and gekko 
+		default: ${BLUE}${PORT}${BLACK}
+
+	-n | --nodes: X <int>
+		default: ${BLUE}${NODES}${BLACK}
+		number of nodes to run the setup. in cluster mode, FTIO is 
+		executed on a single node, while the rest (including the
+		application) get X-1 nodes
+
+	-t | --max-time: X <int>
+		default: ${BLUE}${MAX_TIME}${BLACK}
+		max time for the execution of the setup in minutes
+
+	-e | --execlude-ftio: <bool>
+		deafult: ${EXCLUDE_FTIO}
+		if this flag is provided, the setup is executed without FTIO
+
+
+
+	-i | --instal-location: full_path <str>
+		deafult: ${BLUE}${install_location}${BLACK}
+		installs everyting in the provided directory
+
 \n---- exit ----
     "
 }
@@ -433,35 +466,96 @@ function install_all(){
     "
 	trap : 0
 }
+function parse_options() {
+    # Define the options
+    OPTIONS=a:p:n:t:i:eh
+    LONGOPTS=address:,port:,nodes:,max-time:,install-location:,exclude-ftio,help
 
-function parse_options(){
-    # Parse command-line arguments using getopts
-    while getopts ":a:p:n:t:i:h" opt; do
-        case $opt in
-            a) ADDRESS="$OPTARG" ;;
-            p) PORT="$OPTARG" ;;
-            n) NODES="$OPTARG" ;;
-            t) MAX_TIME="$OPTARG" ;;
-            i)
-                install_location="$OPTARG"
+    # -temporarily store output to be able to check for errors
+    # -activate advanced mode getopt quoting e.g. via “--options”
+    # -pass arguments only via   -- "$@"
+    PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
+    if [[ $? -ne 0 ]]; then
+        # getopt has complained about wrong arguments to stdout
+        exit 2
+    fi
+    # read getopt’s output this way to handle the quoting right:
+    eval set -- "$PARSED"
+
+    # now enjoy the options in order and nicely split until we see --
+    while true; do
+        case "$1" in
+            -a|--address)
+                ADDRESS="$2"
+                shift 2
+                ;;
+            -p|--port)
+                PORT="$2"
+                shift 2
+                ;;
+            -n|--nodes)
+                NODES="$2"
+                shift 2
+                ;;
+            -t|--max-time)
+                MAX_TIME="$2"
+                shift 2
+                ;;
+            -i|--install-location)
+                install_location="$2"
                 install_all
-            ;;
-            h)
+                shift 2
+                ;;
+			-e|--exclude-ftio)
+                EXCLUDE_FTIO=true
+                shift
+                ;;
+            -h|--help)
                 echo -e "${YELLOW}Help launch:  ${BLACK}" >&2
                 error_usage $OPTARG
                 exit 1
-            ;;
-            \?)
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
                 echo -e "${RED}Invalid option: -$1 ${BLACK}" >&2
                 error_usage $OPTARG
                 exit 1
-            ;;
+                ;;
         esac
     done
-    
-    # Shift positional arguments to remove processed flags and options
-    shift $((OPTIND - 1))
 }
+
+# function parse_options(){
+#     # Parse command-line arguments using getopts
+#     while getopts ":a:p:n:t:i:h" opt; do
+#         case $opt in
+#             a) ADDRESS="$OPTARG" ;;
+#             p) PORT="$OPTARG" ;;
+#             n) NODES="$OPTARG" ;;
+#             t) MAX_TIME="$OPTARG" ;;
+#             i)
+#                 install_location="$OPTARG"
+#                 install_all
+#             ;;
+#             h)
+#                 echo -e "${YELLOW}Help launch:  ${BLACK}" >&2
+#                 error_usage $OPTARG
+#                 exit 1
+#             ;;
+#             \?)
+#                 echo -e "${RED}Invalid option: -$1 ${BLACK}" >&2
+#                 error_usage $OPTARG
+#                 exit 1
+#             ;;
+#         esac
+#     done
+    
+#     # Shift positional arguments to remove processed flags and options
+#     shift $((OPTIND - 1))
+# }
 
 function find_time(){
     
@@ -538,7 +632,7 @@ function create_hostfile(){
 function check_error_free(){
 	if [ $? -eq 0 ] 
 	then 
-  		echo -e "${GREEN}$1 successful ${BLACK}"
+  		echo -e "${GREEN}>> $1 successful ${BLACK}"
 	else 
   		echo -e ">>> ${RED}$1 failed! Exiting ${BLACK}<<<">&2 
   		exit 1 
@@ -618,16 +712,47 @@ function get_address(){
 	fi 
 	echo ${out}
 }
-
 function format_time() {
- local int_time=${${1}%.*} 
- local nanos=${${1}#*.}
- local h=$(bc <<< "${int_time}/3600")
- local m=$(bc <<< "(${int_time}%3600)/60")
- local s=$(bc <<< "${int_time}%60")
- local nanos=$(bc <<< "${${s}#*.} + ${nanos}")
-#  out=$(printf "%02d:%02d:%2.10f\n" $h $m $s)
- local out=$(printf "%02d:%02d:%02d.%d\n" $h $m $s $nanos)
- 
- echo ${out}
+    local input_time="$1"
+    local int_time="${input_time%.*}"
+    local nanos="${input_time#*.}"
+    
+	local h=$(bc <<< "${int_time}/3600")
+    local m=$(bc <<< "(${int_time}%3600)/60")
+    local s=$(bc <<< "${int_time}%60")
+    local out=$(printf "%02d:%02d:%02d.%s\n" $h $m $s $nanos)
+    echo "${out}"
+}
+
+function print_settings(){
+echo -e " ${BLUE}
+
+Settings      
+--------------${BLACK}
+Logs dir       : ${BLUE}$(pwd)/${LOG_DIR}${BLACK}
+FTIO_ACTIVATE  : ${BLUE}${FTIO_ACTIVATE}${BLACK}
+GKFS_DEMON     : ${BLUE}${GKFS_DEMON}${BLACK}
+GKFS_INTERCEPT : ${BLUE}${GKFS_INTERCEPT}${BLACK}
+GKFS_MNTDIR    : ${BLUE}${GKFS_MNTDIR}${BLACK}
+GKFS_ROOTDIR   : ${BLUE}${GKFS_ROOTDIR}${BLACK}
+GKFS_HOSTFILE  : ${BLUE}${GKFS_HOSTFILE}${BLACK}
+GKFS_PROXY     : ${BLUE}${GKFS_PROXY}${BLACK}
+GKFS_PROXYFILE : ${BLUE}${GKFS_PROXYFILE}${BLACK}
+CARGO          : ${BLUE}${CARGO}${BLACK}
+CARGO_CLI      : ${BLUE}${CARGO_CLI}${BLACK}
+STAGE_IN_PATH  : ${BLUE}${STAGE_IN_PATH}${BLACK}
+PRECALL        : ${BLUE}${PRECALL}${BLACK}
+APP_CALL       : ${BLUE}${APP_CALL}${BLACK}
+PWD            : ${BLUE}$(pwd)${BLACK}
+
+"
+}
+
+function elapsed_time(){
+	local name="$1"
+	local start=$2
+	local end=$3
+	local runtime=$(echo  "${end} - ${start}" | bc | awk '{printf "%f\n", $0}')
+	local runtime_formated=$(format_time ${runtime})
+	echo -e "\n\n${BLUE}#######################################\n# ${name}\n# time: ${GREEN}${runtime_formated} \n#${BLACK} ${GREEN}${runtime}${BLUE} seconds\n#######################################${BLACK}\n\n" 
 }
