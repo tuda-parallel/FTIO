@@ -6,12 +6,13 @@ YELLOW="\033[1;33m"
 RED="\033[1;31m"
 BLUE="\033[1;34m"
 CYAN="\033[1;36m"
+JIT="\033[1;32m[JIT]\033[0m"
 FINISH=false #set using export in
 JIT_ID=""
 FTIO_NODE=""
 ALL_NODES=""
-EXCLUDE_APP_NODES=""
-EXCLUDE_FTIO_NODES=""
+APP_NODES_COMMAND=""
+FTIO_NODE_COMMAND=""
 
 echo -e "${BLUE}---- Started Script JIT ----${BLACK}"
 
@@ -23,8 +24,11 @@ EXCLUDE_FTIO=false
 CLUSTER=false
 if [ -n "$(hostname | grep 'cpu\|mogon')" ]; then
 	CLUSTER=true
+	if [ -n "$(hostname | grep 'mogon')" ]; then
+		echo -e "${RED} Execute this script on cpu nodes\n mpiexec has still some bugs${BLACK}"
+	fi
 fi
-echo -e "${GREEN}> Cluster Mode: ${CLUSTER}${BLACK}"
+echo -e "${JIT}${GREEN} > Cluster Mode: ${CLUSTER}${BLACK}"
 
 ip=$(ip addr | grep ib0 | awk '{print $4}' | tail -1)
 

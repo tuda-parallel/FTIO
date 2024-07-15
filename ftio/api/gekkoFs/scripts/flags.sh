@@ -32,7 +32,8 @@ CARGO=${CARGO:-"/lustre/project/nhr-admire/vef/cargo/build/src/cargo"}
 # Stag in/out variables
 ###################
 CARGO_CLI="/lustre/project/nhr-admire/vef/cargo/build/cli"
-STAGE_IN_PATH="/lustre/project/nhr-admire/vef/admire/turbPipe/run_gkfs/input"
+# STAGE_IN_PATH="/lustre/project/nhr-admire/vef/admire/turbPipe/run_gkfs/input"
+STAGE_IN_PATH="/lustre/project/nhr-admire/tarraf/stage_in"
 # TODO: pass this to FTIO
 #STAGE_OUT_PATH="/lustre/project/nhr-admire/tarraf/stage-out"
 
