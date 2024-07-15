@@ -705,13 +705,17 @@ function progress(){
 function get_address(){
 	# get Address and port
 	if [ "$CLUSTER" = true ]; then
-		out=$(srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 \
-		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{print $2}'| cut -d'/' -f1 | tail -1)
+		call="srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 \
+		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{print $2}'| cut -d'/' -f1 | tail -1)"
+		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
+		eval " ${call}"
 	else
 		out="$ADDRESS"
 	fi 
 	echo ${out}
 }
+
+
 function format_time() {
     local input_time="$1"
     local int_time="${input_time%.*}"
@@ -744,7 +748,13 @@ STAGE_IN_PATH  : ${BLUE}${STAGE_IN_PATH}${BLACK}
 PRECALL        : ${BLUE}${PRECALL}${BLACK}
 APP_CALL       : ${BLUE}${APP_CALL}${BLACK}
 PWD            : ${BLUE}$(pwd)${BLACK}
-
+EXCLUDE_FTIO   : ${BLUE}${EXCLUDE_FTIO}${BLACK}
+CLUSTER        : ${BLUE}${CLUSTER}${BLACK}
+ADDRESS        : ${BLUE}${ADDRESS}${BLACK}
+PORT           : ${BLUE}${PORT}${BLACK}
+NODES          : ${BLUE}${NODES}${BLACK}
+PROCS          : ${BLUE}${PROCS}${BLACK}
+MAX_TIME       : ${BLUE}${MAX_TIME}${BLACK}
 "
 }
 
