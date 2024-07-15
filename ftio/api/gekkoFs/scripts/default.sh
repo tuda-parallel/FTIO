@@ -10,7 +10,8 @@ FINISH=false #set using export in
 JIT_ID=""
 FTIO_NODE=""
 ALL_NODES=""
-EXCLUDE=""
+EXCLUDE_APP_NODES=""
+EXCLUDE_FTIO_NODES=""
 
 echo -e "${BLUE}---- Started Script JIT ----${BLACK}"
 

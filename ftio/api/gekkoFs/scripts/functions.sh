@@ -70,17 +70,17 @@ function allocate(){
 		FTIO_NODE="${NODES_ARR[-1]}"
 		
         if [ "${#NODES_ARR[@]}" -gt "1" ]; then
-            EXCLUDE="--exclude=${FTIO_NODE}"
-			EXCLUDE_FTIO="--exclude=$(echo ${NODES_ARR[@]/${FTIO_NODE}} | tr ' ' ',' )"
+            EXCLUDE_FTIO_NODES="--exclude=${FTIO_NODE}"
+			EXCLUDE_APP_NODES="--exclude=$(echo ${NODES_ARR[@]/${FTIO_NODE}} | tr ' ' ',' )"
 			NODES=$((${NODES} - 1))
 			sed  -i "/${FTIO_NODE}/d" ~/hostfile_mpi
         fi
         
-        echo -e "${CYAN}> JIT Job Id: ${JIT_ID} ${BLACK}"
-		echo -e "${CYAN}> Allocated Nodes: "${#NODES_ARR[@]}" ${BLACK}"
-		echo -e "${CYAN}> Exclude command: ${EXCLUDE} ${BLACK}"
-		echo -e "${CYAN}> FTIO Node: ${FTIO_NODE} ${BLACK}"
-		echo -e "${YELLOW}> App Nodes: $(cat ~/hostfile_mpi) ${BLACK}\n"
+        echo -e "${CYAN}[JIT]> JIT Job Id: ${JIT_ID} ${BLACK}"
+		echo -e "${CYAN}[JIT]> Allocated Nodes: "${#NODES_ARR[@]}" ${BLACK}"
+		echo -e "${CYAN}[JIT]> Exclude command: ${EXCLUDE_FTIO_NODES} ${BLACK}"
+		echo -e "${CYAN}[JIT]> FTIO Node: ${FTIO_NODE} ${BLACK}"
+		echo -e "${YELLOW}[JIT]> App Nodes: $(cat ~/hostfile_mpi) ${BLACK}\n"
     fi
 }
 
@@ -96,11 +96,11 @@ function start_ftio() {
 			source ${FTIO_ACTIVATE}
 			
 			# One node is only for FTIO
-			echo -e "${CYAN}>> FTIO started on node ${FTIO_NODE}, remainng nodes for the application: ${NODES} each with ${PROCS} processes ${BLACK}"
-			echo -e "${CYAN}>> FTIO is listening node is ${ADDRESS}:${PORT} ${BLACK}"
+			echo -e "${CYAN}[JIT] >> FTIO started on node ${FTIO_NODE}, remainng nodes for the application: ${NODES} each with ${PROCS} processes ${BLACK}"
+			echo -e "${CYAN}[JIT] >> FTIO is listening node is ${ADDRESS}:${PORT} ${BLACK}"
 
 			# call
-			call="srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}"
+			call="srun --jobid=${JIT_ID} ${EXCLUDE_APP_NODES} --disable-status -N 1 --ntasks=1 --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 predictor_jit  --zmq_address ${ADDRESS} --zmq_port ${PORT}"
 			#
 			# old
 			# srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 \
@@ -131,14 +131,14 @@ function start_geko_demon() {
     # set -x
     if [ "$CLUSTER" = true ]; then
 		# Display Demon
-		echo -e "${BLUE}>> Creating directory ${GKFS_MNTDIR}${BLACK}"
+		echo -e "${BLUE}[JIT] [JIT]>> Creating directory ${GKFS_MNTDIR}${BLACK}"
 		srun --jobid=${JIT_ID} mkdir -p ${GKFS_MNTDIR}
 		
 		# Demon call
-		call="srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON}  -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 -P ofi+sockets -p ofi+verbs -L ib0"
+		call="srun --jobid=${JIT_ID} ${EXCLUDE_FTIO_NODES} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON}  -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 -P ofi+sockets -p ofi+verbs -L ib0"
         # #
 		# # old
-		# srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+		# srun --jobid=${JIT_ID} ${EXCLUDE_FTIO_NODES} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         # --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
         # ${GKFS_DEMON}  \
         # -r ${GKFS_ROOTDIR} \
@@ -146,7 +146,7 @@ function start_geko_demon() {
         # -H ${GKFS_HOSTFILE}  -c -l ib0 \
 		# -P ofi+sockets -p ofi+verbs -L ib0
     else
-		echo -e "${BLUE}>> Creating directory ${GKFS_MNTDIR}${BLACK}"
+		echo -e "${BLUE}[JIT] >> Creating directory ${GKFS_MNTDIR}${BLACK}"
 		mkdir -p ${GKFS_MNTDIR}
 
         # Geko Demon call
@@ -163,10 +163,10 @@ function start_geko_proxy() {
 	echo -e "\n${BLUE}[JIT] ####### Starting GKFS PROXY ${BLACK}"
     if [ "$CLUSTER" = true ]; then
 		# Proxy call
-		call="srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}"
+		call="srun --jobid=${JIT_ID} ${EXCLUDE_FTIO_NODES} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}"
 		#
 		# old
-		# srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+		# srun --jobid=${JIT_ID} ${EXCLUDE_FTIO_NODES} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         # --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
         # ${GKFS_PROXY}  \
 		# -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}
@@ -181,15 +181,15 @@ function start_geko_proxy() {
 
 # Application call
 function start_application() {
-    echo -e "\n${BLUE}####### Executing application ${BLACK}"
+    echo -e "\n${BLUE}[JIT] ####### Executing application ${BLACK}"
     # set -x
     if [ "$CLUSTER" = true ]; then
 		# display hostfile
-		echo -e "${YELLOW}> Hostfile cotains: $(cat ~/hostfile_mpi) ${BLACK}\n"
+		echo -e "${YELLOW}[JIT] > Hostfile cotains: $(cat ~/hostfile_mpi) ${BLACK}\n"
 
 		
 		# with srun
-        # srun --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
+        # srun --jobid=${JIT_ID} ${EXCLUDE_FTIO_NODES} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} \
         # --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 \
 		# --export=LIBGKFS_LOG=errors,warnings,LIBGKFS_LOG_OUTPUT=/dev/shm/tarraf_gkfs_client.log,LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE},LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT},LD_PRELOAD=${GKFS_INTERCEPT},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
         # ${APP_CALL}
@@ -239,12 +239,12 @@ function start_cargo() {
     if [ "$CLUSTER" = true ]; then
         
 		# One instance per node
-		call="srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000"
+		call="srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} --jobid=${JIT_ID} ${EXCLUDE_FTIO_NODES} --disable-status -N ${NODES} --ntasks=${NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000"
 
 		#
 		# old
         # srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
-		# --jobid=${JIT_ID} ${EXCLUDE} --disable-status -N ${NODES} \
+		# --jobid=${JIT_ID} ${EXCLUDE_FTIO_NODES} --disable-status -N ${NODES} \
 		# --ntasks=${NODES} --cpus-per-task=${PROCS} \
         # --ntasks-per-node=1 --overcommit --overlap --oversubscribe \
 		# --mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000 
@@ -262,12 +262,12 @@ function stage_out() {
 	
 	# stage out call on any compute node
 	if [ "$CLUSTER" = true ]; then
-		call="${PRCALL} srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/cargo_ftio --server ofi+sockets://127.0.0.1:62000 --run"
+		call="${PRCALL} srun --jobid=${JIT_ID} ${EXCLUDE_FTIO_NODES} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/cargo_ftio --server ofi+sockets://127.0.0.1:62000 --run"
 	else
 		call="${PRCALL} mpiexec -np 1 --oversubscribe ${CARGO_CLI}/cargo_ftio --server ofi+sockets://127.0.0.1:62000 --run"
 	fi
 	
-	echo -e "${CYAN}> Satgging out: ${call} ${BLACK}"
+	echo -e "${CYAN}[JIT] > Satgging out: ${call} ${BLACK}"
 	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
 	eval " ${call}"
 	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
@@ -280,12 +280,12 @@ function stage_in() {
 	
 	# stage in call on any compute node
 	if [ "$CLUSTER" = true ]; then
-		call="${PRCALL} srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/ccp --server ofi+sockets://127.0.0.1:62000 --output / --input ${STAGE_IN_PATH} --of gekkofs --if parallel"
+		call="${PRCALL} srun --jobid=${JIT_ID} ${EXCLUDE_FTIO_NODES} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/ccp --server ofi+sockets://127.0.0.1:62000 --output / --input ${STAGE_IN_PATH} --of gekkofs --if parallel"
 	else
 		call="${PRCALL} mpiexec -np 1 --oversubscribe ${CARGO_CLI}/ccp --server ofi+sockets://127.0.0.1:62000 --output / --input ${STAGE_IN_PATH} --of gekkofs --if parallel"
 	fi
 	
-	echo -e "${CYAN}> Satgging in: ${call} ${BLACK}"
+	echo -e "${CYAN}[JIT] > Satgging in: ${call} ${BLACK}"
 	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
 	eval " ${call}"
 	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
@@ -314,7 +314,7 @@ function hard_kill() {
 }
 # Function to handle SIGINT (Ctrl+C)
 function handle_sigint {
-    echo "Keyboard interrupt detected. Exiting script."
+    echo "[JIT] > Keyboard interrupt detected. Exiting script."
 	scancle ${JIT_ID}
     exit 0
 }
@@ -326,7 +326,7 @@ function check_finish() {
     while :
     do
         if [ "$FINISH" = true ]; then
-            echo "FINISH flag is true. Exiting script in 10 sec."
+            echo "[JIT] > FINISH flag is true. Exiting script in 10 sec."
             sleep 10
             exit 0
         fi
@@ -337,7 +337,7 @@ function check_finish() {
 function error_usage(){
     echo -e "Usage: $0 -a X.X.X.X -p X -n X \n
 	-a | --address: X.X.X.X <string>
-		Adress where FTIO is executed 
+		Address where FTIO is executed 
 		default: ${BLUE}${ADDRESS}${BLACK}
 		on a cluster, this is found automatically by determining
 		the adrees of node where FTIO runs 
@@ -386,12 +386,12 @@ function install_all(){
 	trap 'abort' 0
 	set -e #exit on fail
 
-	echo -e "${GREEN}>> Installation stated${BLACK}"
-	echo -e "${GREEN}>>> Creating directory${BLACK}"
+	echo -e "${GREEN}[JIT] >> Installation stated${BLACK}"
+	echo -e "${GREEN}[JIT] >>> Creating directory${BLACK}"
 	mkdir -p ${install_location}
 
     # Clone GKFS
-    echo -e "${GREEN}>>> Installing GEKKO${BLACK}"
+    echo -e "${GREEN}[JIT] >>> Installing GEKKO${BLACK}"
     cd ${install_location}
     git clone --recurse-submodules https://storage.bsc.es/gitlab/hpc/gekkofs.git
     cd gekkofs
@@ -410,10 +410,10 @@ function install_all(){
 	cd gekkofs && mkdir build && cd build
     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${install_location}/iodeps -DGKFS_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX=${install_location}/iodeps -DGKFS_ENABLE_CLIENT_METRICS=ON ..
     make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"	
-    echo -e "${GREEN}>>> GEKKO installed${BLACK}"
+    echo -e "${GREEN}[JIT] >>> GEKKO installed${BLACK}"
     
     #Cardo DEPS: CEREAL
-    echo -e "${GREEN}>>> Installing Cargo${BLACK}"
+    echo -e "${GREEN}[JIT] >>> Installing Cargo${BLACK}"
     cd ${install_location}
     git clone https://github.com/USCiLab/cereal
     cd cereal && mkdir build && cd build
@@ -439,7 +439,7 @@ function install_all(){
 	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${install_location}/iodeps -DCMAKE_INSTALL_PREFIX=${install_location}/iodeps ..
     make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
     # GekkoFS should be found in the cargo CMAKE configuration.
-    echo -e "${GREEN}>>> Cargon installed${BLACK}"
+    echo -e "${GREEN}[JIT] >>> Cargon installed${BLACK}"
     
     ## build FTIO:
     # echo -e "${GREEN}>>> Installing FTIO${BLACK}"
@@ -459,7 +459,7 @@ function install_all(){
 	./configure
 	make -j 4 #&& make -j 4 install 
 
-	echo -e "${GREEN}>> Installation finished${BLACK}"
+	echo -e "${GREEN}[JIT] >> Installation finished${BLACK}"
     echo -e "\n
 	>> read to go <<
 	call: ./jit.sh  -n NODES -t MAX_TIME 
@@ -704,15 +704,17 @@ function progress(){
 
 function get_address(){
 	# get Address and port
+	echo -e "\n${BLUE}####### Getting FTIO ADDRESS ${BLACK}"
 	if [ "$CLUSTER" = true ]; then
-		call="srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 \
-		--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{print $2}'| cut -d'/' -f1 | tail -1)"
+		# out = $(srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{print $2}'| cut -d'/' -f1 | tail -1)
+		call="srun --jobid=${JIT_ID} ${EXCLUDE_APP_NODES} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{print $2}'| cut -d'/' -f1 | tail -1"
 		echo -e "${CYAN}[JIT] >> Executing: ${call} ${BLACK}"
-		eval " ${call}"
+		ADDRESS=$(eval " ${call}" | awk '{print $NF}')
 	else
-		out="$ADDRESS"
+		echo "using default address"
 	fi 
-	echo ${out}
+
+	echo -e "${GREEN}ADDRESS: ${ADDRESS}${BLACK}"
 }
 
 
@@ -764,5 +766,5 @@ function elapsed_time(){
 	local end=$3
 	local runtime=$(echo  "${end} - ${start}" | bc | awk '{printf "%f\n", $0}')
 	local runtime_formated=$(format_time ${runtime})
-	echo -e "\n\n${BLUE}#######################################\n# ${name}\n# time: ${GREEN}${runtime_formated} \n#${BLACK} ${GREEN}${runtime}${BLUE} seconds\n#######################################${BLACK}\n\n" 
+	echo -e "\n\n${BLUE}#######################################\n# ${name}\n# time: ${GREEN}${runtime_formated} ${BLACK}\n# ${GREEN}${runtime}${BLUE} seconds\n#######################################${BLACK}\n\n" 
 }

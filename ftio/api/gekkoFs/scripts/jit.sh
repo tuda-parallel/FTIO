@@ -31,12 +31,13 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	LOG_DIR="logs_n${NODES}_id${JIT_ID}"
 	mkdir -p ${LOG_DIR}
 	
-	# 1.3
+	#1.3 get the address
+	get_address
+	
+	# 1.4
 	# print settings
 	print_settings | tee ${LOG_DIR}/settings.log &
 
-	#1.4 get the address
-	ADDRESS=$(get_address)
 	
 	# 1.5 create (clean) hostfile 
 	create_hostfile
