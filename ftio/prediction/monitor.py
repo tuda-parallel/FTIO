@@ -16,7 +16,7 @@ def monitor(name: str, _cached_stamp: str, procs: list = []) ->  tuple[str, list
     Args:
         name (str): filename
         _cached_stamp (str): time stamp since last time
-        procs (list, optional): List of proccess to join. Defaults to [].
+        procs (list, optional): List of process to join. Defaults to [].
 
     Returns:
         str: _description_

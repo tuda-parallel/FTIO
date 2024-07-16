@@ -23,24 +23,24 @@ def parse(file_path, match="proxy_component_critical_temperature_celcius")-> tup
     return b_out,t_out
 
 
-def extract(json_data, match, silent=False):
+def extract(json_data, match, verbose=False):
     b_out = np.array([])
     t_out  = np.array([])
     for key, value in json_data.items():
         if isinstance(value, dict):
-            b_out,t_out = extract(value, match)
+            b_out,t_out = extract(value, match, verbose)
             if len(b_out) > 0:
                 break
         else:
             if match == key:
-                if not silent:
+                if verbose:
                     print(f"matched {key}")
                 x = np.array(value)
                 t_out = x[:,0]
                 b_out = x[:,1]
                 #reduce to derivative
                 if "deriv" not in key:
-                    if not silent:
+                    if verbose:
                         print("removing aggregation")
                     b_shifted = b_out[:-1]
                     b_shifted = np.insert(b_shifted,0,0)
@@ -62,7 +62,7 @@ def parse_all(file_path)-> dict:
         return out
 
     for metric in json_data['metrics'].keys():
-        b_out,t_out = extract(json_data,metric, True)
+        b_out,t_out = extract(json_data,metric, False)
         out[metric]=[b_out,t_out]
 
     return out
