@@ -11,7 +11,7 @@ Once extracted, you can find the HACC-IO trace under `data/application_traces/HA
 
 
 ## Generate the experiment on your system:
-TODO: upload the HACC src files somewhere
+Download and extract the repository of the modified HACC-IO version from [here](https://github.com/A-Tarraf/hacc-io). 
 
 <p align="right"><a href="#hacc-io">⬆</a></p>
 
