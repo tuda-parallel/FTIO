@@ -1,5 +1,7 @@
+import sys
 # from rich.progress import Progress
 from ftio.api.metric_proxy.parse_proxy import parse_all
+from ftio.api.metric_proxy.plot_heatmap import heatmap,histogram2D,heatmap_2, density_heatmap
 from ftio.prediction.tasks import ftio_task, ftio_task_save
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import Manager
@@ -9,19 +11,30 @@ from ftio.prediction.async_process import handle_in_process
 from ftio.prediction.async_process import join_procs
 
 
-metrics = parse_all("/d/sim/metric_proxy/traces/Mixed_1x8_5.json")
-ranks = 32
+def main(argv):
+    # ---------------------------------
+    # Modification area
+    # ---------------------------------
+    parallel = False
+    pools    = False
+    show     = False #shows the results from FTIO
 
-## command line arguments
-argv = ["-e", "no"]  # ["-e", "plotly"] 
-# argv.extend(["-n","15"]) # finds up to n frequencies. Comment this out to go back to the default version
-# ---------------------------------
+
+    metrics = parse_all("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", False)
+    ranks = 32
+
+    # command line arguments
+    argv = ["-e", "no"]  # ["-e", "plotly"] 
+    # argv.extend(["-n","15"]) # finds up to n frequencies. Comment this out to go back to the default version
+    # ---------------------------------
+
+    if parallel:
+        execute_parallel(metrics, argv, ranks, show, pools)
+    else:
+        execute(metrics, argv, ranks, show)
 
 
-parallel = False
-pools = False
-
-if parallel:
+def execute_parallel(metrics:dict, argv:list, ranks:int, show:bool, pools:bool)-> None:
     # parallel
     manager = Manager()
     data = manager.list()
@@ -33,32 +46,46 @@ if parallel:
             for metric,arrays in metrics.items():
                 # with ProcessPoolExecutor(max_workers=80) as executor:
                 with ProcessPoolExecutor() as executor:
-                    future = executor.submit(ftio_task_save, data, metric, arrays, argv, ranks)
+                    _ = executor.submit(ftio_task_save, data, metric, arrays, argv, ranks, show)
                         # progress.update(task, advance=1)
         else:
             for metric,arrays in metrics.items():
                 procs = join_procs(procs)
                 while len(procs) > 10:
-                        procs = join_procs(procs)
+                    procs = join_procs(procs)
                 procs.append(handle_in_process(
                     ftio_task_save, 
-                    args=(data, metric, arrays, argv, ranks)
+                    args=(data, metric, arrays, argv, ranks, show)
                     )
                 )
     except KeyboardInterrupt:
         print_data(data)
         print("-- done -- ")
-else:
+        exit()
+
+    print_data(data)
+    heatmap(data)
+    histogram2D(data)
+    print("-- done -- ")
+
+
+def execute(metrics:dict, argv:list, ranks:int, show:bool):
     data=[]
     save = True
     for metric,arrays in metrics.items():
-        # 1 
         if save:
-            ftio_task_save(data, metric, arrays, argv, ranks)
-        #else 
-            # 2
-            ftio_task(metric, arrays, argv, ranks)
+            # save stuff in queue
+            ftio_task_save(data, metric, arrays, argv, ranks, show)
+        else:
+            # skip saving 
+            ftio_task(metric, arrays, argv, ranks, show)
     if save:
         print_data(data)
+        heatmap(data)
+        density_heatmap(data)
+        histogram2D(data)
+        heatmap_2(data)
 
 
+if __name__ == "__main__":
+    main(sys.argv)

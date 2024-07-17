@@ -10,16 +10,17 @@ from ftio.freq.helper import MyConsole
 CONSOLE = MyConsole()
 CONSOLE.set(True)
 
-#TODO: extend this similiar to ftio/prediction/analysis.py
+#TODO: extend this similar to ftio/prediction/analysis.py
 
-def ftio_task(metric:str, arrays:np.ndarray, argv:list ,ranks:int) -> dict:
+def ftio_task(metric:str, arrays:np.ndarray, argv:list, ranks:int, show:bool=True) -> dict:
     """generate FTIO prediction from 2d np array
 
     Args:
-        metric (str): name of metric
+        metric (str): Name of metric
         arrays (np.ndarray): 2D np array containing the bandwidth and time
-        argv (list): list of args for ftio
-        ranks (int): number of ranks
+        argv (list): List of args for ftio
+        ranks (int): Number of ranks
+        show (bool): show the prediction result
 
     Returns:
         dict: prediction from FTIO (see core from ftio.cli.ftio_core)
@@ -36,13 +37,15 @@ def ftio_task(metric:str, arrays:np.ndarray, argv:list ,ranks:int) -> dict:
 
         # # plot and print info
         # convert_and_plot(data, dfs, args)
-        CONSOLE.info(f"\n[green underline]Metric: {metric}[/]")
-        display_prediction("ftio", prediction)
+        if show:
+            CONSOLE.info(f"\n[green underline]Metric: {metric}[/]")
+            display_prediction("ftio", prediction)
+
         return prediction
 
 
-def ftio_task_save(data, metric, arrays ,argv ,ranks) -> None:
-    prediction = ftio_task(metric, arrays ,argv ,ranks)
+def ftio_task_save(data, metric:str, arrays:np.ndarray, argv:list, ranks:int, show:bool=True) -> None:
+    prediction = ftio_task(metric, arrays ,argv ,ranks, False)
     # freq = get_dominant(prediction) #just get a single dominant value
     data.append({
         'metric': f'{metric}',
