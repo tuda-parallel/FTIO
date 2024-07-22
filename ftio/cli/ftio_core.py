@@ -74,6 +74,7 @@ def core(data: list[dict], args) -> tuple[dict, list]:
         tuple[dict,list[list[float]]]: _description_
     """
     # init
+    CONSOLE.set(args.verbose)
     prediction = {}
     share = {}
     dfs_out = [[],[],[],[]]

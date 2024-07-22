@@ -24,7 +24,7 @@ setup(
             "ioplot = ftio.util.ioplot:main",
             "ioparse = ftio.util.ioparse:main",
             "predictor_jit = ftio.api.gekkoFs.predictor_gekko_zmq:main",
-            "trace_analysis = ftio.api.trace_analysis.trace_ftio:main",
+            "trace_ftio = ftio.api.trace_analysis.trace_ftio_v2:main",
         ],
         "gui_scripts": [],
     },
