@@ -21,9 +21,9 @@ debug: venv ftio_debug msg
 
 ftio_debug: 
 	mv old_setup setup.py
-	mv pyproject.toml pyproject
-	${PYTHON} -m pip install -e . || (mv pyproject pyproject.toml && mv setup.py old_setup)
-	mv pyproject pyproject.toml
+	mv pyproject.toml old_pyproject
+	${PYTHON} -m pip install -e . || (mv old_pyproject pyproject.toml && mv setup.py old_setup)
+	mv old_pyproject pyproject.toml
 	mv setup.py old_setup
 	
 
