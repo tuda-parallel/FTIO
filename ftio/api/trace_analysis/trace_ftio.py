@@ -9,7 +9,7 @@ from ftio.parse.bandwidth import overlap
 from ftio.parse.csv_reader import read_csv_file
 
 
-def main(argv):
+def main(argv=sys.argv):
     
     full_path = get_path(argv)
     arrays = read_csv_file(full_path)
