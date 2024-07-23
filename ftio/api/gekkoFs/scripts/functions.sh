@@ -777,7 +777,7 @@ ${GREEN}FTIO${BLACK}
 ├─ ADDRESS        : ${BLUE}${ADDRESS}${BLACK}
 ├─ PORT           : ${BLUE}${PORT}${BLACK}
 ├─ # NODES        : ${BLUE}1${BLACK}
-└─ FTIO NODE      : ${BLUE}${FTIO_NODE_COMMAND/--nodelist=*/}${BLACK}
+└─ FTIO NODE      : ${BLUE}${FTIO_NODE_COMMAND##'--nodelist='}${BLACK}
 
 ${GREEN}Gekko${BLACK}
 ├─ GKFS_DEMON     : ${BLUE}${GKFS_DEMON}${BLACK}
@@ -797,7 +797,7 @@ ${GREEN}APP${BLACK}
 ├─ PRECALL        : ${BLUE}${PRECALL}${BLACK}
 ├─ APP_CALL       : ${BLUE}${APP_CALL}${BLACK}
 ├─ # NODES        : ${BLUE}${APP_NODES}${BLACK}
-└─ APP NODES      : ${BLUE}${APP_NODES_COMMAND/--nodelist=*/}${BLACK}
+└─ APP NODES      : ${BLUE}${APP_NODES_COMMAND##'--nodelist='}${BLACK}
 ${GREEN}##################${BLACK}
 
 "

@@ -99,7 +99,7 @@ def main(args: list[str] = sys.argv[1:]) -> None:
                 ranks = 0
                 socks = dict(poller.poll(1000))
                 start = time.time()
-                while socks and time.time() < start + 0.5:
+                while socks or time.time() < start + 0.5:
                     if socks.get(socket) == zmq.POLLIN:
                         msg = socket.recv(zmq.NOBLOCK)
                         msgs.append(msg)
@@ -217,7 +217,8 @@ def prediction_zmq_process(
     't_flush': t_flush + (t_prediction- time.time()),
     'freq': freq,
     'conf': conf,
-    'probability': probability
+    'probability': probability,
+    'source': f'#{count.value}'
         })
 
     console.print(f"[purple][PREDICTOR] (#{count.value}):[/]  Ended")
@@ -248,7 +249,7 @@ def trigger_cargo(sync_trigger):
                     target_time = prediction['t_end'] + 1/prediction['freq']
                     geko_elapsed_time = prediction['t_flush'] + t  # t  is the waiting time in this function
                     remaining_time = (target_time - geko_elapsed_time ) 
-                    CONSOLE.print(f"[bold green][Trigger][/][green] Target time = {target_time:.3f} -- Gekko time = {geko_elapsed_time:.3f} -> sending cmd in {remaining_time:.3f} s[/]\n")
+                    CONSOLE.print(f"[bold green][Trigger {prediction['source']}][/][green] Target time = {target_time:.3f} -- Gekko time = {geko_elapsed_time:.3f} -> sending cmd in {remaining_time:.3f} s[/]\n")
                     if remaining_time > 0:
                         countdown = time.time() + remaining_time
                         # wait till the time elapses:
