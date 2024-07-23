@@ -45,7 +45,8 @@ function check_port(){
 
 
 function allocate(){
-    
+	APP_NODES=1
+
     if [ "$CLUSTER" = true ]; then
 		echo -e "\n${JIT} ${BLUE}####### Allocating resources FTIO ${BLACK}"
 		call="salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell"
@@ -92,9 +93,7 @@ function allocate(){
 		echo -e "${JIT}${CYAN} >> FTIO Node: ${FTIO_NODE} ${BLACK}"
 		echo -e "${JIT}${CYAN} >> APP  Node command: ${APP_NODES_COMMAND} ${BLACK}"
 		echo -e "${JIT}${CYAN} >> FTIO Node command: ${FTIO_NODE_COMMAND} ${BLACK}"
-		echo -e "${JIT}${YELLOW} >> App Nodes: $(cat ~/hostfile_mpi) ${BLACK}\n"
-    else
-		APP_NODES=1
+		echo -e "${JIT}${YELLOW} >> App Nodes: $(cat ~/hostfile_mpi) ${BLACK}\n"	
 	fi
 }
 
@@ -814,7 +813,7 @@ function elapsed_time(){
 }
 
 function log_dir(){
-	if [[ ! -z "$pLOG_DIR" ]]; then
+	if [[ -z "${LOG_DIR}" ]]; then
 		LOG_DIR="logs_n${NODES}_id${JIT_ID}"
 	fi
 	mkdir -p ${LOG_DIR}
