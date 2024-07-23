@@ -93,7 +93,7 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
             # skip saving
             ftio_task(metric, arrays, argv, ranks, show)
     if save:
-        # print_data(data)
+        print_data(data)
         df = extract_data(data)
         scatter2D(df)
         scatter(df,x='Phi', y='Dominant Frequency', color='Confidence', symbol='Metric')

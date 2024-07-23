@@ -147,6 +147,7 @@ def extract(file:str) -> list[dict]:
         binary_data = in_file.read()
 
     data = extract_data(binary_data, data)
+    return data
 
 
 def extract_data(binary_data, data):
