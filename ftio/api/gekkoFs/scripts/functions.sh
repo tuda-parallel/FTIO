@@ -93,7 +93,9 @@ function allocate(){
 		echo -e "${JIT}${CYAN} >> APP  Node command: ${APP_NODES_COMMAND} ${BLACK}"
 		echo -e "${JIT}${CYAN} >> FTIO Node command: ${FTIO_NODE_COMMAND} ${BLACK}"
 		echo -e "${JIT}${YELLOW} >> App Nodes: $(cat ~/hostfile_mpi) ${BLACK}\n"
-    fi
+    else
+		APP_NODES=1
+	fi
 }
 
 
@@ -321,10 +323,10 @@ function hard_kill() {
 		scancel ${JIT_ID} || true 
 	else 
 		echo -e "\n${JIT}${BLUE} ####### Hard kill ${BLACK}"
-		kill $(ps -aux | grep ${GKFS_DEMON}| grep -v grep | awk '{print $2}')
-		kill $(ps -aux | grep ${GKFS_PROXY}| grep -v grep | awk '{print $2}')
-		kill $(ps -aux | grep ${CARGO}| grep -v grep | awk '{print $2}')
-		kill $(ps -aux | grep "$(dirname "$FTIO_ACTIVATE")/predictor_jit"| grep -v grep | awk '{print $2}')
+		kill $(ps -aux | grep ${GKFS_DEMON}| grep -v grep | awk '{print $2}') || true
+		kill $(ps -aux | grep ${GKFS_PROXY}| grep -v grep | awk '{print $2}') || true
+		kill $(ps -aux | grep ${CARGO}| grep -v grep | awk '{print $2}') || true
+		kill $(ps -aux | grep "$(dirname "$FTIO_ACTIVATE")/predictor_jit"| grep -v grep | awk '{print $2}') || true
 	fi
 }
 # Function to handle SIGINT (Ctrl+C)
@@ -370,6 +372,10 @@ function error_usage(){
 	-t | --max-time: X <int>
 		default: ${BLUE}${MAX_TIME}${BLACK}
 		max time for the execution of the setup in minutes
+	
+	-l |--log-name: <str>
+		default: autoset to number of nodes and job id
+		if provided, sets the name of the directory were the logs are
 
 	-e | --execlude-ftio: <bool>
 		deafult: ${EXCLUDE_FTIO}
@@ -483,8 +489,8 @@ function install_all(){
 }
 function parse_options() {
     # Define the options
-    OPTIONS=a:p:n:t:i:eh
-    LONGOPTS=address:,port:,nodes:,max-time:,install-location:,exclude-ftio,help
+    OPTIONS=a:p:n:t:l:i:eh
+    LONGOPTS=address:,port:,nodes:,max-time:,log-name:,install-location:,exclude-ftio,help
 
     # -temporarily store output to be able to check for errors
     # -activate advanced mode getopt quoting e.g. via “--options”
@@ -514,6 +520,10 @@ function parse_options() {
                 ;;
             -t|--max-time)
                 MAX_TIME="$2"
+                shift 2
+                ;;
+			-l|--log-name)
+                LOG_DIR="$2"
                 shift 2
                 ;;
             -i|--install-location)
@@ -779,7 +789,7 @@ ${GREEN}Gekko${BLACK}
 ├─ GKFS_PROXY     : ${BLUE}${GKFS_PROXY}${BLACK}
 └─ GKFS_PROXYFILE : ${BLUE}${GKFS_PROXYFILE}${BLACK}
 
-${GREEN} CARGO
+${GREEN} CARGO${BLACK}
 ├─ CARGO location : ${BLUE}${CARGO}${BLACK}${BLACK}
 ├─ CARGO_CLI      : ${BLUE}${CARGO_CLI}${BLACK}
 └─ STAGE_IN_PATH  : ${BLUE}${STAGE_IN_PATH}${BLACK}
@@ -789,7 +799,6 @@ ${GREEN}APP${BLACK}
 ├─ APP_CALL       : ${BLUE}${APP_CALL}${BLACK}
 ├─ # NODES        : ${BLUE}${APP_NODES}${BLACK}
 └─ APP NODES      : ${BLUE}${APP_NODES_COMMAND/--nodelist=*/}${BLACK}
-
 ${GREEN}##################${BLACK}
 
 "
@@ -802,4 +811,11 @@ function elapsed_time(){
 	local runtime=$(echo  "${end} - ${start}" | bc | awk '{printf "%f\n", $0}')
 	local runtime_formated=$(format_time ${runtime})
 	echo -e "\n\n${BLUE}############${JIT}${BLUE}##############\n# ${name}\n# time: ${GREEN}${runtime_formated} ${BLUE}\n# ${GREEN}${runtime}${BLUE} seconds\n##############################${BLACK}\n\n" 
+}
+
+function log_dir(){
+	if [[ ! -z "$pLOG_DIR" ]]; then
+		LOG_DIR="logs_n${NODES}_id${JIT_ID}"
+	fi
+	mkdir -p ${LOG_DIR}
 }

@@ -75,7 +75,7 @@ if [ "$CLUSTER" = false ]; then
 	GKFS_PROXYFILE="/tmp/JIT/vef_gkfs_proxy.pid"
 	# Cargo 
 	CARGO="${install_location}/cargo/build/src/cargo"
-	CARGO_CLI="${install_location}/cargo/build/src/cargo/build/cli"
+	CARGO_CLI="${install_location}/cargo/build/cli"
 	STAGE_IN_PATH="~/input"
 	# App
 	APP_CALL="${install_location}/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"

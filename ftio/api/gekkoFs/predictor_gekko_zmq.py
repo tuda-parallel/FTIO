@@ -148,7 +148,7 @@ def prediction_zmq_process(
     hits,
     start_time,
     aggregated_bytes,
-    args: list[str],
+    args,
     msg,
     b_app,
     t_app,
@@ -191,6 +191,7 @@ def prediction_zmq_process(
     text = display_result(freq, prediction, count, aggregated_bytes)
     # data analysis to decrease window
     text, start_time.value = data_analysis(args, prediction, freq, count, hits, text)
+    # if args.verbose:
     console.print(text)
     count.value += 1
 
@@ -218,8 +219,8 @@ def prediction_zmq_process(
     'conf': conf,
     'probability': probability
         })
-        
-    CONSOLE.print("[bold purple]Ended[/]")
+
+    console.print(f"[purple][PREDICTOR] (#{count.value}):[/]  Ended")
 
 
 

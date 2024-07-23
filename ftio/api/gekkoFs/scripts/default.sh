@@ -13,7 +13,7 @@ FTIO_NODE=""
 ALL_NODES=""
 APP_NODES_COMMAND=""
 FTIO_NODE_COMMAND=""
-
+LOG_DIR=""
 echo -e "${BLUE}---- Started Script JIT ----${BLACK}"
 
 # by default FTIO is included in the setup

@@ -36,12 +36,12 @@ def heatmap(data):
 
     # Ensure data is not empty and contains valid ranges
     if heatmap_data.empty:
-        raise ValueError("The heatmap data is empty. Cannot generate heatmap.")
+        raise ValueError('The heatmap data is empty. Cannot generate heatmap.')
     
     # Define equally spaced bins for Dominant Frequency
     freq_min, freq_max = heatmap_data['Dominant Frequency'].min(), heatmap_data['Dominant Frequency'].max()
     if freq_min == freq_max:
-        raise ValueError("The range for Dominant Frequency binning is invalid. Minimum and maximum values are the same.")
+        raise ValueError('The range for Dominant Frequency binning is invalid. Minimum and maximum values are the same.')
     freq_bins = np.linspace(freq_min, freq_max, num=nbins)  # Example: 4 bins
 
     # Bin the Dominant Frequency data
@@ -49,53 +49,44 @@ def heatmap(data):
 
     # Convert Interval bins to strings for Plotly
     heatmap_data['Dominant Frequency Binned'] = heatmap_data['Dominant Frequency Binned'].astype(str)
-
-    heatmap_data.sort_values(by='Dominant Frequency',inplace=True)
+    heatmap_data.sort_values(by='Dominant Frequency',inplace=True, ignore_index=True)
+    
     # Pivot the DataFrame to switch x and y axes
-    heatmap_pivot = heatmap_data.pivot_table(index='Dominant Frequency Binned', columns='Metric', values='Confidence', aggfunc='mean')
+    heatmap_pivot = heatmap_data.pivot_table(index='Dominant Frequency Binned', columns='Metric', values='Confidence', aggfunc='mean', sort=False)
+    # or without sorting
+    # heatmap_pivot = heatmap_data.pivot_table(index='Dominant Frequency Binned', columns='Metric', values='Confidence', aggfunc='mean')
 
     # Create the heatmap with switched axes
     fig = px.imshow(
         heatmap_pivot,
-        labels=dict(x="Metric", y="Dominant Frequency", color="Confidence"),
+        labels=dict(x='Metric', y='Dominant Frequency', color='Confidence'),
         # text_auto=True,
         origin='lower',
         color_continuous_scale='Viridis',
         aspect='equal'#'auto'
     )
     fig.update_layout(xaxis_tickangle=-45,margin=dict(l=100, r=100, t=50, b=150), coloraxis_colorbar=dict(
-    yanchor="top", y=1, ticks="outside", ticksuffix=" %"))
+    yanchor='top', y=1, ticks='outside', ticksuffix=' %'))
     fig.show()
 
 
+def scatter(df,x,y,color,symbol) -> None:
+    # Create the scatter plot
+    fig = px.scatter(df, x=x, y=y, color=color, symbol=symbol, color_continuous_scale='Viridis')
+    # Display the plot
+    fig.update_layout(xaxis_title=x, yaxis_title=y, xaxis_tickangle=-45, margin=dict(l=100, r=100, t=50, b=150), coloraxis_colorbar=dict(
+    orientation='h', ticks='outside', ticksuffix=' %', title=''))
+    fig.show()
 
-def histogram2D(data) -> None:
-    # Prepare the data for the plot
-    data_points = []
 
-    for d in data:
-        if len(d['dominant_freq']) > 0 and len(d['conf']) > 0:
-            max_conf_index = np.argmax(d['conf'])
-            dominant_freq = d['dominant_freq'][max_conf_index]
-            conf = d['conf'][max_conf_index]*100
-            data_points.append((d['metric'], dominant_freq, conf))
-        else:
-            continue 
-            data_points.append((d['metric'], -1, -1))
-
-    # Create a DataFrame for the plot
-    df = pd.DataFrame(data_points, columns=['Metric', 'Dominant Frequency', 'Confidence'])
-
-    df.sort_values(by='Dominant Frequency',inplace=True)
+def scatter2D(df) -> None:
     # Create the scatter plot
     fig = px.scatter(df, x='Metric', y='Dominant Frequency', color='Confidence',
                     labels={'Metric': 'Metric', 'Dominant Frequency': 'Dominant Frequency', 'Confidence': 'Confidence'},
                     color_continuous_scale='Viridis')
-
     # Display the plot
-    fig.update_layout(xaxis_title='Metric', yaxis_title='Dominant Frequency', xaxis_tickangle=-45)
-    fig.update_layout(xaxis_tickangle=-45,margin=dict(l=100, r=100, t=50, b=150), coloraxis_colorbar=dict(
-    yanchor="top", y=1, ticks="outside", ticksuffix=" %"))
+    fig.update_layout(xaxis_title='Metric', yaxis_title='Dominant Frequency', xaxis_tickangle=-45, margin=dict(l=100, r=100, t=50, b=150), coloraxis_colorbar=dict(
+    yanchor='top', y=1, ticks='outside', ticksuffix=' %'))
     fig.show()
 
 
@@ -134,7 +125,7 @@ def heatmap_2(data):
 
     # Ensure data is not empty and contains valid ranges
     if heatmap_data.empty:
-        raise ValueError("The heatmap data is empty. Cannot generate heatmap.")
+        raise ValueError('The heatmap data is empty. Cannot generate heatmap.')
 
     # Select the dominant frequency with the highest confidence for each Metric
     dominant_freq_per_metric = heatmap_data.loc[heatmap_data.groupby('Metric')['Confidence'].idxmax()]
@@ -230,10 +221,10 @@ def density_heatmap(data) -> None:
         yaxis_title='Dominant Frequency',
         xaxis_tickangle=-45,
         coloraxis_colorbar=dict(
-            yanchor="top",
+            yanchor='top',
             y=1,
-            ticks="outside",
-            ticksuffix=" %",
+            ticks='outside',
+            ticksuffix=' %',
             title='Confidence (%)'
         ),
         margin=dict(l=100, r=100, t=50, b=150)
@@ -246,15 +237,15 @@ def plot_heatmap(heatmap_diff, top):
     # Create the heatmap with switched axes
     fig = px.imshow(
         heatmap_diff,
-        labels=dict(x="Metric", y="Metric", color="Difference in Dominant Frequency"),
+        labels=dict(x='Metric', y='Metric', color='Difference in Dominant Frequency'),
         # text_auto=True,
         origin='lower',
         # width=1200,  # Adjust width as needed
         # height=1000   # Adjust height as needed
         aspect='auto',
         # color_continuous_scale='RdBu'
-        color_continuous_scale=[(0, "black"),(.1, "red"),(.2, "orange"), (.4, "yellow"),(.6, "white"),(.8, "blue") , (1, "purple")]
-        # color_continuous_scale=[(0, "black"),(critical/10, "red"),(critical/2, "orange"), (critical, "yellow"),(2*critical, "white"),(10*critical, "white") , (1, "white")]
+        color_continuous_scale=[(0, 'black'),(.1, 'red'),(.2, 'orange'), (.4, 'yellow'),(.6, 'white'),(.8, 'blue') , (1, 'purple')]
+        # color_continuous_scale=[(0, 'black'),(critical/10, 'red'),(critical/2, 'orange'), (critical, 'yellow'),(2*critical, 'white'),(10*critical, 'white') , (1, 'white')]
     )
 
     # Update layout to adjust margins and spacing
@@ -262,11 +253,11 @@ def plot_heatmap(heatmap_diff, top):
         xaxis_title='Metric',
         yaxis_title='Metric',
         coloraxis_colorbar=dict(
-            title="Relative deviation (%)",
-            yanchor="top",
+            title='Relative deviation (%)',
+            yanchor='top',
             y=1,
-            ticks="outside",
-            ticksuffix=" %",
+            ticks='outside',
+            ticksuffix=' %',
             # tickvals=[0, critical/2, critical, 2*critical, 1/critical],
         ),
         xaxis=dict(
@@ -277,3 +268,29 @@ def plot_heatmap(heatmap_diff, top):
     )
 
     fig.show()
+
+
+
+def extract_data(data):
+    # Prepare the data for the plot
+    data_points = []
+
+    for d in data:
+        if len(d['dominant_freq']) > 0 and len(d['conf']) > 0:
+            max_conf_index = np.argmax(d['conf'])
+            dominant_freq = d['dominant_freq'][max_conf_index]
+            conf = d['conf'][max_conf_index]*100
+            phi = d['phi'][max_conf_index]
+            t_s = d['t_start']
+            t_e = d['t_end']
+            data_points.append((d['metric'], dominant_freq, conf, phi, t_s, t_e))
+        else:
+            continue 
+            data_points.append((d['metric'], np.NaN, np.NaN, np. NaN, np.NaN))
+
+    # Create a DataFrame for the plot
+    df = pd.DataFrame(data_points, columns=['Metric', 'Dominant Frequency', 'Confidence', 'Phi', 'time start', 'time end'])
+    df.sort_values(by='Dominant Frequency',inplace=True)
+
+    return df
+

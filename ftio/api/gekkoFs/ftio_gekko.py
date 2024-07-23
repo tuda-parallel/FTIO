@@ -10,11 +10,12 @@ import plotly.graph_objects as go
 from ftio.freq.helper import format_plot
 from ftio.plot.units import set_unit
 from ftio.freq.helper import MyConsole
+import argparse
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
 
-def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app = [], t_app = []):  # "0.01"] ):
+def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_app = []) -> tuple[dict, argparse.Namespace, dict]:  # "0.01"] ):
     """Executes ftio on list of files_or_msgs.
 
     Args:
@@ -98,7 +99,9 @@ def run(files_or_msgs: list, argv:list[str]=["-e", "plotly", "-f", "100"], b_app
     prediction, dfs = core([data], args)
 
     # 9) plot and print info
+    # if args.verbose:
     display_prediction("ftio", prediction)
+
     convert_and_plot(data, dfs, args)
 
     return prediction, args, data_rank["flush_t"]

@@ -1,11 +1,20 @@
 import sys
+
 # from rich.progress import Progress
 from ftio.api.metric_proxy.parse_proxy import parse_all
-from ftio.api.metric_proxy.plot_heatmap import heatmap,histogram2D,heatmap_2, density_heatmap
+from ftio.api.metric_proxy.plot_heatmap import (
+    heatmap,
+    scatter2D,
+    scatter,
+    extract_data,
+    heatmap_2,
+    density_heatmap,
+)
 from ftio.prediction.tasks import ftio_task, ftio_task_save
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import Manager
-from ftio.prediction.helper import  print_data
+from ftio.prediction.helper import print_data
+
 # from ftio.freq.helper import MyConsole
 from ftio.prediction.async_process import handle_in_process
 from ftio.prediction.async_process import join_procs
@@ -16,15 +25,14 @@ def main(argv):
     # Modification area
     # ---------------------------------
     parallel = False
-    pools    = False
-    show     = False #shows the results from FTIO
-
+    pools = False
+    show = False  # shows the results from FTIO
 
     metrics = parse_all("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", False)
     ranks = 32
 
     # command line arguments
-    argv = ["-e", "no"]  # ["-e", "plotly"] 
+    argv = ["-e", "no"]  # ["-e", "plotly"]
     # argv.extend(["-n","15"]) # finds up to n frequencies. Comment this out to go back to the default version
     # ---------------------------------
 
@@ -34,7 +42,9 @@ def main(argv):
         execute(metrics, argv, ranks, show)
 
 
-def execute_parallel(metrics:dict, argv:list, ranks:int, show:bool, pools:bool)-> None:
+def execute_parallel(
+    metrics: dict, argv: list, ranks: int, show: bool, pools: bool
+) -> None:
     # parallel
     manager = Manager()
     data = manager.list()
@@ -43,19 +53,21 @@ def execute_parallel(metrics:dict, argv:list, ranks:int, show:bool, pools:bool)-
         if pools:
             # with Progress() as progress:
             #     task = progress.add_task("[cyan]Metrics handled", total=len(metrics.keys()))
-            for metric,arrays in metrics.items():
+            for metric, arrays in metrics.items():
                 # with ProcessPoolExecutor(max_workers=80) as executor:
                 with ProcessPoolExecutor() as executor:
-                    _ = executor.submit(ftio_task_save, data, metric, arrays, argv, ranks, show)
-                        # progress.update(task, advance=1)
+                    _ = executor.submit(
+                        ftio_task_save, data, metric, arrays, argv, ranks, show
+                    )
+                    # progress.update(task, advance=1)
         else:
-            for metric,arrays in metrics.items():
+            for metric, arrays in metrics.items():
                 procs = join_procs(procs)
                 while len(procs) > 10:
                     procs = join_procs(procs)
-                procs.append(handle_in_process(
-                    ftio_task_save, 
-                    args=(data, metric, arrays, argv, ranks, show)
+                procs.append(
+                    handle_in_process(
+                        ftio_task_save, args=(data, metric, arrays, argv, ranks, show)
                     )
                 )
     except KeyboardInterrupt:
@@ -63,28 +75,32 @@ def execute_parallel(metrics:dict, argv:list, ranks:int, show:bool, pools:bool)-
         print("-- done -- ")
         exit()
 
-    print_data(data)
+    # print_data(data)
     heatmap(data)
-    histogram2D(data)
+    df = extract_data(data)
+    scatter2D(df)
     print("-- done -- ")
 
 
-def execute(metrics:dict, argv:list, ranks:int, show:bool):
-    data=[]
+def execute(metrics: dict, argv: list, ranks: int, show: bool):
+    data = []
     save = True
-    for metric,arrays in metrics.items():
+    for metric, arrays in metrics.items():
         if save:
             # save stuff in queue
             ftio_task_save(data, metric, arrays, argv, ranks, show)
         else:
-            # skip saving 
+            # skip saving
             ftio_task(metric, arrays, argv, ranks, show)
     if save:
-        print_data(data)
+        # print_data(data)
+        df = extract_data(data)
+        scatter2D(df)
+        scatter(df,x='Phi', y='Dominant Frequency', color='Confidence', symbol='Metric')
         heatmap(data)
         density_heatmap(data)
-        histogram2D(data)
         heatmap_2(data)
+
 
 
 if __name__ == "__main__":
