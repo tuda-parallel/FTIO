@@ -1,3 +1,8 @@
+###################
+# ALLOC call
+###################
+# ALLOC_CALL_FLAGS="--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell"
+ALLOC_CALL_FLAGS=" --overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell"
 
 ###################
 # FTIO variables
@@ -32,8 +37,8 @@ CARGO=${CARGO:-"/lustre/project/nhr-admire/vef/cargo/build/src/cargo"}
 # Stag in/out variables
 ###################
 CARGO_CLI="/lustre/project/nhr-admire/vef/cargo/build/cli"
-# STAGE_IN_PATH="/lustre/project/nhr-admire/vef/admire/turbPipe/run_gkfs/input"
-STAGE_IN_PATH="/lustre/project/nhr-admire/tarraf/stage_in"
+STAGE_IN_PATH="/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input"
+# STAGE_IN_PATH="/lustre/project/nhr-admire/tarraf/stage_in"
 # TODO: pass this to FTIO
 #STAGE_OUT_PATH="/lustre/project/nhr-admire/tarraf/stage-out"
 
@@ -48,7 +53,10 @@ PRECALL="time"
 # APP call 
 ###################
 # APP_CALL="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
-APP_CALL="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
+# APP_CALL="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
+APP_CALL="/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/nek5000"
+# Pre call
+PRE_APP_CALL="echo -e 'turbPipe\n${GKFS_MNTDIR}' > ./SESSION.NAME"
 
 if [ "$CLUSTER" = true ]; then
 	# install location in case -i option is provided to the script
@@ -58,7 +66,7 @@ fi
 if [ "$CLUSTER" = false ]; then
 	# install location used to find stuff 
 	install_location=${install_location:-"/d/github/JIT"}
-	
+	# FTIO
 	FTIO_ACTIVATE="/d/github/FTIO/.venv/bin/activate"
 	# Gekko Demon
 	GKFS_DEMON="${install_location}/iodeps/bin/gkfs_daemon"
@@ -81,6 +89,8 @@ if [ "$CLUSTER" = false ]; then
 	# App
 	APP_CALL="${install_location}/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
 	#APP_CALL="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
+	# Pre call
+	PRE_APP_CALL=" "
 fi 
 
 

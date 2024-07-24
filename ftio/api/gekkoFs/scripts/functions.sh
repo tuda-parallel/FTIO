@@ -48,8 +48,10 @@ function allocate(){
 	APP_NODES=1
 
     if [ "$CLUSTER" = true ]; then
-		echo -e "\n${JIT} ${BLUE}####### Allocating resources FTIO ${BLACK}"
-		call="salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell"
+		echo -e "\n${JIT} ${BLUE}####### Allocating resources${BLACK}"
+
+		call="salloc -N ${NODES} -t ${MAX_TIME} ${ALLOC_CALL_FLAGS}"
+
 		echo -e "${JIT}${CYAN} >> Executing: ${call} ${BLACK}"
         # salloc -N ${NODES} -t ${MAX_TIME} --overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell
 		eval " ${call}"
@@ -172,6 +174,8 @@ function start_geko_demon() {
 	# set -o xtrace
 	echo -e "\n\n"
 }
+
+
 function start_geko_proxy() {
 	echo -e "\n${JIT}${BLUE} ####### Starting GKFS PROXY ${BLACK}"
     if [ "$CLUSTER" = true ]; then
@@ -186,6 +190,19 @@ function start_geko_proxy() {
     else
         
 		call="${GKFS_PROXY} -H ${GKFS_HOSTFILE} -p ofi+tcp -P ${GKFS_PROXYFILE}" 
+    fi
+	echo -e "${JIT}${CYAN} >> Executing: ${call} ${BLACK}"
+	eval " ${call}"
+}
+
+#precall
+function pre_call() {
+	echo -e "\n${JIT}${BLUE} ####### Pre application call ${BLACK}"
+    if [ "$CLUSTER" = true ]; then
+		# Proxy call
+		call=${PRE_APP_CALL}
+    else
+		call=${PRE_APP_CALL}
     fi
 	echo -e "${JIT}${CYAN} >> Executing: ${call} ${BLACK}"
 	eval " ${call}"
@@ -219,7 +236,7 @@ function start_application() {
 		# call="LIBGKFS_LOG=errors,warnings LIBGKFS_LOG_OUTPUT=~/tarraf_gkfs_client.log LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} LIBGKFS_ENABLE_METRICS=on LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} LD_PRELOAD=${GKFS_INTERCEPT}  srun --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N ${APP_NODES} --ntasks=${APP_NODES} --cpus-per-task=${PROCS}  --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 --export=LD_LIBRARY_PATH=${LD_LIBRARY_PATH} ${APP_CALL}"
 
 		# app call
-		call="${PRECALL} mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors,warnings -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} taskset -c 0-63 ${APP_CALL}"
+		call="${PRECALL} mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors,warnings -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS}:${PORT} -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} ${APP_CALL}"
 
 		# old
 		# ${PRECALL} mpiexec -np ${PROCS} --oversubscribe \
@@ -230,7 +247,6 @@ function start_application() {
 		# -x LD_PRELOAD=${GKFS_INTERCEPT}\
 		# -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE}\
 		# -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE}\
-		# taskset -c 0-63 \
 		# ${APP_CALL}
 		
 		# measure stage-out
@@ -255,8 +271,10 @@ function start_cargo() {
     if [ "$CLUSTER" = true ]; then
         
 		# One instance per node
-		call="srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N ${APP_NODES} --ntasks=${APP_NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000"
-
+		call="srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N ${APP_NODES} --ntasks=${APP_NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000 -b 65536"
+		
+		# -b specifies block size to move 64MiB 
+		
 		#
 		# old
         # srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} \
@@ -265,7 +283,7 @@ function start_cargo() {
         # --ntasks-per-node=1 --overcommit --overlap --oversubscribe \
 		# --mem=0  ${CARGO} --listen ofi+sockets://127.0.0.1:62000 
     else
-        call="mpiexec -np 1 --oversubscribe -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} ${CARGO} --listen ofi+sockets://127.0.0.1:62000"
+        call="mpiexec -np 1 --oversubscribe -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} ${CARGO} --listen ofi+sockets://127.0.0.1:62000 -b 65536"
     fi
     # set -o xtrace
 	echo -e "${JIT}${CYAN} >> Executing: ${call} ${BLACK}"

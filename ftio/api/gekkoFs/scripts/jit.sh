@@ -63,7 +63,9 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	sleep 12
 
 
-	# 6. Start application with Gekko intercept
+
+	# 6. pre- and application with Gekko intercept
+	pre_call
 	start_application | tee ${LOG_DIR}/app.log 
 	
 	# 7. stage out
