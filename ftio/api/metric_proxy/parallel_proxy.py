@@ -2,18 +2,20 @@ import sys
 
 # from rich.progress import Progress
 from ftio.api.metric_proxy.parse_proxy import parse_all
+from ftio.api.metric_proxy.helper import extract_data
+from ftio.api.metric_proxy.proxy_analysis import phases
 from ftio.api.metric_proxy.plot_heatmap import (
     heatmap,
     scatter2D,
     scatter,
-    extract_data,
     heatmap_2,
     density_heatmap,
 )
 from ftio.prediction.tasks import ftio_task, ftio_task_save
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import Manager
-from ftio.prediction.helper import print_data
+from ftio.prediction.helper import print_data 
+
 
 # from ftio.freq.helper import MyConsole
 from ftio.prediction.async_process import handle_in_process
@@ -100,6 +102,7 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
         heatmap(data)
         density_heatmap(data)
         heatmap_2(data)
+        phases(data)
 
 
 

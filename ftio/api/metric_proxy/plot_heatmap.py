@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 import plotly.express as px
-
+import seaborn as sns
+import matplotlib.pyplot as plt
+import fastcluster
 
 
 def heatmap(data):
@@ -176,6 +178,13 @@ def heatmap_2(data):
     heatmap_diff.columns = metrics_unique
     plot_heatmap(heatmap_diff, top)
 
+    heatmap_diff = heatmap_diff.fillna(0)  # Replace NaN with 0 or another strategy
+    # Apply hierarchical clustering using fastcluster
+    linkage_matrix = fastcluster.linkage(heatmap_diff, method="average", metric="euclidean")
+
+    sns.clustermap(heatmap_diff, row_linkage=linkage_matrix, col_linkage=linkage_matrix, cmap="viridis", annot=False)
+    plt.show()
+
 
 
 def density_heatmap(data) -> None:
@@ -269,28 +278,4 @@ def plot_heatmap(heatmap_diff, top):
 
     fig.show()
 
-
-
-def extract_data(data):
-    # Prepare the data for the plot
-    data_points = []
-
-    for d in data:
-        if len(d['dominant_freq']) > 0 and len(d['conf']) > 0:
-            max_conf_index = np.argmax(d['conf'])
-            dominant_freq = d['dominant_freq'][max_conf_index]
-            conf = d['conf'][max_conf_index]*100
-            phi = d['phi'][max_conf_index]
-            t_s = d['t_start']
-            t_e = d['t_end']
-            data_points.append((d['metric'], dominant_freq, conf, phi, t_s, t_e))
-        else:
-            continue 
-            data_points.append((d['metric'], np.NaN, np.NaN, np. NaN, np.NaN))
-
-    # Create a DataFrame for the plot
-    df = pd.DataFrame(data_points, columns=['Metric', 'Dominant Frequency', 'Confidence', 'Phi', 'time start', 'time end'])
-    df.sort_values(by='Dominant Frequency',inplace=True)
-
-    return df
 
