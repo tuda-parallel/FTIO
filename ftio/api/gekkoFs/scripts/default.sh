@@ -13,6 +13,7 @@ FTIO_NODE=""
 ALL_NODES=""
 APP_NODES_COMMAND=""
 FTIO_NODE_COMMAND=""
+SINGLE_NODE_COMMAND=""
 LOG_DIR=""
 echo -e "${BLUE}---- Started Script JIT ----${BLACK}"
 
@@ -35,7 +36,8 @@ ip=$(ip addr | grep ib0 | awk '{print $4}' | tail -1)
 ###################
 # Common variables
 ###################
-ADDRESS=${ADDRESS:-"127.0.0.1"} # usually obtained automatically before executing FTIO
+ADDRESS_FTIO=${ADDRESS_FTIO:-"127.0.0.1"} # usually obtained automatically before executing FTIO
+ADDRESS_CARGO=${ADDRESS_CARGO:-"127.0.0.1"} # usually obtained automatically before executing FTIO
 PORT=${PORT:-"5555"}
 NODES=${NODES:-"2"}
 PROCS=${PROCS:-"128"}

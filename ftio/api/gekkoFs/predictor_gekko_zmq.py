@@ -21,26 +21,21 @@ T_S = time.time()
 CONSOLE = MyConsole()
 CONSOLE.set(True)
 CARGO = True
-CARGO_CLI = "/lustre/project/nhr-admire/vef/cargo/build/cli"
-CARGO_STAGE_OUT_PATH ="/lustre/project/nhr-admire/tarraf/stage-out"
-CARGO_SERVER = "ofi+sockets://127.0.0.1:62000"
-
 
 def main(args: list[str] = sys.argv[1:]) -> None:
+    
     #parse arguments
     tmp_args = parse_args(args,'ftio JIT')
-    # addr = "10.81.3.98"    
-    # port = "5555"
     addr = tmp_args.zmq_address
     port = tmp_args.zmq_port
 
     if CARGO:
-        call = f"{CARGO_CLI}/cargo_ftio --server {CARGO_SERVER}"
+        call = f"{tmp_args.cargo_cli}/cargo_ftio --server {tmp_args.cargo_server}"
         CONSOLE.print("[bold green][Init][/][green]" +call+"\n")
         os.system(call)
 
         #input is relative from GekokFS
-        call = f"{CARGO_CLI}/ccp --server {CARGO_SERVER} --input / --output {CARGO_STAGE_OUT_PATH} --if gekkofs --of parallel"
+        call = f"{tmp_args.cargo_cli}/ccp --server {tmp_args.cargo_server} --input / --output {tmp_args.cargo_out} --if gekkofs --of parallel"
         CONSOLE.print("[bold green][Init][/][green]" +call+"\n")
         os.system(call)
 
@@ -82,7 +77,7 @@ def main(args: list[str] = sys.argv[1:]) -> None:
 
     # for Cargo trigger process:
     sync_trigger = manager.Queue()
-    trigger = handle_in_process(trigger_cargo, args=(sync_trigger,)) 
+    trigger = handle_in_process(trigger_cargo, args=(sync_trigger, tmp_args),) 
 
     if "-zmq" not in args:
         args.extend(["--zmq"])
@@ -225,7 +220,7 @@ def prediction_zmq_process(
 
 
 
-def trigger_cargo(sync_trigger):
+def trigger_cargo(sync_trigger,args):
     """sends cargo calls. For that in extracts the predictions from `sync_trigger` and examines it. 
 
     Args:
@@ -261,11 +256,11 @@ def trigger_cargo(sync_trigger):
 
                         if not skip_flag:
                             if CARGO:
-                                # call = f"{CARGO_CLI}/cargo_ftio --server {CARGO_SERVER} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']}"
-                                call = f"{CARGO_CLI}/cargo_ftio --server {CARGO_SERVER} --run"
+                                # call = f"{args.cargo_cli}/cargo_ftio --server {args.cargo_server} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']}"
+                                call = f"{args.cargo_cli}/cargo_ftio --server {args.cargo_server} --run"
                                 os.system(call)
 
-                            CONSOLE.print("[bold green][Trigger][/][green]" +call+"\n")
+                            CONSOLE.print("[bold green][Trigger][/][green]" + call +"\n")
                         else:
                             CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, new prediction is ready[/]\n")
 

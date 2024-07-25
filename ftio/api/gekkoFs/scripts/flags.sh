@@ -36,8 +36,10 @@ CARGO=${CARGO:-"/lustre/project/nhr-admire/vef/cargo/build/src/cargo"}
 ###################
 # Stag in/out variables
 ###################
-CARGO_CLI="/lustre/project/nhr-admire/vef/cargo/build/cli"
-STAGE_IN_PATH="/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input"
+CARGO_CLI=${CARGO_CLI:-"/lustre/project/nhr-admire/vef/cargo/build/cli"}
+CARGO_SERVER=${CARGO_SERVER:-"ofi+sockets://127.0.0.1:62000"}
+STAGE_OUT_PATH=${STAGE_OUT_PATH:-"/lustre/project/nhr-admire/tarraf/stage-out"}
+STAGE_IN_PATH=${STAGE_IN_PATH:-"/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input"}
 # STAGE_IN_PATH="/lustre/project/nhr-admire/tarraf/stage_in"
 # TODO: pass this to FTIO
 #STAGE_OUT_PATH="/lustre/project/nhr-admire/tarraf/stage-out"
@@ -54,9 +56,9 @@ PRECALL="time"
 ###################
 # APP_CALL="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
 # APP_CALL="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
-APP_CALL="/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/nek5000"
+APP_CALL="./nek5000"
 # Pre call
-PRE_APP_CALL="echo -e 'turbPipe\n${GKFS_MNTDIR}' > ./SESSION.NAME"
+PRE_APP_CALL="echo -e 'turbPipe\n${GKFS_MNTDIR}' > /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/SESSION.NAME"
 
 if [ "$CLUSTER" = true ]; then
 	# install location in case -i option is provided to the script

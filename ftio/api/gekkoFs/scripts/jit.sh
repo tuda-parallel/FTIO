@@ -31,11 +31,13 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	log_dir
 	
 	#1.3 get the address
-	get_address
+	get_address_ftio 
+	get_address_cargo
 	
+
 	# 1.4
 	# print settings
-	print_settings | tee ${LOG_DIR}/settings.log &
+	print_settings | tee ${LOG_DIR}/settings.log 
 
 	
 	# 1.5 create (clean) hostfile 
