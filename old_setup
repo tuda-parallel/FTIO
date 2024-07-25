@@ -66,5 +66,6 @@ setup(
         "rich",
         "dash_extensions",
         "pytest",
+        "fastcluster",
     ],
 )
