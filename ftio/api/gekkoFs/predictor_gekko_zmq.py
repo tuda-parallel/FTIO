@@ -30,14 +30,19 @@ def main(args: list[str] = sys.argv[1:]) -> None:
     port = tmp_args.zmq_port
 
     if CARGO:
-        call = f"{tmp_args.cargo_cli}/cargo_ftio --server {tmp_args.cargo_server}"
+        #1. Perform stage in outside FTIO with cpp
+        #2. Setup für Cargo Stage-out für cargo_ftio
+        call = f"{tmp_args.cargo_cli}/cargo_ftio --server {tmp_args.cargo_server} --run"
         CONSOLE.print("[bold green][Init][/][green]" +call+"\n")
         os.system(call)
 
-        #input is relative from GekokFS
+        # 3. tells cargo that for all next cargo_ftio calls use the cpp
+        # input is relative from GekokFS
         call = f"{tmp_args.cargo_cli}/ccp --server {tmp_args.cargo_server} --input / --output {tmp_args.cargo_out} --if gekkofs --of parallel"
         CONSOLE.print("[bold green][Init][/][green]" +call+"\n")
         os.system(call)
+        # 4. trigger with the thread
+        # 5. Do a stage out outside FTIO with cargo_ftio --run
 
     ranks = 0
     args.extend(["-e", "no", "-f", "10", "-m", "write"])

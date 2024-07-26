@@ -45,15 +45,15 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	# 2. Start Gekko Server (Demon)
 	start_geko_demon &
 	GEKKO_DEMON_PID=$!
-	sleep 5
+	sleep 8
 	start_geko_proxy &
 	GEKKO_PROXY_PID=$!
-	sleep 5
+	sleep 8
 	
 	# 3. Start Cargo Server
 	start_cargo | tee ${LOG_DIR}/cargo.log &
 	CARGO_PID=$!
-	sleep 10
+	sleep 15
 	
 	# 4. Stage in
 	stage_in | tee ${LOG_DIR}/stage_in.log 
@@ -62,8 +62,6 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	start_ftio | tee ${LOG_DIR}/ftio.log &
 	FTIO_PID=$!
 	sleep 12
-
-
 
 	# 6. pre- and application with Gekko intercept
 	pre_call

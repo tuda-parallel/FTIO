@@ -218,8 +218,10 @@ function start_application() {
 		# display hostfile
 		echo -e "${JIT}${BLUE} >> MPI hostfile: \n$(cat ~/hostfile_mpi) ${BLACK}\n"
 		echo -e "${JIT}${BLUE} >> Gekko hostfile:\n$(cat ${GKFS_HOSTFILE}) ${BLACK}\n"
-
 		
+		local files=$(LD_PRELOAD=${GKFS_INTERCEPT}  LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE}  ls ${GKFS_MNTDIR})
+		echo -e "${JIT}${BLUE} Files in ${GKFS_MNTDIR}: \n${files} ${BLACK}\n"
+		sleep 5
 
 		# without FTIO
 		#? [--stag in--]               [--stag out--]
@@ -258,9 +260,9 @@ function start_application() {
     fi
 
 	echo -e "${JIT}${CYAN} >> Executing: ${call} ${BLACK}"
-	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
+	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%d.%09d\n" "$secs" "$nanos" 2>/dev/null; })
 	eval " ${call}"
-	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
+	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%d.%09d\n" "$secs" "$nanos" 2>/dev/null; })
     FINISH=true
 	
 	elapsed_time "Application finished" ${start} ${end}
@@ -304,9 +306,9 @@ function stage_out() {
 	fi
 	
 	echo -e "${JIT}${CYAN} > Satgging out: ${call} ${BLACK}"
-	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
+	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%d.%09d\n" "$secs" "$nanos" 2>/dev/null; })
 	eval " ${call}"
-	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
+	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%d.%09d\n" "$secs" "$nanos" 2>/dev/null; })
 	elapsed_time "Stage out" ${start} ${end}
 	
 }
@@ -325,9 +327,9 @@ function stage_in() {
 	fi
 	
 	echo -e "${JIT}${CYAN} > Satgging in: ${call} ${BLACK}"
-	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
+	start=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%d.%09d\n" "$secs" "$nanos" 2>/dev/null; })
 	eval " ${call}"
-	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
+	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%d.%09d\n" "$secs" "$nanos" 2>/dev/null; })
 	elapsed_time "Stage in" ${start} ${end}
 	
 	local files=$(LD_PRELOAD=${GKFS_INTERCEPT}  LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE}  ls ${GKFS_MNTDIR})
@@ -798,12 +800,29 @@ function format_time() {
 }
 
 function print_settings(){
+
+if [ "$EXCLUDE_FTIO" = true ]; then
+	local ftio_text="
+├─ FTIO_ACTIVATE  : ${YELLOW}none${BLACK}
+├─ ADDRESS_FTIO   : ${YELLOW}none${BLACK}
+├─ PORT           : ${YELLOW}none${BLACK}
+├─ # NODES        : ${YELLOW}none${BLACK}
+└─ FTIO NODE      : ${YELLOW}none${BLACK}"
+else
+	local ftio_text="
+├─ FTIO_ACTIVATE  : ${BLUE}${FTIO_ACTIVATE}${BLACK}
+├─ ADDRESS_FTIO   : ${BLUE}${ADDRESS_FTIO}${BLACK}
+├─ PORT           : ${BLUE}${PORT}${BLACK}
+├─ # NODES        : ${BLUE}1${BLACK}
+└─ FTIO NODE      : ${BLUE}${FTIO_NODE_COMMAND##'--nodelist='}${BLACK}"
+fi
+
 echo -e " 
 
 ${JIT} ${GREEN}Settings      
 ##################${BLACK}
 ${GREEN}Setup${BLACK}
-├─ Logs dir       : ${BLUE}$(pwd)/${LOG_DIR}${BLACK}
+├─ Logs dir       : ${BLUE}${LOG_DIR}${BLACK}
 ├─ PWD            : ${BLUE}$(pwd)${BLACK}
 ├─ EXCLUDE_FTIO   : ${BLUE}${EXCLUDE_FTIO}${BLACK}
 ├─ CLUSTER        : ${BLUE}${CLUSTER}${BLACK}
@@ -814,12 +833,7 @@ ${GREEN}Setup${BLACK}
 ├─ MAX_TIME       : ${BLUE}${MAX_TIME}${BLACK}
 └─ Job ID         : ${BLUE}${JIT_ID}${BLACK}
 
-${GREEN}FTIO${BLACK}
-├─ FTIO_ACTIVATE  : ${BLUE}${FTIO_ACTIVATE}${BLACK}
-├─ ADDRESS_FTIO   : ${BLUE}${ADDRESS_FTIO}${BLACK}
-├─ PORT           : ${BLUE}${PORT}${BLACK}
-├─ # NODES        : ${BLUE}1${BLACK}
-└─ FTIO NODE      : ${BLUE}${FTIO_NODE_COMMAND##'--nodelist='}${BLACK}
+${GREEN}FTIO${BLACK}${ftio_text}
 
 ${GREEN}Gekko${BLACK}
 ├─ GKFS_DEMON     : ${BLUE}${GKFS_DEMON}${BLACK}
@@ -852,7 +866,7 @@ function elapsed_time(){
 	local end=$3
 	local runtime=$(echo  "${end} - ${start}" | bc | awk '{printf "%f\n", $0}')
 	local runtime_formated=$(format_time ${runtime})
-	echo -e "\n\n${BLUE}############${JIT}${BLUE}##############\n# ${name}\n# time: ${GREEN}${runtime_formated} ${BLUE}\n# ${GREEN}${runtime}${BLUE} seconds\n##############################${BLACK}\n\n" 
+	echo -e "\n\n${BLUE}############${JIT}${BLUE}##############\n# ${name}\n# time: ${GREEN}${runtime_formated} ${BLUE}\n# ${GREEN}${runtime}${BLUE} seconds\n##############################${BLACK}\n\n" | tee -a ${LOG_DIR}/time.log
 }
 
 function log_dir(){
@@ -860,6 +874,7 @@ function log_dir(){
 		LOG_DIR="logs_n${NODES}_id${JIT_ID}"
 	fi
 	mkdir -p ${LOG_DIR}
+	LOG_DIR=$(realpath ${LOG_DIR})
 }
 
 function execute(){

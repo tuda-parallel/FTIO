@@ -2,7 +2,7 @@
 # ALLOC call
 ###################
 # ALLOC_CALL_FLAGS="--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell"
-ALLOC_CALL_FLAGS=" --overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell"
+ALLOC_CALL_FLAGS=" --overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
 
 ###################
 # FTIO variables
