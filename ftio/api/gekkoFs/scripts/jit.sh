@@ -2,10 +2,9 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# get defaullts values 
+# get defaullts values,flags, and functions
 source ${SCRIPT_DIR}/default.sh
-
-#get needed functions 
+source ${SCRIPT_DIR}/flags.sh
 source ${SCRIPT_DIR}/functions.sh
 
 
@@ -13,7 +12,7 @@ source ${SCRIPT_DIR}/functions.sh
 parse_options "$@"
 
 # check port and address are free
-# Fixme: Move the line bellow to FTIO command
+#TODO: Move the line bellow to FTIO command
 # check_port
 
 
@@ -80,7 +79,7 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	# 7. over kill
 	hard_kill
 
-	echo -e "${GREEN}------------- Commands completed ------------- ${BLACK}"
+	echo -e "${GREEN}############### ${JIT} ${BLUE}completed ############### ${BLACK}"
 	exit 0
 fi
 

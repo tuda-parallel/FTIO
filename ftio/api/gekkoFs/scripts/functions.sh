@@ -98,7 +98,7 @@ function allocate(){
 		echo -e "${JIT}${CYAN} >> FTIO Node: ${FTIO_NODE} ${BLACK}"
 		echo -e "${JIT}${CYAN} >> APP  Node command: ${APP_NODES_COMMAND} ${BLACK}"
 		echo -e "${JIT}${CYAN} >> FTIO Node command: ${FTIO_NODE_COMMAND} ${BLACK}"
-		echo -e "${JIT}${YELLOW} >> App Nodes: $(cat ~/hostfile_mpi) ${BLACK}\n"	
+		echo -e "${JIT}${YELLOW} >> cat ~/hostfile_mpi: \n$(cat ~/hostfile_mpi) ${BLACK}\n"	
 	fi
 }
 
@@ -216,8 +216,8 @@ function start_application() {
     # set -x
     if [ "$CLUSTER" = true ]; then
 		# display hostfile
-		echo -e "${JIT}${BLUE} >> MPI hostfile: $(cat ~/hostfile_mpi) ${BLACK}"
-		echo -e "${JIT}${BLUE} >> Gekko hostfile: $(cat ${GKFS_HOSTFILE}) ${BLACK}\n"
+		echo -e "${JIT}${BLUE} >> MPI hostfile: \n$(cat ~/hostfile_mpi) ${BLACK}\n"
+		echo -e "${JIT}${BLUE} >> Gekko hostfile:\n$(cat ${GKFS_HOSTFILE}) ${BLACK}\n"
 
 		
 
@@ -316,8 +316,10 @@ function stage_in() {
 	
 	# stage in call on any compute node
 	if [ "$CLUSTER" = true ]; then
-		# call="${PRCALL} srun --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/ccp --server ${CARGO_SERVER} --output / --input ${STAGE_IN_PATH} --of gekkofs --if parallel"
-		call="LD_PRELOAD=${GKFS_INTERCEPT}  LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE}  cp -r ${STAGE_IN_PATH}/* ${GKFS_MNTDIR}"
+
+		call="${PRCALL} srun --jobid=${JIT_ID} ${SINGLE_NODE_COMMAND} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/ccp --server ${CARGO_SERVER} --output / --input ${STAGE_IN_PATH} --of gekkofs --if parallel"
+		# call="LD_PRELOAD=${GKFS_INTERCEPT}  LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE}  cp -r ${STAGE_IN_PATH}/* ${GKFS_MNTDIR}"
+		# call="srun --export=LD_LIBRARY_PATH=${LD_LIBRARY_PATH},LD_PRELOAD=${GKFS_INTERCEPT},LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} --jobid=${JIT_ID} ${SINGLE_NODE_COMMAND} --disable-status -N 1 --ntasks=1 /usr/bin/cp -r ${STAGE_IN_PATH}/* ${GKFS_MNTDIR}"
 	else
 		call="${PRCALL} mpiexec -np 1 --oversubscribe ${CARGO_CLI}/ccp --server ${CARGO_SERVER} --output / --input ${STAGE_IN_PATH}  --of gekkofs --if parallel"
 	fi
@@ -327,6 +329,9 @@ function stage_in() {
 	eval " ${call}"
 	end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%0d.%09d\n" "$secs" "$nanos"; })
 	elapsed_time "Stage in" ${start} ${end}
+	
+	local files=$(LD_PRELOAD=${GKFS_INTERCEPT}  LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE}  ls ${GKFS_MNTDIR})
+	echo -e "${JIT}${BLUE} Files in ${GKFS_MNTDIR}: \n${files} ${BLACK}\n"
 }
 
 function soft_kill() {
@@ -828,8 +833,8 @@ ${GREEN}Gekko${BLACK}
 ${GREEN} CARGO${BLACK}
 ├─ CARGO location : ${BLUE}${CARGO}${BLACK}${BLACK}
 ├─ CARGO_CLI      : ${BLUE}${CARGO_CLI}${BLACK}
-├─ ADDRESS_CARGO  : ${BLUE}${ADDRESS_CARGO}${BLACK}
-└─ STAGE_IN_PATH  : ${BLUE}${STAGE_IN_PATH}${BLACK}
+├─ STAGE_IN_PATH  : ${BLUE}${STAGE_IN_PATH}${BLACK}
+└─ ADDRESS_CARGO  : ${BLUE}${ADDRESS_CARGO}${BLACK}
 
 ${GREEN}APP${BLACK}
 ├─ PRECALL        : ${BLUE}${PRECALL}${BLACK}
