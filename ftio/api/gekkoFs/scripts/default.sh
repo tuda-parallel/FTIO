@@ -43,9 +43,8 @@ NODES=${NODES:-"2"}
 PROCS=${PROCS:-"128"}
 MAX_TIME=${MAX_TIME:-"30"}
 
-# import flags
-source ${SCRIPT_DIR}/flags.sh
+
 
 # TODO: Bind sockets to CPU numactl --cpunodebind=0,1 --membind=0,1 (particular sockets are faster)
-# TODO: remove FTIO from node list and exlude it from others (see functions.sh)
-# TODO: Gekko Proxy
+
+

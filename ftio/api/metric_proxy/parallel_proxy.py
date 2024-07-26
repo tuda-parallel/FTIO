@@ -96,13 +96,14 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
             ftio_task(metric, arrays, argv, ranks, show)
     if save:
         print_data(data)
+        phases(data)
+        exit()
         df = extract_data(data)
         scatter2D(df)
         scatter(df,x='Phi', y='Dominant Frequency', color='Confidence', symbol='Metric')
         heatmap(data)
         density_heatmap(data)
         heatmap_2(data)
-        phases(data)
 
 
 

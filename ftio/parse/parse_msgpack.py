@@ -1,6 +1,7 @@
 from ftio.parse.simrun import Simrun
 from ftio.parse.msgpack_reader import extract
 
+
 class ParseMsgpack:
     def __init__(self, path):
         self.path = path
