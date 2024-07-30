@@ -110,7 +110,7 @@ Full documentation:
         parser.add_argument('--zmq_port', '--zmq_port', dest='zmq_port', type = str, help = 'zmq port for communication')
         parser.set_defaults(zmq_port = '5555')
         # cargo flags
-        parser.add_argument('--cargo_cli', '--cargo_cli', dest='cargo_cli', type = str, help = 'Location of Cargo clli')
+        parser.add_argument('--cargo_cli', '--cargo_cli', dest='cargo_cli', type = str, help = 'Location of Cargo cli')
         parser.set_defaults(cargo_cli = '/lustre/project/nhr-admire/vef/cargo/build/cli')
         parser.add_argument('--cargo_server', '--cargo_server', dest='cargo_server', type = str, help = 'Address and port where cargo is running')
         parser.set_defaults(cargo_server = 'ofi+sockets://127.0.0.1:62000')

@@ -35,7 +35,7 @@ def main(argv):
 
     # command line arguments
     argv = ["-e", "no"]  # ["-e", "plotly"]
-    # argv.extend(["-n","15"]) # finds up to n frequencies. Comment this out to go back to the default version
+    argv.extend(["-n","15"]) # finds up to n frequencies. Comment this out to go back to the default version
     # ---------------------------------
 
     if parallel:
@@ -95,7 +95,8 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
             # skip saving
             ftio_task(metric, arrays, argv, ranks, show)
     if save:
-        print_data(data)
+        # print_data(data)
+        print(f'data length is {len(data)}')
         phases(data)
         exit()
         df = extract_data(data)

@@ -14,7 +14,7 @@ The currently supported file Formats are:
 		- [Custom MessagePack Files](#custom-messagepack-files)
 	- [Darshan](#darshan)
 	- [Recorder](#recorder)
-	- [Parsing custom File Formats](#parsing-custom-file-formats)
+	- [Parsing Custom File Formats](#parsing-custom-file-formats)
 
 All units in the files are by default SI units. 
 
@@ -217,7 +217,7 @@ ftio folder
 <p align="right"><a href="#file-formats-and-tools">⬆</a></p>
 
 
-## Parsing custom File Formats
+## Parsing Custom File Formats
 `ftio` supports parsing custom file formats using regex. These values can be scaled in case they are not in SI units. 
 The file must currently have the `txt`extension. 
 For that, `ftio` provides two dictionaries that must be provided (pattern and translate) in a custom file similar to the [convert](/ftio/parse/custom_patterns.py)](/ftio/parse/custom_patterns.py) function. 
