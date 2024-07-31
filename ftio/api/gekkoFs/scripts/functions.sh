@@ -417,26 +417,26 @@ function check_finish() {
 
 
 function error_usage(){
-    echo -e "Usage: $0 -a X.X.X.X -p X -n X \n
+    echo -e "Usage: $0 [OPTION]... \n
 	-a | --address: X.X.X.X <string>
-		Address where FTIO is executed 
 		default: ${BLUE}${ADDRESS_FTIO}${BLACK}
-		on a cluster, this is found automatically by determining
-		the adrees of node where FTIO runs 
+		Address where FTIO is executed. On a cluster, this is found 
+		automatically by determining the address of node where FTIO 
+		runs.
 
 	-p | --port: XXXX <int>
-		port for ftio and gekko 
 		default: ${BLUE}${PORT}${BLACK}
+		port for FTIO and GekkoFS.
 
 	-n | --nodes: X <int>
 		default: ${BLUE}${NODES}${BLACK}
 		number of nodes to run the setup. in cluster mode, FTIO is 
 		executed on a single node, while the rest (including the
-		application) get X-1 nodes
+		application) get X-1 nodes.
 
 	-t | --max-time: X <int>
 		default: ${BLUE}${MAX_TIME}${BLACK}
-		max time for the execution of the setup in minutes
+		max time for the execution of the setup in minutes.
 	
 	-l |--log-name: <str>
 		default: Autoset to number of nodes and job id
@@ -444,15 +444,16 @@ function error_usage(){
 
 	-e | --execlude-ftio
 		deafult: ${EXCLUDE_FTIO}
-		if this flag is provided, the setup is executed without FTIO
+		if this flag is provided, the setup is executed without FTIO.
 
 	-x | --exclude-all
 		deafult: ${EXCLUDE_ALL}
-		if this flag is provided, the setup is executed without FTIO, GekkoFs, and Cargo
+		if this flag is provided, the setup is executed without FTIO, 
+		GekkoFs, and Cargo.
 
 	-i | install-location: full_path <str>
 		deafult: ${BLUE}${INSTALL_LOCATION}${BLACK}
-		installs everyting in the provided directory
+		installs everyting in the provided directory.
 
 \n---- exit ----
     "
@@ -607,7 +608,6 @@ function parse_options() {
                 shift
                 ;;
             -h|--help)
-                echo -e "${YELLOW}Help launch:  ${BLACK}" >&2
                 error_usage $OPTARG
                 exit 1
                 ;;
