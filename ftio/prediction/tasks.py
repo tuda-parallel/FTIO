@@ -57,6 +57,7 @@ def ftio_task_save(data, metric:str, arrays:np.ndarray, argv:list, ranks:int, sh
         't_end': prediction['t_end'],
         'total_bytes': prediction['total_bytes'],
         'ranks': prediction['ranks'],
-        'freq': prediction['freq']
+        'freq': prediction['freq'],
+         **({'top_freq': prediction['top_freq']} if 'top_freq' in prediction else {})
         }
     )

@@ -53,12 +53,13 @@ def extract(json_data, match, verbose=False):
     return b_out,t_out
 
 
-def parse_all(file_path:str,deriv_and_not_deriv:bool=True)-> dict:
+def parse_all(file_path:str,deriv_and_not_deriv:bool=True, exclude=None)-> dict:
     """parses all metrics from proxy
 
     Args:
         file_path (str): pass to proxy JSON file
         deriv_and_not_deriv (bool, optional): Removes the metrics in case a similar metrics, which start with deriv is presented. Defaults to True.
+        exclude (list,optional): list of metrics to exclude
 
     Returns:
         dict: parsed metrics with 2D numpy array
@@ -81,9 +82,17 @@ def parse_all(file_path:str,deriv_and_not_deriv:bool=True)-> dict:
         metrics = clean_metrics(metrics)
         elapsed_time = process_time() - t
 
-    for metric in metrics:
-        b_out,t_out = extract(json_data,metric, False)
-        out[metric]=[b_out,t_out]
+    if exclude:
+        for metric in metrics:
+            if all(n not in metric for n in exclude):
+                b_out,t_out = extract(json_data,metric, False)
+                out[metric]=[b_out,t_out]
+        text=', '.join([str(item) for item in exclude])
+        CONSOLE.info(f"[green]Excluded matches for: \\[{text}]\nMetrics reduced further from {len(metrics)} to {len(out)}[/]")
+    else:
+        for metric in metrics:
+            b_out,t_out = extract(json_data,metric, False)
+            out[metric]=[b_out,t_out]
 
     CONSOLE.info(f"\n[green]Parsing time: {elapsed_time} s[/]")
     return out
