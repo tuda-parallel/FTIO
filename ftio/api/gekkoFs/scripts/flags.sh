@@ -1,6 +1,6 @@
-###################
-# ALLOC call
-###################
+#####################
+# Job Allocation call
+#####################
 # ALLOC_CALL_FLAGS="--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell"
 ALLOC_CALL_FLAGS=" --overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
 
@@ -28,34 +28,35 @@ GKFS_PROXY=${GKFS_PROXY:-"/lustre/project/nhr-admire/vef/gekkofs/build/src/proxy
 GKFS_PROXYFILE=${GKFS_PROXYFILE:-"/dev/shm/vef_gkfs_proxy.pid"}
 
 
-###################
+#####################
 # CARGO variables
-###################
+#####################
 CARGO=${CARGO:-"/lustre/project/nhr-admire/vef/cargo/build/src/cargo"}
-
-###################
-# Stag in/out variables
-###################
 CARGO_CLI=${CARGO_CLI:-"/lustre/project/nhr-admire/vef/cargo/build/cli"}
 CARGO_SERVER=${CARGO_SERVER:-"ofi+sockets://127.0.0.1:62000"}
+
+
+#######################
+# Stag in/out variables
+#######################
 STAGE_OUT_PATH=${STAGE_OUT_PATH:-"/lustre/project/nhr-admire/tarraf/stage-out"}
 STAGE_IN_PATH=${STAGE_IN_PATH:-"/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input"}
-# STAGE_IN_PATH="/lustre/project/nhr-admire/tarraf/stage_in"
-# TODO: pass this to FTIO
-#STAGE_OUT_PATH="/lustre/project/nhr-admire/tarraf/stage-out"
 
 
 ###################
 # Pre call 
 ###################
-# execute as ${PRECALL} ${Other_calls} ..${APP_CALL}
+# execute as ${PRECALL} mpiexec ${some flags} ..${APP_CALL}
 PRECALL="time"
 
 
 #######################
 # Pre and Post App Call
 #######################
-# Application specific calls executed before the actual run
+# Application specific calls executed before the actual run. Executed as
+# ${PRE_APP_CALL}
+# ${PRECALL} mpiexec ${some flags} ..${APP_CALL}
+# ${POST_APP_CALL}
 if [ "${EXCLUDE_ALL}" = true ]; then
 	PRE_APP_CALL="echo -e 'turbPipe\n/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input' > /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/SESSION.NAME"
 	POST_APP_CALL="rm /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input/*.f*"
