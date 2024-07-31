@@ -439,10 +439,10 @@ function error_usage(){
 		max time for the execution of the setup in minutes
 	
 	-l |--log-name: <str>
-		default: autoset to number of nodes and job id
+		default: Autoset to number of nodes and job id
 		if provided, sets the name of the directory were the logs are
 
-	-e | --execlude-ftio: <bool>
+	-e | --execlude-ftio
 		deafult: ${EXCLUDE_FTIO}
 		if this flag is provided, the setup is executed without FTIO
 
@@ -450,7 +450,7 @@ function error_usage(){
 		deafult: ${EXCLUDE_ALL}
 		if this flag is provided, the setup is executed without FTIO, GekkoFs, and Cargo
 
-	-i | l-location: full_path <str>
+	-i | install-location: full_path <str>
 		deafult: ${BLUE}${INSTALL_LOCATION}${BLACK}
 		installs everyting in the provided directory
 
