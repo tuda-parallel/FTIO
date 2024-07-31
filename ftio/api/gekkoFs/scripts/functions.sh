@@ -47,7 +47,7 @@ function check_port(){
 function allocate(){
 	APP_NODES=1
 
-    if [ "$CLUSTER" = true ]; then
+    if [ "$CLUSTER" == true ]; then
 		echo -e "\n${JIT} ${BLUE}####### Allocating resources${BLACK}"
 
 		call="salloc -N ${NODES} -t ${MAX_TIME} ${ALLOC_CALL_FLAGS}"
@@ -105,12 +105,17 @@ function allocate(){
 
 # Start FTIO
 function start_ftio() {
-	if [ "$EXCLUDE_FTIO" = true ]; then
+	if [ "$EXCLUDE_FTIO" == true ] || [ "$EXCLUDE_ALL" == true ]; then
 		echo -e "\n${JIT}${YELLOW} ####### Skipping FTIO ${BLACK}"
+		
+		# call_0="${PRCALL} srun --jobid=${JIT_ID} ${SINGLE_NODE_COMMAND} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/cargo_ftio --server ${CARGO_SERVER} --run"
+		# call_1="${PRCALL} srun --jobid=${JIT_ID} ${SINGLE_NODE_COMMAND} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/ccp --server ${CARGO_SERVER} --input / --output ${STAGE_OUT_PATH} --if gekkofs --of parallel"
+		# execute "${call_0}"
+		# execute "${call_1}"
 	else		
 		echo -e "\n${JIT}${BLUE} ####### Starting FTIO ${BLACK}"
 		# set -x
-		if [ "$CLUSTER" = true ]; then
+		if [ "$CLUSTER" == true ]; then
 			source ${FTIO_ACTIVATE}
 			
 			# One node is only for FTIO
@@ -147,7 +152,7 @@ function start_ftio() {
 function start_geko_demon() {
 	echo -e "\n${JIT}${BLUE} ####### Starting GKFS DEOMON ${BLACK}"
     # set -x
-    if [ "$CLUSTER" = true ]; then
+    if [ "$CLUSTER" == true ]; then
 		# Display Demon
 		call_0="srun --jobid=${JIT_ID} ${SINGLE_NODE_COMMAND} -N 1 --ntasks=1 mkdir -p ${GKFS_MNTDIR}"
 		
@@ -179,7 +184,7 @@ function start_geko_demon() {
 
 function start_geko_proxy() {
 	echo -e "\n${JIT}${BLUE} ####### Starting GKFS PROXY ${BLACK}"
-    if [ "$CLUSTER" = true ]; then
+    if [ "$CLUSTER" == true ]; then
 		# Proxy call
 		call="srun --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N ${APP_NODES} --ntasks=${APP_NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}"
 		#
@@ -199,7 +204,7 @@ function start_geko_proxy() {
 #precall
 function pre_call() {
 	echo -e "\n${JIT}${BLUE} ####### Pre application call ${BLACK}"
-    if [ "$CLUSTER" = true ]; then
+    if [ "$CLUSTER" == true ]; then
 		# Proxy call
 		call=${PRE_APP_CALL}
     else
@@ -214,7 +219,7 @@ function pre_call() {
 function start_application() {
     echo -e "\n${JIT}${BLUE} ####### Executing application ${BLACK}"
     # set -x
-    if [ "$CLUSTER" = true ]; then
+    if [ "$CLUSTER" == true ]; then
 		# display hostfile
 		echo -e "${JIT}${BLUE} >> MPI hostfile: \n$(cat ~/hostfile_mpi) ${BLACK}\n"
 		echo -e "${JIT}${BLUE} >> Gekko hostfile:\n$(cat ${GKFS_HOSTFILE}) ${BLACK}\n"
@@ -271,7 +276,7 @@ function start_application() {
 function start_cargo() {
     echo -e "\n${JIT}${BLUE} ####### Starting Cargo ${BLACK}"
     # set -x
-    if [ "$CLUSTER" = true ]; then
+    if [ "$CLUSTER" == true ]; then
         
 		# One instance per node
 		call="srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH} --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N ${APP_NODES} --ntasks=${APP_NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0  ${CARGO} --listen ofi+sockets://ib0:62000 -b 65536"
@@ -299,7 +304,7 @@ function stage_out() {
 	echo -e "\n${JIT}${YELLOW} ####### Stagin out ${BLACK}"
 	
 	# stage out call on any compute node
-	if [ "$CLUSTER" = true ]; then
+	if [ "$CLUSTER" == true ]; then
 		call="${PRCALL} srun --jobid=${JIT_ID} ${SINGLE_NODE_COMMAND} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/cargo_ftio --server ${CARGO_SERVER} --run"
 	else
 		call="${PRCALL} mpiexec -np 1 --oversubscribe ${CARGO_CLI}/cargo_ftio --server ${CARGO_SERVER} --run"
@@ -317,7 +322,7 @@ function stage_in() {
 	echo -e "\n${JIT}${YELLOW} ####### Stagin in ${BLACK}"
 	
 	# stage in call on any compute node
-	if [ "$CLUSTER" = true ]; then
+	if [ "$CLUSTER" == true ]; then
 
 		call="${PRCALL} srun --jobid=${JIT_ID} ${SINGLE_NODE_COMMAND} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/ccp --server ${CARGO_SERVER} --output / --input ${STAGE_IN_PATH} --of gekkofs --if parallel"
 		# call="LD_PRELOAD=${GKFS_INTERCEPT}  LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE}  cp -r ${STAGE_IN_PATH}/* ${GKFS_MNTDIR}"
@@ -345,7 +350,7 @@ function soft_kill() {
 }
 
 function hard_kill() {
-	if [ "$CLUSTER" = true ]; then
+	if [ "$CLUSTER" == true ]; then
 		echo -e "\n${JIT}${BLUE} ####### Hard kill ${BLACK}"
 		scancel ${JIT_ID} || true 
 	else 
@@ -369,7 +374,7 @@ function check_finish() {
     
     while :
     do
-        if [ "$FINISH" = true ]; then
+        if [ "$FINISH" == true ]; then
             echo "${JIT} > FINISH flag is true. Exiting script in 10 sec."
             sleep 10
             exit 0
@@ -516,8 +521,8 @@ function install_all(){
 }
 function parse_options() {
     # Define the options
-    OPTIONS=a:p:n:t:l:i:eh
-    LONGOPTS=address:,port:,nodes:,max-time:,log-name:,install-location:,exclude-ftio,help
+    OPTIONS=a:p:n:t:l:i:exh
+    LONGOPTS=address:,port:,nodes:,max-time:,log-name:,install-location:,exclude-ftio,exclude-all,help
 
     # -temporarily store output to be able to check for errors
     # -activate advanced mode getopt quoting e.g. via “--options”
@@ -560,6 +565,10 @@ function parse_options() {
                 ;;
 			-e|--exclude-ftio)
                 EXCLUDE_FTIO=true
+                shift
+                ;;
+			-x|--exclude-all)
+                EXCLUDE_ALL=true
                 shift
                 ;;
             -h|--help)
@@ -757,7 +766,7 @@ function progress(){
 function get_address_ftio(){
 	# get Address and port
 	echo -e "\n${BLUE}####### Getting FTIO ADDRESS ${BLACK}"
-	if [ "$CLUSTER" = true ]; then
+	if [ "$CLUSTER" == true ]; then
 		# out = $(srun --jobid=${JIT_ID} ${EXCLUDE_FTIO} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{print $2}'| cut -d'/' -f1 | tail -1)
 		call="srun --jobid=${JIT_ID} ${FTIO_NODE_COMMAND} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{print \$2}'| cut -d'/' -f1 | tail -1"
 		echo -e "${JIT}${CYAN} >> Executing: ${call} ${BLACK}"
@@ -773,7 +782,7 @@ function get_address_ftio(){
 
 function get_address_cargo(){
 	echo -e "\n${BLUE}####### Getting Cargo ADDRESS ${BLACK}"
-	if [ "$CLUSTER" = true ]; then
+	if [ "$CLUSTER" == true ]; then
 		call="srun --jobid=${JIT_ID}  ${SINGLE_NODE_COMMAND} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{print \$2}'| cut -d'/' -f1 | tail -1"
 		echo -e "${JIT}${CYAN} >> Executing: ${call} ${BLACK}"
 		ADDRESS_CARGO=$(eval " ${call}")
@@ -801,20 +810,61 @@ function format_time() {
 
 function print_settings(){
 
-if [ "$EXCLUDE_FTIO" = true ]; then
-	local ftio_text="
-├─ FTIO_ACTIVATE  : ${YELLOW}none${BLACK}
-├─ ADDRESS_FTIO   : ${YELLOW}none${BLACK}
-├─ PORT           : ${YELLOW}none${BLACK}
-├─ # NODES        : ${YELLOW}none${BLACK}
-└─ FTIO NODE      : ${YELLOW}none${BLACK}"
-else
-	local ftio_text="
+local ftio_status="${GREEN}ON${BLACK}"
+local gkfs_status="${GREEN}ON${BLACK}"
+local cargo_status="${GREEN}ON${BLACK}"
+
+local ftio_text="
 ├─ FTIO_ACTIVATE  : ${BLUE}${FTIO_ACTIVATE}${BLACK}
 ├─ ADDRESS_FTIO   : ${BLUE}${ADDRESS_FTIO}${BLACK}
 ├─ PORT           : ${BLUE}${PORT}${BLACK}
 ├─ # NODES        : ${BLUE}1${BLACK}
 └─ FTIO NODE      : ${BLUE}${FTIO_NODE_COMMAND##'--nodelist='}${BLACK}"
+
+local gkfs_text="
+├─ GKFS_DEMON     : ${BLUE}${GKFS_DEMON}${BLACK}
+├─ GKFS_INTERCEPT : ${BLUE}${GKFS_INTERCEPT}${BLACK}
+├─ GKFS_MNTDIR    : ${BLUE}${GKFS_MNTDIR}${BLACK}
+├─ GKFS_ROOTDIR   : ${BLUE}${GKFS_ROOTDIR}${BLACK}
+├─ GKFS_HOSTFILE  : ${BLUE}${GKFS_HOSTFILE}${BLACK}
+├─ GKFS_PROXY     : ${BLUE}${GKFS_PROXY}${BLACK}
+└─ GKFS_PROXYFILE : ${BLUE}${GKFS_PROXYFILE}${BLACK}"
+
+local cargo_text="
+├─ CARGO location : ${BLUE}${CARGO}${BLACK}${BLACK}
+├─ CARGO_CLI      : ${BLUE}${CARGO_CLI}${BLACK}
+├─ STAGE_IN_PATH  : ${BLUE}${STAGE_IN_PATH}${BLACK}
+└─ ADDRESS_CARGO  : ${BLUE}${ADDRESS_CARGO}${BLACK}"
+
+if [ "$EXCLUDE_FTIO" == true ] || [ "$EXCLUDE_ALL" == true ] ; then
+	ftio_text="
+├─ FTIO_ACTIVATE  : ${YELLOW}none${BLACK}
+├─ ADDRESS_FTIO   : ${YELLOW}none${BLACK}
+├─ PORT           : ${YELLOW}none${BLACK}
+├─ # NODES        : ${YELLOW}none${BLACK}
+└─ FTIO NODE      : ${YELLOW}none${BLACK}"
+
+ftio_status="${YELLOW}OFF${BLACK}"
+fi
+
+
+if [ "$EXCLUDE_ALL" == true ] ; then
+	gkfs_text="
+├─ GKFS_DEMON     : ${YELLOW}none${BLACK}
+├─ GKFS_INTERCEPT : ${YELLOW}none${BLACK}
+├─ GKFS_MNTDIR    : ${YELLOW}none${BLACK}
+├─ GKFS_ROOTDIR   : ${YELLOW}none${BLACK}
+├─ GKFS_HOSTFILE  : ${YELLOW}none${BLACK}
+├─ GKFS_PROXY     : ${YELLOW}none${BLACK}
+└─ GKFS_PROXYFILE : ${YELLOW}none${BLACK}"
+
+	cargo_text="
+├─ CARGO location : ${YELLOW}none${BLACK}${BLACK}
+├─ CARGO_CLI      : ${YELLOW}none${BLACK}
+├─ STAGE_IN_PATH  : ${YELLOW}none${BLACK}
+└─ ADDRESS_CARGO  : ${YELLOW}none${BLACK}"
+local gkfs_status="${YELLOW}OFF${BLACK}"
+local cargo_status="${YELLOW}OFF${BLACK}"
 fi
 
 echo -e " 
@@ -824,7 +874,9 @@ ${JIT} ${GREEN}Settings
 ${GREEN}Setup${BLACK}
 ├─ Logs dir       : ${BLUE}${LOG_DIR}${BLACK}
 ├─ PWD            : ${BLUE}$(pwd)${BLACK}
-├─ EXCLUDE_FTIO   : ${BLUE}${EXCLUDE_FTIO}${BLACK}
+├─ FTIO           : ${ftio_status}
+├─ GKFS           : ${gkfs_status}
+├─ CARGO          : ${cargo_status}
 ├─ CLUSTER        : ${BLUE}${CLUSTER}${BLACK}
 ├─ Total NODES    : ${BLUE}${NODES}${BLACK}
 ├─ APP NODES      : ${BLUE}${APP_NODES}${BLACK}
@@ -835,20 +887,9 @@ ${GREEN}Setup${BLACK}
 
 ${GREEN}FTIO${BLACK}${ftio_text}
 
-${GREEN}Gekko${BLACK}
-├─ GKFS_DEMON     : ${BLUE}${GKFS_DEMON}${BLACK}
-├─ GKFS_INTERCEPT : ${BLUE}${GKFS_INTERCEPT}${BLACK}
-├─ GKFS_MNTDIR    : ${BLUE}${GKFS_MNTDIR}${BLACK}
-├─ GKFS_ROOTDIR   : ${BLUE}${GKFS_ROOTDIR}${BLACK}
-├─ GKFS_HOSTFILE  : ${BLUE}${GKFS_HOSTFILE}${BLACK}
-├─ GKFS_PROXY     : ${BLUE}${GKFS_PROXY}${BLACK}
-└─ GKFS_PROXYFILE : ${BLUE}${GKFS_PROXYFILE}${BLACK}
+${GREEN}Gekko${BLACK}${gkfs_text}
 
-${GREEN} CARGO${BLACK}
-├─ CARGO location : ${BLUE}${CARGO}${BLACK}${BLACK}
-├─ CARGO_CLI      : ${BLUE}${CARGO_CLI}${BLACK}
-├─ STAGE_IN_PATH  : ${BLUE}${STAGE_IN_PATH}${BLACK}
-└─ ADDRESS_CARGO  : ${BLUE}${ADDRESS_CARGO}${BLACK}
+${GREEN} CARGO${BLACK}${cargo_text}
 
 ${GREEN}APP${BLACK}
 ├─ PRECALL        : ${BLUE}${PRECALL}${BLACK}
@@ -871,7 +912,7 @@ function elapsed_time(){
 
 function log_dir(){
 	if [[ -z "${LOG_DIR}" ]]; then
-		LOG_DIR="logs_n${NODES}_id${JIT_ID}"
+		LOG_DIR="logs_nodes${NODES}_Jobid${JIT_ID}"
 	fi
 	mkdir -p ${LOG_DIR}
 	LOG_DIR=$(realpath ${LOG_DIR})

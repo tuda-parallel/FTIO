@@ -15,10 +15,12 @@ APP_NODES_COMMAND=""
 FTIO_NODE_COMMAND=""
 SINGLE_NODE_COMMAND=""
 LOG_DIR=""
-echo -e "${BLUE}################ Started ${JIT} ${BLUE}################${BLACK}"
+echo -e "${GREEN}################ ${JIT} ################${BLACK}"
 
 # by default FTIO is included in the setup
 EXCLUDE_FTIO=false
+# by default FTIO+CARFO+GKFS are included in the setup
+EXCLUDE_ALL=false
 
 # Set default values. Check if enviromental variables are set
 # cluster or local mode?
@@ -29,7 +31,7 @@ if [ -n "$(hostname | grep 'cpu\|mogon')" ]; then
 		echo -e "${RED} Execute this script on cpu nodes\n mpiexec has still some bugs${BLACK}"
 	fi
 fi
-echo -e "${JIT}${GREEN} > Cluster Mode: ${CLUSTER}${BLACK}"
+echo -e "${JIT}${GREEN} >> CLUSTER MODE: ${CLUSTER}${BLACK}"
 
 ip=$(ip addr | grep ib0 | awk '{print $4}' | tail -1)
 

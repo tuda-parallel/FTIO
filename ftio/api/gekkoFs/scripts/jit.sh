@@ -77,7 +77,7 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	# 7. over kill
 	hard_kill
 
-	echo -e "${GREEN}############### ${JIT} ${BLUE}completed ############### ${BLACK}"
+	echo -e "${GREEN}############### ${JIT} completed ############### ${BLACK}"
 	exit 0
 fi
 
