@@ -15,7 +15,7 @@ APP_NODES_COMMAND=""
 FTIO_NODE_COMMAND=""
 SINGLE_NODE_COMMAND=""
 LOG_DIR=""
-echo -e "${GREEN}################ ${JIT} ################${BLACK}"
+echo -e "\n\n${GREEN}################ ${JIT} ${GREEN}################${BLACK}\n"
 
 # by default FTIO is included in the setup
 EXCLUDE_FTIO=false
