@@ -1,9 +1,9 @@
 import sys
-from ftio.plot.plot_core import plot_core
+from ftio.plot.plot_core import PlotCore
 
 
 def main(args=sys.argv):
-    plotter = plot_core(args)
+    plotter = PlotCore(args)
     plotter.plot_io()
 
 if __name__ == "__main__":

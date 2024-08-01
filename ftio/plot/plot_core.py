@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 from ftio.parse.metrics import Metrics
 from ftio.parse.scales import Scales
 from ftio.plot.dash_files.dash_app import IOAnalysisApp
-from ftio.plot.print_html import print_html
+from ftio.plot.print_html import PrintHtml
 from ftio.plot.helper import *  
 from ftio.plot.plot_error import plot_error_bar, plot_time_error_bar
 from ftio.plot.units import find_unit
@@ -26,7 +26,7 @@ def _find_free_port():
     return sock.getsockname()[1]
 
 
-class plot_core:
+class PlotCore:
     def __init__(self, args):
         self.data = Scales(args)
         self.data.get_data()
@@ -71,7 +71,7 @@ class plot_core:
             "\033[1;31mMultithreaded is off \033[1;0m"
         )
 
-        out = print_html(args, path, self.names)
+        out = PrintHtml(path, self.names, args)
         out.generate_html_start()
         if args.threaded:
             t = []
@@ -208,7 +208,7 @@ class plot_core:
             df_b (list, optional): list containing bandwidth (async). Defaults to [].
         """
         args = self.data.args
-        print("\033[1;32m   '-> Creating plot %s\033[1;0m" % (mode))
+        CONSOLE.print(f"│   ├── [green]Creating plot {mode}[/]")
         f = []
         if isinstance(df_t[1], pd.DataFrame) and df_t[1].empty:
             # Empty throughput by B might exist
@@ -701,7 +701,7 @@ class plot_core:
     # **********************************************************************
     def plot_time(self):
         # ? Init
-        print("\033[1;32m   '-> Creating plot %s\033[1;0m" % ("I/O time"))
+        CONSOLE.print(f"│   ├── [green]Creating plot I/O time [/]")
         colors = px.colors.qualitative.Plotly
         self.nRun = len(pd.unique(self.data.df_time["file_index"]))
         colors = px.colors.qualitative.Plotly
@@ -2010,7 +2010,6 @@ class plot_core:
                 )
             )
 
-        print(" '-> Finished generating plot I/O time")
         # print('%i figures'%len(self.f))
 
     # **********************************************************************

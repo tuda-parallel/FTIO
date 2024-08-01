@@ -123,7 +123,7 @@ Full documentation:
         parser.add_argument('-z', '--zoom',       type = float, help ='upper zoom limit on the y-axis')
         parser.add_argument('-nt', '--no-threaded', dest='threaded', action='store_false', help= 'turn multithreading off (default=on)')
         parser.set_defaults(threaded=True)
-        parser.add_argument('-e', '--engine',         type = str, help = 'plot engine to use. Either plotly (default), dash, or matplotlib')
+        parser.add_argument('-e', '--engine',         type = str, help = 'plot engine to use. Either plotly (default), dash, matplotlib or no (disables plots)')
         parser.set_defaults(engine = 'plotly')
         parser.add_argument('--n_shown_samples', type=int, help='only for dash: Number of shown samples per trace (default: 20_000). Caution: Too small numbers could lead to incorrect representations!')
         parser.set_defaults(n_shown_samples=20_000)

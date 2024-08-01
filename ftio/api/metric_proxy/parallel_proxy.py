@@ -12,6 +12,7 @@ from ftio.api.metric_proxy.plot_proxy import (
     density_heatmap,
     plot_timeseries_metrics,
 )
+from ftio.api.metric_proxy.proxy_cluster import optics,dbscan
 from ftio.prediction.tasks import ftio_task, ftio_task_save
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import Manager
@@ -38,7 +39,7 @@ def main(argv):
     # command line arguments
     argv = ["-e", "no"]  # ["-e", "plotly"]
     # finds up to n frequencies. Comment this out to go back to the default version
-    argv.extend(["-n", "50"])
+    argv.extend(["-n", "10"])
     # ---------------------------------
 
     # plot_timeseries_metrics(metrics)
@@ -104,12 +105,14 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
         phases(data, argv)
         phases_and_timeseries(metrics, data, argv)
         df = extract_data(data)
-        exit()
+        heatmap(data)
         scatter2D(df)
         scatter(
             df, x="Phi", y="Dominant Frequency", color="Confidence", symbol="Metric"
         )
-        heatmap(data)
+        _ = optics(df,"Phi","Dominant Frequency")
+        _ = dbscan(df,"Phi","Dominant Frequency")
+        exit()
         density_heatmap(data)
         heatmap_2(data)
 
