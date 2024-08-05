@@ -106,12 +106,13 @@ function allocate(){
 # Start FTIO
 function start_ftio() {
 	
-	# Set relevant files using regex
-	relevant_files true
+	
 
 	if [ "$EXCLUDE_FTIO" == true ] || [ "${EXCLUDE_ALL}" == true ]; then
 		echo -e "\n${JIT}${YELLOW} ####### Skipping FTIO ${BLACK}"
-	 
+	 	# Set relevant files using regex
+		relevant_files true
+
 	 	if [ "${EXCLUDE_ALL}" == false ]; then
 			# echo -e "${JIT}${YELLOW} Executing the calls bellow used later for staging out${BLACK}"
 			call_0="${PRECALL} srun --jobid=${JIT_ID} ${SINGLE_NODE_COMMAND} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/cargo_ftio --server ${CARGO_SERVER} --run"
@@ -121,6 +122,8 @@ function start_ftio() {
 		fi
 	else		
 		echo -e "\n${JIT}${GREEN} ####### Starting FTIO ${BLACK}"
+		# Set relevant files using regex
+		relevant_files true
 		# set -x
 		if [ "$CLUSTER" == true ]; then
 			source ${FTIO_ACTIVATE}
@@ -341,7 +344,7 @@ function stage_out() {
 		execute_and_wait_stage_out  "${call}" ${CYAN} " > Stage out: ${call}" "Transfer finished for"
 		end=$(date +%s.%N | { read -r secs_nanos; secs=${secs_nanos%.*}; nanos=${secs_nanos#*.}; printf "%d.%09d\n" "$secs" "$nanos" 2>/dev/null; })
 		elapsed_time "Stage out" ${start} ${end}
-		
+
 		# set ignored files to default again
 		relevant_files
 	fi 
@@ -369,7 +372,7 @@ function stage_in() {
 		elapsed_time "Stage in" ${start} ${end}
 		
 		local files=$(LD_PRELOAD=${GKFS_INTERCEPT}  LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE}  ls ${GKFS_MNTDIR})
-		echo -e "${JIT}${BLUE} Files in ${GKFS_MNTDIR}: \n${files} ${BLACK}\n"
+		echo -e "${JIT}${CYAN} >> geko_ls ${GKFS_MNTDIR}:${BLACK} \n${files} ${BLACK}\n"
 	fi
 }
 
@@ -377,7 +380,7 @@ function stage_in() {
 #precall
 function pre_call() {
 	if [ -n "${PRE_APP_CALL}" ]; then
-		echo -e "\n${JIT}${YELLOW} ####### Pre-application Call ${BLACK}"
+		echo -e "\n${JIT}${GREEN} ####### Pre-application Call ${BLACK}"
 		execute "${PRE_APP_CALL}"
 	fi 
 }
@@ -385,7 +388,7 @@ function pre_call() {
 # post call
 function post_call() {
 	if [ -n "${POST_APP_CALL}" ]; then
-		echo -e "\n${JIT}${YELLOW} ####### Post-application Call ${BLACK}"
+		echo -e "\n${JIT}${GREEN} ####### Post-application Call ${BLACK}"
 		execute " ${POST_APP_CALL}"
 	fi
 }
@@ -451,23 +454,23 @@ function check_finish() {
 function error_usage(){
     echo -e "Usage: $0 [OPTION]... \n
 	-a | --address: X.X.X.X <string>
-		default: ${BLUE}${ADDRESS_FTIO}${BLACK}
+		default: ${BLACK}${ADDRESS_FTIO}${BLACK}
 		Address where FTIO is executed. On a cluster, this is found 
 		automatically by determining the address of node where FTIO 
 		runs.
 
 	-p | --port: XXXX <int>
-		default: ${BLUE}${PORT}${BLACK}
+		default: ${BLACK}${PORT}${BLACK}
 		port for FTIO and GekkoFS.
 
 	-n | --nodes: X <int>
-		default: ${BLUE}${NODES}${BLACK}
+		default: ${BLACK}${NODES}${BLACK}
 		number of nodes to run the setup. in cluster mode, FTIO is 
 		executed on a single node, while the rest (including the
 		application) get X-1 nodes.
 
 	-t | --max-time: X <int>
-		default: ${BLUE}${MAX_TIME}${BLACK}
+		default: ${BLACK}${MAX_TIME}${BLACK}
 		max time for the execution of the setup in minutes.
 	
 	-l |--log-name: <str>
@@ -484,7 +487,7 @@ function error_usage(){
 		GekkoFs, and Cargo.
 
 	-i | install-location: full_path <str>
-		deafult: ${BLUE}${INSTALL_LOCATION}${BLACK}
+		deafult: ${BLACK}${INSTALL_LOCATION}${BLACK}
 		installs everyting in the provided directory.
 
 \n---- exit ----
@@ -885,27 +888,27 @@ local gkfs_status="${GREEN}ON${BLACK}"
 local cargo_status="${GREEN}ON${BLACK}"
 
 local ftio_text="
-├─ FTIO_ACTIVATE  : ${BLUE}${FTIO_ACTIVATE}${BLACK}
-├─ ADDRESS_FTIO   : ${BLUE}${ADDRESS_FTIO}${BLACK}
-├─ PORT           : ${BLUE}${PORT}${BLACK}
-├─ # NODES        : ${BLUE}1${BLACK}
-└─ FTIO NODE      : ${BLUE}${FTIO_NODE_COMMAND##'--nodelist='}${BLACK}"
+├─ FTIO_ACTIVATE  : ${BLACK}${FTIO_ACTIVATE}${BLACK}
+├─ ADDRESS_FTIO   : ${BLACK}${ADDRESS_FTIO}${BLACK}
+├─ PORT           : ${BLACK}${PORT}${BLACK}
+├─ # NODES        : ${BLACK}1${BLACK}
+└─ FTIO NODE      : ${BLACK}${FTIO_NODE_COMMAND##'--nodelist='}${BLACK}"
 
 
 local gkfs_text="
-├─ GKFS_DEMON     : ${BLUE}${GKFS_DEMON}${BLACK}
-├─ GKFS_INTERCEPT : ${BLUE}${GKFS_INTERCEPT}${BLACK}
-├─ GKFS_MNTDIR    : ${BLUE}${GKFS_MNTDIR}${BLACK}
-├─ GKFS_ROOTDIR   : ${BLUE}${GKFS_ROOTDIR}${BLACK}
-├─ GKFS_HOSTFILE  : ${BLUE}${GKFS_HOSTFILE}${BLACK}
-├─ GKFS_PROXY     : ${BLUE}${GKFS_PROXY}${BLACK}
-└─ GKFS_PROXYFILE : ${BLUE}${GKFS_PROXYFILE}${BLACK}"
+├─ GKFS_DEMON     : ${BLACK}${GKFS_DEMON}${BLACK}
+├─ GKFS_INTERCEPT : ${BLACK}${GKFS_INTERCEPT}${BLACK}
+├─ GKFS_MNTDIR    : ${BLACK}${GKFS_MNTDIR}${BLACK}
+├─ GKFS_ROOTDIR   : ${BLACK}${GKFS_ROOTDIR}${BLACK}
+├─ GKFS_HOSTFILE  : ${BLACK}${GKFS_HOSTFILE}${BLACK}
+├─ GKFS_PROXY     : ${BLACK}${GKFS_PROXY}${BLACK}
+└─ GKFS_PROXYFILE : ${BLACK}${GKFS_PROXYFILE}${BLACK}"
 
 local cargo_text="
-├─ CARGO          : ${BLUE}${CARGO}${BLACK}${BLACK}
-├─ CARGO_CLI      : ${BLUE}${CARGO_CLI}${BLACK}
-├─ STAGE_IN_PATH  : ${BLUE}${STAGE_IN_PATH}${BLACK}
-└─ ADDRESS_CARGO  : ${BLUE}${ADDRESS_CARGO}${BLACK}"
+├─ CARGO          : ${BLACK}${CARGO}${BLACK}${BLACK}
+├─ CARGO_CLI      : ${BLACK}${CARGO_CLI}${BLACK}
+├─ STAGE_IN_PATH  : ${BLACK}${STAGE_IN_PATH}${BLACK}
+└─ ADDRESS_CARGO  : ${BLACK}${ADDRESS_CARGO}${BLACK}"
 
 
 if [ "$EXCLUDE_FTIO" == true ] || [ "${EXCLUDE_ALL}" == true ] ; then
@@ -944,18 +947,18 @@ echo -e "
 ${JIT} ${GREEN}Settings      
 ##################${BLACK}
 ${GREEN}Setup${BLACK}
-├─ Logs dir       : ${BLUE}${LOG_DIR}${BLACK}
-├─ PWD            : ${BLUE}$(pwd)${BLACK}
+├─ Logs dir       : ${BLACK}${LOG_DIR}${BLACK}
+├─ PWD            : ${BLACK}$(pwd)${BLACK}
 ├─ FTIO           : ${ftio_status}
 ├─ GKFS           : ${gkfs_status}
 ├─ CARGO          : ${cargo_status}
-├─ CLUSTER        : ${BLUE}${CLUSTER}${BLACK}
-├─ Total NODES    : ${BLUE}${NODES}${BLACK}
-├─ APP NODES      : ${BLUE}${APP_NODES}${BLACK}
-├─ FTIO NODES     : ${BLUE}1${BLACK}
-├─ PROCS          : ${BLUE}${PROCS}${BLACK}
-├─ MAX_TIME       : ${BLUE}${MAX_TIME}${BLACK}
-└─ Job ID         : ${BLUE}${JIT_ID}${BLACK}
+├─ CLUSTER        : ${BLACK}${CLUSTER}${BLACK}
+├─ Total NODES    : ${BLACK}${NODES}${BLACK}
+├─ APP NODES      : ${BLACK}${APP_NODES}${BLACK}
+├─ FTIO NODES     : ${BLACK}1${BLACK}
+├─ PROCS          : ${BLACK}${PROCS}${BLACK}
+├─ MAX_TIME       : ${BLACK}${MAX_TIME}${BLACK}
+└─ Job ID         : ${BLACK}${JIT_ID}${BLACK}
 
 ${GREEN}FTIO${BLACK}${ftio_text}
 
@@ -964,10 +967,10 @@ ${GREEN}Gekko${BLACK}${gkfs_text}
 ${GREEN} CARGO${BLACK}${cargo_text}
 
 ${GREEN}APP${BLACK}
-├─ PRECALL        : ${BLUE}${PRECALL}${BLACK}
-├─ APP_CALL       : ${BLUE}${APP_CALL}${BLACK}
-├─ # NODES        : ${BLUE}${APP_NODES}${BLACK}
-└─ APP NODES      : ${BLUE}${APP_NODES_COMMAND##'--nodelist='}${BLACK}
+├─ PRECALL        : ${BLACK}${PRECALL}${BLACK}
+├─ APP_CALL       : ${BLACK}${APP_CALL}${BLACK}
+├─ # NODES        : ${BLACK}${APP_NODES}${BLACK}
+└─ APP NODES      : ${BLACK}${APP_NODES_COMMAND##'--nodelist='}${BLACK}
 ${GREEN}##################${BLACK}
 
 "
@@ -979,7 +982,8 @@ function elapsed_time(){
 	local end=$3
 	local runtime=$(echo  "${end} - ${start}" | bc | awk '{printf "%f\n", $0}')
 	local runtime_formated=$(format_time ${runtime})
-	echo -e "\n\n${BLUE}############${JIT}${BLUE}##############\n# ${name}\n# time: ${GREEN}${runtime_formated} ${BLUE}\n# ${GREEN}${runtime}${BLUE} seconds\n##############################${BLACK}\n\n" | tee -a ${LOG_DIR}/time.log
+	echo -e "\n\n${BLUE}############${JIT}${BLUE}##############\n# ${name}\n# time:${BLACK} ${runtime_formated} ${BLUE}\n#${BLACK} ${runtime} ${BLUE}seconds\n##############################${BLACK}\n\n" | tee -a ${LOG_DIR}/time.log
+	
 }
 
 function log_dir(){
@@ -1074,6 +1078,25 @@ function execute_and_wait_stage_out(){
 }
 
 
+
+
+function wait_msg(){
+	local log="$1"
+	local message="$2"
+	echo -e "${JIT}${CYAN} >> Waiting for detection of ${message} ${BLACK}"
+	local last_pos=$(stat -c %s "${log}")
+	while true; do
+		current_pos=$(stat -c %s "${log}")
+		if (( current_pos > last_pos )); then
+			LAST_LINE=$(tail -n 1 "${log}")
+			if [[ "$LAST_LINE" == *"$message"* ]]; then
+				echo -e "${JIT}${CYAN} >> End of transfer detected ${BLACK}"
+				break
+			fi
+		fi
+	done
+	}
+
 function cancel_jit_jobs(){
     if [ -n "$(hostname | grep 'cpu\|mogon')" ]; then
 		# Get the list of job IDs with the name "JIT"
@@ -1154,4 +1177,9 @@ function reset_relevant_files(){
 		# echo -e "${JIT}${CYAN} >> cat ${REGEX_FILE}: \n$(cat ${REGEX_FILE}) ${BLACK}\n"	
 	fi
 
+}
+
+function total_time(){
+	local tot_time=$(cat ${LOG_DIR}/time.log | grep "seconds" | awk {'print $2'} | awk '{s+=$1} END {print s}')
+	echo -e "\n${JIT} --> Total Time: ${tot_time}${BLACK}\n" | tee -a ${LOG_DIR}/time.log
 }

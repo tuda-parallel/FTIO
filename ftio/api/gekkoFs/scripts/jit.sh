@@ -45,23 +45,26 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	
 	# 2. Start Gekko Server (Demon)
 	start_geko_demon | tee ${LOG_DIR}/geko_demon.log &
-	sleep $((${NODES}*5))
+	sleep $((${NODES}*1))
 	get_pid ${GKFS_DEMON} $!
 	start_geko_proxy | tee ${LOG_DIR}/geko_proxy.log&
-	sleep $((${NODES}*5))
+	sleep $((${NODES}*1))
 	get_pid ${GKFS_PROXY} $!
 	
 	# 3. Start Cargo Server
 	start_cargo | tee ${LOG_DIR}/cargo.log &
-	sleep $((${NODES}*6))
+	wait_msg "${LOG_DIR}/cargo.log" "Start up successful"
+	sleep $((${NODES}*1))
 	get_pid ${CARGO} $!
 	
 	# 4. Stage in
 	stage_in | tee ${LOG_DIR}/stage_in.log 
+	sleep $((${NODES}*5))
 
 	# 5. Start FTIO
 	start_ftio | tee ${LOG_DIR}/ftio.log &
-	sleep $((${NODES}*5))
+	sleep $((${NODES}*1))
+	wait_msg "${LOG_DIR}/cargo.log" "retval: CARGO_SUCCESS, status: {state: completed"
 	get_pid "FTIO" $!
 
 	# 6. pre- and application with Gekko intercept
@@ -73,12 +76,15 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	
 	# 8. Post call if exists
 	post_call
+	
+	# 9. Display total time
+	total_time
 
-	# 9. soft kill
+	# 10. soft kill
 	soft_kill
 	sleep 5
 	
-	# 10. over kill
+	# 11. over kill
 	hard_kill
 
 	echo -e "${GREEN}############### ${JIT} ${GREEN}completed ############### ${BLACK}"
