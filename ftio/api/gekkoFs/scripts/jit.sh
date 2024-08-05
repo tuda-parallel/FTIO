@@ -14,8 +14,11 @@ parse_options "$@"
 source ${SCRIPT_DIR}/flags.sh
 
 
-# check_port
+# handle kill
+trap 'handle_sigint' SIGINT
 
+#clean other jobs
+cancel_jit_jobs
 
 # Only proceed if PORT is free
 if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free PORT)
@@ -40,29 +43,26 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	print_settings | tee ${LOG_DIR}/settings.log 
 
 	
-	# 1.5 create (clean) hostfile 
-	create_hostfile
-
 	# 2. Start Gekko Server (Demon)
-	start_geko_demon &
-	GEKKO_DEMON_PID=$!
-	sleep 8
-	start_geko_proxy &
-	GEKKO_PROXY_PID=$!
-	sleep 8
+	start_geko_demon | tee ${LOG_DIR}/geko_demon.log &
+	sleep $((${NODES}*5))
+	get_pid ${GKFS_DEMON} $!
+	start_geko_proxy | tee ${LOG_DIR}/geko_proxy.log&
+	sleep $((${NODES}*5))
+	get_pid ${GKFS_PROXY} $!
 	
 	# 3. Start Cargo Server
 	start_cargo | tee ${LOG_DIR}/cargo.log &
-	CARGO_PID=$!
-	sleep 15
+	sleep $((${NODES}*6))
+	get_pid ${CARGO} $!
 	
 	# 4. Stage in
 	stage_in | tee ${LOG_DIR}/stage_in.log 
 
 	# 5. Start FTIO
 	start_ftio | tee ${LOG_DIR}/ftio.log &
-	FTIO_PID=$!
-	sleep 12
+	sleep $((${NODES}*5))
+	get_pid "FTIO" $!
 
 	# 6. pre- and application with Gekko intercept
 	pre_call
@@ -70,7 +70,7 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	
 	# 7. stage out
 	stage_out | tee ${LOG_DIR}/stage_out.log 
-
+	
 	# 8. Post call if exists
 	post_call
 

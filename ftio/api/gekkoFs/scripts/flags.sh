@@ -25,7 +25,7 @@ GKFS_HOSTFILE="/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
 # Gekko Proxy
 GKFS_PROXY=${GKFS_PROXY:-"/lustre/project/nhr-admire/vef/gekkofs/build/src/proxy/gkfs_proxy"}
 # Gekko Proxy file
-GKFS_PROXYFILE=${GKFS_PROXYFILE:-"/dev/shm/vef_gkfs_proxy.pid"}
+GKFS_PROXYFILE=${GKFS_PROXYFILE:-"/dev/shm/tarraf_gkfs_proxy.pid"}
 
 
 #####################
@@ -37,11 +37,18 @@ CARGO_SERVER=${CARGO_SERVER:-"ofi+sockets://127.0.0.1:62000"}
 
 
 #######################
-# Stag in/out variables
+# Stag out variables
 #######################
 STAGE_OUT_PATH=${STAGE_OUT_PATH:-"/lustre/project/nhr-admire/tarraf/stage-out"}
-STAGE_IN_PATH=${STAGE_IN_PATH:-"/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input"}
+# file with regex expression that are moved by jit ---intermediate--- flushing
+REGEX_FILE=" /lustre/project/nhr-admire/shared/nek_regex4cargo.txt"
+# REGEX_MATCH="^/turbPipe0\.f\d+$"
+REGEX_MATCH="^/[a-zA-Z0-9]*turbPipe0\.f\d+"
 
+#######################
+# Stag out variables
+#######################
+STAGE_IN_PATH=${STAGE_IN_PATH:-"/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input"}
 
 ###################
 # Pre call 
@@ -57,7 +64,7 @@ PRECALL="time"
 # ${PRE_APP_CALL}
 # ${PRECALL} mpiexec ${some flags} ..${APP_CALL}
 # ${POST_APP_CALL}
-if [ "${EXCLUDE_ALL}" = true ]; then
+if [ "${EXCLUDE_ALL}" == true ]; then
 	PRE_APP_CALL="echo -e 'turbPipe\n/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input' > /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/SESSION.NAME"
 	POST_APP_CALL="rm /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input/*.f*"
 else
@@ -78,7 +85,7 @@ APP_CALL="./nek5000"
 # Install Location
 ###################
 # default install location in case -i option is provided to the script
-if [ "$CLUSTER" = true ]; then
+if [ "$CLUSTER" == true ]; then
 	INSTALL_LOCATION=${INSTALL_LOCATION:-"/beegfs/home/Shared/admire/JIT"}
 fi
 
