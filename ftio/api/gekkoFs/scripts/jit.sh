@@ -63,8 +63,9 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 
 	# 5. Start FTIO
 	start_ftio | tee ${LOG_DIR}/ftio.log &
-	sleep $((${NODES}*1))
+	# TODO: this can lead to a deadlock if wait_msg is reached after start_ftio was completed
 	wait_msg "${LOG_DIR}/cargo.log" "retval: CARGO_SUCCESS, status: {state: completed"
+	sleep $((${NODES}*1))
 	get_pid "FTIO" $!
 
 	# 6. pre- and application with Gekko intercept
