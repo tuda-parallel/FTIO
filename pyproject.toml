@@ -75,7 +75,7 @@ ftio = "ftio.cli.ftio_core:run"
 predictor = "ftio.cli.predictor:main"
 ioplot = "ftio.util.ioplot:main"
 ioparse = "ftio.util.ioparse:main"
-
+admire_proxy_invoke_ftio = "ftio.api.metric_proxy.proxy_invoke_ftio:main"
 
 [project.gui-scripts]
 
