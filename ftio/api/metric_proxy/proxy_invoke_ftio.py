@@ -14,6 +14,7 @@ from json import JSONEncoder
 class NpArrayEncode(JSONEncoder):
     def default(self, obj):
         if isinstance(obj, numpy.ndarray):
+            numpy.nan_to_num(obj, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
             return obj.tolist()
         return JSONEncoder.default(self, obj)
 
