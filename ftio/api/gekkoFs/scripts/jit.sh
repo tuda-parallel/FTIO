@@ -2,17 +2,18 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-# get defaullts values,flags, and functions
+# get defaullts values and functions
 source ${SCRIPT_DIR}/default.sh
-source ${SCRIPT_DIR}/flags.sh
 source ${SCRIPT_DIR}/functions.sh
 
 
-#parse  options
+# parse  options
 parse_options "$@"
 
-# check port and address are free
-#TODO: Move the line bellow to FTIO command
+# import flags
+source ${SCRIPT_DIR}/flags.sh
+
+
 # check_port
 
 
@@ -70,14 +71,17 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	# 7. stage out
 	stage_out | tee ${LOG_DIR}/stage_out.log 
 
-	# 8. soft kill
+	# 8. Post call if exists
+	post_call
+
+	# 9. soft kill
 	soft_kill
 	sleep 5
 	
-	# 7. over kill
+	# 10. over kill
 	hard_kill
 
-	echo -e "${GREEN}############### ${JIT} ${BLUE}completed ############### ${BLACK}"
+	echo -e "${GREEN}############### ${JIT} ${GREEN}completed ############### ${BLACK}"
 	exit 0
 fi
 

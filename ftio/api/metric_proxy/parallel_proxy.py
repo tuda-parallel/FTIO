@@ -3,18 +3,20 @@ import sys
 # from rich.progress import Progress
 from ftio.api.metric_proxy.parse_proxy import parse_all
 from ftio.api.metric_proxy.helper import extract_data
-from ftio.api.metric_proxy.proxy_analysis import phases
-from ftio.api.metric_proxy.plot_heatmap import (
+from ftio.api.metric_proxy.proxy_analysis import phases, phases_and_timeseries
+from ftio.api.metric_proxy.plot_proxy import (
     heatmap,
     scatter2D,
     scatter,
     heatmap_2,
     density_heatmap,
+    plot_timeseries_metrics,
 )
+from ftio.api.metric_proxy.proxy_cluster import optics,dbscan
 from ftio.prediction.tasks import ftio_task, ftio_task_save
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import Manager
-from ftio.prediction.helper import print_data 
+from ftio.prediction.helper import print_data
 
 
 # from ftio.freq.helper import MyConsole
@@ -30,13 +32,17 @@ def main(argv):
     pools = False
     show = False  # shows the results from FTIO
 
-    metrics = parse_all("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", False)
+    metrics = parse_all("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", deriv_and_not_deriv=False)
+    # metrics = parse_all("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", deriv_and_not_deriv=False,exclude=['time', 'hits'])
     ranks = 32
 
     # command line arguments
     argv = ["-e", "no"]  # ["-e", "plotly"]
-    argv.extend(["-n","15"]) # finds up to n frequencies. Comment this out to go back to the default version
+    # finds up to n frequencies. Comment this out to go back to the default version
+    argv.extend(["-n", "10"])
     # ---------------------------------
+
+    # plot_timeseries_metrics(metrics)
 
     if parallel:
         execute_parallel(metrics, argv, ranks, show, pools)
@@ -96,16 +102,19 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
             ftio_task(metric, arrays, argv, ranks, show)
     if save:
         # print_data(data)
-        print(f'data length is {len(data)}')
-        phases(data)
-        exit()
+        phases(data, argv)
+        phases_and_timeseries(metrics, data, argv)
         df = extract_data(data)
-        scatter2D(df)
-        scatter(df,x='Phi', y='Dominant Frequency', color='Confidence', symbol='Metric')
         heatmap(data)
+        scatter2D(df)
+        scatter(
+            df, x="Phi", y="Dominant Frequency", color="Confidence", symbol="Metric"
+        )
+        _ = optics(df,"Phi","Dominant Frequency")
+        _ = dbscan(df,"Phi","Dominant Frequency")
+        exit()
         density_heatmap(data)
         heatmap_2(data)
-
 
 
 if __name__ == "__main__":

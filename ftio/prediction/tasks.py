@@ -47,16 +47,18 @@ def ftio_task(metric:str, arrays:np.ndarray, argv:list, ranks:int, show:bool=Tru
 def ftio_task_save(data, metric:str, arrays:np.ndarray, argv:list, ranks:int, show:bool=True) -> None:
     prediction = ftio_task(metric, arrays ,argv ,ranks, False)
     # freq = get_dominant(prediction) #just get a single dominant value
-    data.append({
-        'metric': f'{metric}',
-        'dominant_freq': prediction['dominant_freq'],
-        'conf': prediction['conf'],
-        'amp': prediction['amp'],
-        'phi': prediction['phi'],
-        't_start': prediction['t_start'],
-        't_end': prediction['t_end'],
-        'total_bytes': prediction['total_bytes'],
-        'ranks': prediction['ranks'],
-        'freq': prediction['freq']
-        }
-    )
+    if prediction:
+        data.append({
+            'metric': f'{metric}',
+            'dominant_freq': prediction['dominant_freq'],
+            'conf': prediction['conf'],
+            'amp': prediction['amp'],
+            'phi': prediction['phi'],
+            't_start': prediction['t_start'],
+            't_end': prediction['t_end'],
+            'total_bytes': prediction['total_bytes'],
+            'ranks': prediction['ranks'],
+            'freq': prediction['freq'],
+            **({'top_freq': prediction['top_freq']} if 'top_freq' in prediction else {})
+            }
+        )

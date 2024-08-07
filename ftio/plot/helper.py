@@ -9,20 +9,30 @@ def legend_fix(data, c) -> bool:
         return False
 
 
-def format_plot(fig) -> go.Figure:
+def format_plot(fig: go.Figure, legend=True, font=True) -> go.Figure:
     """Formats plots
 
     Args:
-        fig (plotly figure): figure from plotly
+        fig (go.Figure): figure from plotly
+        legend (bool, optional): flag to format legend as well. Defaults to True.
+        font (bool, optional): flag to format font as well. Defaults to True.
+
+    Returns:
+        go.Figure: Formatted figure
     """
+    if legend:
+        fig.update_layout(legend=dict(
+                bgcolor="rgba(255,255,255,.99)",
+                bordercolor="Black",
+                borderwidth=1,
+            ))
+    if font:
+        fig.update_layout(font=dict(
+            family="Courier New, monospace", size=17, color="black"
+            ))
+
     fig.update_layout(
         plot_bgcolor="white",
-        legend=dict(
-            bgcolor="rgba(255,255,255,.99)",
-            bordercolor="Black",
-            borderwidth=1,
-        ),
-        font=dict(family="Courier New, monospace", size=17, color="black"),
         margin=dict(r=5),
     )
 

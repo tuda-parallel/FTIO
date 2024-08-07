@@ -388,11 +388,11 @@ def dominant(
                 text += f"Dominant frequency at: [green] {freq_arr[i]:.3e} Hz (T = {1/freq_arr[i] if freq_arr[i] > 0 else 0:.3f} s, k = {i}) -> confidence: {abs(conf[i-1])*100:.3f}%[/]\n"
                 out.append(i)
             if len(out) > 2:
-                text = "[red]Too many dominant frequencies -> Signal might be not perodic[/]\n"
+                text = "[red]Too many dominant frequencies -> Signal might be not periodic[/]\n"
                 out = []
                 break
     else: 
-        text = "[red]No dominant frequencies found -> Signal might be not perodic[/]\n"
+        text = "[red]No dominant frequencies found -> Signal might be not periodic[/]\n"
     
     return out, text
 
@@ -414,7 +414,7 @@ def remove_harmonics(freq_arr, amp_tmp, index_list) -> tuple[np.ndarray, list, s
     removed = []
     msg = ""
     flag = True
-    #sort according to amplitude in descending order
+    # sort according to amplitude in descending order
     # index_list = index_list[np.argsort(-amp_tmp[index_list])]
     for ind in index_list:
         if seen:

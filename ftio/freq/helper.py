@@ -124,9 +124,9 @@ class MyConsole(Console):
         Console (_type_): _description_
     """
 
-    def __init__(self):
+    def __init__(self, verbose=False):
         super().__init__()
-        self.verbose = False
+        self.verbose = verbose
 
     def set(self, flag):
         if flag:
@@ -134,9 +134,9 @@ class MyConsole(Console):
         else:
             self.verbose = False
 
-    def print(self, s):
+    def print(self, *args,**kwargs):
         if self.verbose:
-            Console.print(self, s)
+            super().print(*args,**kwargs)
 
     def info(self, s):
         Console.print(self, s)
