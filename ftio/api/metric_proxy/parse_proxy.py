@@ -1,8 +1,10 @@
+import sys
 import numpy as np
 import json
 from time import process_time
 from ftio.freq.helper import MyConsole
 from ftio.api.metric_proxy.req import MetricProxy
+
 
 
 CONSOLE = MyConsole()
@@ -42,8 +44,11 @@ def extract(json_data, match, verbose=False):
                 if verbose:
                     print(f"matched {key}")
                 x = np.array(value)
+                x = np.nan_to_num(x=x, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
                 t_out = x[:,0]
                 b_out = x[:,1]
+                #remove None from b
+                b_out[b_out==None]= 0
                 #reduce to derivative
                 if "deriv" not in key:
                     if verbose:

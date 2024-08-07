@@ -1,6 +1,6 @@
+import json
 import pandas as pd 
 import numpy as np
-
 
 def extract_data(data):
     """Extracts relevant data that is not NaN 
@@ -33,3 +33,16 @@ def extract_data(data):
     df.sort_values(by='Dominant Frequency',inplace=True)
 
     return df
+
+
+
+class NpArrayEncode(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            np.nan_to_num(x=obj, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+
+def data_to_json(data: list[dict]) -> None:
+    print(json.dumps(data, cls=NpArrayEncode))
