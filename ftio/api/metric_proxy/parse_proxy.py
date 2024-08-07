@@ -2,6 +2,8 @@ import numpy as np
 import json
 from time import process_time
 from ftio.freq.helper import MyConsole
+from ftio.api.metric_proxy.req import MetricProxy
+
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -64,24 +66,31 @@ def parse_all(file_path:str,deriv_and_not_deriv:bool=True, exclude=None)-> dict:
     Returns:
         dict: parsed metrics with 2D numpy array
     """
-    out = {}
+    
     t = process_time()
     try:
         with open(file_path, 'r') as json_file:
             json_data = json.load(json_file)
     except FileNotFoundError:
         print(f"Error: File '{file_path}' not found.")
-        return out
+        return {}
     except json.JSONDecodeError:
         print(f"Error: Unable to decode JSON from file '{file_path}'. Check if the file is valid JSON.")
-        return out
+        return {}
 
+    out = parse_metrics(json_data,deriv_and_not_deriv,exclude,t)
+
+    return out
+
+def parse_metrics(json_data:dict,deriv_and_not_deriv:bool=True, exclude=None, t=None)-> dict:
+    if not t:
+        t = process_time()
+    out = {}
     metrics = json_data['metrics'].keys()
     # extract either derive or all but not all
     if not deriv_and_not_deriv:
         metrics = clean_metrics(metrics)
-        elapsed_time = process_time() - t
-
+        
     if exclude:
         for metric in metrics:
             if all(n not in metric for n in exclude):
@@ -93,10 +102,11 @@ def parse_all(file_path:str,deriv_and_not_deriv:bool=True, exclude=None)-> dict:
         for metric in metrics:
             b_out,t_out = extract(json_data,metric, False)
             out[metric]=[b_out,t_out]
-
+    
+    elapsed_time = process_time() - t
     CONSOLE.info(f"\n[green]Parsing time: {elapsed_time} s[/]")
+    
     return out
-
 
 def clean_metrics(metrics):
     deriv_metrics =  [metric for metric in metrics if metric.startswith("deriv")]
@@ -105,3 +115,34 @@ def clean_metrics(metrics):
     CONSOLE.info(f"[green]Metrics reduced from {len(metrics)} to {len(cleaned_metrics)}[/]")
     return cleaned_metrics
 
+
+
+def get_all_metrics(job_id):
+    mp = MetricProxy()
+    metrics = {}
+    all_metrics= mp.metric(job_id)
+    for metric in all_metrics:
+        value = mp.trace_metric(job_id,metric)
+        t_out = np.array([item[0] for item in value])
+        b_out = np.array([item[1] for item in value])
+        # derive b
+        b_out = numerical_derivative(t_out,b_out)
+        metrics[metric]=[b_out,t_out]
+        
+    return metrics
+
+# Calculate the numerical derivative using central differences
+def numerical_derivative(t, f):
+    n = len(t)
+    df_dt = np.zeros(n)
+    if n > 10:
+        # Forward difference for the first point
+        df_dt[0] = (f[1] - f[0]) / (t[1] - t[0])
+
+        # Central differences for the interior points
+        for i in range(1, n - 1):
+            df_dt[i] = (f[i + 1] - f[i - 1]) / (t[i + 1] - t[i - 1])
+
+        # Backward difference for the last point
+        df_dt[-1] = (f[-1] - f[-2]) / (t[-1] - t[-2])  
+    return df_dt
