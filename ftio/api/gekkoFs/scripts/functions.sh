@@ -170,7 +170,7 @@ function start_geko_demon() {
 
 			# Geko Demon call
 			# local call="GKFS_DAEMON_LOG_LEVEL=info ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE} -p ofi+tcp"
-			local call="GKFS_DAEMON_LOG_LEVEL=info ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE} -l lo -c -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp"
+			local call="GKFS_DAEMON_LOG_LEVEL=info ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE} -c -l lo -P ofi+tcp 			--proxy-listen lo --proxy-protocol ofi+tcp"
 			#-c --auto-sm
 		fi
 		echo -e "${JIT}${CYAN} >> Creating Directory ${BLACK}"
@@ -286,9 +286,9 @@ function start_application() {
 		if [ "${EXCLUDE_ALL}" == true ]; then
 			local call=" ${PRECALL} mpiexec -np ${PROCS} --oversubscribe ${APP_CALL}"
 		elif [ "${EXCLUDE_FTIO}" == true ]; then
-			local call=" ${PRECALL} mpiexec -np ${PROCS} --oversubscribe -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_LOG=none -x LD_PRELOAD=${GKFS_INTERCEPT} ${APP_CALL}"
+			local call=" ${PRECALL} mpiexec -np ${PROCS} --oversubscribe -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_LOG=none -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} -x LD_PRELOAD=${GKFS_INTERCEPT} ${APP_CALL}"
 		else
-			local call=" ${PRECALL} mpiexec -np ${PROCS} --oversubscribe -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_LOG=none -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS_FTIO}:${PORT} -x LD_PRELOAD=${GKFS_INTERCEPT} ${APP_CALL}"
+			local call=" ${PRECALL} mpiexec -np ${PROCS} --oversubscribe -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_LOG=none -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS_FTIO}:${PORT} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} -x LD_PRELOAD=${GKFS_INTERCEPT} ${APP_CALL}"
 		fi
 	fi
 
