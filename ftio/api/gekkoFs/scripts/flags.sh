@@ -54,7 +54,7 @@ STAGE_IN_PATH=${STAGE_IN_PATH:-"/lustre/project/nhr-admire/tarraf/admire/turbPip
 # Pre call 
 ###################
 # execute as ${PRECALL} mpiexec ${some flags} ..${APP_CALL}
-PRECALL="time"
+PRECALL="cd /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs &&"
 
 
 #######################
@@ -107,21 +107,39 @@ if [ "$CLUSTER" = false ]; then
 	#Gekko root directory
 	GKFS_ROOTDIR="/tmp/JIT/tarraf_gkfs_rootdir"
 	# Host file location
-	GKFS_HOSTFILE="~/gkfs_hosts.txt"
+	GKFS_HOSTFILE="${PWD}/gkfs_hosts.txt"
 	# Gekko Proxy
 	GKFS_PROXY="${INSTALL_LOCATION}/gekkofs/build/src/proxy/gkfs_proxy"
 	# Gekko Proxy file
-	GKFS_PROXYFILE="/tmp/JIT/vef_gkfs_proxy.pid"
+	GKFS_PROXYFILE="${INSTALL_LOCATION}/tarraf_gkfs_proxy.pid"
 	# Cargo 
 	CARGO="${INSTALL_LOCATION}/cargo/build/src/cargo"
 	CARGO_CLI="${INSTALL_LOCATION}/cargo/build/cli"
-	STAGE_IN_PATH="~/input"
+	STAGE_IN_PATH="/tmp/input"
+	STAGE_OUT_PATH="/tmp/output"
+	
 	# App
-	APP_CALL="${INSTALL_LOCATION}/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
+	# APP_CALL="${INSTALL_LOCATION}/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
 	#APP_CALL="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
 	# Pre and post app calls
 	PRE_APP_CALL=""
 	POST_APP_CALL=""
+	REGEX_FILE="${INSTALL_LOCATION}/nek_regex4cargo.txt"
+	# REGEX_MATCH="^/turbPipe0\.f\d+$"
+	REGEX_MATCH="^/[a-zA-Z0-9]*turbPipe0\.f\d+"
+	
+
+	#Nek5000
+	PRECALL="cd /d/benchmark/Nek5000/turbPipe/run/ &&"
+	APP_CALL="./nek5000"
+	STAGE_IN_PATH="/d/benchmark/Nek5000/turbPipe/run/input"
+	if [ "${EXCLUDE_ALL}" == true ]; then
+		PRE_APP_CALL="echo -e 'turbPipe\n/d/benchmark/Nek5000/turbPipe/run/input' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
+		POST_APP_CALL="rm /d/benchmark/Nek5000/turbPipe/run/input/*.f*"
+	else
+		PRE_APP_CALL="echo -e 'turbPipe\n${GKFS_MNTDIR}' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
+		POST_APP_CALL="rm ${STAGE_OUT_PATH}/*.f*"
+	fi
 fi 
 
 

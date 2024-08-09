@@ -59,7 +59,7 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	
 	# 4. Stage in
 	stage_in | tee ${LOG_DIR}/stage_in.log 
-	sleep $((${NODES}*5))
+	# sleep $((${NODES}*5))
 
 	# 5. Start FTIO
 	start_ftio | tee ${LOG_DIR}/ftio.log &

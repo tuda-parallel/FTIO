@@ -25,14 +25,15 @@ from ftio.prediction.async_process import handle_in_process
 from ftio.prediction.async_process import join_procs
 
 
-def main(argv):
+def main() -> None:
     # ---------------------------------
     # Modification area
     # ---------------------------------
+    argv = sys.argv
     parallel = False
     pools = False
     show = False  # shows the results from FTIO
-    proxy = True
+    proxy = False
 
     if proxy:
         mp = MetricProxy()
@@ -45,6 +46,9 @@ def main(argv):
 
         # Workaround: proxy needs to be running
         # metrics = get_all_metrics('4195024897')
+    else:
+        metrics = parse_all("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", deriv_and_not_deriv=False,exclude=["size","hits"])
+
     ranks = 32
 
     # command line arguments
@@ -129,4 +133,4 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()
