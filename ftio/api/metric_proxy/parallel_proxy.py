@@ -1,7 +1,7 @@
 import sys
 
 # from rich.progress import Progress
-from ftio.api.metric_proxy.parse_proxy import parse_all
+from ftio.api.metric_proxy.parse_proxy import parse_all,get_all_metrics, filter_deriv
 from ftio.api.metric_proxy.helper import extract_data
 from ftio.api.metric_proxy.proxy_analysis import phases, phases_and_timeseries
 from ftio.api.metric_proxy.plot_proxy import (
@@ -13,6 +13,7 @@ from ftio.api.metric_proxy.plot_proxy import (
     plot_timeseries_metrics,
 )
 from ftio.api.metric_proxy.proxy_cluster import optics,dbscan
+from ftio.api.metric_proxy.req import MetricProxy
 from ftio.prediction.tasks import ftio_task, ftio_task_save
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import Manager
@@ -24,16 +25,30 @@ from ftio.prediction.async_process import handle_in_process
 from ftio.prediction.async_process import join_procs
 
 
-def main(argv):
+def main() -> None:
     # ---------------------------------
     # Modification area
     # ---------------------------------
+    argv = sys.argv
     parallel = False
     pools = False
     show = False  # shows the results from FTIO
+    proxy = False
 
-    metrics = parse_all("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", deriv_and_not_deriv=False)
-    # metrics = parse_all("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", deriv_and_not_deriv=False,exclude=['time', 'hits'])
+    if proxy:
+        mp = MetricProxy()
+        # # Get a LIST of all JOBs
+        jobs = mp.jobs()
+        # Get a JSONL for this JOB
+        job_id = jobs[0]["jobid"]
+        jsonl = mp.trace(job_id)
+        metrics = filter_deriv(jsonl,deriv_and_not_deriv=False)
+
+        # Workaround: proxy needs to be running
+        # metrics = get_all_metrics('4195024897')
+    else:
+        metrics = parse_all("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", deriv_and_not_deriv=False,exclude=["size","hits"])
+
     ranks = 32
 
     # command line arguments
@@ -118,4 +133,4 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()

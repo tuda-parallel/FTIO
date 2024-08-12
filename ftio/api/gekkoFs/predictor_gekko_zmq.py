@@ -236,7 +236,7 @@ def trigger_cargo(sync_trigger,args):
             if not sync_trigger.empty():
                 skip_flag = False 
                 prediction = sync_trigger.get()
-                t = time.time() - prediction['t_wait']  # add this time to t_flush (i.e., the time waiting)
+                t = time.time() - prediction['t_wait']  # time waiting so far
                 # CONSOLE.print(f"[bold green][Trigger] queue wait time = {t:.3f} s[/]\n")
                 if not np.isnan(prediction['freq']):
                     #? 1) Find estimated number of phases and skip in case less than 1
@@ -247,7 +247,7 @@ def trigger_cargo(sync_trigger,args):
                     
                     #? 2) Time analysis to find the right instance when to send the data
                     target_time = prediction['t_end'] + 1/prediction['freq']
-                    geko_elapsed_time = prediction['t_flush'] + t  # t  is the waiting time in this function
+                    geko_elapsed_time = prediction['t_flush'] + t  # t  is the waiting time in this function. t_flush contains the overhead of ftio + when the data was flushed from gekko
                     remaining_time = (target_time - geko_elapsed_time ) 
                     CONSOLE.print(f"[bold green][Trigger {prediction['source']}][/][green] Target time = {target_time:.3f} -- Gekko time = {geko_elapsed_time:.3f} -> sending cmd in {remaining_time:.3f} s[/]\n")
                     if remaining_time > 0:
@@ -265,7 +265,10 @@ def trigger_cargo(sync_trigger,args):
                                 call = f"{args.cargo_cli}/cargo_ftio --server {args.cargo_server} --run"
                                 os.system(call)
 
-                            CONSOLE.print("[bold green][Trigger][/][green]" + call +"\n")
+                            # to use maybe later
+                            period = 1/prediction['freq'] if prediction['freq'] > 0 else 0
+                            text = f"frequency: {prediction['freq']}\nperiod: {period} \nconfidence: {prediction['conf']}\nprobability: {prediction['probability']}\n"
+                            CONSOLE.print("[bold green][Trigger][/][green]" + call +"\n"+text)
                         else:
                             CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, new prediction is ready[/]\n")
 

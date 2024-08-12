@@ -1,12 +1,11 @@
 [build-system]
-requires = ["setuptools","wheel"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages]
-find = {} 
+find = {}
 # include = ["ftio*"]  # package names should match these glob patterns (["*"] by default)
 # exclude = ["ftio.tests*"]  
-
 
 
 [project]
@@ -34,15 +33,13 @@ dependencies = [
 	"fastcluster",
 ]
 requires-python = ">=3.8"
-authors = [
-  {name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de"},
-]
+authors = [{ name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de" }]
 maintainers = [
-  {name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de"}
+	{ name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de" },
 ]
 description = "Frequency Techniques for I/O"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 keywords = ["ftio", "I/O"]
 classifiers = [
 	"Development Status :: 5 - Production/Stable",
@@ -75,12 +72,14 @@ ftio = "ftio.cli.ftio_core:run"
 predictor = "ftio.cli.predictor:main"
 ioplot = "ftio.util.ioplot:main"
 ioparse = "ftio.util.ioparse:main"
-
+admire_proxy_invoke_ftio = "ftio.api.metric_proxy.proxy_invoke_ftio:main"
+predictor_jit = "ftio.api.gekkoFs.predictor_gekko_zmq:main"
+trace_ftio = "ftio.api.trace_analysis.trace_ftio_v2:main"
+proxy_ftio = "ftio.api.metric_proxy.parallel_proxy:main"
 
 [project.gui-scripts]
 
 
 [tool.setuptools.dynamic]
-version = {attr = "ftio.__version__"}
-readme = {file = ["README.md"]}
-
+version = { attr = "ftio.__version__" }
+readme = { file = ["README.md"] }

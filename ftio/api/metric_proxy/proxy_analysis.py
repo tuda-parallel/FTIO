@@ -195,16 +195,20 @@ def plot_mode(mode,metrics,t,n,subfig=False)-> list[go.Figure]:
         fig = format_plot(fig, font=False)
         fig.update_layout(
             xaxis_title='Time (s)',
-            yaxis_title=f'{mode.name} Metrics',
+            yaxis_title=f'{mode.name.capitalize()} Metrics',
             width=1400,
-            height=400,
+            height=800,
             showlegend=True,
         ) 
+    if subfig:
+        fig.update_xaxes(title_text='Time (s)', **spec[1])
+        fig.update_yaxes(title_text=f'{mode.name.capitalize()} Metrics',**spec[1])
+
         if f.index(fig) == 0:
             if n:
-                fig.update_layout(title=f'{mode.name}: Using {n} Frequencies per metric')
+                fig.update_layout(title=f'{mode.name.capitalize()}: Using {n} Frequencies per metric')
             else:
-                fig.update_layout(title=f'{mode.name}: Using Dominant Frequencies')
+                fig.update_layout(title=f'{mode.name.capitalize()}: Using Dominant Frequencies')
     return f
 
 def norm(wave: np.ndarray) -> np.ndarray:
