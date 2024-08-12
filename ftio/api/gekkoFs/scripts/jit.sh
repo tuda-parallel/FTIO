@@ -48,12 +48,14 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	sleep $((${NODES}*1))
 	get_pid ${GKFS_DEMON} $!
 	start_geko_proxy | tee ${LOG_DIR}/geko_proxy.log&
-	sleep $((${NODES}*1))
+	sleep $((${NODES}*3))
 	get_pid ${GKFS_PROXY} $!
 	
 	# 3. Start Cargo Server
 	start_cargo | tee ${LOG_DIR}/cargo.log &
-	wait_msg "${LOG_DIR}/cargo.log" "Start up successful"
+	if [ "${EXCLUDE_ALL}" == false ]; then
+		wait_msg "${LOG_DIR}/cargo.log" "Start up successful"
+	fi
 	sleep $((${NODES}*1))
 	get_pid ${CARGO} $!
 	
@@ -64,9 +66,11 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	# 5. Start FTIO
 	start_ftio | tee ${LOG_DIR}/ftio.log &
 	# TODO: this can lead to a deadlock if wait_msg is reached after start_ftio was completed
-	wait_msg "${LOG_DIR}/cargo.log" "retval: CARGO_SUCCESS, status: {state: completed"
-	sleep $((${NODES}*1))
-	get_pid "FTIO" $!
+	if [ "${EXCLUDE_ALL}" == false ]; then
+		wait_msg "${LOG_DIR}/cargo.log" "retval: CARGO_SUCCESS, status: {state: completed"
+	fi
+	sleep $((${NODES}*2))
+	get_pid "predictor_jit" $!
 
 	# 6. pre- and application with Gekko intercept
 	pre_call
