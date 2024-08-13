@@ -1,4 +1,4 @@
-"""Module contating function functions to discretize the data.
+"""Module contains function functions to discretize the data.
 """
 
 from __future__ import annotations
