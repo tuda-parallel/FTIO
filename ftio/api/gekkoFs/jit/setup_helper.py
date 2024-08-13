@@ -432,8 +432,9 @@ def cancel_jit_jobs():
 
 def get_pid(settings: JitSettings, name: str, pid: int):
     if settings.cluster == True:
-        cmd = f"ps aux | grep 'srun' | grep '{settings.jit_id}' | grep '$1' | grep -v grep | tail -1 | awk '{{print $2}}'"
-        pid = subprocess.run(cmd, shell=True, universal_newlines=True, check=True)
+        call = f"ps aux | grep 'srun' | grep '{settings.jit_id}' | grep '{name}' | grep -v grep | tail -1 | awk '{{print $2}}'"
+        res = subprocess.run(call, shell=True, check=True, capture_output=True)
+        pid = res.stdout.strip()
         print(pid)
         print(name)
 
