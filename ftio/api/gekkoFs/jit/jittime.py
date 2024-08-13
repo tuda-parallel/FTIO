@@ -53,10 +53,10 @@ class JitTime:
     def print_time(self):
         console = Console()
         text = (
-            f"App Time      : {self._app}s\n"
+            f"App time      : {self._app}s\n"
             f"Stage out time: {self._stage_out}s\n"
             f"Stage in time : {self._stage_in}s\n"
-            "--------------------------------"
+            "--------------------------------\n"
             f"Total time : {self._app + self._stage_out + self._stage_in}s\n"
         )
         console.print(

@@ -48,7 +48,7 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
 
     # 2) exit if no new data
     if not data_rank["avg_thruput_mib"]:
-        CONSOLE.print("[red]Terminating prediction ... [/]")
+        CONSOLE.print("[red]Terminating prediction (no data passed) [/]")
         exit(0)
     
     # 3) Scale if JSON or MsgPack
