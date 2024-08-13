@@ -96,7 +96,7 @@ class JitSettings():
         # stage out variables
         self.stage_out_path = '/lustre/project/nhr-admire/tarraf/stage-out'
         self.regex_file = '/lustre/project/nhr-admire/shared/nek_regex4cargo.txt'
-        self.regex_match = '^/[a-z0-9]*turbpipe0\\.f\\d+'
+        self.regex_match = '^/[a-z0-9]*turbPipe0\\.f\\d+'
 
         # stage in variables
         self.stage_in_path = '/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input'
@@ -111,10 +111,10 @@ class JitSettings():
         # ${PRECALL} mpiexec ${some flags} ..${APP_CALL}
         # ${POST_APP_CALL}
         if self.exclude_all:
-            self.pre_app_call = "echo -e 'turbpipe\\n/lustre/project/nhr-admire/tarraf/admire/turbpipe/run_gkfs/input' > /lustre/project/nhr-admire/tarraf/admire/turbpipe/run_gkfs/SESSION.NAME"
-            self.post_app_call = "rm /lustre/project/nhr-admire/tarraf/admire/turbpipe/run_gkfs/input/*.f*"
+            self.pre_app_call = "echo -e 'turbPipe\\n/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input' > /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/SESSION.NAME"
+            self.post_app_call = "rm /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input/*.f*"
         else:
-            self.pre_app_call = f"echo -e 'turbpipe\\n{self.gkfs_mntdir}' > /lustre/project/nhr-admire/tarraf/admire/turbpipe/run_gkfs/SESSION.NAME"
+            self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/SESSION.NAME"
             self.post_app_call = ""
 
         # app call
