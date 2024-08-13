@@ -356,10 +356,10 @@ def start_application(settings: JitSettings, runtime: JitTime):
 
     # elapsed = execute_and_log(call, os.path.join(settings.log_dir, "app.log"))   
 
-    app_log_dir = os.path.join(settings.log_dir, "geko_demon.log")
+    app_log_dir = os.path.join(settings.log_dir, "app.log")
     start = time.time()
     process = execute_background(call, app_log_dir)
-    monitor_log_file(app_log_dir)
+    monitor_log_file(app_log_dir,"")
     stdout, stderr = process.communicate()
     elapsed = time.time() -start
     if process.returncode != 0:
