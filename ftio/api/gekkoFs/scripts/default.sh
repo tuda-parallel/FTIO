@@ -15,6 +15,9 @@ APP_NODES_COMMAND=""
 FTIO_NODE_COMMAND=""
 SINGLE_NODE_COMMAND=""
 LOG_DIR=""
+APP_TIME=""
+STAGE_IN_TIME=""
+STAGE_OUT_TIME=""
 echo -e "\n\n${GREEN}################ ${JIT} ${GREEN}################${BLACK}\n"
 
 # by default FTIO is included in the setup
@@ -51,5 +54,4 @@ MAX_TIME=${MAX_TIME:-"30"}
 
 
 # TODO: Bind sockets to CPU numactl --cpunodebind=0,1 --membind=0,1 (particular sockets are faster)
-
 
