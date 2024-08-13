@@ -611,7 +611,7 @@ def handle_sigint(settings: JitSettings):
     soft_kill(settings)
     hard_kill(settings)
     if settings.cluster:
-        execute(f"scancle {settings.jit_id}")
+        execute(f"scancel {settings.jit_id}")
     sys.exit(0)
 
 

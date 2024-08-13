@@ -155,7 +155,7 @@ def start_cargo(settings: JitSettings) -> None:
         monitor_log_file(cargo_log_dir, "cargo")
 
         # wait for line to appear
-        time.sleep(1)
+        time.sleep(5)
         wait_for_line(cargo_log_dir, "Start up successful")
         console.print("\n")
 
