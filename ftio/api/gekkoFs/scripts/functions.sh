@@ -155,9 +155,9 @@ function start_geko_demon() {
 		if [ "$CLUSTER" == true ]; then
 			# Display Demon
 			call_0="srun --jobid=${JIT_ID} ${SINGLE_NODE_COMMAND} -N 1 --ntasks=1 mkdir -p ${GKFS_MNTDIR}"
-			local proxy=false
+			# EXCLUDE_PROXY=false
 
-			if [ "$proxy" == true ]; then
+			if [ "$EXCLUDE_PROXY" == true ]; then
 				# Demon call
 				local call="srun --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N ${APP_NODES} --ntasks=${APP_NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON}  -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 -P ofi+sockets -p ofi+verbs -L ib0"
 			else
@@ -170,7 +170,7 @@ function start_geko_demon() {
 
 			# Geko Demon call
 			# local call="GKFS_DAEMON_LOG_LEVEL=info ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE} -p ofi+tcp"
-			local call="GKFS_DAEMON_LOG_LEVEL=info ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE} -c -l lo -P ofi+tcp 			--proxy-listen lo --proxy-protocol ofi+tcp"
+			local call="GKFS_DAEMON_LOG_LEVEL=info ${GKFS_DEMON} -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE} -c -l lo -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp"
 			#-c --auto-sm
 		fi
 		echo -e "${JIT}${CYAN} >> Creating Directory ${BLACK}"
@@ -189,7 +189,7 @@ function start_geko_proxy() {
 		echo -e "\n${JIT}${GREEN} ####### Starting GKFS PROXY ${BLACK}"
 		if [ "$CLUSTER" == true ]; then
 			# Proxy call
-			local call="srun --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N ${APP_NODES} --ntasks=${APP_NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -p ofi+verbs -P ${GKFS_PROXYFILE}"
+			local call="srun --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N ${APP_NODES} --ntasks=${APP_NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_PROXY}  -H ${GKFS_HOSTFILE} -P ${GKFS_PROXYFILE} -p ofi+verbs"
 			#
 			# old
 			# srun --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N ${APP_NODES} --ntasks=${APP_NODES} --cpus-per-task=${PROCS} \
@@ -308,6 +308,8 @@ function start_application() {
 	FINISH=true
 
 	elapsed_time "Application finished" ${start} ${end}
+	local call="echo '${end} - ${start}' | bc"
+	APP_TIME=$(eval "$call" )
 }
 
 function stage_out() {
@@ -343,7 +345,9 @@ function stage_out() {
 			printf "%d.%09d\n" "$secs" "$nanos" 2>/dev/null
 		})
 		elapsed_time "Stage out" ${start} ${end}
-
+		local call="echo '${end} - ${start}' | bc"
+		STAGE_OUT_TIME=$(eval "$call" )
+		
 		# set ignored files to default again
 		relevant_files
 	fi
@@ -379,6 +383,8 @@ function stage_in() {
 			printf "%d.%09d\n" "$secs" "$nanos" 2>/dev/null
 		})
 		elapsed_time "Stage in" ${start} ${end}
+		local call="echo '${end} - ${start}' | bc"
+		STAGE_IN_TIME=$(eval "$call" )
 
 		local files=$(LD_PRELOAD=${GKFS_INTERCEPT} LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} ls ${GKFS_MNTDIR})
 		echo -e "${JIT}${CYAN} >> geko_ls ${GKFS_MNTDIR}:${BLACK} \n${files} ${BLACK}\n"
@@ -921,7 +927,8 @@ function print_settings() {
 ├─ GKFS_MNTDIR    : ${BLACK}${GKFS_MNTDIR}${BLACK}
 ├─ GKFS_ROOTDIR   : ${BLACK}${GKFS_ROOTDIR}${BLACK}
 ├─ GKFS_HOSTFILE  : ${BLACK}${GKFS_HOSTFILE}${BLACK}"
-	local gkfs_proxy_text="├─ GKFS_PROXY     : ${BLACK}${GKFS_PROXY}${BLACK}
+	local gkfs_proxy_text="
+├─ GKFS_PROXY     : ${BLACK}${GKFS_PROXY}${BLACK}
 └─ GKFS_PROXYFILE : ${BLACK}${GKFS_PROXYFILE}${BLACK}"
 
 	local cargo_text="
@@ -948,21 +955,23 @@ function print_settings() {
 ├─ GKFS_MNTDIR    : ${YELLOW}none${BLACK}
 ├─ GKFS_ROOTDIR   : ${YELLOW}none${BLACK}
 ├─ GKFS_HOSTFILE  : ${YELLOW}none${BLACK}"
-	local gkfs_demon_status="${YELLOW}OFF${BLACK}"
-	
-if [ "${EXCLUDE_PROXY}" == true ]; then
-	local gkfs_proxy_text="├─ GKFS_PROXY     : ${YELLOW}none${BLACK}
-└─ GKFS_PROXYFILE : ${YELLOW}none${BLACK}"
-	local gkfs_proxy_status="${YELLOW}OFF${BLACK}"
-fi
+	gkfs_demon_status="${YELLOW}OFF${BLACK}"
+	fi 
 
+	if [ "${EXCLUDE_PROXY}" == true ]; then
+		gkfs_proxy_text="
+├─ GKFS_PROXY     : ${YELLOW}none${BLACK}
+└─ GKFS_PROXYFILE : ${YELLOW}none${BLACK}"
+		gkfs_proxy_status="${YELLOW}OFF${BLACK}"
+	fi
+
+	if [ "${EXCLUDE_CARGO}" == true ]; then
 		cargo_text="
 ├─ CARGO location : ${YELLOW}none${BLACK}${BLACK}
 ├─ CARGO_CLI      : ${YELLOW}none${BLACK}
 ├─ STAGE_IN_PATH  : ${YELLOW}none${BLACK}
 └─ ADDRESS_CARGO  : ${YELLOW}none${BLACK}"
-		local gkfs_status="${YELLOW}OFF${BLACK}"
-		local cargo_status="${YELLOW}OFF${BLACK}"
+		cargo_status="${YELLOW}OFF${BLACK}"
 	fi
 
 	echo -e " 
@@ -1196,7 +1205,8 @@ function reset_relevant_files() {
 
 function total_time() {
 	local tot_time=$(cat ${LOG_DIR}/time.log | grep "seconds" | awk {'print $2'} | awk '{s+=$1} END {print s}')
-	echo -e "\n${JIT} --> Total Time: ${tot_time}${BLACK}\n" | tee -a ${LOG_DIR}/time.log
+	echo -e "\n${JIT}${GREEN} >>\n       App time: ${APP_TIME}\n  Stage in time: ${STAGE_IN_TIME}\n Stage out time: ${STAGE_OUT_TIME}\n---------------- ${BLACK}"
+	echo -e "${JIT} --> Total Time: ${tot_time}${BLACK}\n" | tee -a ${LOG_DIR}/time.log
 }
 
 
@@ -1208,14 +1218,13 @@ function check_setup(){
 		local files=$(LD_PRELOAD=${GKFS_INTERCEPT} LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} ls ${GKFS_MNTDIR})
 		echo -e "${JIT}${CYAN} >> geko_ls ${GKFS_MNTDIR}:${BLACK}\n${files} ${BLACK}\n"
 		
-		echo -e "${JIT}${CYAN} >> statx:${BLACK}\n"
-		mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} /home/tarrafah/nhr-admire/tarraf/FTIO/ftio/api/gekkoFs/scripts/test.sh
+		# echo -e "${JIT}${CYAN} >> statx:${BLACK}\n"
+		# mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} /home/tarrafah/nhr-admire/tarraf/FTIO/ftio/api/gekkoFs/scripts/test.sh
 		
-
 		# echo -e "${JIT}${CYAN} >> SESSION.NAME:${BLACK}\n$(cat /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/SESSION.NAME) ${BLACK}\n"
-		
+	
 		# Tersting
-		local files2=$(srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH},LD_PRELOAD=${GKFS_INTERCEPT} --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N $1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0  /usr/bin/ls ${GKFS_MNTDIR} )
+		local files2=$(srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH},LD_PRELOAD=${GKFS_INTERCEPT} --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N ${APP_NODES}  --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0  /usr/bin/ls ${GKFS_MNTDIR} )
 		echo -e "${JIT}${CYAN} >> srun ls ${GKFS_MNTDIR}:${BLACK}\n${files2} ${BLACK}\n"
 		# local files3=$(mpiexec -np 1 --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS_FTIO}:${PORT} -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} /usr/bin/ls ${GKFS_MNTDIR} )
 		# echo -e "${JIT}${CYAN} >> mpirun ls ${GKFS_MNTDIR}:${BLACK}\n${files3} ${BLACK}\n"
@@ -1230,6 +1239,9 @@ function set_flags(){
 		EXCLUDE_CARGO=true
 		EXCLUDE_DEMON=true
 		EXCLUDE_PROXY=true
+		APP_TIME="0"
+		STAGE_IN_TIME="0"
+		STAGE_OUT_TIME="0"
 	fi
 }
 
