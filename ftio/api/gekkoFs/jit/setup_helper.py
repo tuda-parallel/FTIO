@@ -434,7 +434,8 @@ def get_pid(settings: JitSettings, name: str, pid: int):
     if settings.cluster == True:
         call = f"ps aux | grep 'srun' | grep '{settings.jit_id}' | grep '{name}' | grep -v grep | tail -1 | awk '{{print $2}}'"
         res = subprocess.run(call, shell=True, check=True, capture_output=True, text=True)
-        pid = int(res.stdout.strip())
+        if res.stdout.strip():
+            pid = res.stdout.strip() 
         print(pid)
         print(name)
 
