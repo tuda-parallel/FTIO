@@ -76,7 +76,7 @@ def start_geko_demon(settings: JitSettings) -> None:
         process = execute_background(call, geko_demon_log_dir)
         get_pid(settings, "demon", process.pid)
         #demon is noisy
-        # monitor_log_file(geko_demon_log_dir, "demon")
+        monitor_log_file(geko_demon_log_dir, "demon")
 
         # stdout, stderr = process.communicate()
         # if process.returncode != 0:
