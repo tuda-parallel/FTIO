@@ -363,8 +363,8 @@ def start_application(settings: JitSettings, runtime: JitTime):
     stdout, stderr = process.communicate()
     elapsed = time.time() -start
     if process.returncode != 0:
-        console.print(f"[bold red]Error executing command:[/bold red] {call}", style="bold red")
-        console.print(stderr, style="bold red")
+        console.print(f"[red]Error executing command:{call}")
+        console.print(f"[red] Error was:\n{stderr}")
     else:
         # console.print(stdout, style="bold green")
         pass
