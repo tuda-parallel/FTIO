@@ -19,6 +19,9 @@ echo -e "\n\n${GREEN}################ ${JIT} ${GREEN}################${BLACK}\n"
 
 # by default FTIO is included in the setup
 EXCLUDE_FTIO=false
+EXCLUDE_CARGO=false
+EXCLUDE_DEMON=false
+EXCLUDE_PROXY=false
 # by default FTIO+CARFO+GKFS are included in the setup
 EXCLUDE_ALL=false
 

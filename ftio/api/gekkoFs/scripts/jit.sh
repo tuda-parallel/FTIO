@@ -19,6 +19,7 @@ trap 'handle_sigint' SIGINT
 
 #clean other jobs
 cancel_jit_jobs
+set_flags
 
 # Only proceed if PORT is free
 if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free PORT)

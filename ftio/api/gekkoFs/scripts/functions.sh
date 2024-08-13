@@ -110,7 +110,7 @@ function start_ftio() {
 		# Set relevant files using regex
 		relevant_files true
 
-		if [ "${EXCLUDE_ALL}" == false ]; then
+		if [ "${EXCLUDE_CARGO}" == false ]; then
 			# echo -e "${JIT}${YELLOW} Executing the calls bellow used later for staging out${BLACK}"
 			call_0="srun --jobid=${JIT_ID} ${SINGLE_NODE_COMMAND} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/cargo_ftio --server ${CARGO_SERVER} --run"
 			call_1="srun --jobid=${JIT_ID} ${SINGLE_NODE_COMMAND} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${CARGO_CLI}/ccp --server ${CARGO_SERVER} --input / --output ${STAGE_OUT_PATH} --if gekkofs --of parallel"
@@ -145,7 +145,7 @@ function start_ftio() {
 
 # Start the Server
 function start_geko_demon() {
-	if [ "${EXCLUDE_ALL}" == true ]; then
+	if [ "${EXCLUDE_DEMON}" == true ]; then
 		echo -e "\n${JIT}${YELLOW} ####### Skipping GKFS DEMON ${BLACK}"
 	else
 		echo -e "\n${JIT}${GREEN} ####### Starting GKFS DEOMON ${BLACK}"
@@ -155,9 +155,9 @@ function start_geko_demon() {
 		if [ "$CLUSTER" == true ]; then
 			# Display Demon
 			call_0="srun --jobid=${JIT_ID} ${SINGLE_NODE_COMMAND} -N 1 --ntasks=1 mkdir -p ${GKFS_MNTDIR}"
-			local proxy=true
+			local proxy=false
 
-			if [ "$proxy" == true]; then
+			if [ "$proxy" == true ]; then
 				# Demon call
 				local call="srun --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N ${APP_NODES} --ntasks=${APP_NODES} --cpus-per-task=${PROCS} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ${GKFS_DEMON}  -r ${GKFS_ROOTDIR} -m ${GKFS_MNTDIR} -H ${GKFS_HOSTFILE}  -c -l ib0 -P ofi+sockets -p ofi+verbs -L ib0"
 			else
@@ -183,7 +183,7 @@ function start_geko_demon() {
 
 function start_geko_proxy() {
 
-	if [ "${EXCLUDE_ALL}" == true ]; then
+	if [ "${EXCLUDE_PROXY}" == true ]; then
 		echo -e "\n${JIT}${YELLOW} ####### Skipping GKFS PROXY ${BLACK}"
 	else
 		echo -e "\n${JIT}${GREEN} ####### Starting GKFS PROXY ${BLACK}"
@@ -206,7 +206,7 @@ function start_geko_proxy() {
 }
 
 function start_cargo() {
-	if [ "${EXCLUDE_ALL}" == true ]; then
+	if [ "${EXCLUDE_CARGO}" == true ]; then
 		echo -e "\n${JIT}${YELLOW} ####### Skipping Cargo ${BLACK}"
 	else
 		echo -e "\n${JIT}${GREEN} ####### Starting Cargo ${BLACK}"
@@ -408,13 +408,15 @@ function soft_kill() {
 		shut_down "FTIO" ${FTIO_PID} &
 		echo -e "${JIT}${CYAN} >> killed FTIO ${BLACK}"
 	fi
-	if [ "$EXCLUDE_ALL" == false ]; then
+	if [ "$EXCLUDE_DEMON" == false ]; then
 		shut_down "GEKKO" ${GEKKO_DEMON_PID} &
 		echo -e "${JIT}${CYAN} >> killed GEKKO DEMON ${BLACK}"
-
+	fi
+	if [ "$EXCLUDE_PROXY" == false ]; then
 		shut_down "GEKKO" ${GEKKO_PROXY_PID} &
 		echo -e "${JIT}${CYAN} >> killed GEKKO PROXY ${BLACK}"
-
+	fi
+	if [ "$EXCLUDE_CARGO" == false ]; then
 		shut_down "CARGO" ${CARGO_PID} &
 		echo -e "${JIT}${CYAN} >> killed CARGO ${BLACK}"
 	fi
@@ -479,9 +481,11 @@ function error_usage() {
 		default: Autoset to number of nodes and job id
 		if provided, sets the name of the directory were the logs are
 
-	-e | --execlude-ftio
-		deafult: ${EXCLUDE_FTIO}
-		if this flag is provided, the setup is executed without FTIO.
+	-e | --execlude: <str>,<str>,...,<str>
+		deafult: ftio
+		if this flag is provided, the setup is executed without the tool(s).
+		supported options include: ftio, demon, proxy, geko (demon + proxy), 
+		cargo, and all (same as -x).
 
 	-x | --exclude-all
 		deafult: ${EXCLUDE_ALL}
@@ -551,7 +555,10 @@ function install_all() {
 	cmake -DCMAKE_PREFIX_PATH=${INSTALL_LOCATION}/iodeps -DCMAKE_INSTALL_PREFIX=${INSTALL_LOCATION}/iodeps ..
 	make -j 4 install || echo -e "${RED}>>> Error encountered${BLACK}"
 
-	# clone cargo:
+	# clone cargo:EXCLUDE_FTIO=false
+EXCLUDE_CARGO=false
+EXCLUDE_DEMON=false
+EXCLUDE_PROXY=false
 	cd ${INSTALL_LOCATION}
 	git clone https://storage.bsc.es/gitlab/hpc/cargo.git
 	cd cargo
@@ -596,8 +603,8 @@ function install_all() {
 }
 function parse_options() {
 	# Define the options
-	OPTIONS=a:p:n:t:l:i:exh
-	LONGOPTS=address:,port:,nodes:,max-time:,log-name:,install-location:,exclude-ftio,exclude-all,help
+	OPTIONS=a:p:n:t:l:i:e:xh
+	LONGOPTS=address:,port:,nodes:,max-time:,log-name:,install-location:,exclude:,exclude-all,help
 
 	# -temporarily store output to be able to check for errors
 	# -activate advanced mode getopt quoting e.g. via “--options”
@@ -638,9 +645,52 @@ function parse_options() {
 			install_all
 			shift 2
 			;;
-		-e | --exclude-ftio)
-			EXCLUDE_FTIO=true
-			shift
+		-e | --exclude)
+			# Check if argument is provided or not
+			echo -e "${JIT} ${GREEN}>>${YELLOW} Excluding: "
+			if [[ -z "$2" || "$2" == -* ]]; then
+				# Default to 'ftio' if no string is passed
+				EXCLUDE_FTIO=true
+				echo -e "- ftio "
+				[[ "$2" == -* ]] && shift || shift 2
+			else
+				IFS=',' read -ra EXCLUDES <<< "$2"
+				for exclude in "${EXCLUDES[@]}"; do
+					case "$exclude" in
+					ftio)
+						EXCLUDE_FTIO=true
+						echo -e "- ftio "
+						;;
+					cargo)
+						EXCLUDE_CARGO=true
+						echo -e "- cargo "
+						;;
+					gkfs)
+						EXCLUDE_DEMON=true
+						EXCLUDE_PROXY=true
+						echo -e "- gkfs "
+						;;
+					demon)
+						EXCLUDE_DEMON=true
+						echo -e "- demon "
+						;;
+					proxy)
+						EXCLUDE_PROXY=true
+						echo -e "- proxy "
+						;;
+					all)
+						EXCLUDE_ALL=true
+						echo -e "- all "
+						;;
+					*)
+						echo -e "${JIT} >>${RED}Invalid exclude option: $exclude ${BLACK}" >&2
+						exit 1
+						;;
+					esac
+				done
+				shift 2
+			fi
+			echo -e "${BLACK}"
 			;;
 		-x | --exclude-all)
 			EXCLUDE_ALL=true
@@ -663,34 +713,6 @@ function parse_options() {
 	done
 }
 
-# function parse_options(){
-#     # Parse command-line arguments using getopts
-#     while getopts ":a:p:n:t:i:h" opt; do
-#         case $opt in
-#             a) ADDRESS_FTIO="$OPTARG" ;;
-#             p) PORT="$OPTARG" ;;
-#             n) NODES="$OPTARG" ;;
-#             t) MAX_TIME="$OPTARG" ;;
-#             i)
-#                 INSTALL_LOCATION="$OPTARG"
-#                 install_all
-#             ;;
-#             h)
-#                 echo -e "${YELLOW}Help launch:  ${BLACK}" >&2
-#                 error_usage $OPTARG
-#                 exit 1
-#             ;;
-#             \?)
-#                 echo -e "${RED}Invalid option: -$1 ${BLACK}" >&2
-#                 error_usage $OPTARG
-#                 exit 1
-#             ;;
-#         esac
-#     done
-
-#     # Shift positional arguments to remove processed flags and options
-#     shift $((OPTIND - 1))
-# }
 
 function find_time() {
 
@@ -882,7 +904,8 @@ function format_time() {
 function print_settings() {
 
 	local ftio_status="${GREEN}ON${BLACK}"
-	local gkfs_status="${GREEN}ON${BLACK}"
+	local gkfs_demon_status="${GREEN}ON${BLACK}"
+	local gkfs_proxy_status="${GREEN}ON${BLACK}"
 	local cargo_status="${GREEN}ON${BLACK}"
 
 	local ftio_text="
@@ -892,13 +915,13 @@ function print_settings() {
 ├─ # NODES        : ${BLACK}1${BLACK}
 └─ FTIO NODE      : ${BLACK}${FTIO_NODE_COMMAND##'--nodelist='}${BLACK}"
 
-	local gkfs_text="
+	local gkfs_demon_text="
 ├─ GKFS_DEMON     : ${BLACK}${GKFS_DEMON}${BLACK}
 ├─ GKFS_INTERCEPT : ${BLACK}${GKFS_INTERCEPT}${BLACK}
 ├─ GKFS_MNTDIR    : ${BLACK}${GKFS_MNTDIR}${BLACK}
 ├─ GKFS_ROOTDIR   : ${BLACK}${GKFS_ROOTDIR}${BLACK}
-├─ GKFS_HOSTFILE  : ${BLACK}${GKFS_HOSTFILE}${BLACK}
-├─ GKFS_PROXY     : ${BLACK}${GKFS_PROXY}${BLACK}
+├─ GKFS_HOSTFILE  : ${BLACK}${GKFS_HOSTFILE}${BLACK}"
+	local gkfs_proxy_text="├─ GKFS_PROXY     : ${BLACK}${GKFS_PROXY}${BLACK}
 └─ GKFS_PROXYFILE : ${BLACK}${GKFS_PROXYFILE}${BLACK}"
 
 	local cargo_text="
@@ -907,7 +930,7 @@ function print_settings() {
 ├─ STAGE_IN_PATH  : ${BLACK}${STAGE_IN_PATH}${BLACK}
 └─ ADDRESS_CARGO  : ${BLACK}${ADDRESS_CARGO}${BLACK}"
 
-	if [ "$EXCLUDE_FTIO" == true ] || [ "${EXCLUDE_ALL}" == true ]; then
+	if [ "$EXCLUDE_FTIO" == true ] ; then
 		ftio_text="
 ├─ FTIO_ACTIVATE  : ${YELLOW}none${BLACK}
 ├─ ADDRESS_FTIO   : ${YELLOW}none${BLACK}
@@ -918,15 +941,20 @@ function print_settings() {
 		ftio_status="${YELLOW}OFF${BLACK}"
 	fi
 
-	if [ "${EXCLUDE_ALL}" == true ]; then
-		gkfs_text="
+	if [ "${EXCLUDE_DEMON}" == true ]; then
+		gkfs_demon_text="
 ├─ GKFS_DEMON     : ${YELLOW}none${BLACK}
 ├─ GKFS_INTERCEPT : ${YELLOW}none${BLACK}
 ├─ GKFS_MNTDIR    : ${YELLOW}none${BLACK}
 ├─ GKFS_ROOTDIR   : ${YELLOW}none${BLACK}
-├─ GKFS_HOSTFILE  : ${YELLOW}none${BLACK}
-├─ GKFS_PROXY     : ${YELLOW}none${BLACK}
+├─ GKFS_HOSTFILE  : ${YELLOW}none${BLACK}"
+	local gkfs_demon_status="${YELLOW}OFF${BLACK}"
+	
+if [ "${EXCLUDE_PROXY}" == true ]; then
+	local gkfs_proxy_text="├─ GKFS_PROXY     : ${YELLOW}none${BLACK}
 └─ GKFS_PROXYFILE : ${YELLOW}none${BLACK}"
+	local gkfs_proxy_status="${YELLOW}OFF${BLACK}"
+fi
 
 		cargo_text="
 ├─ CARGO location : ${YELLOW}none${BLACK}${BLACK}
@@ -945,7 +973,8 @@ ${GREEN}Setup${BLACK}
 ├─ Logs dir       : ${BLACK}${LOG_DIR}${BLACK}
 ├─ PWD            : ${BLACK}$(pwd)${BLACK}
 ├─ FTIO           : ${ftio_status}
-├─ GKFS           : ${gkfs_status}
+├─ GKFS DEMON     : ${gkfs_demon_status}
+├─ GKFS PROXY     : ${gkfs_proxy_status}
 ├─ CARGO          : ${cargo_status}
 ├─ CLUSTER        : ${BLACK}${CLUSTER}${BLACK}
 ├─ Total NODES    : ${BLACK}${NODES}${BLACK}
@@ -957,7 +986,7 @@ ${GREEN}Setup${BLACK}
 
 ${GREEN}FTIO${BLACK}${ftio_text}
 
-${GREEN}Gekko${BLACK}${gkfs_text}
+${GREEN}Gekko${BLACK}${gkfs_demon_text}${gkfs_proxy_text}
 
 ${GREEN} CARGO${BLACK}${cargo_text}
 
@@ -1178,17 +1207,28 @@ function check_setup(){
 		echo -e "${JIT}${CYAN} >> Gekko hostfile:${BLACK}\n$(cat ${GKFS_HOSTFILE}) ${BLACK}\n"
 		local files=$(LD_PRELOAD=${GKFS_INTERCEPT} LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} ls ${GKFS_MNTDIR})
 		echo -e "${JIT}${CYAN} >> geko_ls ${GKFS_MNTDIR}:${BLACK}\n${files} ${BLACK}\n"
+		
 		echo -e "${JIT}${CYAN} >> statx:${BLACK}\n"
-		mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} echo -e "Hello I am $(hostname) and stat output: \n$(stat /dev/shm/tarraf_gkfs_mountdir/turbPipe.rea)\n"
+		mpiexec -np ${PROCS} --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} /home/tarrafah/nhr-admire/tarraf/FTIO/ftio/api/gekkoFs/scripts/test.sh
+		
 
 		# echo -e "${JIT}${CYAN} >> SESSION.NAME:${BLACK}\n$(cat /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/SESSION.NAME) ${BLACK}\n"
 		
 		# Tersting
-		# local files2=$(srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH},LD_PRELOAD=${GKFS_INTERCEPT} --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N $1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0  /usr/bin/ls ${GKFS_MNTDIR} )
-		# echo -e "${JIT}${CYAN} >> srun ls ${GKFS_MNTDIR}:${BLACK}\n${files2} ${BLACK}\n"
+		local files2=$(srun --export=LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE},LD_LIBRARY_PATH=${LD_LIBRARY_PATH},LD_PRELOAD=${GKFS_INTERCEPT} --jobid=${JIT_ID} ${APP_NODES_COMMAND} --disable-status -N $1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0  /usr/bin/ls ${GKFS_MNTDIR} )
+		echo -e "${JIT}${CYAN} >> srun ls ${GKFS_MNTDIR}:${BLACK}\n${files2} ${BLACK}\n"
 		# local files3=$(mpiexec -np 1 --oversubscribe --hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors -x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT=${ADDRESS_FTIO}:${PORT} -x LD_PRELOAD=${GKFS_INTERCEPT} -x LIBGKFS_HOSTS_FILE=${GKFS_HOSTFILE} -x LIBGKFS_PROXY_PID_FILE=${GKFS_PROXYFILE} /usr/bin/ls ${GKFS_MNTDIR} )
 		# echo -e "${JIT}${CYAN} >> mpirun ls ${GKFS_MNTDIR}:${BLACK}\n${files3} ${BLACK}\n"
 	fi
 
 	sleep 1
+}
+
+function set_flags(){
+	if [ "${EXCLUDE_ALL}" == true ]; then
+		EXCLUDE_FTIO=true
+		EXCLUDE_CARGO=true
+		EXCLUDE_DEMON=true
+		EXCLUDE_PROXY=true
+	fi
 }
