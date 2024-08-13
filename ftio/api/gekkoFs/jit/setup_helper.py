@@ -1121,31 +1121,28 @@ def check_setup(settings:JitSettings):
             gekkofs_hostfile_content = file.read()
         console.print(f"[cyan]>> Gekko hostfile:\n{gekkofs_hostfile_content}[/]")
 
-        # List files in GKFS_MNTDIR
-        gkfs_mntdir = settings.gkfs_mntdir
-        ls_command = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={gekkofs_hostfile} ls {gkfs_mntdir}"
-        files = subprocess.check_output(ls_command, shell=True).decode()
-        console.print(f"[cyan]>> geko_ls {gkfs_mntdir}: \n{files}[/]")
+        # # List files in GKFS_MNTDIR
+        # ls_command = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={gekkofs_hostfile} ls {settings.gkfs_mntdir}"
+        # files = subprocess.check_output(ls_command, shell=True).decode()
+        # console.print(f"[cyan]>> geko_ls {gkfs_mntdir}: \n{files}[/]")
 
-        # Run MPI exec test script
-        procs = settings.procs
-        if settings.cluster:
-            test_script_command = (f"mpiexec -np {procs} --oversubscribe --hostfile {mpi_hostfile_path} "
-                                f"--map-by node -x LIBGKFS_LOG=errors -x LD_PRELOAD={settings.gkfs_intercept} "
-                                f"-x LIBGKFS_HOSTS_FILE={gekkofs_hostfile} -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-                                f"/home/tarrafah/nhr-admire/tarraf/FTIO/ftio/api/gekkoFs/scripts/test.sh")
-            console.print(f"[cyan]>> statx:[/]")
-            execute(test_script_command)
+        # # Run MPI exec test script
+        # procs = settings.procs
+        # if settings.cluster:
+        #     test_script_command = (f"mpiexec -np {procs} --oversubscribe --hostfile {mpi_hostfile_path} "
+        #                         f"--map-by node -x LIBGKFS_LOG=errors -x LD_PRELOAD={settings.gkfs_intercept} "
+        #                         f"-x LIBGKFS_HOSTS_FILE={gekkofs_hostfile} -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+        #                         f"/home/tarrafah/nhr-admire/tarraf/FTIO/ftio/api/gekkoFs/scripts/test.sh")
+        #     console.print(f"[cyan]>> statx:[/]")
+        #     execute(test_script_command)
 
-            # Run srun ls command
-            app_nodes_command = settings.app_nodes_command
-            job_id = settings.jit_id
-            srun_command = (f"srun --export=LIBGKFS_HOSTS_FILE={gekkofs_hostfile},LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')},"
-                            f"LD_PRELOAD={settings.gkfs_intercept} --jobid={job_id} {app_nodes_command} --disable-status "
-                            f"-N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-                            f"/usr/bin/ls {gkfs_mntdir}")
-            files2 = subprocess.check_output(srun_command, shell=True).decode()
-            console.print(f"[cyan]>> srun ls {gkfs_mntdir}: \n{files2}[/]")
+                    
+        #     srun_command = (f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')},"
+        #                     f"LD_PRELOAD={settings.gkfs_intercept} --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status "
+        #                     f"-N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
+        #                     f"/usr/bin/ls {settings.gkfs_mntdir}")
+        #     files2 = subprocess.check_output(srun_command, shell=True).decode()
+        #     console.print(f"[cyan]>> srun ls {settings.gkfs_mntdir}: \n{files2}[/]")
 
         # Note: The commented out command for `mpirun` is not included in this translation.
 
