@@ -38,27 +38,25 @@ def start_geko_demon(settings: JitSettings) -> None:
         # Create host file
         create_hostfile(settings)
 
-        if settings.cluster:
+        if settings.cluster == True:
             # Display Demon
             call_0 = f"srun --jobid={settings.jit_id} {settings.single_node_command} -N 1 --ntasks=1 mkdir -p {settings.gkfs_mntdir}"
-            settings.exclude_proxy = False
 
             if settings.exclude_proxy:
-                # Demon call with proxy
-                call = (
-                    f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                    f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs} --ntasks-per-node=1 --overcommit --overlap "
-                    f"--oversubscribe --mem=0 {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile} -c -l ib0 -P ofi+sockets -p ofi+verbs -L ib0"
-                )
-
-            else:
                 # Demon call without proxy
                 call = (
                     f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
                     f"-H {settings.gkfs_hostfile} -c -l ib0 -P ofi+sockets"
+                )
+            else:
+                # Demon call with proxy
+                call = (
+                    f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                    f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs} --ntasks-per-node=1 --overcommit --overlap "
+                    f"--oversubscribe --mem=0 {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+                    f"-H {settings.gkfs_hostfile} -c -l ib0 -P ofi+sockets -p ofi+verbs -L ib0"
                 )
 
         else:
@@ -283,7 +281,7 @@ def stage_out(settings: JitSettings, runtime: JitTime):
             os.path.join(settings.log_dir, "cargo.log"),
             "Transfer finished for"
         )
-        elapsed = time.time()
+        elapsed = time.time() - start_time
 
         elapsed_time(settings, "Stage out", elapsed)
         runtime.stage_out = elapsed

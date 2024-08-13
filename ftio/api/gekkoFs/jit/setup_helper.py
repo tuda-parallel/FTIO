@@ -890,7 +890,7 @@ def execute_and_log(call,log_file) -> float:
     return end - start
 
 
-def execute_background(call: str, log_dir: str = "", error_dir: str = ""):
+def execute_background(call: str, log_file: str = "", log_err_file: str = ""):
     """executes a call in the background and sets up a log dir
 
     Args:
@@ -902,16 +902,19 @@ def execute_background(call: str, log_dir: str = "", error_dir: str = ""):
         _type_: _description_
     """
     jit_print(f"[cyan]>> Executing {call}")
-    if log_dir and error_dir:
-        with open(log_dir, "w") as log_file:
-            with open(error_dir, "w") as error_file:
+    with open(log_file, "a") as file:
+            file.write(f">> Executing {call}")
+            
+    if log_file and log_err_file:
+        with open(log_file, "a") as log_out:
+            with open(log_err_file, "w") as log_err:
                 process = subprocess.Popen(
-                    call, shell=True, stdout=log_file, stderr=error_file
+                    call, shell=True, stdout=log_out, stderr=log_err
                 )
-    elif log_dir:
-        with open(log_dir, "w") as log_file:
+    elif log_file:
+        with open(log_file, "a") as log_out:
             process = subprocess.Popen(
-                call, shell=True, stdout=log_file, stderr=subprocess.STDOUT
+                call, shell=True, stdout=log_out, stderr=subprocess.STDOUT
             )
     else:
         process = subprocess.Popen(
