@@ -436,8 +436,7 @@ def get_pid(settings: JitSettings, name: str, pid: int):
         res = subprocess.run(call, shell=True, check=True, capture_output=True, text=True)
         if res.stdout.strip():
             pid = res.stdout.strip() 
-        print(pid)
-        print(name)
+
 
     if name.lower() in "cargo":
         settings.cargo_pid = pid
