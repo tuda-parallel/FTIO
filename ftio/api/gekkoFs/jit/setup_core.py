@@ -250,7 +250,7 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
         end = time.time()
         elapsed = end - start
         elapsed_time(settings, "Stage in", elapsed)
-        runtime.stage_out = elapsed
+        runtime.stage_in = elapsed
         check(settings)
 
 
