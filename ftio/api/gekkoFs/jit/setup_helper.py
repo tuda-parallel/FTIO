@@ -619,20 +619,32 @@ def soft_kill(settings: JitSettings) -> None:
     console.print("\n[bold green]JIT[bold green] ####### Soft kill [/]")
 
     if settings.exclude_ftio == False:
-        shut_down(settings, "FTIO", settings.ftio_pid)
-        console.print("[bold green]JIT[bold cyan] >> killed FTIO [/]")
+        try:
+            shut_down(settings, "FTIO", settings.ftio_pid)
+            console.print("[bold green]JIT[bold cyan] >> killed FTIO [/]")
+        except:
+            console.print("[bold green]JIT[bold cyan] >> Unable to soft kill FTIO [/]")
 
     if settings.exclude_demon == False:
-        shut_down(settings, "GEKKO", settings.gekko_demon_pid)
-        console.print("[bold green]JIT[bold cyan] >> killed GEKKO DEMON [/]")
+        try:
+            shut_down(settings, "GEKKO", settings.gekko_demon_pid)
+            console.print("[bold green]JIT[bold cyan] >> killed GEKKO DEMON [/]")
+        except:
+            console.print("[bold green]JIT[bold cyan] >> Unable to soft kill GEKKO DEMON [/]")
 
     if settings.exclude_proxy == False:
-        shut_down(settings, "GEKKO", settings.gekko_proxy_pid)
-        console.print("[bold green]JIT[bold cyan] >> killed GEKKO PROXY [/]")
+        try:
+            shut_down(settings, "GEKKO", settings.gekko_proxy_pid)
+            console.print("[bold green]JIT[bold cyan] >> killed GEKKO PROXY [/]")
+        except:
+            console.print("[bold green]JIT[bold cyan] >> Unable to soft  kill GEKKO PROXY [/]")
 
     if settings.exclude_cargo == False:
-        shut_down(settings, "CARGO", settings.cargo_pid)
-        console.print("[bold green]JIT[bold cyan] >> killed CARGO [/]")
+        try:
+            shut_down(settings, "CARGO", settings.cargo_pid)
+            console.print("[bold green]JIT[bold cyan] >> killed CARGO [/]")
+        except:
+            console.print("[bold green]JIT[bold cyan] >> Unable to soft kill CARGO [/]")
 
 
 def hard_kill(settings) -> None:
