@@ -431,7 +431,7 @@ def cancel_jit_jobs():
 
 
 def get_pid(settings: JitSettings, name: str, pid: int):
-    if settings.cluster == "true":
+    if settings.cluster == True:
         cmd = f"ps aux | grep 'srun' | grep '{settings.jit_id}' | grep '$1' | grep -v grep | tail -1 | awk '{{print $2}}'"
         pid = subprocess.run(cmd, shell=True, universal_newlines=True, check=True)
         print(pid)
@@ -679,7 +679,7 @@ def shut_down(settings, name, pid):
             print(f"An error occurred: {e}")
 
         # Wait for the process to terminate if in a cluster
-        if settings.cluster == "true":
+        if settings.cluster == True:
             execute(f"wait {pid}")
 
 
@@ -698,7 +698,7 @@ def log_dir(settings):
 def get_address_ftio(settings: JitSettings) -> None:
     # Get Address and port
     jit_print("####### Getting FTIO ADDRESS")
-    if settings.cluster == "true":
+    if settings.cluster == True:
         call = f"srun --jobid={settings.jit_id} {settings.ftio_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
         jit_print(f"[bold cyan]>> Executing: {call}")
         try:
@@ -715,7 +715,7 @@ def get_address_ftio(settings: JitSettings) -> None:
 
 def get_address_cargo(settings: JitSettings) -> None:
     jit_print("####### Getting Cargo ADDRESS")
-    if settings.cluster == "true":
+    if settings.cluster == True:
         call = f"srun --jobid={settings.jit_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
         jit_print(f"[bold cyan]>> Executing: {call}")
         try:
