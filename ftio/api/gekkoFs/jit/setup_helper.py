@@ -847,10 +847,12 @@ def jit_print(s: str):
     console.print(f"[bold green]JIT[/][green] {s}[/]")
 
 
-def execute(call):
+def execute(call) -> None:
     jit_print(f">> Executing {call}")
     try:
-        out = subprocess.run(call, shell=True, capture_output=True, text=True, check=True)
+        # subprocess.run(call, shell=True, capture_output=True, text=True, check=True)
+        # process = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        out = subprocess.run(call, shell=True, text=True, check=True, executable='/bin/bash')
     except subprocess.CalledProcessError as e:
         error_message = (
             f"[red]Command failed:[/red] {call}\n"
@@ -861,7 +863,6 @@ def execute(call):
         console.print(f"[red]{error_message}\n[/]")
         handle_sigint
         raise
-    return out
 
 def execute_and_log(call,log_file) -> float:
     log_message = f">> Executing command: {call}\n"
@@ -1007,8 +1008,11 @@ def wait_for_line(filename: str, target_line: str, timeout: int = 60) -> None:
 
     with open(filename, "r") as file:
         # Move to the end of the file to start monitoring
-        # file.seek(10, 2)  # Go to the end of the file and look at the last 10 entris
-        file.seek(0, 0)  # Go to the end of the file and look at the last 10 entris
+        # file.seek(0, 2)  # Go to the end of the file and look at the last 10 entris
+        try:
+            file.seek(-2, os.SEEK_END)
+        except:
+            file.seek(0, 0)  # Go to the end of the file and look at the last 10 entris
 
         with Status(f"[cyan]Waiting for line to appear...", console=console) as status:
             while True:

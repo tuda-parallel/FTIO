@@ -69,7 +69,7 @@ def start_geko_demon(settings: JitSettings) -> None:
             )
 
         jit_print("[cyan]>> Creating Directory[/]")
-        _ = execute(call_0)
+        execute(call_0)
 
         jit_print("[cyan]>> Starting Demons[/]")
         geko_demon_log_dir = os.path.join(settings.log_dir, "geko_demon.log")
@@ -231,16 +231,22 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
         console.print("\n[bold green]####### Staging in [/]")
 
         if settings.cluster:
-            command = f"srun --jobid={settings.jit_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
+            call = f"srun --jobid={settings.jit_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
         else:
-            command = f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
+            call = f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
 
+        cargo_log_dir=os.path.join(settings.log_dir, "cargo.log")
         start = time.time()
+
         execute_and_wait_line(
-            command,
-            os.path.join(settings.log_dir, "cargo.log"),
+            call,
+            cargo_log_dir,
             "retval: CARGO_SUCCESS, status: {state: completed",
         )
+        # process = execute_background(call, cargo_log_dir)
+        # wait_for_line(cargo_log_dir, "Start up successful")
+
+        
         end = time.time()
         elapsed = end - start
         elapsed_time(settings, "Stage in", elapsed)
@@ -356,8 +362,6 @@ def start_application(settings: JitSettings, runtime: JitTime):
     monitor_log_file(app_log_dir)
     stdout, stderr = process.communicate()
     elapsed = time.time() -start
-
-    stdout, stderr = process.communicate()
     if process.returncode != 0:
         console.print(f"[bold red]Error executing command:[/bold red] {call}", style="bold red")
         console.print(stderr, style="bold red")
