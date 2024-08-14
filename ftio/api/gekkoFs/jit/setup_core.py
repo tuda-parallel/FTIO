@@ -121,11 +121,20 @@ def start_cargo(settings: JitSettings) -> None:
 
         if settings.cluster:
             # Command for cluster
+            # call = (
+            #     f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
+            #     f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} --jobid={settings.jit_id} "
+            #     f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+            #     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_cargo} --ntasks-per-node=1 "
+            #     f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
+            #     f"--listen ofi+sockets://ib0:62000 -b 65536"
+            # )
+            # The above call just gives more resources to the same proc, but not more. Cargo need at least two
             call = (
                 f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
                 f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} --jobid={settings.jit_id} "
                 f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_cargo} --ntasks-per-node=1 "
+                f"-n={settings.procs_cargo}"
                 f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
                 f"--listen ofi+sockets://ib0:62000 -b 65536"
             )

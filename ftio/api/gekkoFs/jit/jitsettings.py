@@ -54,6 +54,7 @@ class JitSettings:
         self.procs_ftio  = 0
         
         self.set_cluster_mode()
+        self.set_default_procs()
         self.set_variables()
 
     def set_cluster_mode(self) -> None:
@@ -76,6 +77,21 @@ class JitSettings:
         self.set_falgs()
         self.set_variables()
 
+    def  set_default_procs(self) -> None:
+    #default values for the procs in proc_list is not passed
+        if self.cluster:
+            self.procs_demon = self.procs
+            self.procs_proxy = self.procs
+            self.procs_ftio  = self.procs
+        else:
+            self.procs_demon = 1
+            self.procs_proxy = 1
+            self.procs_ftio  = 1
+
+        self.procs_cargo = 2
+        self.procs_app = self.procs
+
+
     def set_falgs(self) -> None:
         """sets the flags in case exclude all is specified
         in the options passed
@@ -86,8 +102,6 @@ class JitSettings:
             self.exclude_demon = True
             self.exclude_proxy = True
 
-
-
         if not self.cluster:
             if self.nodes > 1:
                 self.procs = max(self.nodes,self.procs)
@@ -95,32 +109,6 @@ class JitSettings:
                 console.print(
                     f"[bold green]JIT [bold cyan]>> correcting nodes to {self.nodes} and processes to {self.procs} [/]"
                 )
-
-        #default values for the procs in proc_list is not passed
-        if self.procs_demon == 0:
-            if self.cluster:
-                self.procs_demon = self.procs
-            else:
-                self.procs_demon = 1
-        if self.procs_proxy == 0:
-            if self.cluster:
-                self.procs_proxy = self.procs
-            else:
-                self.procs_proxy = 1
-        if self.procs_cargo == 0:
-            if self.cluster:
-                self.procs_cargo = self.procs
-            else:
-                self.procs_cargo = 2
-        if self.procs_app == 0:       
-                self.procs_app   = self.procs
-
-        if self.procs_ftio == 0:
-            if self.cluster:
-                self.procs_ftio  = self.procs
-            else:
-                self.procs_ftio  = 1
-
 
         if self.exclude_ftio:
             self.procs_ftio  = 0
