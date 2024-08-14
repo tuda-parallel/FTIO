@@ -134,7 +134,7 @@ def start_cargo(settings: JitSettings) -> None:
                 f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
                 f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} --jobid={settings.jit_id} "
                 f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                f"-n={settings.procs_cargo}"
+                f"-n={settings.procs_cargo} "
                 f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
                 f"--listen ofi+sockets://ib0:62000 -b 65536"
             )
