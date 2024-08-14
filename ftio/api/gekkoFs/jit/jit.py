@@ -1,5 +1,6 @@
 import sys
 import time
+import signal
 from rich.console import Console
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.jittime import JitTime
@@ -16,14 +17,13 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     soft_kill,
 )
 from ftio.api.gekkoFs.jit.setup_core import *
-import signal
 
 
 console = Console()
-console.print(f"\n\n[bold green]################ JIT ################[/]\n")
+console.print("\n\n[bold green]################ JIT ################[/]\n")
 
 settings = JitSettings()
-runtime=JitTime()
+runtime = JitTime()
 
 
 # Parse options

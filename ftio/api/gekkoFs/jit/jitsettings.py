@@ -1,19 +1,19 @@
-import os 
-import socket 
+import os
+import socket
 from rich.console import Console
+
 console = Console()
 
 
+class JitSettings:
+    def __init__(self) -> None:
+        """sets the internal variables, don't modify this part.
+        """
 
-
-class JitSettings():
-    def __init__(self):
-
-        self.script_dir = os.path.dirname(os.path.realpath(__file__))
+        # self.script_dir = os.path.dirname(os.path.realpath(__file__))
         self.log_dir = ""
 
         # Variable initialization
-        self.finish = False
         self.cluster = False
         self.jit_id = 0
         self.ftio_node = ""
@@ -45,65 +45,136 @@ class JitSettings():
         self.nodes = 2
         self.procs = 128
         self.max_time = 30
-        self.debug=True
+        self.debug = True
 
+        self.procs_demon = 0
+        self.procs_proxy = 0
+        self.procs_cargo = 0
+        self.procs_app   = 0
+        self.procs_ftio  = 0
+        
         self.set_cluster_mode()
         self.set_variables()
-        
-    def set_cluster_mode(self):
+
+    def set_cluster_mode(self) -> None:
+        """automatically identifies if it's a cluster or local machine
+        """
         hostname = socket.gethostname()
         if "cpu" in hostname or "mogon" in hostname:
             self.cluster = True
             if "mogon" in hostname:
-                console.print("[bold red] Execute this script on CPU nodes\n mpiexec still has some bugs[/]")
+                console.print(
+                    "[bold red] Execute this script on CPU nodes\n mpiexec still has some bugs[/]"
+                )
 
         console.print(f"[bold green]JIT >> CLUSTER MODE: {self.cluster}[/]")
 
     def update(self) -> None:
+        """updates the flags and pass variables after the passed options are read.
+        This is necessary, to adapt to the cluster mode and the installation path
+        """
         self.set_falgs()
         self.set_variables()
 
-    def set_falgs(self):
+    def set_falgs(self) -> None:
+        """sets the flags in case exclude all is specified
+        in the options passed
+        """
         if self.exclude_all:
             self.exclude_ftio = True
             self.exclude_cargo = True
             self.exclude_demon = True
             self.exclude_proxy = True
 
+
+
+        if not self.cluster:
+            if self.nodes > 1:
+                self.procs = max(self.nodes,self.procs)
+                self.nodes = 1
+                console.print(
+                    f"[bold green]JIT [bold cyan]>> correcting nodes to {self.nodes} and processes to {self.procs} [/]"
+                )
+
+        #default values for the procs in proc_list is not passed
+        if self.procs_demon == 0:
+            if self.cluster:
+                self.procs_demon = self.procs
+            else:
+                self.procs_demon = 1
+        if self.procs_proxy == 0:
+            if self.cluster:
+                self.procs_proxy = self.procs
+            else:
+                self.procs_proxy = 1
+        if self.procs_cargo == 0:
+            if self.cluster:
+                self.procs_cargo = self.procs
+            else:
+                self.procs_cargo = 2
+        if self.procs_app == 0:       
+                self.procs_app   = self.procs
+
+        if self.procs_ftio == 0:
+            if self.cluster:
+                self.procs_ftio  = self.procs
+            else:
+                self.procs_ftio  = 1
+
+
+        if self.exclude_ftio:
+            self.procs_ftio  = 0
+        if self.exclude_cargo:
+            self.procs_cargo = 0
+        if self.exclude_demon:
+            self.procs_demon = 0
+        if self.exclude_proxy:
+            self.procs_proxy = 0
+
     #! only modify here
-    def set_variables(self):
+    def set_variables(self) -> None:
+        """sets the path variables
+        """
         # job allocation call
         # self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
         self.alloc_call_flags = "--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
 
         # ftio variables
-        self.ftio_activate = '/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin/activate'
+        self.ftio_activate = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin/activate"
 
         # gekko variables
-        self.gkfs_demon = '/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/bin/gkfs_daemon'
-        self.gkfs_intercept = '/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so'
-        self.gkfs_mntdir = '/dev/shm/tarraf_gkfs_mountdir'
-        self.gkfs_rootdir = '/dev/shm/tarraf_gkfs_rootdir'
-        self.gkfs_hostfile = '/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt'
-        self.gkfs_proxy = '/lustre/project/nhr-admire/vef/gekkofs/build/src/proxy/gkfs_proxy'
-        self.gkfs_proxyfile = '/dev/shm/tarraf_gkfs_proxy.pid'
+        self.gkfs_demon = (
+            "/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/bin/gkfs_daemon"
+        )
+        self.gkfs_intercept = "/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
+        self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
+        self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
+        self.gkfs_hostfile = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
+        self.gkfs_proxy = (
+            "/lustre/project/nhr-admire/vef/gekkofs/build/src/proxy/gkfs_proxy"
+        )
+        self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
 
         # cargo variables
-        self.cargo = '/lustre/project/nhr-admire/vef/cargo/build/src/cargo'
-        self.cargo_cli = '/lustre/project/nhr-admire/vef/cargo/build/cli'
-        self.cargo_server = 'ofi+sockets://127.0.0.1:62000'
+        self.cargo = "/lustre/project/nhr-admire/vef/cargo/build/src/cargo"
+        self.cargo_cli = "/lustre/project/nhr-admire/vef/cargo/build/cli"
+        self.cargo_server = "ofi+sockets://127.0.0.1:62000"
 
         # stage out variables
-        self.stage_out_path = '/lustre/project/nhr-admire/tarraf/stage-out'
-        self.regex_file = '/lustre/project/nhr-admire/shared/nek_regex4cargo.txt'
-        self.regex_match = '^/[a-z0-9]*turbPipe0\\.f\\d+'
+        self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
+        self.regex_file = "/lustre/project/nhr-admire/shared/nek_regex4cargo.txt"
+        self.regex_match = "^/[a-z0-9]*turbPipe0\\.f\\d+"
 
         # stage in variables
-        self.stage_in_path = '/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input'
+        self.stage_in_path = (
+            "/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input"
+        )
 
         # pre call
         # execute as ${PRECALL} mpiexec ${some flags} ..${APP_CALL}
-        self.precall="cd /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs &&"
+        self.precall = (
+            "cd /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs &&"
+        )
 
         # pre and post app call
         # Application specific calls executed before the actual run. Executed as
@@ -118,36 +189,40 @@ class JitSettings():
             self.post_app_call = ""
 
         # app call
-        #self.app="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
-        #self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
+        # self.app="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
+        # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
         self.app_call = "./nek5000"
 
         # install location
         if self.cluster:
-            self.install_location = '/beegfs/home/Shared/admire/JIT'
+            self.install_location = "/beegfs/home/Shared/admire/JIT"
 
         # local machine settings
         if not self.cluster:
-            self.install_location = '/d/github/JIT'
+            self.install_location = "/d/github/JIT"
             self.regex_file = f"{self.install_location}/nek_regex4cargo.txt"
-            
+
             self.ftio_activate = "/d/github/FTIO/.venv/bin/activate"
             self.gkfs_demon = f"{self.install_location}/iodeps/bin/gkfs_daemon"
-            self.gkfs_intercept = f"{self.install_location}/iodeps/lib/libgkfs_intercept.so"
+            self.gkfs_intercept = (
+                f"{self.install_location}/iodeps/lib/libgkfs_intercept.so"
+            )
             self.gkfs_mntdir = "/tmp/jit/tarraf_gkfs_mountdir"
             self.gkfs_rootdir = "/tmp/jit/tarraf_gkfs_rootdir"
             self.gkfs_hostfile = f"{os.getcwd()}/gkfs_hosts.txt"
-            self.gkfs_proxy = f"{self.install_location}/gekkofs/build/src/proxy/gkfs_proxy"
+            self.gkfs_proxy = (
+                f"{self.install_location}/gekkofs/build/src/proxy/gkfs_proxy"
+            )
             self.gkfs_proxyfile = f"{self.install_location}/tarraf_gkfs_proxy.pid"
             self.cargo = f"{self.install_location}/cargo/build/src/cargo"
             self.cargo_cli = f"{self.install_location}/cargo/build/cli"
             self.stage_in_path = "/tmp/input"
             self.stage_out_path = "/tmp/output"
-            
+
             # Nek5000
             self.precall = "cd /d/benchmark/Nek5000/turbPipe/run/ &&"
             self.app_call = "./nek5000"
-            self.stage_in_path="/d/benchmark/Nek5000/turbPipe/run/input"
+            self.stage_in_path = "/d/benchmark/Nek5000/turbPipe/run/input"
             if self.exclude_all:
                 self.pre_app_call = "echo -e 'turbPipe\\n/d/benchmark/Nek5000/turbPipe/run/input' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
                 self.post_app_call = "rm /d/benchmark/Nek5000/turbPipe/run/input/*.f*"

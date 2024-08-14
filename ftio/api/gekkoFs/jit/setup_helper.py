@@ -1,15 +1,12 @@
 import sys
 import subprocess
-import socket
 import getopt
 import os
 import signal
 import time
-import threading
 from rich.console import Console
-from rich.panel import Panel
-from rich.status import Status
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
+from ftio.api.gekkoFs.jit.jittime import JitTime
 
 console = Console()
 
@@ -78,11 +75,13 @@ def parse_options(settings: JitSettings, args: list) -> None:
     try:
         opts, args = getopt.getopt(
             args,
-            "a:p:n:t:l:i:e:xh",
+            "a:p:n:c:r:t:l:i:e:xh",
             [
                 "address=",
                 "port=",
                 "nodes=",
+                "procs=",
+                "procs_list=",
                 "max-time=",
                 "log-name=",
                 "install-location=",
@@ -101,43 +100,69 @@ def parse_options(settings: JitSettings, args: list) -> None:
         elif opt in ("-p", "--port"):
             settings.port = arg
         elif opt in ("-n", "--nodes"):
-            settings.nodes = arg
+            settings.nodes = int(arg)
         elif opt in ("-t", "--max-time"):
-            settings.max_time = arg
+            settings.max_time = int(arg)
         elif opt in ("-l", "--log-name"):
             settings.log_dir = arg
         elif opt in ("-i", "--install-location"):
             settings.install_location = arg
             install_all(settings)
+        elif opt in ("-p","--procs"):
+            settings.procs = int(arg)
+        elif opt in("-r", "--procs_list"):
+            # Split the argument by comma to get the list of numbers
+            procs_list = arg.split(",")
+
+            # Convert the list of strings to a list of integers
+            try:
+                procs_list = [int(proc) for proc in procs_list]
+            except ValueError:
+                console.print("[bold red]Invalid --procs value. It must be a comma-separated list of numbers.[/]")
+                sys.exit(1)
+
+            # Check the number of elements and assign accordingly
+            if len(procs_list) > 5:
+                console.print("[bold red]Too many values for --procs. Maximum is 5.[/]")
+                sys.exit(1)
+            elif len(procs_list) > 0:
+                settings.procs_app = int(procs_list[0])
+            if len(procs_list) > 1:
+                settings.procs_demon = int(procs_list[1])
+            if len(procs_list) > 2:
+                settings.procs_proxy = int(procs_list[2])
+            if len(procs_list) > 3:
+                settings.procs_cargo = int(procs_list[3])
+            if len(procs_list) > 4:
+                settings.procs_ftio = int(procs_list[4])
         elif opt in ("-e", "--exclude"):
             jit_print("[bold yellow]>> Excluding: [/]")
             if not arg or arg.startswith("-"):
                 settings.exclude_ftio = True
-                console.print("- ftio")
+                console.print("[yellow]- ftio[/]")
             else:
                 excludes = arg.split(",")
                 for exclude in excludes:
                     if exclude == "ftio":
                         settings.exclude_ftio = True
-                        console.print("- ftio")
+                        console.print("[yellow]- ftio[/]")
                     elif exclude == "cargo":
                         settings.exclude_cargo = True
-                        console.print("- cargo")
+                        console.print("[yellow]- cargo[/]")
                     elif exclude in ("gkfs", "demon", "proxy"):
                         if exclude == "gkfs":
                             settings.exclude_demon = True
                             settings.exclude_proxy = True
-                            console.print("- gkfs")
+                            console.print("[yellow]- gkfs[/]")
                         elif exclude == "demon":
                             settings.exclude_demon = True
-                            console.print("- demon")
+                            console.print("[yellow]- demon[/]")
                         elif exclude == "proxy":
                             settings.exclude_proxy = True
-                            console.print("- proxy")
+                            console.print("[yellow]- proxy[/]")
                     elif exclude == "all":
                         settings.exclude_all = True
-                        settings.update()
-                        console.print("- all")
+                        console.print("[yellow]- all[/]")
                     else:
                         console.print(
                             f"[bold green]JIT >>[bold red] Invalid exclude option: {exclude} [/]"
@@ -145,14 +170,17 @@ def parse_options(settings: JitSettings, args: list) -> None:
                         sys.exit(1)
         elif opt in ("-x", "--exclude-all"):
             settings.exclude_all = True
-            settings.update()
         elif opt in ("-h", "--help"):
             error_usage(settings)
             sys.exit(1)
+        
+
         else:
             console.print(f"[bold red]Invalid option: {opt}[/]")
             error_usage(settings)
             sys.exit(1)
+
+    settings.update()
 
 
 def error_usage(settings: JitSettings):
@@ -175,12 +203,21 @@ def error_usage(settings: JitSettings):
         executed on a single node, while the rest (including the
         application) get X-1 nodes.
 
+    -c | --procs: X <int>
+        default: [bold yellow]{settings.procs}[/]
+        if procs_list is skipped, this is the default number of procs assigned to all
+        
+    -r | --procs_list: x,x,..,x <list>
+        default: [bold yellow]{settings.procs_app},{settings.procs_demon},{settings.procs_proxy},{settings.procs_cargo},{settings.procs_ftio}[/]
+        List of procs for aap, demon, proxy, cargo, and ftio, respectively.
+        Assignment is from right to left depending on the length of the list
+
     -t | --max-time: X <int>
         default: [bold yellow]{settings.max_time}[/]
         max time for the execution of the setup in minutes.
     
     -l | --log-name: <str>
-        default: Autoset to number of nodes and job ID
+        default: Auto set to number of nodes and job ID
         if provided, sets the name of the directory where the logs are stored.
 
     -e | --exclude: <str>,<str>,...,<str>
@@ -189,10 +226,10 @@ def error_usage(settings: JitSettings):
         Supported options include: ftio, demon, proxy, gkfs (demon + proxy), 
         cargo, and all (same as -x).
 
-    -x | --exclude-all
+    -x | --exclude-all <list>
         default: [bold yellow]{settings.exclude_all}[/]
         If this flag is provided, the setup is executed without FTIO, 
-        GekkoFS, and Cargo.
+        GekkoFs, and Cargo.
 
     -i | --install-location: full_path <str>
         default: [bold yellow]{settings.install_location}[/]
@@ -216,7 +253,7 @@ def install_all(settings: JitSettings) -> None:
             os.makedirs(settings.install_location, exist_ok=True)
 
             # Clone GKFS
-            console.print("[bold green]JIT >>> Installing GEKKO[/]")
+            console.print("[bold green]JIT >>> Installing GKFS[/]")
             subprocess.run(
                 [
                     "git",
@@ -430,26 +467,6 @@ def cancel_jit_jobs():
             console.print("[bold green]JIT [bold yellow]>> No jobs were cancelled.[/]")
 
 
-def get_pid(settings: JitSettings, name: str, pid: int):
-    if settings.cluster == True:
-        call = f"ps aux | grep 'srun' | grep '{settings.jit_id}' | grep '{name}' | grep -v grep | tail -1 | awk '{{print $2}}'"
-        res = subprocess.run(call, shell=True, check=True, capture_output=True, text=True)
-        if res.stdout.strip():
-            pid = res.stdout.strip() 
-
-
-    if name.lower() in "cargo":
-        settings.cargo_pid = pid
-        console.print(f"[green bold]JIT >>> Cargo PID: {pid}[/]")
-    elif name.lower() in "gkfs_demon":
-        settings.gekko_demon_pid = pid
-        console.print(f"[green bold]JIT >>> Gekko demon PID: {pid}[/]")
-    elif name.lower() in "gkfs_proxy":
-        settings.gekko_proxy_pid = pid
-        console.print(f"[green bold]JIT >>> Gekko proxy PID: {pid}[/]")
-    elif name.lower() in "ftio" or name.lower() in "predictor_jit":
-        settings.ftio_pid = pid
-        console.print(f"[green bold]JIT >>> Ftio PID: {pid}[/]")
 
 
 def relevant_files(settings: JitSettings, verbose: bool = False):
@@ -598,12 +615,30 @@ def allocate(settings: JitSettings) -> None:
                 "[bold gree]JIT [bold red]>> JIT_ID could not be retrieved[/]"
             )
 
-    else:
-        settings.procs = settings.nodes
-        settings.nodes = 1
-        console.print(
-            f"[bold green]JIT [bold cyan]>> Number of processes: {settings.procs} [/]"
-        )
+
+
+
+
+
+def get_pid(settings: JitSettings, name: str, pid: int):
+    if settings.cluster:
+        call = f"ps aux | grep 'srun' | grep '{settings.jit_id}' | grep '{name}' | grep -v grep | tail -1 | awk '{{print $2}}'"
+        res = subprocess.run(call, shell=True, check=True, capture_output=True, text=True)
+        if res.stdout.strip():
+            pid = res.stdout.strip() 
+
+    if name.lower() in "cargo":
+        settings.cargo_pid = pid
+        console.print(f"[green bold]JIT >>> Cargo PID: {pid}[/]")
+    elif name.lower() in "gkfs_demon":
+        settings.gekko_demon_pid = pid
+        console.print(f"[green bold]JIT >>> Gekko demon PID: {pid}[/]")
+    elif name.lower() in "gkfs_proxy":
+        settings.gekko_proxy_pid = pid
+        console.print(f"[green bold]JIT >>> Gekko proxy PID: {pid}[/]")
+    elif name.lower() in "ftio" or name.lower() in "predictor_jit":
+        settings.ftio_pid = pid
+        console.print(f"[green bold]JIT >>> Ftio PID: {pid}[/]")
 
 
 # Function to handle SIGINT (Ctrl+C)
@@ -612,7 +647,8 @@ def handle_sigint(settings: JitSettings):
     soft_kill(settings)
     hard_kill(settings)
     if settings.cluster:
-        execute(f"scancel {settings.jit_id}")
+        _ = subprocess.run(f"scancel {settings.jit_id}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
+        )
     sys.exit(0)
 
 
@@ -653,8 +689,9 @@ def hard_kill(settings) -> None:
 
     if settings.cluster:
         # Cluster environment: use `scancel` to cancel the job
-        call = f"scancel {settings.jit_id}"
-        execute(call)
+        _ = subprocess.run(
+            f"scancel {settings.jit_id}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
+        )
     else:
         # Non-cluster environment: use `kill` to terminate processes
         processes = [
@@ -669,7 +706,7 @@ def hard_kill(settings) -> None:
                 # Find process IDs and kill them
                 kill_command = f"ps -aux | grep {process} | grep -v grep | awk '{{print $2}}' | xargs kill"
                 while(kill_command):
-                    subprocess.run(
+                    _ = subprocess.run(
                         kill_command, shell=True, capture_output=True, text=True, check=True
                     )
                     kill_command = f"ps -aux | grep {process} | grep -v grep | awk '{{print $2}}' | xargs kill"
@@ -692,8 +729,10 @@ def shut_down(settings, name, pid):
             print(f"An error occurred: {e}")
 
         # Wait for the process to terminate if in a cluster
-        if settings.cluster == True:
-            execute(f"wait {pid}")
+        if settings.cluster:
+            _ = subprocess.run(
+            f"wait {pid}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
+        )
 
 
 def log_dir(settings):
@@ -711,7 +750,7 @@ def log_dir(settings):
 def get_address_ftio(settings: JitSettings) -> None:
     # Get Address and port
     jit_print("####### Getting FTIO ADDRESS")
-    if settings.cluster == True:
+    if settings.cluster:
         call = f"srun --jobid={settings.jit_id} {settings.ftio_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
         jit_print(f"[bold cyan]>> Executing: {call}")
         try:
@@ -728,7 +767,7 @@ def get_address_ftio(settings: JitSettings) -> None:
 
 def get_address_cargo(settings: JitSettings) -> None:
     jit_print("####### Getting Cargo ADDRESS")
-    if settings.cluster == True:
+    if settings.cluster:
         call = f"srun --jobid={settings.jit_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
         jit_print(f"[bold cyan]>> Executing: {call}")
         try:
@@ -824,9 +863,14 @@ def print_settings(settings) -> None:
 ├─ cargo          : {cargo_status}
 ├─ cluster        : {settings.cluster}
 ├─ total nodes    : {settings.nodes}
-├─ app nodes      : {settings.app_nodes}
-├─ ftio nodes     : 1
+|   ├─ app        : {settings.app_nodes}
+|   └─ ftio       : 1
 ├─ procs          : {settings.procs}
+|   ├─ app        : {settings.procs_app}
+|   ├─ demon      : {settings.procs_demon}
+|   ├─ proxy      : {settings.procs_proxy}
+|   ├─ cargo      : {settings.procs_cargo}
+|   └─ ftio       : {settings.procs_ftio}
 ├─ max time       : {settings.max_time}
 └─ job id         : {settings.jit_id}
 
@@ -860,199 +904,6 @@ def jit_print(s: str):
     console.print(f"[bold green]JIT[/][green] {s}[/]")
 
 
-def execute(call) -> None:
-    jit_print(f">> Executing {call}")
-    try:
-        # subprocess.run(call, shell=True, capture_output=True, text=True, check=True)
-        # process = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        out = subprocess.run(call, shell=True, text=True, check=True, executable='/bin/bash')
-    except subprocess.CalledProcessError as e:
-        error_message = (
-            f"[red]Command failed:[/red] {call}\n"
-            f"[red]Exit code:[/red] {e.returncode}\n"
-            f"[red]Output:[/red] {e.stdout.strip()}\n"
-            f"[red]Error:[/red] {e.stderr.strip()}"
-        )
-        console.print(f"[red]{error_message}\n[/]")
-        handle_sigint
-        raise
-
-def execute_and_log(call,log_file) -> float:
-    log_message = f">> Executing command: {call}\n"
-    jit_print("[cyan]"+log_message)
-    start = time.time()
-    end = start
-    try:
-        out = subprocess.run(call, shell=True, capture_output=True, text=True, check=True, executable='/bin/bash')
-        end = time.time()
-        log_message += f"Output:\n{out.stdout}\n"
-    except subprocess.CalledProcessError as e:
-        log_message += f"Error:\n{e.stderr}\n"
-        error_message = (
-            f"[red]Command failed:[/red] {call}\n"
-            f"[red]Exit code:[/red] {e.returncode}\n"
-            f"[red]Output:[/red] {e.stdout.strip()}\n"
-            f"[red]Error:[/red] {e.stderr.strip()}"
-        )
-        console.print(f"[red]{error_message}[/]")
-        handle_sigint
-        raise
-    finally:
-        # Write the log message to the file
-        with open(log_file, "a") as file:
-            file.write(log_message)
-    return end - start
-
-
-def execute_background(call: str, log_file: str = "", log_err_file: str = ""):
-    """executes a call in the background and sets up a log dir
-
-    Args:
-        call (str): call to execute
-        log_dir (str, optional): log dir directory. Defaults to "".
-        error_dir (str, optional): error die directory. Defaults to "".
-
-    Returns:
-        _type_: _description_
-    """
-    jit_print(f"[cyan]>> Executing {call}")
-    with open(log_file, "a") as file:
-            file.write(f">> Executing {call}")
-            
-    if log_file and log_err_file:
-        with open(log_file, "a") as log_out:
-            with open(log_err_file, "w") as log_err:
-                process = subprocess.Popen(
-                    call, shell=True, stdout=log_out, stderr=log_err
-                )
-    elif log_file:
-        with open(log_file, "a") as log_out:
-            process = subprocess.Popen(
-                call, shell=True, stdout=log_out, stderr=subprocess.STDOUT
-            )
-    else:
-        process = subprocess.Popen(
-            call, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-    return process
-
-
-def execute_and_wait_line(call: str, filename: str, target_line: str):
-    execute(call)
-    wait_for_line(filename, target_line)
-
-
-def monitor_log_file(file, src=""):
-    monitor_thread = threading.Thread(target=print_file, args=(file, src))
-    monitor_thread.daemon = True
-    monitor_thread.start()
-
-
-def print_file(file, src=""):
-    """Continuously monitor the log file for new lines and print them."""
-    color = ""
-    if src:
-        if "demon" in src:
-            color = "[purple4]"
-        elif "proxy" in src:
-            color = "[deep_pink1]"
-        elif "ftio" in src:
-            color = "[deep_sky_blue1]"
-
-    with open(file, "r") as file:
-        # Go to the end of the file
-        file.seek(0, os.SEEK_END)
-        while True:
-            line = file.readline()
-            if line and len(line)> 0:
-                if not src or "cargo" in src:
-                    print(line.rstrip())
-                else:
-                    console.print(
-                        Panel.fit(
-                            color + line.rstrip(),
-                            title=src,
-                            style="white",
-                            border_style="white",
-                            title_align="left",
-                        )
-                    )
-            else:
-                time.sleep(0.1)  # Sleep briefly to avoid high CPU usage
-
-
-def wait_for_file(filename: str, timeout: int = 60) -> None:
-    """Waits for a file to be created
-
-    Args:
-        file (str): absolute file path
-    """
-    start_time = time.time()
-    with Status(
-        f"[cyan]Waiting for {filename} to be created...\n", console=console
-    ) as status:
-        while not os.path.isfile(filename):
-            passed_time = int(time.time() - start_time)
-            if passed_time >= timeout:
-                status.update("Timeout reached")
-                console.print("[bold green]JIT [bold red]>> Timeout reached[/]")
-                handle_sigint
-                return
-
-            status.update(
-                f"[cyan]Waiting for {filename} to be created... ({passed_time}/{timeout}) s"
-            )
-            time.sleep(1)  # Wait for 1 second before checking again
-
-        # When the file is created, update the status
-        status.update(f"{filename} has been created.")
-        console.print(f"[bold green]JIT [/]>>{filename} has been created.")
-
-
-def wait_for_line(filename: str, target_line: str, timeout: int = 60) -> None:
-    """
-    Waits for a specific line to appear in a log file
-
-    Args:
-        filename (str): The path to the log file.
-        target_line (str): The line of text to wait for.
-    """
-    start_time = time.time()
-
-    with open(filename, "r") as file:
-        # Move to the end of the file to start monitoring
-        # file.seek(0, 2)  # Go to the end of the file and look at the last 10 entris
-        try:
-            file.seek(-2, os.SEEK_END)
-        except:
-            file.seek(0, 0)  # Go to the end of the file and look at the last 10 entris
-
-        with Status(f"[cyan]Waiting for line to appear...", console=console) as status:
-            while True:
-                line = file.readline()
-                if not line:
-                    # If no line, wait and check again
-                    time.sleep(0.1)
-                    passed_time = int(time.time() - start_time)
-                    if passed_time >= timeout:
-                        status.update("Timeout reached.")
-                        console.print(
-                            "[bold green]JIT [bold red]>> Timeout reached. [/]"
-                        )
-                        handle_sigint
-                        return
-                    status.update(
-                        f"[cyan]Waiting for line to appear... ({passed_time}/{timeout})"
-                    )
-                    continue
-
-                if target_line in line:
-                    status.update(f"Found target line: '{target_line}'")
-                    console.print(
-                        f"\n[bold green]JIT [/]>> Found target line: '{target_line}'"
-                    )
-                    break
-
 
 def create_hostfile(settings):
     jit_print(f"[cyan]>> Cleaning Hostfile: {settings.gkfs_hostfile}")
@@ -1078,22 +929,22 @@ def create_hostfile(settings):
     #     console.print(f"[bold red]Error creating hostfile:[/bold red] {e}")
 
 
-def format_time(runtime):
-    """Format the runtime in a more readable way."""
-    hours, remainder = divmod(runtime, 3600)
+def format_time(elapsed):
+    """Format the elapsed in a more readable way."""
+    hours, remainder = divmod(elapsed, 3600)
     minutes, seconds = divmod(remainder, 60)
     return f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
 
 
-def elapsed_time(settings: JitSettings, name, runtime):
+def elapsed_time(settings: JitSettings, runtime:JitTime, name, elapsed):
     """Calculate and print the elapsed time."""
 
-    runtime_formatted = format_time(runtime)
+    elapsed_formatted = format_time(elapsed)
     log_message = (
         f"\n\n[cyan]############[JIT]##############\n"
         f"# {name}\n"
-        f"# time: [yellow]{runtime_formatted} [cyan]\n"
-        f"# [yellow]{runtime} [cyan]seconds\n"
+        f"# time: [yellow]{elapsed_formatted} [cyan]\n"
+        f"# [yellow]{elapsed} [cyan]seconds\n"
         f"##############################\n\n"
     )
     console.print(log_message)
@@ -1103,6 +954,14 @@ def elapsed_time(settings: JitSettings, name, runtime):
         log_message,
         os.path.join(settings.log_dir, "time.log"),
     )
+
+    if "stage" in name.lower():
+        if "in" in name .lower():
+            runtime.stage_in = elapsed
+        elif "out" in name.lower():
+            runtime.stage_out = elapsed
+    elif "app" in name.lower():
+        runtime.app = elapsed
 
 
 def check(settings: JitSettings):
@@ -1147,7 +1006,7 @@ def check_setup(settings:JitSettings):
         #                         f"-x LIBGKFS_HOSTS_FILE={gekkofs_hostfile} -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
         #                         f"/home/tarrafah/nhr-admire/tarraf/FTIO/ftio/api/gekkoFs/scripts/test.sh")
         #     console.print(f"[cyan]>> statx:[/]")
-        #     execute(test_script_command)
+        #      subprocess.run(test_script_command, shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"        )
 
                     
         #     srun_command = (f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')},"
