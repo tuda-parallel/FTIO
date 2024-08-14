@@ -124,8 +124,8 @@ class JitSettings:
         """sets the path variables
         """
         # job allocation call
-        # self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
-        self.alloc_call_flags = "--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
+        self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
+        # self.alloc_call_flags = "--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
 
         # ftio variables
         self.ftio_activate = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin/activate"
