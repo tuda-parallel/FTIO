@@ -46,7 +46,7 @@ def check_setup(settings:JitSettings):
             if not settings.exclude_proxy:
                 additional_arguments += " -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
             call = (
-                f"mpiexec -np {settings.procs_app} --oversubscribe "
+                f"mpiexec -np 10 --oversubscribe "
                 f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors "
                 f"-x LIBGKFS_ENABLE_METRICS=on  "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
