@@ -302,7 +302,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             settings.cargo_log,
             "[info] Transfer finished for ["
         )
-        end_of_transfer(settings, settings.cargo_log)
+        end_of_transfer(settings, settings.cargo_log,call)
         elapsed_time(settings, runtime, "Stage out", time.time() - start)
         # Set ignored files to default again
         relevant_files(settings)

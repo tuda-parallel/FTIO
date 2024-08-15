@@ -189,11 +189,15 @@ def monitor_log_file(file: str, src: str = "") -> None:
     monitor_thread.start()
 
 
-def end_of_transfer(settings: JitSettings, log_file: str, monitored_files: list[str] = []):
+def end_of_transfer(settings: JitSettings, log_file: str, call:str, monitored_files: list[str] = []) -> None:
     online = False
+    stuck = False
+    hits = 0
+    limit = 100 
     if len(monitored_files) == 0:
         monitored_files = get_files(settings,True)
         online = True
+        stuck = True
     
     last_lines = read_last_n_lines(log_file)
     n = len(monitored_files)
@@ -246,10 +250,23 @@ def end_of_transfer(settings: JitSettings, log_file: str, monitored_files: list[
                                     if name in content:
                                         monitored_files.remove(name)
                                         console.print(f"[bold green]JIT [cyan]>> finished moving '{name}'. Remaining files ({len(monitored_files)})")
+                                        console.print(f"Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}")
+                                        console.print(f"[bold green]JIT [/][cyan]>> Files in mount dir {monitored_files}")
                                         status.update(f"Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}")
-                    # avoids dead loop for disappearing files
-                    monitored_files = get_files(settings,False)
-                    console.print(f"[bold green]JIT [/][cyan]>> Files in mount dir {monitored_files}")
+                                        hits = 0
+                    if online:
+                        # avoids dead loop for disappearing files
+                        monitored_files = get_files(settings,False)
+                        hits += 1
+                        status.update(f"Waiting for {len(monitored_files)} more files to be deleted [yellow]({hits}/{limit})[/]: {monitored_files}")
+                        if hits > 4:
+                            if stuck:
+                                console.print("[bold green]JIT [cyan]>> Stuck? Triggering cargo again\n")
+                                _ = execute_background(call, settings.cargo_log,settings.cargo_err)
+                                stuck = False
+                        if hits > limit:
+                            console.print("[bold green]JIT [cyan]>> Stopping stage out\n")
+                            return
                 # All monitored files have been processed
                 timestamp = get_time
                 status.update(f"\n[bold green]JIT [cyan]>> finished moving all files at  [{timestamp}]")
