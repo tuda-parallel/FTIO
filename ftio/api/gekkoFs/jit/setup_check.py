@@ -53,7 +53,7 @@ def check_setup(settings:JitSettings):
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"{additional_arguments} "
-                f"hostname && /usr/bin/ls {settings.gkfs_mntdir} "
+                f" hostname && ls {settings.gkfs_mntdir} "
             )
             console.print("[bold green]JIT[/][cyan] >> Checking mpiexec with Gekko")
             out = execute_block(call, False)
@@ -64,7 +64,7 @@ def check_setup(settings:JitSettings):
             console.print("[bold green]JIT[/][cyan] >> Checking test file")
             try:
                 timestamp = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-                file = create_test_file("test.sh"+timestamp)
+                file = create_test_file("test.sh"+timestamp, settings)
                 call = (
                         f"mpiexec -np 5 --oversubscribe "
                         f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors "
@@ -108,13 +108,14 @@ def check_setup(settings:JitSettings):
 
 
 
-def create_test_file(name:str) -> str:
+def create_test_file(name:str, settings:JitSettings) -> str:
     # Define the content of the shell script
-    script_content = """#!/bin/bash
-    myhostname=$(hostname)
-    statcall=$(/usr/bin/stat /dev/shm/tarraf_gkfs_mountdir/turbPipe.rea)
-    lscall=$(/usr/bin/stat /dev/shm/tarraf_gkfs_mountdir/turbPipe.rea)
-    echo -e "Hello I am ${myhostname} and stat output: \\n${statcall}\\n The directory contains:${lscall}"
+    script_content = "#!/bin/bash\n"
+    script_content +="myhostname=$(hostname)\n"
+    script_content +=f"statcall=$(stat {settings.gkfs_mntdir})\n"
+    script_content +=f"lscall=$(ls {settings.gkfs_mntdir})\n"
+    script_content += """
+    echo -e "Hello I am ${myhostname} and stat output: \\n${statcall}\\n The directory contains:${lscall}\\n"
     """
 
     # Write the content to a file called tet.sh
