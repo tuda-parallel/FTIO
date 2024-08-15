@@ -42,9 +42,9 @@ def check_setup(settings:JitSettings):
 
             additional_arguments = ""
             if not settings.exclude_ftio:
-                additional_arguments += "-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
+                additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
             if not settings.exclude_proxy:
-                additional_arguments += "-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+                additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
             call = (
                 f"mpiexec -np 2 --oversubscribe "
                 f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors "
@@ -52,7 +52,7 @@ def check_setup(settings:JitSettings):
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"{additional_arguments} "
-                f"hostname && /usr/bin/ls {settings.gkfs_mntdir}) "
+                f"hostname && /usr/bin/ls {settings.gkfs_mntdir} "
             )
             console.print("[bold green]JIT[/][cyan] >> Checking mpiexec with Gekko")
             out = execute_block(call, False)
@@ -73,7 +73,9 @@ def check_setup(settings:JitSettings):
                 )
             out = execute_block(call, False)
             console.print(f"{out}")
-                
+            # remove the created file
+            if os.path.exists(file):
+                os.remove(file)
         else:
             console.print("[bold green]JIT[/][cyan] >> Skipping setup check")
         # # Run MPI exec test script
