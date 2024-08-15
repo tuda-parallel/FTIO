@@ -49,56 +49,56 @@ def main() -> None:
     # Clean other jobs
     cancel_jit_jobs()
 
-    # Create folder for logs
-    log_dir(settings)
-
-    # 1. Allocate resources
+    # 1.0 Allocate resources
     allocate(settings)
+
+    # 1.2 Create folder for logs
+    log_dir(settings)
     
-    # 1.2 Get the address
+    # 1.3 Get the address
     get_address_ftio(settings)
 
-    #1.3 Get address carg
+    # 1.4 Get address carg
     get_address_cargo(settings)
 
-    # 1.4 Print settings
+    # 1.5 Print settings
     print_settings(settings)
 
-    # 2. Start Gekko Server (Daemon)
+    # 2.0 Start Gekko Server (Daemon)
     start_gekko_demon(settings)
 
-    # 2.1
+    # 2.1 Start Proxy
     start_gekko_proxy(settings)
 
-    # 3. Start Cargo Server
+    # 3.0 Start Cargo Server
     start_cargo(settings)
 
-    # 4. Stage in
+    # 4.0 Stage in
     stage_in(settings, runtime)
 
-    # 5. Start FTIO
+    # 5.0 Start FTIO
     start_ftio(settings)
 
-    # 6. Pre- and application with Gekko intercept
+    # 6.0 Pre- and application with Gekko intercept
     pre_call(settings)
     start_application(settings, runtime)
 
-    # 7. Stage out
+    # 7.0 Stage out
     stage_out(settings, runtime)
 
-    # 8. Post call if exists
+    # 8.0 Post call if exists
     post_call(settings)
 
-    # # 9. Display total time
+    # 9.0 Display total time
     runtime.print_time()
 
-    # 10. Soft kill
+    # 10.0 Soft kill
     soft_kill(settings)
 
-    # 11. Hard kill
+    # 11.0 Hard kill
     hard_kill(settings)
 
-    console.print(f"[bold green]############### JIT completed ###############[/]")
+    console.print("[bold green]############### JIT completed ###############[/]")
     sys.exit(0)
 
 

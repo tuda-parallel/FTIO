@@ -53,7 +53,7 @@ def check_setup(settings:JitSettings):
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"{additional_arguments} "
-                f" hostname && ls {settings.gkfs_mntdir} "
+                f" ls {settings.gkfs_mntdir} "
             )
             console.print("[bold green]JIT[/][cyan] >> Checking mpiexec with Gekko")
             out = execute_block(call, False)
@@ -115,7 +115,7 @@ def create_test_file(name:str, settings:JitSettings) -> str:
     script_content +=f"statcall=$(stat {settings.gkfs_mntdir})\n"
     script_content +=f"lscall=$(ls {settings.gkfs_mntdir})\n"
     script_content += """
-    echo -e "Hello I am ${myhostname} and stat output: \\n${statcall}\\n The directory contains:${lscall}\\n"
+    echo -e "Hello I am ${myhostname} and stat output: \\n${statcall}\\n The directory contains:\\n${lscall}\\n"
     """
 
     # Write the content to a file called tet.sh
