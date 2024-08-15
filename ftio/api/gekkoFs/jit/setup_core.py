@@ -45,8 +45,12 @@ def start_gekko_demon(settings: JitSettings) -> None:
 
         if settings.cluster:
             # Display Demon
-            call_0 = f"srun --jobid={settings.jit_id} {settings.single_node_command} -N 1 --ntasks=1 mkdir -p {settings.gkfs_mntdir}"
-
+            # call_0 = f"srun --jobid={settings.jit_id} {settings.single_node_command} -N 1 --ntasks=1 mkdir -p {settings.gkfs_mntdir}"
+            call_0 =(
+                f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                f"--ntasks={settings.app_nodes} --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap "
+                f"--oversubscribe --mem=0 mkdir -p {settings.gkfs_mntdir}"
+                    )
             if settings.exclude_proxy:
                 # Demon call without proxy
                 # call = (
@@ -71,11 +75,7 @@ def start_gekko_demon(settings: JitSettings) -> None:
                 )
 
         else:
-            call_0 = (
-                f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                f"--ntasks={settings.app_nodes} --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap "
-                f"--oversubscribe --mem=0 mkdir -p {settings.gkfs_mntdir}"
-                    )
+            call_0 = f"mkdir -p {settings.gkfs_mntdir}"
 
             # Gekko demon call
             call = (
@@ -83,8 +83,8 @@ def start_gekko_demon(settings: JitSettings) -> None:
                 f"-H {settings.gkfs_hostfile} -c -l lo -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp"
             )
 
-        jit_print("[cyan]>> Creating Directory[/]")
-        _ = execute_block(call_0)
+        out = execute_block(call_0)
+        jit_print(f"[cyan]>> Creating directory\n{out}[/]")
 
         jit_print("[cyan]>> Starting Demons[/]")
         
