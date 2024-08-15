@@ -268,7 +268,7 @@ def end_of_transfer(settings: JitSettings, log_file: str, call:str, monitored_fi
                             console.print("[bold green]JIT [cyan]>> Stopping stage out\n")
                             return
                 # All monitored files have been processed
-                timestamp = get_time
+                timestamp = get_time()
                 status.update(f"\n[bold green]JIT [cyan]>> finished moving all files at  [{timestamp}]")
                 console.print(f"\n[bold green]JIT [cyan]>> finished moving all files at  [{timestamp}]")
 

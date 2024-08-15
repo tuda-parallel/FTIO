@@ -51,7 +51,7 @@ def check_setup(settings:JitSettings):
                 f"-x LIBGKFS_ENABLE_METRICS=on  "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                f" echo -e 'Here is $(hostname): \\n$(/usr/bin/ls {settings.gkfs_mntdir}) "
+                f" echo -e 'Here is $(hostname): \\n$(/usr/bin/ls {settings.gkfs_mntdir})' "
             )
             console.print("[bold green] JIT[/][cyan]>> Checking mpiexec with Gekko")
             out = execute_block(call, False)
