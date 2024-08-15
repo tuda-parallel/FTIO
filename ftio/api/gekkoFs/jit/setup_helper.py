@@ -732,7 +732,7 @@ def shut_down(settings, name, pid):
 
 
 
-def log_dir(settings):
+def log_dir(settings:JitSettings):
     if not settings.log_dir:
         # Define default LOG_DIR if not set
         settings.log_dir = f"logs_nodes{settings.nodes}_Jobid{settings.jit_id}"
@@ -742,6 +742,7 @@ def log_dir(settings):
 
     # Resolve and return the absolute path of LOG_DIR
     settings.log_dir = os.path.abspath(settings.log_dir)
+    settings.set_log_dirs()
 
 
 def get_address_ftio(settings: JitSettings) -> None:

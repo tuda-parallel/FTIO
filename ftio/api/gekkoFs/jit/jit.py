@@ -40,9 +40,6 @@ def main() -> None:
     settings = JitSettings()
     runtime = JitTime()
 
-    # Create folder for logs
-    log_dir(settings)
-
     # Parse options
     parse_options(settings, sys.argv[1:])
 
@@ -51,6 +48,9 @@ def main() -> None:
 
     # Clean other jobs
     cancel_jit_jobs()
+
+    # Create folder for logs
+    log_dir(settings)
 
     # 1. Allocate resources
     allocate(settings)

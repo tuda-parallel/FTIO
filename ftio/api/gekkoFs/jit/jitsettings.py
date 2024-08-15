@@ -134,6 +134,7 @@ class JitSettings:
         if self.exclude_proxy:
             self.procs_proxy = 0
 
+    def set_log_dirs(self):
         self.gekko_demon_log = os.path.join(self.log_dir, "gekko_demon.log")
         self.gekko_demon_err = os.path.join(self.log_dir, "gekko_demon.err")
         self.gekko_proxy_log = os.path.join(self.log_dir, "gekko_proxy.log")
@@ -143,7 +144,7 @@ class JitSettings:
         self.ftio_log        = os.path.join(self.log_dir, "ftio.log")
         self.ftio_err        = os.path.join(self.log_dir, "ftio.err")
         self.app_log         = os.path.join(self.log_dir, "app.log")
-        self.app_err       = os.path.join(self.log_dir, "app.err")
+        self.app_err        = os.path.join(self.log_dir, "app.err")
 
         
     #! only modify here
