@@ -42,22 +42,40 @@ def check_setup(settings:JitSettings):
 
             additional_arguments = ""
             if not settings.exclude_ftio:
-                additional_arguments += " -x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
+                additional_arguments += "-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
             if not settings.exclude_proxy:
-                additional_arguments += " -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+                additional_arguments += "-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
             call = (
-                f"mpiexec -np 10 --oversubscribe "
+                f"mpiexec -np 2 --oversubscribe "
                 f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors "
                 f"-x LIBGKFS_ENABLE_METRICS=on  "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                f" echo -e 'Here is $(hostname): \\n$(/usr/bin/ls {settings.gkfs_mntdir})' "
+                f"{additional_arguments} "
+                f"hostname && /usr/bin/ls {settings.gkfs_mntdir}) "
             )
-            console.print("[bold green] JIT[/][cyan]>> Checking mpiexec with Gekko")
+            console.print("[bold green]JIT[/][cyan] >> Checking mpiexec with Gekko")
             out = execute_block(call, False)
-            console.print(f"srun check: {out}")
+            console.print(f"{out}")
+
+
+            #test script
+            console.print("[bold green]JIT[/][cyan] >> Checking test file")
+            file = create_test_file()
+            call = (
+                    f"mpiexec -np 5 --oversubscribe "
+                    f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors "
+                    f"-x LIBGKFS_ENABLE_METRICS=on  "
+                    f"-x LD_PRELOAD={settings.gkfs_intercept} "
+                    f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                    f"{additional_arguments} "
+                    f"{file}"
+                )
+            out = execute_block(call, False)
+            console.print(f"{out}")
+                
         else:
-            console.print("[bold green] JIT[/][cyan]>> Skipping setup check")
+            console.print("[bold green]JIT[/][cyan] >> Skipping setup check")
         # # Run MPI exec test script
         # procs = settings.procs
         # if settings.cluster:
@@ -80,3 +98,22 @@ def check_setup(settings:JitSettings):
 
     # Pause for 1 second
     time.sleep(1)
+
+
+
+def create_test_file() -> str:
+    # Define the content of the shell script
+    script_content = """#!/bin/bash
+    myhostname=$(hostname)
+    statcall=$(/usr/bin/stat /dev/shm/tarraf_gkfs_mountdir/turbPipe.rea)
+    lscall=$(/usr/bin/stat /dev/shm/tarraf_gkfs_mountdir/turbPipe.rea)
+    echo -e "Hello I am ${myhostname} and stat output: \\n${statcall}\\n The directory contains:${lscall}"
+    """
+
+    # Write the content to a file called tet.sh
+    file_path = os.path.join(os.getcwd(), "test.sh")
+    with open(file_path, "w") as file:
+        file.write(script_content)
+
+    os.chmod(file_path, 0o755)
+    return file_path
