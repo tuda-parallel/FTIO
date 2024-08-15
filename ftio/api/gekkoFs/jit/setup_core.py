@@ -71,7 +71,11 @@ def start_gekko_demon(settings: JitSettings) -> None:
                 )
 
         else:
-            call_0 = f"mkdir -p {settings.gkfs_mntdir}"
+            call_0 = (
+                f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                f"--ntasks={settings.app_nodes} --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap "
+                f"--oversubscribe --mem=0 mkdir -p {settings.gkfs_mntdir}"
+                    )
 
             # Gekko demon call
             call = (
