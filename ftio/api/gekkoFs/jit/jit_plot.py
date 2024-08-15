@@ -25,14 +25,18 @@ def main():
     tmp_stage_in = [1.11, 1.11, 0]
     nodes.append('node 3')
     app,stage_out,stage_in = add_experiment(app,stage_out,stage_in,tmp_app,tmp_stage_out,tmp_stage_in)
-
+    print(app)
+    print(stage_out)
+    print(stage_in)
 
     tmp_app = [70.53, 72.71, 80.21]
     tmp_stage_out = [1.891,9.430, 0]
     tmp_stage_in = [1.149, 1.145, 0]
     nodes.append('node 4')
     app,stage_out,stage_in = add_experiment(app,stage_out,stage_in,tmp_app,tmp_stage_out,tmp_stage_in)
-
+    print(app)
+    print(stage_out)
+    print(stage_in)
 
     ##################################
     repeated_strings = [s for s in categories for _ in nodes]
@@ -67,17 +71,17 @@ def add_experiment(app,stage_out,stage_in,tmp_app,tmp_stage_out,tmp_stage_in):
 def add_mode(list1, list2):
     # Create a new list to store the result
     result = []
-    
-
+    step = int(len(list1)/3)
     
     # Iterate over the range of the lists' lengths
     for i in range(len(list2)):
         # Add the current element from each list    
-        for j in range(int(len(list1)/3)):
-            result.append(list1[i+j])
+        for j in range(step):
+            result.append(list1[i*step+j])
         result.append(list2[i])
     
     return result
 
 if __name__ == "__main__":
     main()
+    
