@@ -28,15 +28,17 @@ def check_setup(settings:JitSettings):
         # console.print(f"[cyan]>> geko_ls {gkfs_mntdir}: \n{files}[/]")
 
         if settings.cluster and settings.debug and not settings.exclude_demon:
-            call = (
-                f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} --ntasks={settings.app_nodes} "
-                f"--cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-                f"--export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')},LD_PRELOAD={settings.gkfs_intercept} "
-                f"/usr/bin/ls {settings.gkfs_mntdir} "
-            )
-            console.print("[bold green] JIT[/][cyan]>> Checking srun with Gekko")
-            out = execute_block(call, False)
-            console.print(f"srun check: {out}\n")
+            #srun dies not work with gekko
+            # call = (
+            #     f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} --ntasks={settings.app_nodes} "
+            #     f"--cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
+            #     f"--export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')},LD_PRELOAD={settings.gkfs_intercept} "
+            #     f"/usr/bin/ls {settings.gkfs_mntdir} "
+            # )
+            # console.print("[bold green] JIT[/][cyan]>> Checking srun with Gekko")
+            # out = execute_block(call, False)
+            # console.print(f"srun check: {out}\n")
+
 
             additional_arguments = ""
             if not settings.exclude_ftio:

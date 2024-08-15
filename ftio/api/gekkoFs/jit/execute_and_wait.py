@@ -14,19 +14,21 @@ from ftio.api.gekkoFs.jit.setup_helper import jit_print, get_pid
 console = Console()
 
 
-def execute_block(call: str, raise_exception:bool=True) -> subprocess.CompletedProcess[str]:
+def execute_block(call: str, raise_exception:bool=True) -> str:
     """Executes a call and blocks till it is finished
 
     Args:
         call (str): bash call to execute
     """
     jit_print(f">> Executing {call}")
+    out = ""
     try:
         # process = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         # remove capture_output=True to unblock
         out = subprocess.run(
             call, shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
         )
+        out = out.stdout
     except subprocess.CalledProcessError as e:
         error_message = (
             f"[red]Command failed:[/red] {call}\n"
