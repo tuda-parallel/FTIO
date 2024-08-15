@@ -9,22 +9,21 @@ from rich.panel import Panel
 from rich.status import Status
 
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
-from ftio.api.gekkoFs.jit.setup_helper import handle_sigint, jit_print, get_pid
+from ftio.api.gekkoFs.jit.setup_helper import jit_print, get_pid
 
 console = Console()
 
 
-def execute_block(call: str) -> subprocess.CompletedProcess[str]:
+def execute_block(call: str, raise_exception:bool=True) -> subprocess.CompletedProcess[str]:
     """Executes a call and blocks till it is finished
 
     Args:
         call (str): bash call to execute
     """
     jit_print(f">> Executing {call}")
-    out = ""
     try:
         # process = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        # remove capture_output=True to unbloack
+        # remove capture_output=True to unblock
         out = subprocess.run(
             call, shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
         )
@@ -36,9 +35,10 @@ def execute_block(call: str) -> subprocess.CompletedProcess[str]:
             f"[red]Error:[/red] {e.stderr.strip()}"
         )
         console.print(f"[red]{error_message}\n[/]")
-        handle_sigint
-        raise
-    return out 
+        if raise_exception:
+            raise
+
+    return out
 
 
 def execute_block_and_log(call: str, log_file: str) -> float:
@@ -76,7 +76,6 @@ def execute_block_and_log(call: str, log_file: str) -> float:
             f"[red]Error:[/red] {e.stderr.strip()}"
         )
         console.print(f"[red]{error_message}[/]")
-        handle_sigint
         raise
     finally:
         # Write the log message to the file
@@ -119,7 +118,7 @@ def execute_background(call: str, log_file: str = "", log_err_file: str = ""):
 
 
 def execute_background_and_log(
-    settings: JitSettings, call: str, log_file: str, name=""
+    settings: JitSettings, call: str, log_file: str, name="", err_file:str=""
 ) -> subprocess.Popen:
     """execute call in background and returns process. The output is displayed using a
     thread that reads the log file
@@ -134,7 +133,7 @@ def execute_background_and_log(
     Returns:
         subprocess.Popen: process
     """
-    process = execute_background(call, log_file)
+    process = execute_background(call, log_file, err_file)
     get_pid(settings, name, process.pid)
     # demon is noisy
     monitor_log_file(log_file, name)
@@ -258,7 +257,7 @@ def get_files(settings:JitSettings, verbose= True):
     command_ls = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} ls {settings.gkfs_mntdir}"
     files = subprocess.check_output(command_ls, shell=True).decode()
     monitored_files = files_filtered(files, settings.regex_match, verbose)
-    # remove Geko warnings
+    # remove Gekko warnings
     monitored_files = [f for f in monitored_files if "LIBGKFS" not in f]
     if verbose:
         console.print(f"[bold green]JIT [/][cyan]>> Files that need to be stage out:")
@@ -294,14 +293,17 @@ def print_file(file, src=""):
     color = ""
     wait_time = 0.05
     if src:
-        if "demon" in src:
+        if "demon" in src.lower():
             color = "[purple4]"
             wait_time = 0.1
-        elif "proxy" in src:
+        elif "proxy" in src.lower():
             color = "[deep_pink1]"
             wait_time = 0.1
-        elif "ftio" in src:
+        elif "ftio" in src.lower():
             color = "[deep_sky_blue1]"
+            wait_time = 0.1
+        elif "error" in src.lower():
+            color = "[red]"
             wait_time = 0.1
 
     with open(file, "r") as file:
@@ -332,7 +334,7 @@ def print_file(file, src=""):
                     console.print(
                         Panel.fit(
                             color + content,
-                            title=src,
+                            title=src.capitalize(),
                             style="white",
                             border_style="white",
                             title_align="left",
@@ -355,7 +357,6 @@ def wait_for_file(filename: str, timeout: int = 60) -> None:
             if passed_time >= timeout:
                 status.update("Timeout reached")
                 console.print("[bold green]JIT [bold red]>> Timeout reached[/]")
-                handle_sigint
                 return
 
             status.update(
@@ -402,7 +403,6 @@ def wait_for_line(filename: str, target_line: str, msg:str="" ,timeout: int = 60
                         console.print(
                             "[bold green]JIT [bold red]>> Timeout reached. [/]"
                         )
-                        handle_sigint
                         return
                     status.update(
                         f"[cyan]{msg} ({passed_time}/{timeout})"

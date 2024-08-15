@@ -2,14 +2,13 @@ import os
 import subprocess
 from rich.console import Console
 import time
+from ftio.api.gekkoFs.jit.setup_check import check_setup
 from ftio.api.gekkoFs.jit.setup_helper import (
     check,
     check_port,
-    check_setup,
     create_hostfile,
     elapsed_time,
     jit_print,
-    get_pid,
     relevant_files,
     reset_relevant_files,
     shut_down,
@@ -34,7 +33,7 @@ console = Console()
 
 #! Start gekko
 #!#################
-def start_geko_demon(settings: JitSettings) -> None:
+def start_gekko_demon(settings: JitSettings) -> None:
 
     if settings.exclude_demon:
         console.print(f"[bold yellow]####### Skipping Gkfs Demon [/][black][{get_time()}][/]")
@@ -74,9 +73,9 @@ def start_geko_demon(settings: JitSettings) -> None:
         else:
             call_0 = f"mkdir -p {settings.gkfs_mntdir}"
 
-            # Geko Demon call
+            # Gekko demon call
             call = (
-                f"GKFS_DAEMON_LOG_LEVEL=info {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+                f"GKFS_DAEMON_LOG_LEVEL=info GKFS_DAEMON_LOG_PATH={settings.gekko_demon_log} {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
                 f"-H {settings.gkfs_hostfile} -c -l lo -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp"
             )
 
@@ -84,8 +83,12 @@ def start_geko_demon(settings: JitSettings) -> None:
         _ = execute_block(call_0)
 
         jit_print("[cyan]>> Starting Demons[/]")
-        geko_demon_log_dir = os.path.join(settings.log_dir, "geko_demon.log")
-        process = execute_background_and_log(settings, call, geko_demon_log_dir, "demon")
+        
+        if settings.debug:
+            process = execute_background_and_log(settings, call, settings.gekko_demon_log, "demon",settings.gekko_demon_err)
+            monitor_log_file(settings.gekko_demon_err,"Error Demon")
+        else:
+            process = execute_background_and_log(settings, call, settings.gekko_demon_log, "demon")
         
         wait_for_file(settings.gkfs_hostfile)
         console.print("\n")
@@ -93,7 +96,7 @@ def start_geko_demon(settings: JitSettings) -> None:
 
 #! Start Proxy
 #!#######################
-def start_geko_proxy(settings: JitSettings) -> None:
+def start_gekko_proxy(settings: JitSettings) -> None:
     if settings.exclude_proxy:
         console.print(f"[bold yellow]####### Skipping Gkfs Proxy [/][black][{get_time()}][/]")
     else:
@@ -115,8 +118,12 @@ def start_geko_proxy(settings: JitSettings) -> None:
                 f"-p ofi+tcp -P {settings.gkfs_proxyfile}"
             )
         jit_print("[cyan]>> Starting Proxy[/]")
-        geko_proxy_log_dir = os.path.join(settings.log_dir, "geko_proxy.log")
-        process = execute_background_and_log(settings, call, geko_proxy_log_dir, "proxy")
+
+        if settings.debug:
+            process = execute_background_and_log(settings, call, settings.gekko_proxy_log, "proxy", settings.gekko_proxy_err)
+            monitor_log_file(settings.gekko_proxy_err,"Error Proxy")
+        else:
+            process = execute_background_and_log(settings, call, settings.gekko_proxy_log, "proxy")
         console.print("\n")
 
 
@@ -156,11 +163,15 @@ def start_cargo(settings: JitSettings) -> None:
             )
 
         jit_print("[cyan]>> Starting Cargo[/]")
-        cargo_log_dir = os.path.join(settings.log_dir, "cargo.log")
-        process = execute_background_and_log(settings, call, cargo_log_dir, "cargo")
+
+        if settings.debug:
+            process = execute_background_and_log(settings, call, settings.cargo_log, "cargo", settings.cargo_err)
+            monitor_log_file(settings.cargo_err,"Error Cargo")
+        else:
+            process = execute_background_and_log(settings, call, settings.cargo_log, "cargo")
         # wait for line to appear
         time.sleep(5)
-        wait_for_line(cargo_log_dir, "Start up successful")
+        wait_for_line(settings.cargo_log, "Start up successful")
         console.print("\n")
 
 #! start FTIO
@@ -221,9 +232,14 @@ def start_ftio(settings: JitSettings) -> None:
             )
 
         jit_print("[cyan]>> Starting FTIO[/]")
-        ftio_log_dir = os.path.join(settings.log_dir, "ftio.log")
-        process = execute_background_and_log(settings, call, ftio_log_dir, "ftio")
-        wait_for_line(ftio_log_dir, "FTIO is running on:", "Waiting for FTIO startup")
+
+        if settings.debug:
+            process = execute_background_and_log(settings, call, settings.ftio_log, "ftio", settings.ftio_err)
+            monitor_log_file(settings.ftio_err,"Error Ftio")
+        else:
+            process = execute_background_and_log(settings, call, settings.ftio_log, "ftio")
+        
+        wait_for_line(settings.ftio_log, "FTIO is running on:", "Waiting for FTIO startup")
         time.sleep(5)
         console.print("\n")
 
@@ -240,16 +256,15 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
         else:
             call = f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
 
-        cargo_log_dir=os.path.join(settings.log_dir, "cargo.log")
         start = time.time()
 
         execute_background_and_wait_line(
             call,
-            cargo_log_dir,
+            settings.cargo_log,
             "retval: CARGO_SUCCESS, status: {state: completed",
         )
-        # process = execute_background(call, cargo_log_dir)
-        # wait_for_line(cargo_log_dir, "Start up successful")
+        # process = execute_background(call, cargo_log)
+        # wait_for_line(cargo_log, "Start up successful")
         
         elapsed_time(settings, runtime, "Stage in", time.time() - start)
         check(settings)
@@ -268,7 +283,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
 
         command_ls = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} ls {settings.gkfs_mntdir}"
         files = subprocess.check_output(command_ls, shell=True).decode()
-        console.print(f"[cyan]>> geko_ls {settings.gkfs_mntdir}: \n{files}[/]")
+        console.print(f"[cyan]>> gekko_ls {settings.gkfs_mntdir}: \n{files}[/]")
         # Reset relevant files
         if settings.cluster:
             call = (f"srun --jobid={settings.jit_id} {settings.single_node_command} "
@@ -279,15 +294,15 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             call = (f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/cargo_ftio "
                     f"--server {settings.cargo_server} --run")
 
-        cargo_log = os.path.join(settings.log_dir, "cargo.log")
+        
         # Measure and print elapsed time
         start = time.time()
         execute_background_and_wait_line(
             call,
-            cargo_log,
+            settings.cargo_log,
             "[info] Transfer finished for ["
         )
-        end_of_transfer(settings, cargo_log)
+        end_of_transfer(settings, settings.cargo_log)
         elapsed_time(settings, runtime, "Stage out", time.time() - start)
         # Set ignored files to default again
         relevant_files(settings)
@@ -353,14 +368,11 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f"-x LD_PRELOAD={settings.gkfs_intercept} {settings.app_call}"
             )
 
-    # elapsed = execute_block_and_log(call, os.path.join(settings.log_dir, "app.log"))   
-
-    app_log_dir = os.path.join(settings.log_dir, "app.log")
-    app_error_dir = os.path.join(settings.log_dir, "app.err")
+    # elapsed = execute_block_and_log(call, settings.app_log_dir)   
     start = time.time()
-    process = execute_background(call, app_log_dir, app_error_dir)
-    monitor_log_file(app_log_dir,"")
-    monitor_log_file(app_error_dir,"")
+    process = execute_background(call, settings.app_log, settings.app_err)
+    monitor_log_file(settings.app_log,"")
+    monitor_log_file(settings.app_err,"error")
     stdout, stderr = process.communicate()
     elapsed_time(settings, runtime, "App", time.time() - start)
     if process.returncode != 0:
@@ -381,7 +393,7 @@ def pre_call(settings: JitSettings) -> None:
     if settings.pre_app_call:
         console.print(f"[green bold]####### Pre-application Call [/][black][{get_time()}][/]")
         _ = execute_block_and_log(
-            settings.pre_app_call, os.path.join(settings.log_dir, "app.log")
+            settings.pre_app_call, settings.app_log
         )
 
 
@@ -391,7 +403,9 @@ def post_call(settings: JitSettings) -> None:
     if settings.post_app_call:
         console.print(f"[green bold]####### Post-application Call [/][black][{get_time()}][/]")
         _ = execute_block_and_log(
-            settings.post_app_call, os.path.join(settings.log_dir, "app.log")
+            settings.post_app_call, settings.app_log
         )
+
+
 
 

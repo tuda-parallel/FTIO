@@ -973,53 +973,6 @@ def check(settings: JitSettings):
         jit_print(f"[red]>> Failed to list files in {settings.gkfs_mntdir}: {e}[/]")
 
 
-def check_setup(settings:JitSettings):
-    
-    if not settings.exclude_all:
-
-        # Display MPI hostfile
-        if settings.cluster:
-            mpi_hostfile_path = os.path.expanduser('~/hostfile_mpi')
-            with open(mpi_hostfile_path, 'r') as file:
-                mpi_hostfile_content = file.read()
-            console.print(f"[cyan]>> MPI hostfile:\n{mpi_hostfile_content}[/]")
-
-        # Display GekkoFS hostfile
-        gekkofs_hostfile = settings.gkfs_hostfile
-        with open(gekkofs_hostfile, 'r') as file:
-            gekkofs_hostfile_content = file.read()
-        console.print(f"[cyan]>> Gekko hostfile:\n{gekkofs_hostfile_content}[/]")
-
-        # # List files in GKFS_MNTDIR
-        # ls_command = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={gekkofs_hostfile} ls {settings.gkfs_mntdir}"
-        # files = subprocess.check_output(ls_command, shell=True).decode()
-        # console.print(f"[cyan]>> geko_ls {gkfs_mntdir}: \n{files}[/]")
-
-        # # Run MPI exec test script
-        # procs = settings.procs
-        # if settings.cluster:
-        #     test_script_command = (f"mpiexec -np {procs} --oversubscribe --hostfile {mpi_hostfile_path} "
-        #                         f"--map-by node -x LIBGKFS_LOG=errors -x LD_PRELOAD={settings.gkfs_intercept} "
-        #                         f"-x LIBGKFS_HOSTS_FILE={gekkofs_hostfile} -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-        #                         f"/home/tarrafah/nhr-admire/tarraf/FTIO/ftio/api/gekkoFs/scripts/test.sh")
-        #     console.print(f"[cyan]>> statx:[/]")
-        #      subprocess.run(test_script_command, shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"        )
-
-                    
-        #     srun_command = (f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')},"
-        #                     f"LD_PRELOAD={settings.gkfs_intercept} --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status "
-        #                     f"-N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-        #                     f"/usr/bin/ls {settings.gkfs_mntdir}")
-        #     files2 = subprocess.check_output(srun_command, shell=True).decode()
-        #     console.print(f"[cyan]>> srun ls {settings.gkfs_mntdir}: \n{files2}[/]")
-
-        # Note: The commented out command for `mpirun` is not included in this translation.
-
-    # Pause for 1 second
-    time.sleep(1)
-
-
-
 def update_hostfile_mpi(settings:JitSettings):
         # Command to get the list of hostnames for the job
     squeue_command = f"squeue -j {settings.jit_id} -o '%N' | tail -n +2"

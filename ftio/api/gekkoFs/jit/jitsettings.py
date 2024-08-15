@@ -16,6 +16,7 @@ class JitSettings:
         # Variable initialization
         self.cluster = False
         self.jit_id = 0
+
         self.ftio_node = ""
         self.single_node = ""
         self.app_nodes = 0
@@ -23,15 +24,27 @@ class JitSettings:
         self.app_nodes_command = ""
         self.ftio_node_command = ""
         self.single_node_command = ""
+
         self.log_dir = ""
-        self.app_time = ""
-        self.stage_in_time = ""
-        self.stage_out_time = ""
+        self.gekko_demon_log = ""
+        self.gekko_demon_err = ""
+        self.gekko_proxy_log = ""
+        self.gekko_proxy_err = ""
+        self.cargo_log = ""
+        self.cargo_err = ""
+        self.ftio_log = ""
+        self.ftio_err = ""
+        self.app_log = ""
+        self.app_err = ""
+
+        #exclude flags
         self.exclude_ftio = False
         self.exclude_cargo = False
         self.exclude_demon = False
         self.exclude_proxy = False
         self.exclude_all = False
+
+        # pid of processes
         self.ftio_pid = 0
         self.gekko_demon_pid = 0
         self.gekko_proxy_pid = 0
@@ -121,6 +134,18 @@ class JitSettings:
         if self.exclude_proxy:
             self.procs_proxy = 0
 
+        self.gekko_demon_log = os.path.join(self.log_dir, "gekko_demon.log")
+        self.gekko_demon_err = os.path.join(self.log_dir, "gekko_demon.err")
+        self.gekko_proxy_log = os.path.join(self.log_dir, "gekko_proxy.log")
+        self.gekko_proxy_err = os.path.join(self.log_dir, "gekko_proxy.err")
+        self.cargo_log       = os.path.join(self.log_dir, "cargo.log")
+        self.cargo_err       = os.path.join(self.log_dir, "cargo.err")
+        self.ftio_log        = os.path.join(self.log_dir, "ftio.log")
+        self.ftio_err        = os.path.join(self.log_dir, "ftio.err")
+        self.app_log         = os.path.join(self.log_dir, "app.log")
+        self.app_err       = os.path.join(self.log_dir, "app.err")
+
+        
     #! only modify here
     def set_variables(self) -> None:
         """sets the path variables

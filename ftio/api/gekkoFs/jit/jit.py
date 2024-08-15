@@ -12,8 +12,8 @@ from ftio.api.gekkoFs.jit.setup_core import (
     start_application,
     start_cargo,
     start_ftio,
-    start_geko_demon,
-    start_geko_proxy,
+    start_gekko_demon,
+    start_gekko_proxy,
 )
 from ftio.api.gekkoFs.jit.setup_helper import (
     get_address_cargo,
@@ -63,10 +63,10 @@ def main() -> None:
     print_settings(settings)
 
     # 2. Start Gekko Server (Daemon)
-    start_geko_demon(settings)
+    start_gekko_demon(settings)
 
     # 2.1
-    start_geko_proxy(settings)
+    start_gekko_proxy(settings)
 
     # 3. Start Cargo Server
     start_cargo(settings)
