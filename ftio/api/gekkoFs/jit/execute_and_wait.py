@@ -1,6 +1,8 @@
+from datetime import datetime
 import subprocess
 import time
 import os
+import re
 import threading
 from rich.console import Console
 from rich.panel import Panel
@@ -107,7 +109,7 @@ def execute_background(call: str, log_file: str = "", log_err_file: str = ""):
     elif log_file:
         with open(log_file, "a") as log_out:
             process = subprocess.Popen(
-                call, shell=True, stdout=log_out, stderr=subprocess.STDOUT
+                call, shell=True, stdout=log_out, stderr=log_out
             )
     else:
         process = subprocess.Popen(
@@ -186,37 +188,156 @@ def monitor_log_file(file: str, src: str = "") -> None:
     monitor_thread.start()
 
 
+def end_of_transfer(settings: JitSettings, log_file: str, monitored_files: list[str] = []):
+    online = False
+    if len(monitored_files) == 0:
+        monitored_files = get_files(settings,True)
+        online = True
+    
+    last_lines = read_last_n_lines(log_file)
+    n = len(monitored_files)
+    if "Transfer finished for []" in last_lines:
+        # Nothing to move
+        return 
+    elif n == 0:
+        return
+    else:
+        with open(log_file, 'r') as file:
+            # Move to the end of the file
+            file.seek(0, 2)
+            last_pos = file.tell()
+            buffer = ""
+
+            with Status(f"[cyan]Waiting for end of transfer...monitoring {n} files", console=console) as status:
+                while len(monitored_files) > 0:
+                    time.sleep(0.1)  # Short sleep interval to quickly catch new lines
+
+                    # Check if the file has grown
+                    current_pos = file.tell()
+                    if current_pos < last_pos:
+                        # Log file was truncated or rotated, reset
+                        file.seek(0, 2)
+                        last_pos = file.tell()
+
+                    # Read new content
+                    file.seek(last_pos)
+                    new_data = file.read()
+                    last_pos = file.tell()
+
+                    # Process the new data
+                    if new_data:
+                        buffer += new_data
+                        lines = buffer.splitlines()
+
+                        # Check if the last line is incomplete
+                        if not new_data.endswith('\n'):
+                            buffer = lines.pop()  # Save incomplete line in the buffer
+                        else:
+                            buffer = ""
+
+                        # Process each line
+                        for line in lines:
+                            content = line.strip()
+                            # console.print(f"\n[bold green]JIT [cyan]**{content}")
+                            if "Deleting" in content:
+                                # Check if any of the monitored files are mentioned in the line
+                                for name in monitored_files:
+                                    if name in content:
+                                        monitored_files.remove(name)
+                                        console.print(f"[bold green]JIT [cyan]>> finished moving '{name}'. Remaining files ({len(monitored_files)})")
+                                        status.update(f"Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}")
+                    # avoids dead loop for disappearing files
+                    monitored_files = get_files(settings,False)
+                    console.print(f"[bold green]JIT [/][cyan]>> Files in mount dir {monitored_files}")
+                # All monitored files have been processed
+                timestamp = get_time
+                status.update(f"\n[bold green]JIT [cyan]>> finished moving all files at  [{timestamp}]")
+                console.print(f"\n[bold green]JIT [cyan]>> finished moving all files at  [{timestamp}]")
+
+def get_files(settings:JitSettings, verbose= True):
+    command_ls = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} ls {settings.gkfs_mntdir}"
+    files = subprocess.check_output(command_ls, shell=True).decode()
+    monitored_files = files_filtered(files, settings.regex_match, verbose)
+    # remove Geko warnings
+    monitored_files = [f for f in monitored_files if "LIBGKFS" not in f]
+    if verbose:
+        console.print(f"[bold green]JIT [/][cyan]>> Files that need to be stage out:")
+        for f in monitored_files: 
+            console.print(f"[cyan]{f}[/]")
+
+    return monitored_files
+
+
+def get_time():
+    return datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+
+def files_filtered(files:str, regex_pattern, verbose = True) -> list[str]:
+    if files:
+        list_of_files = files.splitlines()
+
+    if regex_pattern:
+        #check if it contains file name without path (less error prone)
+        while "/" in regex_pattern:
+            regex_pattern = regex_pattern.split("/",1)[1]
+        if verbose:
+            console.print(f"[bold green]JIT [cyan]>> Cleaned Regex pattern to: {regex_pattern} ")
+    regex = re.compile(regex_pattern)
+    monitored_files = []
+    for f in list_of_files:
+        if regex.match(f):
+            monitored_files.append(f)
+
+    return monitored_files
+
 def print_file(file, src=""):
     """Continuously monitor the log file for new lines and print them."""
     color = ""
+    wait_time = 0.05
     if src:
         if "demon" in src:
             color = "[purple4]"
+            wait_time = 0.1
         elif "proxy" in src:
             color = "[deep_pink1]"
+            wait_time = 0.1
         elif "ftio" in src:
             color = "[deep_sky_blue1]"
+            wait_time = 0.1
 
     with open(file, "r") as file:
         # Go to the end of the file
         file.seek(0, os.SEEK_END)
+        buffer = []
+        last_print_time = time.time()
+
         while True:
             line = file.readline()
-            if line and len(line) > 0:
+            if line:
+                buffer.append(line.rstrip())
+            else:
+                # If there's no new line, wait briefly
+                time.sleep(wait_time)
+
+            # Group and print the buffered lines every 0.1 seconds
+            current_time = time.time()
+            if current_time - last_print_time >= wait_time and buffer:
+                # Print grouped lines
+                content = "\n".join(buffer)
+                buffer.clear()
+                last_print_time = current_time
+
                 if not src or "cargo" in src:
-                    print(line.rstrip())
+                    print(content)
                 else:
                     console.print(
                         Panel.fit(
-                            color + line.rstrip(),
+                            color + content,
                             title=src,
                             style="white",
                             border_style="white",
                             title_align="left",
                         )
                     )
-            else:
-                time.sleep(0.1)  # Sleep briefly to avoid high CPU usage
 
 
 def wait_for_file(filename: str, timeout: int = 60) -> None:
@@ -244,18 +365,22 @@ def wait_for_file(filename: str, timeout: int = 60) -> None:
 
         # When the file is created, update the status
         status.update(f"{filename} has been created.")
-        console.print(f"[bold green]JIT [/]>>{filename} has been created.")
+        console.print(f"[bold green]JIT [/]>> {filename} has been created.")
 
 
-def wait_for_line(filename: str, target_line: str, timeout: int = 60) -> None:
+def wait_for_line(filename: str, target_line: str, msg:str="" ,timeout: int = 60) -> None:
     """
     Waits for a specific line to appear in a log file
 
     Args:
         filename (str): The path to the log file.
         target_line (str): The line of text to wait for.
+        msg (str): Message to print
+        timeout (int): maximal timeout 
     """
     start_time = time.time()
+    if not msg:
+        msg="Waiting for line to appear..."
 
     with open(filename, "r") as file:
         # Move to the end of the file to start monitoring
@@ -265,12 +390,12 @@ def wait_for_line(filename: str, target_line: str, timeout: int = 60) -> None:
         except:
             file.seek(0, 0)  # Go to the end of the file and look at the last 10 entris
 
-        with Status(f"[cyan]Waiting for line to appear...", console=console) as status:
+        with Status(f"[cyan]{msg}", console=console) as status:
             while True:
                 line = file.readline()
                 if not line:
-                    # If no line, wait and check again
-                    time.sleep(0.1)
+                    # If no line, wait and check againet
+                    time.sleep(0.01)
                     passed_time = int(time.time() - start_time)
                     if passed_time >= timeout:
                         status.update("Timeout reached.")
@@ -280,14 +405,40 @@ def wait_for_line(filename: str, target_line: str, timeout: int = 60) -> None:
                         handle_sigint
                         return
                     status.update(
-                        f"[cyan]Waiting for line to appear... ({passed_time}/{timeout})"
+                        f"[cyan]{msg} ({passed_time}/{timeout})"
                     )
                     continue
 
                 if target_line in line:
+                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                     status.update(f"Found target line: '{target_line}'")
                     console.print(
-                        f"\n[bold green]JIT [/]>> Found target line: '{target_line}'"
+                        f"\n[bold green]JIT [cyan]>> Stopped waiting at [{timestamp}]"
                     )
                     break
 
+
+def read_last_n_lines(filename, n=3):
+    """Read the last `n` lines of a file."""
+    with open(filename, 'rb') as f:
+        # Move the pointer to the end of the file
+        f.seek(0, 2)
+        file_size = f.tell()
+
+        # Initialize variables
+        lines = []
+        buffer = b''
+        pointer = file_size
+        
+        while pointer > 0 and len(lines) < n:
+            # Move the pointer backwards by one byte and read
+            pointer -= 1
+            f.seek(pointer)
+            buffer = f.read(1) + buffer
+
+            # If a newline is found, add the line to the list
+            if buffer.startswith(b'\n') or pointer == 0:
+                lines.append(buffer.decode('utf-8'))
+                buffer = b''
+        
+        return lines[-n:]

@@ -77,7 +77,7 @@ def main() -> None:
     # 5. Start FTIO
     start_ftio(settings)
 
-    # # 6. Pre- and application with Gekko intercept
+    # 6. Pre- and application with Gekko intercept
     pre_call(settings)
     start_application(settings, runtime)
 
@@ -89,8 +89,6 @@ def main() -> None:
 
     # # 9. Display total time
     runtime.print_time()
-
-    time.sleep(15)
 
     # 10. Soft kill
     soft_kill(settings)

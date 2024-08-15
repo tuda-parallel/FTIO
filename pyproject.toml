@@ -72,11 +72,11 @@ ftio = "ftio.cli.ftio_core:run"
 predictor = "ftio.cli.predictor:main"
 ioplot = "ftio.util.ioplot:main"
 ioparse = "ftio.util.ioparse:main"
-admire_proxy_invoke_ftio = "ftio.api.metric_proxy.proxy_invoke_ftio:main"
 predictor_jit = "ftio.api.gekkoFs.predictor_gekko_zmq:main"
 jit = "ftio.api.gekkoFs.jit.jit:main"
 trace_ftio = "ftio.api.trace_analysis.trace_ftio_v2:main"
 proxy_ftio = "ftio.api.metric_proxy.parallel_proxy:main"
+admire_proxy_invoke_ftio = "ftio.api.metric_proxy.proxy_invoke_ftio:main"
 
 [project.gui-scripts]
 

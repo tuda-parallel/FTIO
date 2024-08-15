@@ -472,7 +472,7 @@ def cancel_jit_jobs():
 def relevant_files(settings: JitSettings, verbose: bool = False):
 
     if verbose:  # Mimicking checking for the number of arguments
-        console.print(f"[bold green] JIT [bold cyan]>> Setting up ignored files[/]")
+        console.print(f"[bold green]JIT [/][cyan]>> Setting up ignored files[/]")
 
     # Create or update the regex file with the settings.regex_match
     with open(settings.regex_file, "w") as file:
@@ -480,7 +480,7 @@ def relevant_files(settings: JitSettings, verbose: bool = False):
 
     if verbose:
         console.print(
-            f"[bold green] JIT [cyan]>> Files that match {settings.regex_match} are ignored [/]"
+            f"[bold green]JIT [/][cyan]>> Files that match {settings.regex_match} are ignored [/]"
         )
 
     # Display the contents of the regex file
@@ -488,16 +488,18 @@ def relevant_files(settings: JitSettings, verbose: bool = False):
         content = file.read()
     if settings.debug:
         console.print(
-            f"[bold green] JIT [cyan]>> content of {settings.regex_file}: \n{content}[/]"
+            f"[bold green]JIT [cyan]>> content of {settings.regex_file}: \n{content}[/]"
         )
 
 
 def reset_relevant_files(settings: JitSettings) -> None:
     if settings.cluster:
-        console.print(f"[bold green] JIT [bold cyan]>> Resetting ignored files[/]")
+        console.print(f"[bold green] JIT [/][cyan]>> Resetting ignored files[/]")
         # Write the default regex pattern to the file
+        settings.regex_match=".*"
         with open(settings.regex_file, "w") as file:
-            file.write(".*\n")
+            
+            file.write(f"{settings.regex_match}\n")
         # Optionally console.print the contents of the regex file
         # with open(settings.regex_file, 'r') as file:
         #     content = file.read()
@@ -629,16 +631,16 @@ def get_pid(settings: JitSettings, name: str, pid: int):
 
     if name.lower() in "cargo":
         settings.cargo_pid = pid
-        console.print(f"[green bold]JIT >>> Cargo PID: {pid}[/]")
+        console.print(f"[green ]JIT >> Cargo startup successful. PID is {pid}[/]")
     elif name.lower() in "gkfs_demon":
         settings.gekko_demon_pid = pid
-        console.print(f"[green bold]JIT >>> Gekko demon PID: {pid}[/]")
+        console.print(f"[green ]JIT >> Gekko demon startup successful. PID is {pid}[/]")
     elif name.lower() in "gkfs_proxy":
         settings.gekko_proxy_pid = pid
-        console.print(f"[green bold]JIT >>> Gekko proxy PID: {pid}[/]")
+        console.print(f"[green ]JIT >> Gekko proxy startup successful. PID is {pid}[/]")
     elif name.lower() in "ftio" or name.lower() in "predictor_jit":
         settings.ftio_pid = pid
-        console.print(f"[green bold]JIT >>> Ftio PID: {pid}[/]")
+        console.print(f"[green ]JIT >> Ftio startup successful. PID is {pid}[/]")
 
 
 # Function to handle SIGINT (Ctrl+C)
@@ -728,11 +730,6 @@ def shut_down(settings, name, pid):
         except Exception as e:
             print(f"An error occurred: {e}")
 
-        # Wait for the process to terminate if in a cluster
-        if settings.cluster:
-            _ = subprocess.run(
-            f"wait {pid}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
-        )
 
 
 def log_dir(settings):

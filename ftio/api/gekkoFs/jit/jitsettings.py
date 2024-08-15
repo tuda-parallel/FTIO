@@ -36,13 +36,14 @@ class JitSettings:
         self.gekko_demon_pid = 0
         self.gekko_proxy_pid = 0
         self.cargo_pid = 0
+        self.log_speed = 0.1
 
         # parsed variables
         ###################
         self.address_ftio = "127.0.0.1"
         self.address_cargo = "127.0.0.1"
         self.port = "5555"
-        self.nodes = 2
+        self.nodes = 1
         self.procs = 128
         self.max_time = 30
         self.debug = True
@@ -84,6 +85,7 @@ class JitSettings:
             self.procs_proxy = self.procs
             self.procs_ftio  = self.procs
         else:
+            self.procs = 10
             self.procs_demon = 1
             self.procs_proxy = 1
             self.procs_ftio  = 1
@@ -104,7 +106,7 @@ class JitSettings:
 
         if not self.cluster:
             if self.nodes > 1:
-                self.procs = max(self.nodes,self.procs)
+                self.procs = self.nodes
                 self.nodes = 1
                 console.print(
                     f"[bold green]JIT [bold cyan]>> correcting nodes to {self.nodes} and processes to {self.procs} [/]"
@@ -124,8 +126,8 @@ class JitSettings:
         """sets the path variables
         """
         # job allocation call
-        self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
-        # self.alloc_call_flags = "--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
+        # self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
+        self.alloc_call_flags = "--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082,cpu0083"
 
         # ftio variables
         self.ftio_activate = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin/activate"
@@ -151,7 +153,7 @@ class JitSettings:
         # stage out variables
         self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
         self.regex_file = "/lustre/project/nhr-admire/shared/nek_regex4cargo.txt"
-        self.regex_match = "^/[a-z0-9]*turbPipe0\\.f\\d+"
+        self.regex_match = "^/[a-zA-Z0-9]*turbPipe0\\.f\\d+"
 
         # stage in variables
         self.stage_in_path = (
@@ -171,7 +173,7 @@ class JitSettings:
         # ${POST_APP_CALL}
         if self.exclude_all:
             self.pre_app_call = "echo -e 'turbPipe\\n/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input' > /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/SESSION.NAME"
-            self.post_app_call = "rm /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input/*.f*"
+            self.post_app_call = "rm /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input/*.f* || echo true"
         else:
             self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/SESSION.NAME"
             self.post_app_call = ""
@@ -213,7 +215,7 @@ class JitSettings:
             self.stage_in_path = "/d/benchmark/Nek5000/turbPipe/run/input"
             if self.exclude_all:
                 self.pre_app_call = "echo -e 'turbPipe\\n/d/benchmark/Nek5000/turbPipe/run/input' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
-                self.post_app_call = "rm /d/benchmark/Nek5000/turbPipe/run/input/*.f*"
+                self.post_app_call = "rm /d/benchmark/Nek5000/turbPipe/run/input/*.f* || true"
             else:
                 self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
-                self.post_app_call = f"rm {self.stage_out_path}/*.f*"
+                self.post_app_call = f"rm {self.stage_out_path}/*.f* || true"
