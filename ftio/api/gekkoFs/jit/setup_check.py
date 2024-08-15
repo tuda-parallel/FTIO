@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime
 from rich.console import Console
 from ftio.api.gekkoFs.jit.execute_and_wait import execute_block
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
@@ -61,21 +62,25 @@ def check_setup(settings:JitSettings):
 
             #test script
             console.print("[bold green]JIT[/][cyan] >> Checking test file")
-            file = create_test_file()
-            call = (
-                    f"mpiexec -np 5 --oversubscribe "
-                    f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors "
-                    f"-x LIBGKFS_ENABLE_METRICS=on  "
-                    f"-x LD_PRELOAD={settings.gkfs_intercept} "
-                    f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                    f"{additional_arguments} "
-                    f"{file}"
-                )
-            out = execute_block(call, False)
-            console.print(f"{out}")
-            # remove the created file
-            if os.path.exists(file):
-                os.remove(file)
+            try:
+                timestamp = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+                file = create_test_file("test.sh"+timestamp)
+                call = (
+                        f"mpiexec -np 5 --oversubscribe "
+                        f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors "
+                        f"-x LIBGKFS_ENABLE_METRICS=on  "
+                        f"-x LD_PRELOAD={settings.gkfs_intercept} "
+                        f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                        f"{additional_arguments} "
+                        f"{file}"
+                    )
+                out = execute_block(call, False)
+                console.print(f"{out}")
+                # remove the created file
+                if os.path.exists(file):
+                    os.remove(file)
+            except Exception as e:
+                console.print(f"[bold green]JIT[/][red] >> Error running test script:\n{e}")
         else:
             console.print("[bold green]JIT[/][cyan] >> Skipping setup check")
         # # Run MPI exec test script
@@ -103,7 +108,7 @@ def check_setup(settings:JitSettings):
 
 
 
-def create_test_file() -> str:
+def create_test_file(name:str) -> str:
     # Define the content of the shell script
     script_content = """#!/bin/bash
     myhostname=$(hostname)
@@ -113,7 +118,7 @@ def create_test_file() -> str:
     """
 
     # Write the content to a file called tet.sh
-    file_path = os.path.join(os.getcwd(), "test.sh")
+    file_path = os.path.join(os.getcwd(), name)
     with open(file_path, "w") as file:
         file.write(script_content)
 
