@@ -40,6 +40,9 @@ def main() -> None:
     settings = JitSettings()
     runtime = JitTime()
 
+    # Create folder for logs
+    log_dir(settings)
+
     # Parse options
     parse_options(settings, sys.argv[1:])
 
@@ -51,12 +54,11 @@ def main() -> None:
 
     # 1. Allocate resources
     allocate(settings)
-
-    # 1.2 Create folder for logs
-    log_dir(settings)
-
-    # 1.3 Get the address
+    
+    # 1.2 Get the address
     get_address_ftio(settings)
+
+    #1.3 Get address carg
     get_address_cargo(settings)
 
     # 1.4 Print settings
