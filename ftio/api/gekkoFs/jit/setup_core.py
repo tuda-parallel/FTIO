@@ -285,9 +285,12 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
         reset_relevant_files(settings)       
         time.sleep(8)
 
-        command_ls = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} ls {settings.gkfs_mntdir}"
-        files = subprocess.check_output(command_ls, shell=True).decode()
-        console.print(f"[cyan]>> gekko_ls {settings.gkfs_mntdir}: \n{files}[/]")
+        try:
+            command_ls = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} ls {settings.gkfs_mntdir}"
+            files = subprocess.check_output(command_ls, shell=True).decode()
+            console.print(f"[cyan]>> gekko_ls {settings.gkfs_mntdir}: \n{files}[/]")
+        except Exception as e:
+                console.print(f"[bold green]JIT[/][red] >> Error during test:\n{e}")
         # Reset relevant files
         if settings.cluster:
             call = (f"srun --jobid={settings.jit_id} {settings.single_node_command} "
