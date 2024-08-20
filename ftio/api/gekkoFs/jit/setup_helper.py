@@ -106,6 +106,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
             settings.max_time = int(arg)
         elif opt in ("-j", "--job-id"):
             settings.job_id = int(arg)
+            settings.static_allocation = True
         elif opt in ("-l", "--log-name"):
             settings.log_dir = arg
         elif opt in ("-i", "--install-location"):
@@ -586,9 +587,11 @@ def allocate(settings: JitSettings) -> None:
                     check=True,
                 )
                 nodes_arr = nodes_result.stdout.splitlines()
+                console.print(f"[bold green] ## Node res {nodes_result}[/]")
                 if nodes_arr:
                     try:
                         nodes_arr = nodes_arr[:settings.nodes-1]
+                        console.print(f"[bold green] ## Node arr {nodes_arr}[/]")
                     except IndexError:
                         pass 
                     console.print(f"[bold green]JIT [red] >> Unable to decrease number of nodes. Using {settings.nodes}[/]")
@@ -718,7 +721,7 @@ def soft_kill(settings: JitSettings) -> None:
 def hard_kill(settings) -> None:
     console.print(f"\n[bold green]####### Hard kill[/]")
 
-    if settings.cluster:
+    if settings.cluster and not settings.static_allocation:
         # Cluster environment: use `scancel` to cancel the job
         _ = subprocess.run(
             f"scancel {settings.job_id}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
@@ -746,7 +749,7 @@ def hard_kill(settings) -> None:
 
 
 
-def shut_down(settings, name, pid):
+def shut_down(settings:JitSettings, name, pid):
     console.print(f"Shutting down {name} with PID {pid}")
     if pid:
         try:

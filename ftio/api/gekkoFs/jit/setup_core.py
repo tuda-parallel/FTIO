@@ -382,7 +382,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
     process = execute_background(call, settings.app_log, settings.app_err)
     monitor_log_file(settings.app_log,"")
     monitor_log_file(settings.app_err,"error")
-    monitor_log_file(settings.gekko_client_log,"Client")
+    # monitor_log_file(settings.gekko_client_log,"Client")
     stdout, stderr = process.communicate()
     elapsed_time(settings, runtime, "App", time.time() - start)
     if process.returncode != 0:

@@ -16,6 +16,7 @@ class JitSettings:
         # Variable initialization
         self.cluster = False
         self.job_id = 0
+        self.static_allocation = False
 
         self.ftio_node = ""
         self.single_node = ""
