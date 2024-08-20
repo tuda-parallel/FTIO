@@ -30,6 +30,7 @@ class JitSettings:
         self.gekko_demon_err = ""
         self.gekko_proxy_log = ""
         self.gekko_proxy_err = ""
+        self.gekko_client_log = ""
         self.cargo_log = ""
         self.cargo_err = ""
         self.ftio_log = ""
@@ -139,6 +140,7 @@ class JitSettings:
         self.gekko_demon_err = os.path.join(self.log_dir, "gekko_demon.err")
         self.gekko_proxy_log = os.path.join(self.log_dir, "gekko_proxy.log")
         self.gekko_proxy_err = os.path.join(self.log_dir, "gekko_proxy.err")
+        self.gekko_client_log = os.path.join(self.log_dir, "gekko_client.log")
         self.cargo_log       = os.path.join(self.log_dir, "cargo.log")
         self.cargo_err       = os.path.join(self.log_dir, "cargo.err")
         self.ftio_log        = os.path.join(self.log_dir, "ftio.log")

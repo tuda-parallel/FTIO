@@ -151,7 +151,7 @@ def start_cargo(settings: JitSettings) -> None:
             # )
             # The above call just gives more resources to the same proc, but not more. Cargo need at least two
             call = (
-                f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
+                f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LIBGKFS_LOG_OUTPUT={settings.gekko_client_log},"
                 f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} --jobid={settings.job_id} "
                 f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                 f"--ntasks={settings.app_nodes*settings.procs_cargo} --cpus-per-task={settings.procs_cargo} --ntasks-per-node={settings.procs_cargo} "
@@ -342,6 +342,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+                f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
                 f"{settings.app_call}"
             )
         else:
@@ -352,6 +353,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+                f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
                 f"{settings.app_call}"
             )
     else:

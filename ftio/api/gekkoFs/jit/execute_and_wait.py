@@ -290,20 +290,24 @@ def get_time():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 
 def files_filtered(files:str, regex_pattern, verbose = True) -> list[str]:
-    if files:
-        list_of_files = files.splitlines()
-
-    if regex_pattern:
-        #check if it contains file name without path (less error prone)
-        while "/" in regex_pattern:
-            regex_pattern = regex_pattern.split("/",1)[1]
-        if verbose:
-            console.print(f"[bold green]JIT [cyan]>> Cleaned Regex pattern to: {regex_pattern} ")
-    regex = re.compile(regex_pattern)
+    list_of_files = []
     monitored_files = []
-    for f in list_of_files:
-        if regex.match(f):
-            monitored_files.append(f)
+
+    if list_of_files:
+        if files:
+            list_of_files = files.splitlines()
+
+        if regex_pattern:
+            #check if it contains file name without path (less error prone)
+            while "/" in regex_pattern:
+                regex_pattern = regex_pattern.split("/",1)[1]
+            if verbose:
+                console.print(f"[bold green]JIT [cyan]>> Cleaned Regex pattern to: {regex_pattern} ")
+        regex = re.compile(regex_pattern)
+        
+        for f in list_of_files:
+            if regex.match(f):
+                monitored_files.append(f)
 
     return monitored_files
 

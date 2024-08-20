@@ -212,7 +212,7 @@ def error_usage(settings: JitSettings):
         
     -r | --procs_list: x,x,..,x <list>
         default: [bold yellow]{settings.procs_app},{settings.procs_demon},{settings.procs_proxy},{settings.procs_cargo},{settings.procs_ftio}[/]
-        List of procs for aap, demon, proxy, cargo, and ftio, respectively.
+        List of procs per node for app, demon, proxy, cargo, and ftio, respectively.
         Assignment is from right to left depending on the length of the list
 
     -t | --max-time: X <int>
@@ -586,6 +586,12 @@ def allocate(settings: JitSettings) -> None:
                     check=True,
                 )
                 nodes_arr = nodes_result.stdout.splitlines()
+                if nodes_arr:
+                    try:
+                        nodes_arr = nodes_arr[:settings.nodes]
+                    except IndexError:
+                        pass 
+                    console.print(f"[bold green]JIT [red] >> Unable to decrease number of nodes. Using {settings.nodes}[/]")
             except subprocess.CalledProcessError:
                 nodes_arr = []
 
