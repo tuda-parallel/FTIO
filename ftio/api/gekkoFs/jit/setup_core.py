@@ -45,22 +45,22 @@ def start_gekko_demon(settings: JitSettings) -> None:
 
         if settings.cluster:
             # Display Demon
-            # call_0 = f"srun --jobid={settings.jit_id} {settings.single_node_command} -N 1 --ntasks=1 mkdir -p {settings.gkfs_mntdir}"
+            # call_0 = f"srun --jobid={settings.job_id} {settings.single_node_command} -N 1 --ntasks=1 mkdir -p {settings.gkfs_mntdir}"
             call_0 =(
-                f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                 f"--ntasks={settings.app_nodes} --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap "
                 f"--oversubscribe --mem=0 mkdir -p {settings.gkfs_mntdir}"
                     )
             if settings.exclude_proxy:
                 # Demon call without proxy
                 # call = (
-                #     f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                #     f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                 #     f"--ntasks={settings.app_nodes*settings.procs_demon} --cpus-per-task={settings.procs_demon} --ntasks-per-node={settings.procs_demon} --overcommit --overlap "
                 #     f"--oversubscribe --mem=0 {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
                 #     f"-H {settings.gkfs_hostfile} -c -l ib0 -P ofi+sockets"
                 # )
                 call = (
-                    f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                    f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
                     f"-H {settings.gkfs_hostfile} -c -l ib0 -P ofi+sockets"
@@ -68,7 +68,7 @@ def start_gekko_demon(settings: JitSettings) -> None:
             else:
                 # Demon call with proxy
                 call = (
-                    f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                    f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
                     f"-H {settings.gkfs_hostfile} -c -l ib0 -P ofi+sockets -p ofi+verbs -L ib0"
@@ -109,7 +109,7 @@ def start_gekko_proxy(settings: JitSettings) -> None:
         if settings.cluster:
             # Proxy call for cluster
             call = (
-                f"srun --jobid={settings.jit_id} {settings.app_nodes_command} "
+                f"srun --jobid={settings.job_id} {settings.app_nodes_command} "
                 f"--disable-status -N {settings.app_nodes} --ntasks={settings.app_nodes} "
                 f"--cpus-per-task={settings.procs_proxy} --ntasks-per-node=1 --overcommit "
                 f"--overlap --oversubscribe --mem=0 {settings.gkfs_proxy} "
@@ -143,7 +143,7 @@ def start_cargo(settings: JitSettings) -> None:
             # Command for cluster
             # call = (
             #     f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
-            #     f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} --jobid={settings.jit_id} "
+            #     f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} --jobid={settings.job_id} "
             #     f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
             #     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_cargo} --ntasks-per-node=1 "
             #     f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
@@ -152,7 +152,7 @@ def start_cargo(settings: JitSettings) -> None:
             # The above call just gives more resources to the same proc, but not more. Cargo need at least two
             call = (
                 f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
-                f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} --jobid={settings.jit_id} "
+                f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} --jobid={settings.job_id} "
                 f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                 f"--ntasks={settings.app_nodes*settings.procs_cargo} --cpus-per-task={settings.procs_cargo} --ntasks-per-node={settings.procs_cargo} "
                 f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
@@ -191,13 +191,13 @@ def start_ftio(settings: JitSettings) -> None:
                 "[bold yellow]Executing the calls below used later for staging out[/]"
             )
             call_0 = (
-                f"srun --jobid={settings.jit_id} {settings.single_node_command} "
+                f"srun --jobid={settings.job_id} {settings.single_node_command} "
                 f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
                 f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/cargo_ftio "
                 f"--server {settings.cargo_server} --run"
             )
             call_1 = (
-                f"srun --jobid={settings.jit_id} {settings.single_node_command} "
+                f"srun --jobid={settings.job_id} {settings.single_node_command} "
                 f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
                 f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp "
                 f"--server {settings.cargo_server} --input / --output {settings.stage_out_path} "
@@ -220,7 +220,7 @@ def start_ftio(settings: JitSettings) -> None:
             )
 
             call = (
-                f"srun --jobid={settings.jit_id} {settings.ftio_node_command} "
+                f"srun --jobid={settings.job_id} {settings.ftio_node_command} "
                 f"--disable-status -N 1 --ntasks=1 --cpus-per-task={settings.procs_ftio} "
                 f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
                 f"predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} "
@@ -256,7 +256,7 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
         console.print(f"[bold green]####### Staging in [/][black][{get_time()}][/]")
 
         if settings.cluster:
-            call = f"srun --jobid={settings.jit_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
+            call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
         else:
             call = f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
 
@@ -293,7 +293,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
                 console.print(f"[bold green]JIT[/][red] >> Error during test:\n{e}")
         # Reset relevant files
         if settings.cluster:
-            call = (f"srun --jobid={settings.jit_id} {settings.single_node_command} "
+            call = (f"srun --jobid={settings.job_id} {settings.single_node_command} "
                     f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
                     f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/cargo_ftio "
                     f"--server {settings.cargo_server} --run")

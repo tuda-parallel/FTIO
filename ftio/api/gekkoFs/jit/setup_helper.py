@@ -75,7 +75,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
     try:
         opts, args = getopt.getopt(
             args,
-            "a:p:n:c:r:t:l:i:e:xh",
+            "a:p:n:c:r:t:j:l:i:e:xh",
             [
                 "address=",
                 "port=",
@@ -83,6 +83,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
                 "procs=",
                 "procs_list=",
                 "max-time=",
+                "job-id=",
                 "log-name=",
                 "install-location=",
                 "exclude=",
@@ -102,6 +103,8 @@ def parse_options(settings: JitSettings, args: list) -> None:
         elif opt in ("-n", "--nodes"):
             settings.nodes = int(arg)
         elif opt in ("-t", "--max-time"):
+            settings.max_time = int(arg)
+        elif opt in ("-j", "--job-id"):
             settings.max_time = int(arg)
         elif opt in ("-l", "--log-name"):
             settings.log_dir = arg
@@ -215,6 +218,10 @@ def error_usage(settings: JitSettings):
     -t | --max-time: X <int>
         default: [bold yellow]{settings.max_time}[/]
         max time for the execution of the setup in minutes.
+
+    -j | --job-id: X <int>
+        default: [bold yellow] Auto detected[/]
+        Skips allocating new resources and uses job id.
     
     -l | --log-name: <str>
         default: Auto set to number of nodes and job ID
@@ -250,12 +257,12 @@ def install_all(settings: JitSettings) -> None:
         try:
             # Create directory
             console.print("[bold green]JIT >>> Creating directory[/]")
-            status.update("[bold green]JIT >>> Creating directory[/]")
+            status.update("[bold green]JIT >>> Creating directory[/]",speed=30)
             os.makedirs(settings.install_location, exist_ok=True)
 
             # Clone GKFS
             console.print("[bold green]JIT >>> Installing GKFS[/]")
-            status.update("[bold green]JIT >>> Installing GKFS[/]")
+            status.update("[bold green]JIT >>> Installing GKFS[/]",speed=30)
             subprocess.run(
                 [
                     "git",
@@ -272,7 +279,7 @@ def install_all(settings: JitSettings) -> None:
 
             # Build GKFS
             console.print("[bold green]JIT >>> Building GKFS[/]")
-            status.update("[bold green]JIT >>> Building GKFS[/]")
+            status.update("[bold green]JIT >>> Building GKFS[/]",speed=30)
             subprocess.run(
                 [
                     "gekkofs/scripts/gkfs_dep.sh",
@@ -301,10 +308,10 @@ def install_all(settings: JitSettings) -> None:
             subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
 
             console.print("[bold green]JIT >>> GEKKO installed[/]")
-            status.update("[bold green]JIT >>> GEKKO installed[/]")
+            status.update("[bold green]JIT >>> GEKKO installed[/]",speed=30)
 
             console.print("[bold green]JIT >>> Installing Cereal[/]")
-            status.update("[bold green]JIT >>> Installing Cereal[/]")
+            status.update("[bold green]JIT >>> Installing Cereal[/]",speed=30)
             subprocess.run(
                 ["git", "clone", "https://github.com/USCiLab/cereal"],
                 cwd=settings.install_location,
@@ -327,7 +334,7 @@ def install_all(settings: JitSettings) -> None:
 
             # Install Cargo Dependencies: Thallium
             console.print("[bold green]JIT >>> Installing Thallium[/]")
-            status.update("[bold green]JIT >>> Installing Thallium[/]")
+            status.update("[bold green]JIT >>> Installing Thallium[/]",speed=30)
             subprocess.run(
                 ["git", "clone", "https://github.com/mochi-hpc/mochi-thallium"],
                 cwd=settings.install_location,
@@ -352,7 +359,7 @@ def install_all(settings: JitSettings) -> None:
 
             # Clone and Build Cargo
             console.print("[bold green]JIT >>> Installing Cargo[/]")
-            status.update("[bold green]JIT >>> Installing Cargo[/]")
+            status.update("[bold green]JIT >>> Installing Cargo[/]",speed=30)
             subprocess.run(
                 ["git", "clone", "https://storage.bsc.es/gitlab/hpc/cargo.git"],
                 cwd=settings.install_location,
@@ -379,11 +386,11 @@ def install_all(settings: JitSettings) -> None:
             subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
 
             console.print("[bold green]JIT >>> Cargo installed[/]")
-            status.update("[bold green]JIT >>> Cargo installed[/]")
+            status.update("[bold green]JIT >>> Cargo installed[/]",speed=30)
 
             # Build IOR
             console.print("[bold green]JIT >>> Installing IOR[/]")
-            status.update("[bold green]JIT >>> Installing IOR[/]")
+            status.update("[bold green]JIT >>> Installing IOR[/]",speed=30)
             subprocess.run(
                 ["git", "clone", "https://github.com/hpc/ior.git"],
                 cwd=settings.install_location,
@@ -395,15 +402,15 @@ def install_all(settings: JitSettings) -> None:
             subprocess.run(["make", "-j", "4"], check=True)
 
             console.print("[bold green]JIT >> Installation finished[/]")
-            status.update("[bold green]JIT >> Installation finished[/]")
+            status.update("[bold green]JIT >> Installation finished[/]",speed=30)
             console.print("\n>> Ready to go <<")
-            status.update("\n>> Ready to go <<")
+            status.update("\n>> Ready to go <<",speed=30)
             console.print("Call: ./jit.sh -n NODES -t MAX_TIME")
-            status.update("Call: ./jit.sh -n NODES -t MAX_TIME")
+            status.update("Call: ./jit.sh -n NODES -t MAX_TIME",speed=30)
 
         except subprocess.CalledProcessError as e:
             console.print("[bold green]JIT [bold red] >>> Error encountered: {e}[/]")
-            status.update("[bold green]JIT [bold red] >>> Error encountered: {e}[/]")
+            status.update("[bold green]JIT [bold red] >>> Error encountered: {e}[/]",speed=30)
             abort()
 
 
@@ -435,49 +442,50 @@ def replace_line_in_file(file_path, line_number, new_line_content):
         print(f"An unexpected error occurred: {e}")
 
 
-def cancel_jit_jobs():
-    # Check if the hostname contains 'cpu' or 'mogon'
-    hostname = subprocess.check_output("hostname", shell=True).decode().strip()
-    if "cpu" in hostname or "mogon" in hostname:
-        # Get the list of job IDs with the name "JIT"
-        try:
-            jit_jobs = (
-                subprocess.check_output(
-                    "squeue --me --name=JIT --format=%A", shell=True
+def cancel_jit_jobs(settings:JitSettings):
+    if settings.job_id == 0:
+        # Check if the hostname contains 'cpu' or 'mogon'
+        hostname = subprocess.check_output("hostname", shell=True).decode().strip()
+        if "cpu" in hostname or "mogon" in hostname:
+            # Get the list of job IDs with the name "JIT"
+            try:
+                jit_jobs = (
+                    subprocess.check_output(
+                        "squeue --me --name=JIT --format=%A", shell=True
+                    )
+                    .decode()
+                    .strip()
+                    .split("\n")[1:]
                 )
-                .decode()
-                .strip()
-                .split("\n")[1:]
-            )
-        except subprocess.CalledProcessError:
-            jit_jobs = []
+            except subprocess.CalledProcessError:
+                jit_jobs = []
 
-        if not jit_jobs:
-            return
+            if not jit_jobs:
+                return
 
-        # Print the list of JIT jobs
-        job_list = "\n".join(jit_jobs)
-        console.print(
-            "[bold green]JIT [bold yellow]>> The following jobs with the name 'JIT' were found:[/]"
-        )
-        console.print(job_list)
-
-        # Prompt the user to confirm cancellation
-        confirmation = (
-            input("Do you want to cancel all 'JIT' jobs? (yes/no): ").strip().lower()
-        )
-
-        if confirmation in {"yes", "y", "ye"}:
-            for job_id in jit_jobs:
-                subprocess.run(f"scancel {job_id}", shell=True, check=True)
-                console.print(
-                    f"[bold green]JIT [bold cyan]>> Cancelled job ID {job_id}[/]"
-                )
+            # Print the list of JIT jobs
+            job_list = "\n".join(jit_jobs)
             console.print(
-                "[bold green]JIT [bold green]>> All 'JIT' jobs have been cancelled.[/]"
+                "[bold green]JIT [bold yellow]>> The following jobs with the name 'JIT' were found:[/]"
             )
-        else:
-            console.print("[bold green]JIT [bold yellow]>> No jobs were cancelled.[/]")
+            console.print(job_list)
+
+            # Prompt the user to confirm cancellation
+            confirmation = (
+                input("Do you want to cancel all 'JIT' jobs? (yes/no): ").strip().lower()
+            )
+
+            if confirmation in {"yes", "y", "ye"}:
+                for job_id in jit_jobs:
+                    subprocess.run(f"scancel {job_id}", shell=True, check=True)
+                    console.print(
+                        f"[bold green]JIT [bold cyan]>> Cancelled job ID {job_id}[/]"
+                    )
+                console.print(
+                    "[bold green]JIT [bold green]>> All 'JIT' jobs have been cancelled.[/]"
+                )
+            else:
+                console.print("[bold green]JIT [bold yellow]>> No jobs were cancelled.[/]")
 
 
 
@@ -540,36 +548,38 @@ def total_time(log_dir):
 def allocate(settings: JitSettings) -> None:
     settings.app_nodes = 1
     if settings.cluster:
-        # Allocating resources
-        console.print(
-            "\n[bold green]JIT [green] ####### Allocating resources[/]",
-            style="bold green",
-        )
 
-        call = f"salloc -N {settings.nodes} -t {settings.max_time} {settings.alloc_call_flags}"
-        console.print(f"[bold green]JIT [cyan] >> Executing: {call} [/]")
+        #allocate if needed 
+        if settings.job_id == 0:
+            # Allocating resources
+            console.print("[bold green]JIT [green] ####### Allocating resources[/]")
 
-        # Execute the salloc command
-        subprocess.run(call, shell=True, check=True)
+            call = f"salloc -N {settings.nodes} -t {settings.max_time} {settings.alloc_call_flags}"
+            console.print(f"[bold green]JIT [cyan] >> Executing: {call} [/]")
 
-        # Get JIT_ID
-        try:
-            result = subprocess.run(
-                "squeue -o '%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R' | grep ' JIT ' | sort -k1,1rn | head -n 1 | awk '{print $1}'",
-                shell=True,
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            settings.jit_id = int(result.stdout.strip())
-        except subprocess.CalledProcessError:
-            settings.jit_id = 0
+            # Execute the salloc command
+            subprocess.run(call, shell=True, check=True)
+
+            # Get JIT_ID
+            try:
+                result = subprocess.run(
+                    "squeue -o '%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R' | grep ' JIT ' | sort -k1,1rn | head -n 1 | awk '{print $1}'",
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                settings.job_id = int(result.stdout.strip())
+            except subprocess.CalledProcessError:
+                settings.job_id = 0
+        else:
+            console.print(f"[bold green]JIT [green] ####### Using allocation with id: {settings.job_id}[/]")
 
         # Get NODES_ARR
-        if settings.jit_id:
+        if settings.job_id:
             try:
                 nodes_result = subprocess.run(
-                    f"scontrol show hostname $(squeue -j {settings.jit_id} -o '%N' | tail -n +2)",
+                    f"scontrol show hostname $(squeue -j {settings.job_id} -o '%N' | tail -n +2)",
                     shell=True,
                     capture_output=True,
                     text=True,
@@ -604,7 +614,7 @@ def allocate(settings: JitSettings) -> None:
                         )
 
                 console.print(
-                    f"[bold green]JIT [green] >> JIT Job Id: {settings.jit_id} [/]"
+                    f"[bold green]JIT [green] >> JIT Job Id: {settings.job_id} [/]"
                 )
                 console.print(
                     f"[bold green]JIT [green] >> Allocated Nodes: {len(nodes_arr)} [/]"
@@ -637,7 +647,7 @@ def allocate(settings: JitSettings) -> None:
 
 def get_pid(settings: JitSettings, name: str, pid: int):
     if settings.cluster:
-        call = f"ps aux | grep 'srun' | grep '{settings.jit_id}' | grep '{name}' | grep -v grep | tail -1 | awk '{{print $2}}'"
+        call = f"ps aux | grep 'srun' | grep '{settings.job_id}' | grep '{name}' | grep -v grep | tail -1 | awk '{{print $2}}'"
         res = subprocess.run(call, shell=True, check=True, capture_output=True, text=True)
         if res.stdout.strip():
             pid = res.stdout.strip() 
@@ -662,7 +672,7 @@ def handle_sigint(settings: JitSettings):
     soft_kill(settings)
     hard_kill(settings)
     if settings.cluster:
-        _ = subprocess.run(f"scancel {settings.jit_id}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
+        _ = subprocess.run(f"scancel {settings.job_id}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
         )
     sys.exit(0)
 
@@ -705,7 +715,7 @@ def hard_kill(settings) -> None:
     if settings.cluster:
         # Cluster environment: use `scancel` to cancel the job
         _ = subprocess.run(
-            f"scancel {settings.jit_id}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
+            f"scancel {settings.job_id}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
         )
     else:
         # Non-cluster environment: use `kill` to terminate processes
@@ -748,7 +758,7 @@ def shut_down(settings, name, pid):
 def log_dir(settings:JitSettings):
     if not settings.log_dir:
         # Define default LOG_DIR if not set
-        settings.log_dir = f"logs_nodes{settings.nodes}_Jobid{settings.jit_id}"
+        settings.log_dir = f"logs_nodes{settings.nodes}_Jobid{settings.job_id}"
 
     # Create directory if it does not exist
     os.makedirs(settings.log_dir, exist_ok=True)
@@ -762,7 +772,7 @@ def get_address_ftio(settings: JitSettings) -> None:
     # Get Address and port
     jit_print("####### Getting FTIO ADDRESS")
     if settings.cluster:
-        call = f"srun --jobid={settings.jit_id} {settings.ftio_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
+        call = f"srun --jobid={settings.job_id} {settings.ftio_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
         jit_print(f"[bold cyan]>> Executing: {call}")
         try:
             result = subprocess.run(
@@ -779,7 +789,7 @@ def get_address_ftio(settings: JitSettings) -> None:
 def get_address_cargo(settings: JitSettings) -> None:
     jit_print("####### Getting Cargo ADDRESS")
     if settings.cluster:
-        call = f"srun --jobid={settings.jit_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
+        call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
         jit_print(f"[bold cyan]>> Executing: {call}")
         try:
             result = subprocess.run(
@@ -883,7 +893,7 @@ def print_settings(settings) -> None:
 |   ├─ cargo      : {settings.procs_cargo}
 |   └─ ftio       : {settings.procs_ftio}
 ├─ max time       : {settings.max_time}
-└─ job id         : {settings.jit_id}
+└─ job id         : {settings.job_id}
 
 [bold green]ftio[/]{ftio_text}
 
@@ -989,7 +999,7 @@ def check(settings: JitSettings):
 
 def update_hostfile_mpi(settings:JitSettings):
         # Command to get the list of hostnames for the job
-    squeue_command = f"squeue -j {settings.jit_id} -o '%N' | tail -n +2"
+    squeue_command = f"squeue -j {settings.job_id} -o '%N' | tail -n +2"
     scontrol_command = f"scontrol show hostname $({squeue_command})"
     
     # Execute the command and capture the hostnames

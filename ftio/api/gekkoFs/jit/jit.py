@@ -47,7 +47,7 @@ def main() -> None:
     signal.signal(signal.SIGINT, lambda signal, frame: handle_sigint(settings))
 
     # Clean other jobs
-    cancel_jit_jobs()
+    cancel_jit_jobs(settings)
 
     # 1.0 Allocate resources
     allocate(settings)

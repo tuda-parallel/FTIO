@@ -31,7 +31,7 @@ def check_setup(settings:JitSettings):
         if settings.cluster and settings.debug and not settings.exclude_demon:
             #srun dies not work with gekko
             # call = (
-            #     f"srun --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} --ntasks={settings.app_nodes} "
+            #     f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} --ntasks={settings.app_nodes} "
             #     f"--cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
             #     f"--export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')},LD_PRELOAD={settings.gkfs_intercept} "
             #     f"/usr/bin/ls {settings.gkfs_mntdir} "
@@ -95,7 +95,7 @@ def check_setup(settings:JitSettings):
 
                     
         #     srun_command = (f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')},"
-        #                     f"LD_PRELOAD={settings.gkfs_intercept} --jobid={settings.jit_id} {settings.app_nodes_command} --disable-status "
+        #                     f"LD_PRELOAD={settings.gkfs_intercept} --jobid={settings.job_id} {settings.app_nodes_command} --disable-status "
         #                     f"-N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
         #                     f"/usr/bin/ls {settings.gkfs_mntdir}")
         #     files2 = subprocess.check_output(srun_command, shell=True).decode()
