@@ -322,6 +322,9 @@ def print_file(file, src=""):
         elif "proxy" in src.lower():
             color = "[deep_pink1]"
             wait_time = 0.1
+        elif "client" in src.lower():
+            color = "[gold3]"
+            wait_time = 0.1
         elif "ftio" in src.lower():
             color = "[deep_sky_blue1]"
             wait_time = 0.1
