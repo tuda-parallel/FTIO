@@ -8,12 +8,16 @@ from ftio.freq._dft import display_prediction
 from ftio.freq.freq_plot_core import convert_and_plot
 from ftio.parse.csv_reader import read_csv_file
 from ftio.api.trace_analysis.helper import quick_plot
-
+from rich.console import Console
+console = Console()
 
 def main(argv=sys.argv[1:]):
-    
+
     full_path = get_path(argv)
     arrays = read_csv_file(full_path)
+    b_r = np.array([])
+    b_w = np.array([])
+    b_b = np.array([])
 
     # for key, array in arrays.items():
     #     print(f"{key}: {array}")
@@ -21,8 +25,13 @@ def main(argv=sys.argv[1:]):
     ranks = 10
     if 'read' in arrays:
         b_r = np.array(arrays['read']).astype(float)
+        console.print("[bold yellow] No read[/]")
     if 'write' in arrays:
         b_w = np.array(arrays['write']).astype(float)
+        console.print("[bold yellow] No write[/]")
+    if 'both' in arrays:
+        b_b = np.array(arrays['both']).astype(float)
+        console.print("[bold yellow] No both[/]")
 
     if 'timestamp' in arrays:
         entries = [datetime.strptime(ts, '%Y-%m-%d %H:%M:%S.%f') for ts in arrays['timestamp']]
@@ -30,12 +39,15 @@ def main(argv=sys.argv[1:]):
         time_diffs_in_seconds = [(dt - t_s).total_seconds() for dt in entries]
         t = np.array(time_diffs_in_seconds)
     else:
-        f_s = 0.1 #get this value from the name of a file
+        f_s = 1 #get this value from the name of a file
         t_s = 1/f_s
         t = np.arange(0,len(b_w)*t_s,t_s).astype(float)
-
+        argv.extend(['-f', '1'])
+        console.print(f"[bold green] Sampling rate set to {t_s}[/]")
+        
     total_bytes_r = 0#np.sum(np.repeat(t_s,len(b_r))*len(b_r))
     total_bytes_w = 0#np.sum(np.repeat(t_s,len(b_w))*len(b_w))
+    total_bytes_b = 0#np.sum(np.repeat(t_s,len(b_b))*len(b_b))
 
     # plot
     # quick_plot(t,b_w)
@@ -52,6 +64,8 @@ def main(argv=sys.argv[1:]):
         quick_ftio(argv,b_r,t, total_bytes_r, ranks, 'read')
     if 'write' in arrays:
         quick_ftio(argv,b_w,t, total_bytes_w, ranks, 'write')
+    if 'both' in arrays:
+        quick_ftio(argv,b_b,t, total_bytes_b, ranks, 'both')
 
 
 def get_path(argv):
