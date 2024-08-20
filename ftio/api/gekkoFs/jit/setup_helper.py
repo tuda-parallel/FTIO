@@ -588,10 +588,12 @@ def allocate(settings: JitSettings) -> None:
                 )
                 nodes_arr = nodes_result.stdout.splitlines()
                 console.print(f"[bold green] ## Node res {nodes_result}[/]")
+                console.print(f"[bold green] ## Node res stdout{nodes_result.stdout}[/]")
+                console.print(f"[bold green] ## Node arr {nodes_arr}[/]")
+                console.print(f"[bold green] ## split{nodes_result.stdout.split('\n')}[/]")
                 if nodes_arr:
                     try:
                         nodes_arr = nodes_arr[:settings.nodes-1]
-                        console.print(f"[bold green] ## Node arr {nodes_arr}[/]")
                     except IndexError:
                         pass 
                     console.print(f"[bold green]JIT [red] >> Unable to decrease number of nodes. Using {settings.nodes}[/]")

@@ -91,7 +91,7 @@ apt install python3.11-venv
 
 ### Automated installation
 
-Simply call the make command:
+FTIO is installed by default in a virtual environment. For the automated installation, simply execute the command:
 
 ```sh
 # uses by default python3 
