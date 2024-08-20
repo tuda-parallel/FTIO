@@ -338,7 +338,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
         elif settings.exclude_ftio:
             call = (
                 f"{settings.precall} mpiexec -np {settings.procs_app} --oversubscribe "
-                f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors "
+                f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=info,warnings,errors "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
@@ -348,7 +348,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
         else:
             call = (
                 f"{settings.precall} mpiexec -np {settings.procs_app} --oversubscribe "
-                f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors "
+                f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=info,warnings,errors "
                 f"-x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
@@ -364,7 +364,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
             call = (
                 f"{settings.precall} mpiexec -np {settings.procs_app} --oversubscribe "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                f"-x LIBGKFS_LOG=none -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+                f"-x LIBGKFS_LOG=info,warnings,errors -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} {settings.app_call}"
             )
         else:

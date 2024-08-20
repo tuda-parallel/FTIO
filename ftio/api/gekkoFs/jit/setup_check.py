@@ -47,7 +47,7 @@ def check_setup(settings:JitSettings):
             if not settings.exclude_proxy:
                 additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
             call = (
-                f"mpiexec -np 2 --oversubscribe "
+                f"mpiexec -np 1 --oversubscribe "
                 f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors "
                 f"-x LIBGKFS_ENABLE_METRICS=on  "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
@@ -66,9 +66,9 @@ def check_setup(settings:JitSettings):
                 timestamp = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
                 file = create_test_file("test.sh"+timestamp, settings)
                 call = (
-                        f"mpiexec -np 5 --oversubscribe "
-                        f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors "
-                        f"-x LIBGKFS_ENABLE_METRICS=on  "
+                        f"mpiexec -np {settings.app_nodes} --oversubscribe "
+                        f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=info,warnings,errors "
+                        f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
                         f"-x LD_PRELOAD={settings.gkfs_intercept} "
                         f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                         f"{additional_arguments} "
