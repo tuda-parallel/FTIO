@@ -105,7 +105,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
         elif opt in ("-t", "--max-time"):
             settings.max_time = int(arg)
         elif opt in ("-j", "--job-id"):
-            settings.max_time = int(arg)
+            settings.job_id = int(arg)
         elif opt in ("-l", "--log-name"):
             settings.log_dir = arg
         elif opt in ("-i", "--install-location"):
