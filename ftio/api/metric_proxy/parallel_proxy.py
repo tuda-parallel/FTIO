@@ -33,7 +33,7 @@ def main() -> None:
     parallel = False
     pools = False
     show = False  # shows the results from FTIO
-    proxy = False
+    proxy = True
 
     if proxy:
         mp = MetricProxy()

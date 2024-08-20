@@ -250,10 +250,12 @@ def install_all(settings: JitSettings) -> None:
         try:
             # Create directory
             console.print("[bold green]JIT >>> Creating directory[/]")
+            status.update("[bold green]JIT >>> Creating directory[/]")
             os.makedirs(settings.install_location, exist_ok=True)
 
             # Clone GKFS
             console.print("[bold green]JIT >>> Installing GKFS[/]")
+            status.update("[bold green]JIT >>> Installing GKFS[/]")
             subprocess.run(
                 [
                     "git",
@@ -270,6 +272,7 @@ def install_all(settings: JitSettings) -> None:
 
             # Build GKFS
             console.print("[bold green]JIT >>> Building GKFS[/]")
+            status.update("[bold green]JIT >>> Building GKFS[/]")
             subprocess.run(
                 [
                     "gekkofs/scripts/gkfs_dep.sh",
@@ -298,8 +301,10 @@ def install_all(settings: JitSettings) -> None:
             subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
 
             console.print("[bold green]JIT >>> GEKKO installed[/]")
+            status.update("[bold green]JIT >>> GEKKO installed[/]")
 
             console.print("[bold green]JIT >>> Installing Cereal[/]")
+            status.update("[bold green]JIT >>> Installing Cereal[/]")
             subprocess.run(
                 ["git", "clone", "https://github.com/USCiLab/cereal"],
                 cwd=settings.install_location,
@@ -322,6 +327,7 @@ def install_all(settings: JitSettings) -> None:
 
             # Install Cargo Dependencies: Thallium
             console.print("[bold green]JIT >>> Installing Thallium[/]")
+            status.update("[bold green]JIT >>> Installing Thallium[/]")
             subprocess.run(
                 ["git", "clone", "https://github.com/mochi-hpc/mochi-thallium"],
                 cwd=settings.install_location,
@@ -346,6 +352,7 @@ def install_all(settings: JitSettings) -> None:
 
             # Clone and Build Cargo
             console.print("[bold green]JIT >>> Installing Cargo[/]")
+            status.update("[bold green]JIT >>> Installing Cargo[/]")
             subprocess.run(
                 ["git", "clone", "https://storage.bsc.es/gitlab/hpc/cargo.git"],
                 cwd=settings.install_location,
@@ -372,9 +379,11 @@ def install_all(settings: JitSettings) -> None:
             subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
 
             console.print("[bold green]JIT >>> Cargo installed[/]")
+            status.update("[bold green]JIT >>> Cargo installed[/]")
 
             # Build IOR
             console.print("[bold green]JIT >>> Installing IOR[/]")
+            status.update("[bold green]JIT >>> Installing IOR[/]")
             subprocess.run(
                 ["git", "clone", "https://github.com/hpc/ior.git"],
                 cwd=settings.install_location,
@@ -386,11 +395,15 @@ def install_all(settings: JitSettings) -> None:
             subprocess.run(["make", "-j", "4"], check=True)
 
             console.print("[bold green]JIT >> Installation finished[/]")
+            status.update("[bold green]JIT >> Installation finished[/]")
             console.print("\n>> Ready to go <<")
+            status.update("\n>> Ready to go <<")
             console.print("Call: ./jit.sh -n NODES -t MAX_TIME")
+            status.update("Call: ./jit.sh -n NODES -t MAX_TIME")
 
         except subprocess.CalledProcessError as e:
             console.print("[bold green]JIT [bold red] >>> Error encountered: {e}[/]")
+            status.update("[bold green]JIT [bold red] >>> Error encountered: {e}[/]")
             abort()
 
 
