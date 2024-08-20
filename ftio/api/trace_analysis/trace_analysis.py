@@ -124,7 +124,7 @@ def periodic_apps(df):
     all = len(df[f'{values[0]}_dominant_freq'])
     for mode in values:
         n = df[f'{mode}_dominant_freq'].apply(lambda x: len(x)>0).sum()
-        console.print(f"[blue]Periodic {mode.capitalize()}: {n}/{all}[/]")
+        console.print(f"[blue]Periodic {mode.capitalize()}: {n}/{all} ({n/all*100}%)[/]")
 
 if __name__ == "__main__":
     main(sys.argv[1:])
