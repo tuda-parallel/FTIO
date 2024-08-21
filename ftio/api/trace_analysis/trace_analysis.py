@@ -3,7 +3,7 @@ import sys
 import json
 import time
 from rich.console import Console
-from rich.progress import Progress
+from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
 from rich.panel import Panel
 import numpy as np
 import pandas as pd
@@ -41,8 +41,14 @@ def main(argv=sys.argv[1:]) -> None:
         console.print("[bold red]No files matched the pattern![/]")
         return
 
+    progress = Progress(
+        SpinnerColumn(),
+        *Progress.get_default_columns(),
+        TimeElapsedColumn(),
+    )
+
     try:
-        with Progress() as progress:
+        with progress:
             task = progress.add_task("[green]Processing files...", total=len(csv_files))
 
             # Iterate over each csv file
