@@ -90,7 +90,9 @@ def main(argv=sys.argv[1:]) -> None:
                 progress.advance(task)
 
         progress.console.print("[bold green]All files processed successfully![/]")
-        console.print(f"[blue]FTIO total time: {time.time()  - start_time:.4f} seconds[/]")
+        console.print(
+            f"[blue]FTIO total time: {time.time()  - start_time:.4f} seconds[/]"
+        )
         df.to_csv("ftio.csv", index=False)
         statisitcs(df)
     except KeyboardInterrupt:
@@ -133,7 +135,7 @@ def flatten_dict(d):
 
 
 def statisitcs(df):
-    print(df)
+    # print(df)
     dom_df = reduce_to_max_conf(df)
     prefixes = ["read", "write", "both"]
     color = ["purple4", "gold3", "deep_sky_blue1"]
