@@ -19,7 +19,7 @@ def main(argv=sys.argv[1:]) -> None:
         argv.pop(0)
     else:
         # folder_path = os.getcwd()
-        folder_path = "/d/github/FTIO/ftio/api/trace_analysis/test"
+        folder_path = "/d/github/FTIO/ftio/api/trace_analysis/platfrim"
 
     folder_path = os.path.abspath(folder_path)
     console.print(f"[bold green]Path is: {folder_path}[/]")
@@ -78,11 +78,10 @@ def main(argv=sys.argv[1:]) -> None:
                 
         progress.console.print("[bold green]All files processed successfully![/]")
         df.to_csv("ftio.csv", index=False)
-        print(df)
-        periodic_apps(df)
+        statisitcs(df)
     except KeyboardInterrupt:
         progress.console.print("[bold red]Keyboard interrupt![/]")
-        print(df)
+        statisitcs(df)
         sys.exit()
         
 
@@ -124,7 +123,48 @@ def periodic_apps(df):
     all = len(df[f'{values[0]}_dominant_freq'])
     for mode in values:
         n = df[f'{mode}_dominant_freq'].apply(lambda x: len(x)>0).sum()
-        console.print(f"[blue]Periodic {mode.capitalize()}: {n}/{all} ({n/all*100}%)[/]")
+        console.print(f"[blue]Periodic {mode.capitalize()}: {n:.2f}/{all:.2f} ({n/all*100}%)[/]")
+
+def statisitcs(df):
+    print(df)
+    periodic_apps(df)
+    dom_df = reduce_to_max_conf(df)
+    # print(dom_df)
+    min_max_mean(dom_df)
+    min_max_mean(dom_df,"dominant_freq")
+    
+
+
+def min_max_mean(df,suffix="conf"):
+    prefixes = ["read", "write", "both"]
+    for prefix in prefixes:    
+        conf_col = f"{prefix}_{suffix}"
+        min = np.min(df[conf_col])
+        max = np.max(df[conf_col])
+        mean= np.mean(df[conf_col])
+        median= np.median(df[conf_col])
+        nanmean= np.nanmean(df[conf_col])
+        nanmedian= np.nanmedian(df[conf_col])
+        scale = 100 if "conf" in suffix else 1
+        console.print(f"[green]{prefix.capitalize()} {suffix.capitalize()}:\n - range: [{min*scale:.2f},{max*scale:.2f}]\n - mean: {mean*scale:.2f}\n - nanmean: {nanmean*scale:.2f}\n - median:{median*scale:.2f}\n - nanmedian:{nanmedian*scale:.2f}\n[/]")
+        
+def reduce_to_max_conf(df):
+    prefixes = ["read", "write", "both"]
+    # Iterate over each row
+    for i, row in df.iterrows():
+        for prefix in prefixes:    
+            conf_col = f"{prefix}_conf"
+            freq_col = f"{prefix}_dominant_freq"
+            freq = np.nan
+            conf = np.nan
+            if isinstance(row[conf_col], list) and len(row[conf_col]) > 0:  
+                dominant_index = np.argmax(row[conf_col])
+                freq = row[freq_col][dominant_index]
+                conf = row[conf_col][dominant_index]
+            df.at[i, conf_col] = conf
+            df.at[i, freq_col] = freq
+        
+    return df
 
 if __name__ == "__main__":
     main(sys.argv[1:])
