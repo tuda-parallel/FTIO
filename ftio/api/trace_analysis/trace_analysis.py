@@ -4,6 +4,7 @@ import json
 import time
 from rich.console import Console
 from rich.progress import Progress
+from rich.panel import Panel
 import numpy as np
 import pandas as pd
 from ftio.api.trace_analysis.trace_ftio_v2 import main as trace_ftio
@@ -99,7 +100,6 @@ def convert_dict(data):
     return data
 
 
-
 def flatten_dict(d):
     """Flatten the dictionary for DataFrame insertion."""
     flat = {}
@@ -119,26 +119,34 @@ def flatten_dict(d):
     return flat
 
 
-def periodic_apps(df,prefix):
-    all = len(df[f'{prefix}_dominant_freq'])
-    # n = df[f'{prefix}_dominant_freq'].apply(lambda x: len(x)>0).sum()
-    n = df[f'{prefix}_dominant_freq'].apply(lambda x: not np.isnan(x)).sum()
-    console.print(f"[blue]Periodic {prefix.capitalize()}: {n:.2f}/{all:.2f} ({n/all*100:.2f}%)[/]")
 
 def statisitcs(df):
     print(df)
     dom_df = reduce_to_max_conf(df)
     prefixes = ["read", "write", "both"]
+    color = ["purple4", "gold3", "deep_sky_blue1"]
+    
     for prefix in prefixes:
-        periodic_apps(df,prefix)
-        min_max_mean(dom_df,prefix, "conf")
-        min_max_mean(dom_df,prefix,"dominant_freq","Hz")
-        time_app(df,prefix)
+        s = ""
+        s +=  periodic_apps(df,prefix)
+        s +=  min_max_mean(dom_df,prefix, "conf")
+        s +=  min_max_mean(dom_df,prefix,"dominant_freq","Hz")
+        s +=  time_app(df,prefix)
+        console.print(Panel.fit(s, title=prefix.capitalize(), border_style=color[prefixes.index(prefix)], title_align="left"))
     # print(dom_df)
     
 
 
-def min_max_mean(df:pd.DataFrame,prefix, suffix="conf",unit="%",title="") -> None:
+def periodic_apps(df,prefix) -> str:
+    all = len(df[f'{prefix}_dominant_freq'])
+    # n = df[f'{prefix}_dominant_freq'].apply(lambda x: len(x)>0).sum()
+    n = df[f'{prefix}_dominant_freq'].apply(lambda x: not np.isnan(x)).sum()
+    # out = f"[blue]Periodic {prefix.capitalize()}: {n:.2f}/{all:.2f} ({n/all*100:.2f}%)[/]"
+    out = f"[blue]Periodic I/O: {n:.2f}/{all:.2f} ({n/all*100:.2f}%)[/]\n\n"
+    return out
+    
+
+def min_max_mean(df:pd.DataFrame,prefix, suffix="conf",unit="%",title="") -> str:
     if not title:
         title = suffix.capitalize()
     conf_col = f"{prefix}_{suffix}"
@@ -149,11 +157,14 @@ def min_max_mean(df:pd.DataFrame,prefix, suffix="conf",unit="%",title="") -> Non
     nanmean= np.nanmean(df[conf_col])
     nanmedian= np.nanmedian(df[conf_col])
     scale = 100 if "conf" in suffix else 1
-    console.print(f"[green]{prefix.capitalize()} {title}:\n - range: [{min*scale:.2f},{max*scale:.2f}] {unit}\n - mean: {mean*scale:.2f} {unit}\n - nanmean: {nanmean*scale:.2f} {unit}\n - median: {median*scale:.2f} {unit}\n - nanmedian: {nanmedian*scale:.2f} {unit}\n[/]")
+    # out = f"[green]{prefix.capitalize()} {title}:\n - range: [{min*scale:.2f},{max*scale:.2f}] {unit}\n - mean: {mean*scale:.2f} {unit}\n - nanmean: {nanmean*scale:.2f} {unit}\n - median: {median*scale:.2f} {unit}\n - nanmedian: {nanmedian*scale:.2f} {unit}\n[/]"
+    out = f"[gray][green]{title}[/]:\n - range: [{min*scale:.2f},{max*scale:.2f}] {unit}\n - mean: {mean*scale:.2f} {unit}\n - nanmean: {nanmean*scale:.2f} {unit}\n - median: {median*scale:.2f} {unit}\n - nanmedian: {nanmedian*scale:.2f} {unit}\n\n[/]"
+    return  out
 
 def time_app(df,prefix):
     df[f"{prefix}_time"] = df[f"{prefix}_t_end"]- df[f"{prefix}_t_start"]
-    min_max_mean(df,prefix,"time","sec","I/O Time")
+    out = min_max_mean(df,prefix,"time","sec","I/O Time")
+    return out
 
     
 def reduce_to_max_conf(df:pd.DataFrame) -> pd.DataFrame:
