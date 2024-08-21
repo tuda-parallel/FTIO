@@ -18,7 +18,7 @@ def main(argv=sys.argv[1:]) -> None:
     # specify the name with -n 
     if '-n' in argv:
         index = argv.index('-n')
-        name = bool(argv[index + 1])
+        name = str(argv[index + 1])
         argv.pop(index)
         argv.pop(index)
     if '-v' in argv:
@@ -54,7 +54,7 @@ def main(argv=sys.argv[1:]) -> None:
                 csv_files.append(os.path.join(dirpath, filename))
 
     if not csv_files:
-        console.print("[bold red]No files matched the pattern![/]")
+        console.print(f"[bold red]No files matched the pattern: {pattern}![/]")
         return
 
     progress = Progress(
