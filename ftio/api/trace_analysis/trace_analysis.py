@@ -13,8 +13,24 @@ console = Console()
 
 
 def main(argv=sys.argv[1:]) -> None:
+    verbose = False
+    name = "plafrim"
+    # specify the name with -n 
+    if '-n' in argv:
+        index = argv.index('-n')
+        name = bool(argv[index + 1])
+        argv.pop(index)
+        argv.pop(index)
+    if '-v' in argv:
+        index = argv.index('-v')
+        verbose = bool(argv[index + 1])
+        argv.pop(index)
+        argv.pop(index)
+
+    # print(argv)
     start_time = time.time()
-    pattern = "_signal_plafrim.csv"
+    # pattern = "_signal_plafrim.csv"
+    pattern = f"_signal_{name}.csv"
     df = pd.DataFrame()
 
     # Handle command-line arguments properly
@@ -44,6 +60,7 @@ def main(argv=sys.argv[1:]) -> None:
     progress = Progress(
         SpinnerColumn(),
         *Progress.get_default_columns(),
+        "[yellow] --  elapsed time",
         TimeElapsedColumn(),
     )
 
@@ -60,7 +77,7 @@ def main(argv=sys.argv[1:]) -> None:
 
                 # Run the trace_ftio function
 
-                res = trace_ftio([file_path] + argv, False)
+                res = trace_ftio([file_path] + argv, verbose)
 
                 # Create the new file name by replacing the pattern
                 base_name = os.path.basename(file_path)
@@ -89,14 +106,14 @@ def main(argv=sys.argv[1:]) -> None:
                 # Update the progress bar
                 progress.advance(task)
 
-        progress.console.print("[bold green]All files processed successfully![/]")
+        progress.console.print("[bold green]All files processed successfully![/]\n")
         console.print(
             f"[blue]FTIO total time: {time.time()  - start_time:.4f} seconds[/]"
         )
         df.to_csv("ftio.csv", index=False)
         statisitcs(df)
     except KeyboardInterrupt:
-        progress.console.print("[bold red]Keyboard interrupt![/]")
+        progress.console.print("[bold red]Keyboard interrupt![/]\n")
         statisitcs(df)
         sys.exit()
     console.print(f"[blue]Execution time: {time.time()  - start_time:.4f} seconds[/]")

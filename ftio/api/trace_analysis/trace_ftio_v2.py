@@ -42,12 +42,12 @@ def main( argv=sys.argv[1:],verbose=True):
         if '-f' not in argv:
             argv.extend(['-f', '1'])
             if verbose:
-                console.print(f"[bold] Sampling rate set to {t_s}[/]")
+                console.print(f"[bold]Sampling rate set to {t_s}[/]")
         else:
             flag_index = argv.index('-f')
             f_s = int(argv[flag_index + 1])
             if verbose:
-                console.print(f"[bold] Sampling rate set to {f_s}[/]")
+                console.print(f"[bold green]Sampling rate set to {f_s}[/]")
         
     total_bytes_r = 0#np.sum(np.repeat(t_s,len(b_r))*len(b_r))
     total_bytes_w = 0#np.sum(np.repeat(t_s,len(b_w))*len(b_w))
@@ -61,7 +61,7 @@ def main( argv=sys.argv[1:],verbose=True):
     argv = [x for x in argv if '.py' not in x and '.csv' not in x]
     argv.extend(['-e', 'no'])
     if verbose:
-        print(argv)
+        console.print(f"Args: {argv}")
     # argv = ['-e', 'mat']
 
     res_r={}
