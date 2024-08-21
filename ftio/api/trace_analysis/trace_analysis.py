@@ -119,37 +119,44 @@ def flatten_dict(d):
     return flat
 
 
-def periodic_apps(df):
-    values = ["read", "write", "both"]
-    all = len(df[f'{values[0]}_dominant_freq'])
-    for mode in values:
-        n = df[f'{mode}_dominant_freq'].apply(lambda x: len(x)>0).sum()
-        console.print(f"[blue]Periodic {mode.capitalize()}: {n:.2f}/{all:.2f} ({n/all*100:.2f}%)[/]")
+def periodic_apps(df,prefix):
+    all = len(df[f'{prefix}_dominant_freq'])
+    # n = df[f'{prefix}_dominant_freq'].apply(lambda x: len(x)>0).sum()
+    n = df[f'{prefix}_dominant_freq'].apply(lambda x: not np.isnan(x)).sum()
+    console.print(f"[blue]Periodic {prefix.capitalize()}: {n:.2f}/{all:.2f} ({n/all*100:.2f}%)[/]")
 
 def statisitcs(df):
     print(df)
-    periodic_apps(df)
     dom_df = reduce_to_max_conf(df)
+    prefixes = ["read", "write", "both"]
+    for prefix in prefixes:
+        periodic_apps(df,prefix)
+        min_max_mean(dom_df,prefix, "conf")
+        min_max_mean(dom_df,prefix,"dominant_freq","Hz")
+        time_app(df,prefix)
     # print(dom_df)
-    min_max_mean(dom_df)
-    min_max_mean(dom_df,"dominant_freq")
     
 
 
-def min_max_mean(df,suffix="conf"):
-    prefixes = ["read", "write", "both"]
-    for prefix in prefixes:    
-        conf_col = f"{prefix}_{suffix}"
-        min = np.min(df[conf_col])
-        max = np.max(df[conf_col])
-        mean= np.mean(df[conf_col])
-        median= np.median(df[conf_col])
-        nanmean= np.nanmean(df[conf_col])
-        nanmedian= np.nanmedian(df[conf_col])
-        scale = 100 if "conf" in suffix else 1
-        console.print(f"[green]{prefix.capitalize()} {suffix.capitalize()}:\n - range: [{min*scale:.2f},{max*scale:.2f}]\n - mean: {mean*scale:.2f}\n - nanmean: {nanmean*scale:.2f}\n - median: {median*scale:.2f}\n - nanmedian: {nanmedian*scale:.2f}\n[/]")
-        
-def reduce_to_max_conf(df):
+def min_max_mean(df:pd.DataFrame,prefix, suffix="conf",unit="%",title="") -> None:
+    if not title:
+        title = suffix.capitalize()
+    conf_col = f"{prefix}_{suffix}"
+    min = np.min(df[conf_col])
+    max = np.max(df[conf_col])
+    mean= np.mean(df[conf_col])
+    median= np.median(df[conf_col])
+    nanmean= np.nanmean(df[conf_col])
+    nanmedian= np.nanmedian(df[conf_col])
+    scale = 100 if "conf" in suffix else 1
+    console.print(f"[green]{prefix.capitalize()} {title}:\n - range: [{min*scale:.2f},{max*scale:.2f}] {unit}\n - mean: {mean*scale:.2f} {unit}\n - nanmean: {nanmean*scale:.2f} {unit}\n - median: {median*scale:.2f} {unit}\n - nanmedian: {nanmedian*scale:.2f} {unit}\n[/]")
+
+def time_app(df,prefix):
+    df[f"{prefix}_time"] = df[f"{prefix}_t_end"]- df[f"{prefix}_t_start"]
+    min_max_mean(df,prefix,"time","sec","I/O Time")
+
+    
+def reduce_to_max_conf(df:pd.DataFrame) -> pd.DataFrame:
     prefixes = ["read", "write", "both"]
     # Iterate over each row
     for i, row in df.iterrows():
