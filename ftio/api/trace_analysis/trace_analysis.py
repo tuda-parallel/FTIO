@@ -117,7 +117,6 @@ def main(argv=sys.argv[1:]) -> None:
             f"[blue]Location:[/] {folder_path}\n"
             f"[blue]Pattern:[/] {pattern}\n"
         )
-        df.to_csv("ftio.csv", index=False)
         statisitcs(df)
     except KeyboardInterrupt:
         progress.console.print("[bold red]Keyboard interrupt![/]\n")
@@ -160,15 +159,17 @@ def flatten_dict(d):
 
 def statisitcs(df):
     # print(df)
-    dom_df = reduce_to_max_conf(df)
+    df_dom = reduce_to_max_conf(df)
+    df.to_csv("ftio.csv", index=False)
+    df_dom.to_csv("ftio_flat.csv", index=False)
     prefixes = ["read", "write", "both"]
     color = ["purple4", "gold3", "deep_sky_blue1"]
 
     for prefix in prefixes:
         s = ""
         s += periodic_apps(df, prefix)
-        s += compute_metrics(dom_df, prefix, "conf")
-        s += compute_metrics(dom_df, prefix, "dominant_freq", "Hz")
+        s += compute_metrics(df_dom, prefix, "conf")
+        s += compute_metrics(df_dom, prefix, "dominant_freq", "Hz")
         s += time_app(df, prefix)
         console.print(
             Panel.fit(
