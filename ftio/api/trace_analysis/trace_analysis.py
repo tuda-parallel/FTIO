@@ -82,7 +82,7 @@ def main(argv=sys.argv[1:]) -> None:
                 # Create the new file name by replacing the pattern
                 base_name = os.path.basename(file_path)
                 new_file_name = base_name.replace(
-                    "_signal_plafrim.csv", "_freq_plafrim.json"
+                    f"_signal_{name}.csv", f"_freq_{name}.json"
                 )
                 new_file_path = os.path.join(os.path.dirname(file_path), new_file_name)
 
@@ -91,14 +91,19 @@ def main(argv=sys.argv[1:]) -> None:
                 #     file.write(str(res))
                 # Convert NumPy arrays to lists
                 data_converted = convert_dict(res)
-                with open(new_file_path, "w") as file:
-                    json.dump(data_converted, file, indent=4)
+                if new_file_name.endswith("json"):
+                    with open(new_file_path, "w") as file:
+                        json.dump(data_converted, file, indent=4)
+                else:
+                    console.print(f"[bold red]Cannot dump Json file in {new_file_path}[/]")
 
                 flat_res = flatten_dict(res)
                 try:
                     flat_res["job_id"] = base_name.split("_")[0]
                 except:
                     flat_res["job_id"] = "??"
+                    console.print("[bold red]UNable to extract job id[/]")
+
                 new_row_df = pd.DataFrame([flat_res])
                 # Append the new row DataFrame to the existing DataFrame
                 df = pd.concat([df, new_row_df], ignore_index=True)
