@@ -39,7 +39,7 @@ def main(argv=sys.argv[1:]) -> None:
         argv.pop(0)
     else:
         # folder_path = os.getcwd()
-        folder_path = "/d/github/FTIO/ftio/api/trace_analysis/platfrim"
+        folder_path = "/d/github/FTIO/ftio/api/trace_analysis/plafrim"
 
     folder_path = os.path.abspath(folder_path)
     console.print(f"[bold green]Path is: {folder_path}[/]")
@@ -113,7 +113,9 @@ def main(argv=sys.argv[1:]) -> None:
 
         progress.console.print("[bold green]All files processed successfully![/]\n")
         console.print(
-            f"[blue]FTIO total time: {time.time()  - start_time:.4f} seconds[/]"
+            f"[blue]FTIO total time:[/] {time.time()  - start_time:.4f} seconds\n"
+            f"[blue]Location:[/] {folder_path}\n"
+            f"[blue]Pattern:[/] {pattern}\n"
         )
         df.to_csv("ftio.csv", index=False)
         statisitcs(df)
@@ -121,7 +123,7 @@ def main(argv=sys.argv[1:]) -> None:
         progress.console.print("[bold red]Keyboard interrupt![/]\n")
         statisitcs(df)
         sys.exit()
-    console.print(f"[blue]Execution time: {time.time()  - start_time:.4f} seconds[/]")
+    console.print(f"[blue]Execution time:[/] {time.time()  - start_time:.4f} seconds")
 
 
 def convert_dict(data):
@@ -165,8 +167,8 @@ def statisitcs(df):
     for prefix in prefixes:
         s = ""
         s += periodic_apps(df, prefix)
-        s += min_max_mean(dom_df, prefix, "conf")
-        s += min_max_mean(dom_df, prefix, "dominant_freq", "Hz")
+        s += compute_metrics(dom_df, prefix, "conf")
+        s += compute_metrics(dom_df, prefix, "dominant_freq", "Hz")
         s += time_app(df, prefix)
         console.print(
             Panel.fit(
@@ -176,6 +178,7 @@ def statisitcs(df):
                 title_align="left",
             )
         )
+        console.print("\n")
     # print(dom_df)
 
 
@@ -184,11 +187,11 @@ def periodic_apps(df, prefix) -> str:
     # n = df[f'{prefix}_dominant_freq'].apply(lambda x: len(x)>0).sum()
     n = df[f"{prefix}_dominant_freq"].apply(lambda x: not np.isnan(x)).sum()
     # out = f"[blue]Periodic {prefix.capitalize()}: {n:.2f}/{all:.2f} ({n/all*100:.2f}%)[/]"
-    out = f"[blue]Periodic I/O: {n:.2f}/{all:.2f} ({n/all*100:.2f}%)[/]\n\n"
+    out = f"[blue]Periodic I/O:[/]\n - {n:.0f}/{all:.0f} ({n/all*100:.2f}%)\n\n"
     return out
 
 
-def min_max_mean(df: pd.DataFrame, prefix, suffix="conf", unit="%", title="") -> str:
+def compute_metrics(df: pd.DataFrame, prefix, suffix="conf", unit="%", title="") -> str:
     if not title:
         title = suffix.capitalize()
     conf_col = f"{prefix}_{suffix}"
@@ -200,13 +203,13 @@ def min_max_mean(df: pd.DataFrame, prefix, suffix="conf", unit="%", title="") ->
     nanmedian = np.nanmedian(df[conf_col])
     scale = 100 if "conf" in suffix else 1
     # out = f"[green]{prefix.capitalize()} {title}:\n - range: [{min*scale:.2f},{max*scale:.2f}] {unit}\n - mean: {mean*scale:.2f} {unit}\n - nanmean: {nanmean*scale:.2f} {unit}\n - median: {median*scale:.2f} {unit}\n - nanmedian: {nanmedian*scale:.2f} {unit}\n[/]"
-    out = f"[gray][green]{title}[/]:\n - range: [{min*scale:.2f},{max*scale:.2f}] {unit}\n - mean: {mean*scale:.2f} {unit}\n - nanmean: {nanmean*scale:.2f} {unit}\n - median: {median*scale:.2f} {unit}\n - nanmedian: {nanmedian*scale:.2f} {unit}\n\n[/]"
+    out = f"[gray][green]{title}:[/]\n - range: [{min*scale:.2f},{max*scale:.2f}] {unit}\n - mean: {mean*scale:.2f} {unit}\n - nanmean: {nanmean*scale:.2f} {unit}\n - median: {median*scale:.2f} {unit}\n - nanmedian: {nanmedian*scale:.2f} {unit}\n\n[/]"
     return out
 
 
 def time_app(df, prefix):
     df[f"{prefix}_time"] = df[f"{prefix}_t_end"] - df[f"{prefix}_t_start"]
-    out = min_max_mean(df, prefix, "time", "sec", "I/O Time")
+    out = compute_metrics(df, prefix, "time", "sec", "I/O Time")
     return out
 
 
