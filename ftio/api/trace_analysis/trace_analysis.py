@@ -1,15 +1,16 @@
 import os
 import sys
 import json
+import time
 from rich.console import Console
 from rich.progress import Progress
 import numpy as np
 import pandas as pd
 from ftio.api.trace_analysis.trace_ftio_v2 import main as trace_ftio
-
 console = Console()
 
 def main(argv=sys.argv[1:]) -> None:
+    start_time = time.time() 
     pattern = "_signal_plafrim.csv"
     df = pd.DataFrame()
 
@@ -44,7 +45,7 @@ def main(argv=sys.argv[1:]) -> None:
             # Iterate over each csv file
             for file_path in csv_files:
                     # Display the file being processed
-                progress.console.print(f"Processing: {file_path}")
+                progress.console.print(f"Processing ({csv_files.index(file_path)}/{len(csv_files)}): {file_path}")
 
                 # Run the trace_ftio function
                 
@@ -83,7 +84,7 @@ def main(argv=sys.argv[1:]) -> None:
         progress.console.print("[bold red]Keyboard interrupt![/]")
         statisitcs(df)
         sys.exit()
-        
+    console.print(f"[blue]Execution time: {time.time()  - start_time:.4f} seconds[/]")
 
 def convert_dict(data):
     """Convert NumPy arrays and sets to lists in the dictionary."""
@@ -123,7 +124,7 @@ def periodic_apps(df):
     all = len(df[f'{values[0]}_dominant_freq'])
     for mode in values:
         n = df[f'{mode}_dominant_freq'].apply(lambda x: len(x)>0).sum()
-        console.print(f"[blue]Periodic {mode.capitalize()}: {n:.2f}/{all:.2f} ({n/all*100}%)[/]")
+        console.print(f"[blue]Periodic {mode.capitalize()}: {n:.2f}/{all:.2f} ({n/all*100:.2f}%)[/]")
 
 def statisitcs(df):
     print(df)
@@ -146,7 +147,7 @@ def min_max_mean(df,suffix="conf"):
         nanmean= np.nanmean(df[conf_col])
         nanmedian= np.nanmedian(df[conf_col])
         scale = 100 if "conf" in suffix else 1
-        console.print(f"[green]{prefix.capitalize()} {suffix.capitalize()}:\n - range: [{min*scale:.2f},{max*scale:.2f}]\n - mean: {mean*scale:.2f}\n - nanmean: {nanmean*scale:.2f}\n - median:{median*scale:.2f}\n - nanmedian:{nanmedian*scale:.2f}\n[/]")
+        console.print(f"[green]{prefix.capitalize()} {suffix.capitalize()}:\n - range: [{min*scale:.2f},{max*scale:.2f}]\n - mean: {mean*scale:.2f}\n - nanmean: {nanmean*scale:.2f}\n - median: {median*scale:.2f}\n - nanmedian: {nanmedian*scale:.2f}\n[/]")
         
 def reduce_to_max_conf(df):
     prefixes = ["read", "write", "both"]
