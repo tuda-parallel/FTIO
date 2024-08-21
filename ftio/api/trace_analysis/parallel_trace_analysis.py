@@ -1,0 +1,133 @@
+import os
+import sys
+import time
+import json
+import pandas as pd
+from multiprocessing import Pool, cpu_count
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
+
+from ftio.api.trace_analysis.trace_ftio_v2 import main as trace_ftio
+from ftio.api.trace_analysis.trace_analysis import convert_dict, flatten_dict, statisitcs
+
+# Initialize the console for printing
+console = Console()
+
+# Define your function that processes a single file
+def process_file(file_path, argv, verbose, name):
+    try:
+        # Call your trace_ftio function (adjust the import and call as necessary)
+        res = trace_ftio([file_path] + argv, verbose)
+
+        # Create the new file name by replacing the pattern
+        base_name = os.path.basename(file_path)
+        new_file_name = base_name.replace(f"_signal_{name}.csv", f"_freq_{name}.json")
+        new_file_path = os.path.join(os.path.dirname(file_path), new_file_name)
+
+        # Convert NumPy arrays to lists
+        data_converted = convert_dict(res)
+        if new_file_name.endswith("json"):
+            with open(new_file_path, "w") as file:
+                json.dump(data_converted, file, indent=4)
+        else:
+            console.print(f"[bold red]Cannot dump Json file in {new_file_path}[/]")
+
+        flat_res = flatten_dict(res)
+        try:
+            flat_res["job_id"] = base_name.split("_")[0]
+        except:
+            flat_res["job_id"] = "??"
+            console.print("[bold red]Unable to extract job id[/]")
+
+        # Return the flattened result to be processed later
+        return flat_res
+    except Exception as e:
+        console.print(f"[bold red]Error processing file {file_path}: {e}[/]")
+        return None
+
+def main(argv=sys.argv[1:]) -> None:
+    verbose = False
+    name = "plafrim"
+
+    # Specify the name with -n 
+    if '-n' in argv:
+        index = argv.index('-n')
+        name = str(argv[index + 1])
+        argv.pop(index)
+        argv.pop(index)
+    if '-v' in argv:
+        index = argv.index('-v')
+        verbose = bool(argv[index + 1])
+        argv.pop(index)
+        argv.pop(index)
+
+    start_time = time.time()
+    pattern = f"_signal_{name}.csv"
+    df = pd.DataFrame()
+
+    # Handle command-line arguments properly
+    if len(argv) > 0:
+        folder_path = argv[0]
+        argv.pop(0)
+    else:
+        folder_path = "/d/github/FTIO/ftio/api/trace_analysis/plafrim"
+
+    folder_path = os.path.abspath(folder_path)
+    console.print(f"[bold green]Path is: {folder_path}[/]")
+
+    # Create a list to store all matching csv files
+    csv_files = []
+
+    # Walk through all subdirectories and find matching files
+    for dirpath, _, filenames in os.walk(folder_path):
+        for filename in filenames:
+            if filename.endswith(pattern):
+                csv_files.append(os.path.join(dirpath, filename))
+
+    if not csv_files:
+        console.print(f"[bold red]No files matched the pattern: {pattern}![/]")
+        return
+
+    # Create a progress bar
+    progress = Progress(
+        SpinnerColumn(),
+        *Progress.get_default_columns(),
+        "[yellow] --  elapsed time",
+        TimeElapsedColumn(),
+    )
+
+    try:
+        with progress:
+            task = progress.add_task("[green]Processing files...", total=len(csv_files))
+
+            # Use multiprocessing Pool
+            num_procs = min(10, cpu_count())  # Limit to 10 processes
+            with Pool(processes=num_procs) as pool:
+                results = [pool.apply_async(process_file, (file_path, argv, verbose, name)) for file_path in csv_files]
+                # Collect the results
+                flat_results = [res.get() for res in results]
+
+            # Filter out any None results
+            flat_results = [res for res in flat_results if res is not None]
+
+            # Create DataFrame from the results
+            df = pd.DataFrame(flat_results)
+
+            # Update the progress bar
+            progress.advance(task)
+
+        progress.console.print("[bold green]All files processed successfully![/]\n")
+        console.print(
+            f"[blue]FTIO total time:[/] {time.time() - start_time:.4f} seconds\n"
+            f"[blue]Location:[/] {folder_path}\n"
+            f"[blue]Pattern:[/] {pattern}\n"
+        )
+        statisitcs(df)
+    except KeyboardInterrupt:
+        progress.console.print("[bold red]Keyboard interrupt![/]\n")
+        statisitcs(df)
+        sys.exit()
+    console.print(f"[blue]Execution time:[/] {time.time() - start_time:.4f} seconds")
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

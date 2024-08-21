@@ -15,14 +15,14 @@ console = Console()
 def main(argv=sys.argv[1:]) -> None:
     verbose = False
     name = "plafrim"
-    # specify the name with -n 
-    if '-n' in argv:
-        index = argv.index('-n')
+    # specify the name with -n
+    if "-n" in argv:
+        index = argv.index("-n")
         name = str(argv[index + 1])
         argv.pop(index)
         argv.pop(index)
-    if '-v' in argv:
-        index = argv.index('-v')
+    if "-v" in argv:
+        index = argv.index("-v")
         verbose = bool(argv[index + 1])
         argv.pop(index)
         argv.pop(index)
@@ -76,7 +76,6 @@ def main(argv=sys.argv[1:]) -> None:
                 )
 
                 # Run the trace_ftio function
-
                 res = trace_ftio([file_path] + argv, verbose)
 
                 # Create the new file name by replacing the pattern
@@ -85,17 +84,15 @@ def main(argv=sys.argv[1:]) -> None:
                     f"_signal_{name}.csv", f"_freq_{name}.json"
                 )
                 new_file_path = os.path.join(os.path.dirname(file_path), new_file_name)
-
-                # Write the content to the new file
-                # with open(new_file_path, "w", newline=") as file:
-                #     file.write(str(res))
-                # Convert NumPy arrays to lists
                 data_converted = convert_dict(res)
+
                 if new_file_name.endswith("json"):
                     with open(new_file_path, "w") as file:
                         json.dump(data_converted, file, indent=4)
                 else:
-                    console.print(f"[bold red]Cannot dump Json file in {new_file_path}[/]")
+                    console.print(
+                        f"[bold red]Cannot dump Json file in {new_file_path}[/]"
+                    )
 
                 flat_res = flatten_dict(res)
                 try:
