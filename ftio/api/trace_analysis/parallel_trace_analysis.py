@@ -13,8 +13,7 @@ from ftio.api.trace_analysis.trace_analysis import convert_dict, flatten_dict, s
 # Initialize the console for printing
 console = Console()
 
-# Define your function that processes a single file
-def process_file(file_path, argv, verbose, name):
+def process_file(file_path, argv, verbose, name, index, total_files):
     try:
         # Call your trace_ftio function (adjust the import and call as necessary)
         res = trace_ftio([file_path] + argv, verbose)
@@ -39,11 +38,11 @@ def process_file(file_path, argv, verbose, name):
             flat_res["job_id"] = "??"
             console.print("[bold red]Unable to extract job id[/]")
 
-        # Return the flattened result to be processed later
-        return flat_res
+        # Return the flattened result along with index and total number of files
+        return (flat_res, index, total_files)
     except Exception as e:
         console.print(f"[bold red]Error processing file {file_path}: {e}[/]")
-        return None
+        return (None, index, total_files)
 
 def main(argv=sys.argv[1:]) -> None:
     verbose = False
@@ -103,18 +102,17 @@ def main(argv=sys.argv[1:]) -> None:
             # Use multiprocessing Pool
             num_procs = min(10, cpu_count())  # Limit to 10 processes
             with Pool(processes=num_procs) as pool:
-                results = [pool.apply_async(process_file, (file_path, argv, verbose, name)) for file_path in csv_files]
-                # Collect the results
-                flat_results = [res.get() for res in results]
-
-            # Filter out any None results
-            flat_results = [res for res in flat_results if res is not None]
-
-            # Create DataFrame from the results
-            df = pd.DataFrame(flat_results)
-
-            # Update the progress bar
-            progress.advance(task)
+                # Pass the index and total files to process_file
+                results = [pool.apply_async(process_file, (file_path, argv, verbose, name, i, len(csv_files))) for i, file_path in enumerate(csv_files)]
+                
+                for result in results:
+                    flat_res, index, total_files = result.get()
+                    if flat_res:
+                        # Process result
+                        df = pd.concat([df, pd.DataFrame([flat_res])], ignore_index=True)
+                    # Update progress
+                    progress.console.print(f"Processed ({index + 1} /{total_files}): {csv_files[index]}")
+                    progress.update(task, completed=index + 1)
 
         progress.console.print("[bold green]All files processed successfully![/]\n")
         console.print(
