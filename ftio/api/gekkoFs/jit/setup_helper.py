@@ -580,7 +580,7 @@ def allocate(settings: JitSettings) -> None:
         if settings.job_id:
             try:
                 nodes_result = subprocess.run(
-                    f"scontrol show hostname $(squeue -j {settings.job_id} -o '%N' | tail -n +2)",
+                    f"scontrol show hostname $(squeue -j 376866 -o '%N'  | tail -1)",
                     shell=True,
                     capture_output=True,
                     text=True,
@@ -593,10 +593,10 @@ def allocate(settings: JitSettings) -> None:
                 # console.print(f"[bold green] ## split{nodes_result.stdout.split()}[/]")
                 if nodes_arr:
                     try:
-                        nodes_arr = nodes_arr[:int(settings.nodes)-1]
+                        nodes_arr = nodes_arr[:int(settings.nodes)]
                     except Exception as e:
                         print(e)
-                    console.print(f"[bold green]JIT [red] >> Unable to decrease number of nodes. Using {settings.nodes}[/]")
+                        console.print(f"[bold green]JIT [red] >> Unable to decrease number of nodes. Using {settings.nodes}[/]")
             except subprocess.CalledProcessError:
                 nodes_arr = []
 
@@ -615,8 +615,8 @@ def allocate(settings: JitSettings) -> None:
                     settings.app_nodes_command = f"--nodelist={','.join(n for n in nodes_arr if n != settings.ftio_node)}"
                     settings.single_node_command = f"--nodelist={settings.single_node}"
                     settings.app_nodes = len(nodes_arr) - 1
-                    print(nodes_arr)
-                    print(f"{','.join(n for n in nodes_arr if n != settings.ftio_node)}\n")
+                    # print(nodes_arr)
+                    # print(f"{','.join(n for n in nodes_arr if n != settings.ftio_node)}\n")
 
                     # Remove FTIO node from hostfile_mpi
                     with open(os.path.expanduser("~/hostfile_mpi"), "r") as file:
