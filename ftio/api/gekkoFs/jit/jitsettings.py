@@ -21,7 +21,7 @@ class JitSettings:
         self.ftio_node = ""
         self.single_node = ""
         self.app_nodes = 0
-        self.all_nodes = ""
+        self.all_nodes = 0
         self.app_nodes_command = ""
         self.ftio_node_command = ""
         self.single_node_command = ""

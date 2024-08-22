@@ -587,15 +587,15 @@ def allocate(settings: JitSettings) -> None:
                     check=True,
                 )
                 nodes_arr = nodes_result.stdout.splitlines()
-                console.print(f"[bold green] ## Node res {nodes_result}[/]")
-                console.print(f"[bold green] ## Node res stdout{nodes_result.stdout}[/]")
-                console.print(f"[bold green] ## Node arr {nodes_arr}[/]")
-                console.print(f"[bold green] ## split{nodes_result.stdout.split()}[/]")
+                # console.print(f"[bold green] ## Node res {nodes_result}[/]")
+                # console.print(f"[bold green] ## Node res stdout{nodes_result.stdout}[/]")
+                # console.print(f"[bold green] ## Node arr {nodes_arr}[/]")
+                # console.print(f"[bold green] ## split{nodes_result.stdout.split()}[/]")
                 if nodes_arr:
                     try:
-                        nodes_arr = nodes_arr[:settings.nodes-1]
-                    except IndexError:
-                        pass 
+                        nodes_arr = nodes_arr[:int(settings.nodes)-1]
+                    except Exception as e:
+                        print(e)
                     console.print(f"[bold green]JIT [red] >> Unable to decrease number of nodes. Using {settings.nodes}[/]")
             except subprocess.CalledProcessError:
                 nodes_arr = []
@@ -615,6 +615,8 @@ def allocate(settings: JitSettings) -> None:
                     settings.app_nodes_command = f"--nodelist={','.join(n for n in nodes_arr if n != settings.ftio_node)}"
                     settings.single_node_command = f"--nodelist={settings.single_node}"
                     settings.app_nodes = len(nodes_arr) - 1
+                    print(nodes_arr)
+                    print(f"{','.join(n for n in nodes_arr if n != settings.ftio_node)}\n")
 
                     # Remove FTIO node from hostfile_mpi
                     with open(os.path.expanduser("~/hostfile_mpi"), "r") as file:
