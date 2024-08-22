@@ -580,7 +580,7 @@ def allocate(settings: JitSettings) -> None:
         if settings.job_id:
             try:
                 nodes_result = subprocess.run(
-                    f"scontrol show hostname $(squeue -j 376866 -o '%N'  | tail -1)",
+                    f"scontrol show hostname $(squeue -j {settings.job_id} -o '%N' | tail -n +2)",
                     shell=True,
                     capture_output=True,
                     text=True,
