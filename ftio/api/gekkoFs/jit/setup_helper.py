@@ -590,7 +590,7 @@ def allocate(settings: JitSettings) -> None:
                 console.print(f"[bold green] ## Node res {nodes_result}[/]")
                 console.print(f"[bold green] ## Node res stdout{nodes_result.stdout}[/]")
                 console.print(f"[bold green] ## Node arr {nodes_arr}[/]")
-                console.print(f"[bold green] ## split{nodes_result.stdout.split('\n')}[/]")
+                console.print(f"[bold green] ## split{nodes_result.stdout.split()}[/]")
                 if nodes_arr:
                     try:
                         nodes_arr = nodes_arr[:settings.nodes-1]
