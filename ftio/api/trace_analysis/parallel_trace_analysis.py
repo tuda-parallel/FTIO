@@ -100,7 +100,9 @@ def main(argv=sys.argv[1:]) -> None:
             task = progress.add_task("[green]Processing files...", total=len(csv_files))
 
             # Use multiprocessing Pool
-            num_procs = min(10, cpu_count())  # Limit to 10 processes
+            num_procs = int(cpu_count()/4)  
+            console.print(f"[bold green]Using {num_procs} processes[/]")
+            # num_procs = min(10, cpu_count())  
             with Pool(processes=num_procs) as pool:
                 # Pass the index and total files to process_file
                 results = [pool.apply_async(process_file, (file_path, argv, verbose, name, i, len(csv_files))) for i, file_path in enumerate(csv_files)]

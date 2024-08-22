@@ -163,20 +163,20 @@ class JitSettings:
 
         # gekko variables
         self.gkfs_demon = (
-            "/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/bin/gkfs_daemon"
+            "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/bin/gkfs_daemon"
         )
-        self.gkfs_intercept = "/lustre/project/nhr-admire/vef/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
+        self.gkfs_intercept = "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
         self.gkfs_hostfile = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
         self.gkfs_proxy = (
-            "/lustre/project/nhr-admire/vef/gekkofs/build/src/proxy/gkfs_proxy"
+            "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
         )
         self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
 
         # cargo variables
-        self.cargo = "/lustre/project/nhr-admire/vef/cargo/build/src/cargo"
-        self.cargo_cli = "/lustre/project/nhr-admire/vef/cargo/build/cli"
+        self.cargo = "/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
+        self.cargo_cli = "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
         self.cargo_server = "ofi+sockets://127.0.0.1:62000"
 
         # stage out variables
