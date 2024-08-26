@@ -322,6 +322,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
     console.print(f"[green bold]####### Executing Application [/][black][{get_time()}][/]")
     # Placeholder for setup check
     check_setup(settings)
+    s_call=""
     if settings.cluster:
         # without FTIO
 		#? [--stag in (si)--]               [--stag out (so)--]
@@ -368,7 +369,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f"LD_PRELOAD={settings.gkfs_intercept},"
                 f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
                 f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
-                f"LIBGKFS_LOG_OUTPUT={settings.gekko_client_log}"
+                f"LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
                 f"--jobid={settings.job_id} "
                 f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                 f"--ntasks={settings.app_nodes*settings.procs_app} --cpus-per-task={settings.procs_app} --ntasks-per-node={settings.procs_app} "
@@ -407,14 +408,15 @@ def start_application(settings: JitSettings, runtime: JitTime):
         console.print(f"[red]Error executing command:{call}")
         console.print(f"[red] Error was:\n{stderr}")
         # try s_call
-        console.print(f"[green] Trying scall:\n{s_call}")
-        start = time.time()
-        process = execute_background(s_call, settings.app_log, settings.app_err)
-        monitor_log_file(settings.app_log,"")
-        monitor_log_file(settings.app_err,"error")
-        # monitor_log_file(settings.gekko_client_log,"Client")
-        stdout, stderr = process.communicate()
-        elapsed_time(settings, runtime, "App", time.time() - start)
+        if s_call:
+            console.print(f"[green] Trying scall:\n{s_call}")
+            start = time.time()
+            process = execute_background(s_call, settings.app_log, settings.app_err)
+            monitor_log_file(settings.app_log,"")
+            monitor_log_file(settings.app_err,"error")
+            # monitor_log_file(settings.gekko_client_log,"Client")
+            stdout, stderr = process.communicate()
+            elapsed_time(settings, runtime, "App", time.time() - start)
     else:
         # console.print(stdout, style="bold green")
         pass
