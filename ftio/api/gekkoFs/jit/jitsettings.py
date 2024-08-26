@@ -191,7 +191,8 @@ class JitSettings:
         # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
         self.app_call = "./nek5000"
         # app folder (only used in this file)
-        self.app_folder = "/home/tarrafah/nhr-admire/vef/admire/turbPipe/run_gkfs"
+        # self.app_folder = "/home/tarrafah/nhr-admire/vef/admire/turbPipe/run_gkfs"
+        self.app_folder = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
         
         # Application specific calls executed before the actual run. Executed as
         # > ${PRE_APP_CALL}
@@ -219,7 +220,7 @@ class JitSettings:
 
         # stage in variables
         self.stage_in_path = (
-            "/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input"
+            f"{self.app_folder}/input"
         )
 
         # local machine settings
