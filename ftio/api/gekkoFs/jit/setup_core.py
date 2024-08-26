@@ -338,7 +338,8 @@ def start_application(settings: JitSettings, runtime: JitTime):
         elif settings.exclude_ftio:
             call = (
                 f"{settings.precall} mpiexec -np {settings.procs_app} --oversubscribe "
-                f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=info,warnings,errors "
+                f"--hostfile ~/hostfile_mpi --map-by node "
+                f"-x LIBGKFS_LOG=info,warnings,errors "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
@@ -348,14 +349,31 @@ def start_application(settings: JitSettings, runtime: JitTime):
         else:
             call = (
                 f"{settings.precall} mpiexec -np {settings.procs_app} --oversubscribe "
-                f"--hostfile ~/hostfile_mpi --map-by node -x LIBGKFS_LOG=info,warnings,errors "
-                f"-x LIBGKFS_ENABLE_METRICS=on -x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
+                f"--hostfile ~/hostfile_mpi --map-by node "
+                f"-x LIBGKFS_LOG=info,warnings,errors "
+                f"-x LIBGKFS_ENABLE_METRICS=on "
+                f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
                 f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
                 f"{settings.app_call}"
             )
+            s_call =(
+                f"{settings.precall} srun "
+                f"--export="
+                f"LIBGKFS_LOG=info,warnings,errors,"
+                f"LIBGKFS_ENABLE_METRICS=on,"
+                f"LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port},"
+                f"LD_PRELOAD={settings.gkfs_intercept},"
+                f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
+                f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
+                f"LIBGKFS_LOG_OUTPUT={settings.gekko_client_log}"
+                f"--jobid={settings.job_id} "
+                f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                f"--ntasks={settings.app_nodes*settings.procs_app} --cpus-per-task={settings.procs_app} --ntasks-per-node={settings.procs_app} "
+                f"--overcommit --overlap --oversubscribe --mem=0 "
+                f"{settings.app_call}")
     else:
         # Define the call for non-cluster environment
         if settings.exclude_all:
@@ -388,6 +406,15 @@ def start_application(settings: JitSettings, runtime: JitTime):
     if process.returncode != 0:
         console.print(f"[red]Error executing command:{call}")
         console.print(f"[red] Error was:\n{stderr}")
+        # try s_call
+        console.print(f"[green] Trying scall:\n{s_call}")
+        start = time.time()
+        process = execute_background(s_call, settings.app_log, settings.app_err)
+        monitor_log_file(settings.app_log,"")
+        monitor_log_file(settings.app_err,"error")
+        # monitor_log_file(settings.gekko_client_log,"Client")
+        stdout, stderr = process.communicate()
+        elapsed_time(settings, runtime, "App", time.time() - start)
     else:
         # console.print(stdout, style="bold green")
         pass
