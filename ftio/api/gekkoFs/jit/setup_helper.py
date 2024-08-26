@@ -21,13 +21,13 @@ def is_port_in_use(port_number):
         ).decode("utf-8")
         # If output is found, the port is in use
         if netstat_output:
-            console.print(
-                f"[bold red]Error: Port {port_number} is already in use...[/bold red]"
+            jit_print(
+                f"[bold red]>> Error: Port {port_number} is already in use...[/bold red]"
             )
             return True  # Port is in use
     except subprocess.CalledProcessError:
         # grep returns a non-zero exit status if it finds no matches
-        console.print(f"[bold blue]Port {port_number} is available.[/bold blue]")
+        jit_print(f"[bold blue]>> Port {port_number} is available.[/bold blue]")
         return False  # Port is free
 
 
@@ -35,7 +35,7 @@ def check_port(settings: JitSettings):
     """Check if a port is available and terminate any existing process using it."""
     if is_port_in_use(settings.port):
         jit_print(
-            f"[bold red]Error: Port {settings.port} is already in use on {settings.address_ftio}. Terminating existing process...[/]"
+            f"[bold red]>> Error: Port {settings.port} is already in use on {settings.address_ftio}. Terminating existing process...[/]"
         )
 
         # Identify the process ID using the settings.port
@@ -50,23 +50,23 @@ def check_port(settings: JitSettings):
             process_id = process_output.split()[6].split("/")[0]
 
             if process_id:
-                jit_print(f"[bold yellow]Terminating process with PID: {process_id}[/]")
+                jit_print(f"[bold yellow]>> Terminating process with PID: {process_id}[/]")
                 os.kill(int(process_id), 9)
                 jit_print(
-                    f"[bold green]Using port {settings.port} on {settings.address_ftio}.[/]"
+                    f"[bold green]>> Using port {settings.port} on {settings.address_ftio}.[/]"
                 )
                 return 0
             else:
                 jit_print(
-                    f"[bold red]Failed to identify process ID for PORT {settings.port}.[/]"
+                    f">>[bold red]>> Failed to identify process ID for PORT {settings.port}.[/]"
                 )
                 exit(1)
         except subprocess.CalledProcessError as e:
-            jit_print(f"[bold red]Failed to retrieve process information: {e}[/]")
+            jit_print(f"[bold red]>> Failed to retrieve process information: {e}[/]")
             exit(1)
     else:
         jit_print(
-            f"[bold green]Using port {settings.port} on {settings.address_ftio}.[/]"
+            f"[bold green]>> Using port {settings.port} on {settings.address_ftio}.[/]"
         )
 
 
@@ -75,19 +75,21 @@ def parse_options(settings: JitSettings, args: list) -> None:
     try:
         opts, args = getopt.getopt(
             args,
-            "a:p:n:c:r:t:j:l:i:e:xh",
+            "a:p:n:c:r:o:t:j:l:i:e:xyh",
             [
                 "address=",
                 "port=",
                 "nodes=",
                 "procs=",
                 "procs_list=",
+                "omp_threads=",
                 "max-time=",
                 "job-id=",
                 "log-name=",
                 "install-location=",
                 "exclude=",
                 "exclude-all",
+                "confirm",
                 "help",
             ],
         )
@@ -112,8 +114,10 @@ def parse_options(settings: JitSettings, args: list) -> None:
         elif opt in ("-i", "--install-location"):
             settings.install_location = arg
             install_all(settings)
-        elif opt in ("-p","--procs"):
+        elif opt in ("-c","--procs"):
             settings.procs = int(arg)
+        elif opt in ("-o","--omp_threads"):
+            settings.omp_threads = int(arg)
         elif opt in("-r", "--procs_list"):
             # Split the argument by comma to get the list of numbers
             procs_list = arg.split(",")
@@ -143,44 +147,55 @@ def parse_options(settings: JitSettings, args: list) -> None:
             jit_print("[bold yellow]>> Excluding: [/]")
             if not arg or arg.startswith("-"):
                 settings.exclude_ftio = True
+                settings.log_suffix =  settings.log_suffix.replace("F","")
                 console.print("[yellow]- ftio[/]")
             else:
                 excludes = arg.split(",")
                 for exclude in excludes:
-                    if exclude == "ftio":
+                    if exclude.lower() == "ftio":
                         settings.exclude_ftio = True
+                        settings.log_suffix =  settings.log_suffix.replace("F","")
                         console.print("[yellow]- ftio[/]")
-                    elif exclude == "cargo":
+                    elif exclude.lower() == "cargo":
                         settings.exclude_cargo = True
+                        settings.log_suffix =  settings.log_suffix.replace("C","")
                         console.print("[yellow]- cargo[/]")
-                    elif exclude in ("gkfs", "demon", "proxy"):
-                        if exclude == "gkfs":
+                    elif exclude.lower() in ("gkfs", "demon", "proxy"):
+                        if exclude.lower() == "gkfs":
                             settings.exclude_demon = True
                             settings.exclude_proxy = True
+                            settings.log_suffix =  settings.log_suffix.replace("D","")
+                            settings.log_suffix =  settings.log_suffix.replace("P","")
                             console.print("[yellow]- gkfs[/]")
-                        elif exclude == "demon":
+                        elif exclude.lower() == "demon":
                             settings.exclude_demon = True
+                            settings.log_suffix =  settings.log_suffix.replace("D","")
                             console.print("[yellow]- demon[/]")
-                        elif exclude == "proxy":
+                        elif exclude.lower() == "proxy":
                             settings.exclude_proxy = True
+                            settings.log_suffix =  settings.log_suffix.replace("P","")
                             console.print("[yellow]- proxy[/]")
-                    elif exclude == "all":
+                    elif exclude.lower() == "all":
                         settings.exclude_all = True
+                        settings.log_suffix = ""
                         console.print("[yellow]- all[/]")
                     else:
-                        console.print(
-                            f"[bold green]JIT >>[bold red] Invalid exclude option: {exclude} [/]"
+                        jit_print(
+                            f"[bold red]>> Invalid exclude option: {exclude} [/]"
                         )
                         sys.exit(1)
         elif opt in ("-x", "--exclude-all"):
             settings.exclude_all = True
+            settings.log_suffix = ""
+        elif opt in ("-y", "--confirm"):
+            settings.confirm = True
         elif opt in ("-h", "--help"):
             error_usage(settings)
             sys.exit(1)
         
 
         else:
-            console.print(f"[bold red]Invalid option: {opt}[/]")
+            jit_print(f"[bold red]>>Invalid option: {opt}[/]")
             error_usage(settings)
             sys.exit(1)
 
@@ -213,8 +228,15 @@ def error_usage(settings: JitSettings):
         
     -r | --procs_list: x,x,..,x <list>
         default: [bold yellow]{settings.procs_app},{settings.procs_demon},{settings.procs_proxy},{settings.procs_cargo},{settings.procs_ftio}[/]
-        List of procs per node for app, demon, proxy, cargo, and ftio, respectively.
-        Assignment is from right to left depending on the length of the list
+        List of task per node/cpu per proc for app, demon, proxy, cargo, and ftio, respectively.
+        Assignment is from right to left depending on the length of the list.
+        FTIO, GekkoFS (proxy and demon) always have 1 task per node. The 
+        assignment in this list specifics the cpu per task. For cargo and the app, the task per node
+        is calculated as nodes*procs_cargo or nodes*procs_app, respectively.
+
+    -o | --omp_threads: X <int>
+        default: [bold yellow]{settings.omp_threads}[/]
+        OpenMP threads used
 
     -t | --max-time: X <int>
         default: [bold yellow]{settings.max_time}[/]
@@ -234,10 +256,15 @@ def error_usage(settings: JitSettings):
         Supported options include: ftio, demon, proxy, gkfs (demon + proxy), 
         cargo, and all (same as -x).
 
-    -x | --exclude-all <list>
+    -x | --exclude-all
         default: [bold yellow]{settings.exclude_all}[/]
         If this flag is provided, the setup is executed without FTIO, 
         GekkoFs, and Cargo.
+
+    -y | --confirm 
+        default: [bold yellow]{settings.confirm}[/]
+        If this flag is provided, the setup automatically cancels running jobs 
+        name JIT
 
     -i | --install-location: full_path <str>
         default: [bold yellow]{settings.install_location}[/]
@@ -249,7 +276,7 @@ def error_usage(settings: JitSettings):
 
 
 def abort():
-    console.print("[bold green]JIT [bold red] >>> Aborting installation[/]")
+    jit_print("[bold red] >>> Aborting installation[/]")
     exit(1)
 
 
@@ -257,12 +284,12 @@ def install_all(settings: JitSettings) -> None:
     with console.status("[bold green]Starting installation...") as status:
         try:
             # Create directory
-            console.print("[bold green]JIT >>> Creating directory[/]")
+            jit_print(">>> Creating directory[/]")
             status.update("[bold green]JIT >>> Creating directory[/]",speed=30)
             os.makedirs(settings.install_location, exist_ok=True)
 
             # Clone GKFS
-            console.print("[bold green]JIT >>> Installing GKFS[/]")
+            jit_print(">>> Installing GKFS[/]")
             status.update("[bold green]JIT >>> Installing GKFS[/]",speed=30)
             subprocess.run(
                 [
@@ -279,7 +306,7 @@ def install_all(settings: JitSettings) -> None:
             os.chdir(settings.install_location)
 
             # Build GKFS
-            console.print("[bold green]JIT >>> Building GKFS[/]")
+            jit_print(">>> Building GKFS[/]")
             status.update("[bold green]JIT >>> Building GKFS[/]",speed=30)
             subprocess.run(
                 [
@@ -308,10 +335,10 @@ def install_all(settings: JitSettings) -> None:
             )
             subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
 
-            console.print("[bold green]JIT >>> GEKKO installed[/]")
+            jit_print(">>> GEKKO installed[/]")
             status.update("[bold green]JIT >>> GEKKO installed[/]",speed=30)
 
-            console.print("[bold green]JIT >>> Installing Cereal[/]")
+            jit_print(">>> Installing Cereal[/]")
             status.update("[bold green]JIT >>> Installing Cereal[/]",speed=30)
             subprocess.run(
                 ["git", "clone", "https://github.com/USCiLab/cereal"],
@@ -334,7 +361,7 @@ def install_all(settings: JitSettings) -> None:
             subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
 
             # Install Cargo Dependencies: Thallium
-            console.print("[bold green]JIT >>> Installing Thallium[/]")
+            jit_print(">>> Installing Thallium[/]")
             status.update("[bold green]JIT >>> Installing Thallium[/]",speed=30)
             subprocess.run(
                 ["git", "clone", "https://github.com/mochi-hpc/mochi-thallium"],
@@ -359,7 +386,7 @@ def install_all(settings: JitSettings) -> None:
             subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
 
             # Clone and Build Cargo
-            console.print("[bold green]JIT >>> Installing Cargo[/]")
+            jit_print(">>> Installing Cargo[/]")
             status.update("[bold green]JIT >>> Installing Cargo[/]",speed=30)
             subprocess.run(
                 ["git", "clone", "https://storage.bsc.es/gitlab/hpc/cargo.git"],
@@ -386,11 +413,11 @@ def install_all(settings: JitSettings) -> None:
             )
             subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
 
-            console.print("[bold green]JIT >>> Cargo installed[/]")
+            jit_print(">>> Cargo installed[/]")
             status.update("[bold green]JIT >>> Cargo installed[/]",speed=30)
 
             # Build IOR
-            console.print("[bold green]JIT >>> Installing IOR[/]")
+            jit_print(">>> Installing IOR[/]")
             status.update("[bold green]JIT >>> Installing IOR[/]",speed=30)
             subprocess.run(
                 ["git", "clone", "https://github.com/hpc/ior.git"],
@@ -402,7 +429,7 @@ def install_all(settings: JitSettings) -> None:
             subprocess.run(["./configure"], check=True)
             subprocess.run(["make", "-j", "4"], check=True)
 
-            console.print("[bold green]JIT >> Installation finished[/]")
+            jit_print(">> Installation finished[/]")
             status.update("[bold green]JIT >> Installation finished[/]",speed=30)
             console.print("\n>> Ready to go <<")
             status.update("\n>> Ready to go <<",speed=30)
@@ -410,7 +437,7 @@ def install_all(settings: JitSettings) -> None:
             status.update("Call: ./jit.sh -n NODES -t MAX_TIME",speed=30)
 
         except subprocess.CalledProcessError as e:
-            console.print("[bold green]JIT [bold red] >>> Error encountered: {e}[/]")
+            jit_print("[bold red] >>> Error encountered: {e}[/]")
             status.update("[bold green]JIT [bold red] >>> Error encountered: {e}[/]",speed=30)
             abort()
 
@@ -466,27 +493,29 @@ def cancel_jit_jobs(settings:JitSettings):
 
             # Print the list of JIT jobs
             job_list = "\n".join(jit_jobs)
-            console.print(
-                "[bold green]JIT [bold yellow]>> The following jobs with the name 'JIT' were found:[/]"
+            jit_print("[bold yellow]>> The following jobs with the name 'JIT' were found:[/]"
             )
             console.print(job_list)
 
-            # Prompt the user to confirm cancellation
-            confirmation = (
-                input("Do you want to cancel all 'JIT' jobs? (yes/no): ").strip().lower()
-            )
+            if not settings.confirm:
+                # Prompt the user to confirm cancellation
+                confirmation = (
+                    input("Do you want to cancel all 'JIT' jobs? (yes/no): ").strip().lower()
+                )
+            else:
+                confirmation = "yes"
 
             if confirmation in {"yes", "y", "ye"}:
                 for job_id in jit_jobs:
                     subprocess.run(f"scancel {job_id}", shell=True, check=True)
-                    console.print(
-                        f"[bold green]JIT [bold cyan]>> Cancelled job ID {job_id}[/]"
+                    jit_print(
+                        f"[bold cyan]>> Cancelled job ID {job_id}[/]"
                     )
-                console.print(
-                    "[bold green]JIT [bold green]>> All 'JIT' jobs have been cancelled.[/]"
+                jit_print(
+                    "[bold green]>> All 'JIT' jobs have been cancelled[/]"
                 )
             else:
-                console.print("[bold green]JIT [bold yellow]>> No jobs were cancelled.[/]")
+                jit_print("[bold yellow]>> No jobs were cancelled[/]")
 
 
 
@@ -494,38 +523,38 @@ def cancel_jit_jobs(settings:JitSettings):
 def relevant_files(settings: JitSettings, verbose: bool = False):
 
     if verbose:  # Mimicking checking for the number of arguments
-        console.print(f"[bold green]JIT [/][cyan]>> Setting up ignored files[/]")
+        jit_print(f"[cyan]>> Setting up ignored files[/]")
 
     # Create or update the regex file with the settings.regex_match
     with open(settings.regex_file, "w") as file:
         file.write(f"{settings.regex_match}\n")
 
     if verbose:
-        console.print(
-            f"[bold green]JIT [/][cyan]>> Files that match {settings.regex_match} are ignored [/]"
+        jit_print(
+            f"[cyan]>> Files that match {settings.regex_match} are ignored [/]"
         )
 
     # Display the contents of the regex file
     with open(settings.regex_file, "r") as file:
         content = file.read()
-    if settings.debug:
-        console.print(
-            f"[bold green]JIT [cyan]>> content of {settings.regex_file}: \n{content}[/]"
+    if settings.verbose:
+        jit_print(
+            f"[cyan]>> content of {settings.regex_file}: \n{content}[/]"
         )
 
 
 def reset_relevant_files(settings: JitSettings) -> None:
     if settings.cluster:
-        console.print(f"[bold green] JIT [/][cyan]>> Resetting ignored files[/]")
+        jit_print(f"[cyan]>> Resetting ignored files[/]")
         # Write the default regex pattern to the file
         settings.regex_match=".*"
         with open(settings.regex_file, "w") as file:
             
             file.write(f"{settings.regex_match}\n")
-        # Optionally console.print the contents of the regex file
+        # Optionally jit_print the contents of the regex file
         # with open(settings.regex_file, 'r') as file:
         #     content = file.read()
-        # console.print(f"[bold green] JIT [bold cyan]>> cat {settings.regex_file}: \n{content} [/]\n")
+        # jit_print(f"[bold cyan]>> cat {settings.regex_file}: \n{content} [/]\n")
 
 
 def total_time(log_dir):
@@ -553,7 +582,7 @@ def allocate(settings: JitSettings) -> None:
         #allocate if needed 
         if settings.job_id == 0:
             # Allocating resources
-            console.print("[bold green]JIT [green] ####### Allocating resources[/]")
+            jit_print("[green] ####### Allocating resources[/]")
 
             call = f"salloc -N {settings.nodes} -t {settings.max_time} {settings.alloc_call_flags}"
             console.print(f"[bold green]JIT [cyan] >> Executing: {call} [/]")
@@ -601,7 +630,7 @@ def allocate(settings: JitSettings) -> None:
                 nodes_arr = []
 
             # Write to hostfile_mpi
-            with open(os.path.expanduser("~/hostfile_mpi"), "w") as file:
+            with open(f"{settings.app_dir}/hostfile_mpi", "w") as file:
                 file.write("\n".join(nodes_arr) + "\n")
 
             if nodes_arr:
@@ -619,38 +648,38 @@ def allocate(settings: JitSettings) -> None:
                     # print(f"{','.join(n for n in nodes_arr if n != settings.ftio_node)}\n")
 
                     # Remove FTIO node from hostfile_mpi
-                    with open(os.path.expanduser("~/hostfile_mpi"), "r") as file:
+                    with open(f"{settings.app_dir}/hostfile_mpi", "r") as file:
                         lines = file.readlines()
-                    with open(os.path.expanduser("~/hostfile_mpi"), "w") as file:
+                    with open(f"{settings.app_dir}/hostfile_mpi", "w") as file:
                         file.writelines(
                             line for line in lines if line.strip() != settings.ftio_node
                         )
 
-                console.print(
-                    f"[bold green]JIT [green] >> JIT Job Id: {settings.job_id} [/]"
+                jit_print(
+                    f"[green]>> JIT Job Id: {settings.job_id} [/]"
                 )
-                console.print(
-                    f"[bold green]JIT [green] >> Allocated Nodes: {len(nodes_arr)} [/]"
+                jit_print(
+                    f"[green]>> Allocated Nodes: {len(nodes_arr)} [/]"
                 )
-                console.print(
-                    f"[bold green]JIT [green] >> FTIO Node: {settings.ftio_node} [/]"
+                jit_print(
+                    f"[green]>> FTIO Node: {settings.ftio_node} [/]"
                 )
-                console.print(
-                    f"[bold green]JIT [green] >> APP Node command: {settings.app_nodes_command} [/]"
+                jit_print(
+                    f"[green]>> APP Node command: {settings.app_nodes_command} [/]"
                 )
-                console.print(
-                    f"[bold green]JIT [green] >> FTIO Node command: {settings.ftio_node_command} [/]"
+                jit_print(
+                    f"[green]>> FTIO Node command: {settings.ftio_node_command} [/]"
                 )
 
                 # Print contents of hostfile_mpi
-                with open(os.path.expanduser("~/hostfile_mpi"), "r") as file:
+                with open(f"{settings.app_dir}/hostfile_mpi", "r") as file:
                     hostfile_content = file.read()
-                console.print(
-                    f"[bold green]JIT [cyan] >> content of ~/hostfile_mpi: \n{hostfile_content} [/]"
+                jit_print(
+                    f"[cyan]>> content of {settings.app_dir}/hostfile_mpi: \n{hostfile_content} [/]"
                 )
         else:
-            console.print(
-                "[bold gree]JIT [bold red]>> JIT_ID could not be retrieved[/]"
+            jit_print(
+                "[bold red]>> JIT_ID could not be retrieved[/]"
             )
 
 
@@ -681,7 +710,7 @@ def get_pid(settings: JitSettings, name: str, pid: int):
 
 # Function to handle SIGINT (Ctrl+C)
 def handle_sigint(settings: JitSettings):
-    console.print("[bold green]JIT > Keyboard interrupt detected. Exiting script.[/]")
+    jit_print("[bold blue]>> Keyboard interrupt detected. Exiting script.[/]")
     soft_kill(settings)
     hard_kill(settings)
     if settings.cluster:
@@ -691,39 +720,39 @@ def handle_sigint(settings: JitSettings):
 
 
 def soft_kill(settings: JitSettings) -> None:
-    console.print("\n[bold green]JIT[bold green] ####### Soft kill [/]")
+    jit_print("[bold green]####### Soft kill [/]", True)
 
-    if settings.exclude_ftio == False:
+    if not settings.exclude_ftio:
         try:
             shut_down(settings, "FTIO", settings.ftio_pid)
-            console.print("[bold green]JIT[bold cyan] >> killed FTIO [/]")
+            jit_print("[bold cyan] >> killed FTIO [/]")
         except:
-            console.print("[bold green]JIT[bold cyan] >> Unable to soft kill FTIO [/]")
+            jit_print("[bold cyan] >> Unable to soft kill FTIO [/]")
 
-    if settings.exclude_demon == False:
+    if not settings.exclude_demon:
         try:
             shut_down(settings, "GEKKO", settings.gekko_demon_pid)
-            console.print("[bold green]JIT[bold cyan] >> killed GEKKO DEMON [/]")
+            jit_print("[bold cyan] >> killed GEKKO DEMON [/]")
         except:
-            console.print("[bold green]JIT[bold cyan] >> Unable to soft kill GEKKO DEMON [/]")
+            jit_print("[bold cyan] >> Unable to soft kill GEKKO DEMON [/]")
 
-    if settings.exclude_proxy == False:
+    if not settings.exclude_proxy:
         try:
             shut_down(settings, "GEKKO", settings.gekko_proxy_pid)
-            console.print("[bold green]JIT[bold cyan] >> killed GEKKO PROXY [/]")
+            jit_print("[bold cyan] >> killed GEKKO PROXY [/]")
         except:
-            console.print("[bold green]JIT[bold cyan] >> Unable to soft  kill GEKKO PROXY [/]")
+            jit_print("[bold cyan] >> Unable to soft  kill GEKKO PROXY [/]")
 
-    if settings.exclude_cargo == False:
+    if not settings.exclude_cargo:
         try:
             shut_down(settings, "CARGO", settings.cargo_pid)
-            console.print("[bold green]JIT[bold cyan] >> killed CARGO [/]")
+            jit_print("[bold cyan] >> killed CARGO [/]")
         except:
-            console.print("[bold green]JIT[bold cyan] >> Unable to soft kill CARGO [/]")
+            jit_print("[bold cyan] >> Unable to soft kill CARGO [/]")
 
 
 def hard_kill(settings) -> None:
-    console.print(f"\n[bold green]####### Hard kill[/]")
+    jit_print(f"[bold green]####### Hard kill[/]", True)
 
     if settings.cluster and not settings.static_allocation:
         # Cluster environment: use `scancel` to cancel the job
@@ -736,7 +765,7 @@ def hard_kill(settings) -> None:
             settings.gkfs_demon,
             settings.gkfs_proxy,
             settings.cargo,
-            f"{os.path.dirname(settings.ftio_activate)}/predictor_jit",
+            f"{settings.ftio_bin_location}/predictor_jit",
         ]
 
         for process in processes:
@@ -772,6 +801,8 @@ def log_dir(settings:JitSettings):
     if not settings.log_dir:
         # Define default LOG_DIR if not set
         settings.log_dir = f"logs_nodes{settings.nodes}_Jobid{settings.job_id}"
+        if settings.log_suffix:
+            settings.log_dir +=f"_{settings.log_suffix}"
 
     # Create directory if it does not exist
     os.makedirs(settings.log_dir, exist_ok=True)
@@ -796,7 +827,14 @@ def get_address_ftio(settings: JitSettings) -> None:
             jit_print(f"[bold red]>>Error occurred: {e}")
             settings.address_ftio = ""
 
-    jit_print(f">> Address FTIO: {settings.address_ftio}")
+    jit_print(f">> Address FTIO: {settings.address_ftio}", True)
+
+
+def set_dir_gekko(settings: JitSettings) -> None:
+    if settings.nodelocal and settings.cluster:
+        jit_print("####### Setting Gekko root dir to node local")
+        settings.gkfs_rootdir = f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_rootdir)}"
+        jit_print(f">> Gekko root dir set to: {settings.gkfs_rootdir}", True)
 
 
 def get_address_cargo(settings: JitSettings) -> None:
@@ -818,18 +856,28 @@ def get_address_cargo(settings: JitSettings) -> None:
         settings.cargo_server = f"ofi+tcp://{settings.address_cargo}:62000"
 
     jit_print(f">> Address CARGO: {settings.address_cargo}")
-    jit_print(f">> CARGO server:  {settings.cargo_server} ")
+    jit_print(f">> CARGO server:  {settings.cargo_server} ", True)
 
 
 def print_settings(settings) -> None:
+    # Default values
     ftio_status = f"[bold green]ON[/]"
     gkfs_demon_status = f"[bold green]ON[/]"
     gkfs_proxy_status = f"[bold green]ON[/]"
     cargo_status = f"[bold green]ON[/]"
 
+    task_demon = f"{settings.app_nodes}"
+    cpu_demon  = f"{settings.procs_demon}"
+    task_proxy = f"{settings.app_nodes}"
+    cpu_proxy  = f"{settings.procs_proxy}"
+    task_cargo = f"{settings.app_nodes*settings.procs_cargo}"
+    cpu_cargo  = f"{settings.procs_cargo}"
+    task_ftio  = "1"
+    cpu_ftio   = f"{settings.procs_ftio}"
+
     # Default settings text
     ftio_text = f"""
-├─ ftio activate  : {settings.ftio_activate}
+├─ ftio location  : {settings.ftio_bin_location}
 ├─ address ftio   : {settings.address_ftio}
 ├─ port           : {settings.port}
 ├─ # nodes        : 1
@@ -860,7 +908,9 @@ def print_settings(settings) -> None:
 ├─ # nodes        : [yellow]none[/]
 └─ ftio node      : [yellow]none[/]"""
         ftio_status = "[bold yellow]off[/]"
-
+        task_ftio  = "[bold yellow]-[/]"
+        cpu_ftio  = "[bold yellow]-[/]"
+        
     if settings.exclude_demon:
         gkfs_demon_text = """
 ├─ gkfs demon     : [yellow]none[/]
@@ -869,13 +919,17 @@ def print_settings(settings) -> None:
 ├─ gkfs rootdir   : [yellow]none[/]
 ├─ gkfs hostfile  : [yellow]none[/]"""
         gkfs_demon_status = "[bold yellow]off[/]"
+        task_demon = "[bold yellow]-[/]"
+        cpu_demon = "[bold yellow]-[/]"
 
     if settings.exclude_proxy:
         gkfs_proxy_text = """
 ├─ gkfs proxy     : [yellow]none[/]
 └─ gkfs proxyfile : [yellow]none[/]"""
         gkfs_proxy_status = "[bold yellow]off[/]"
-
+        task_proxy = "[bold yellow]-[/]"
+        cpu_proxy = "[bold yellow]-[/]"
+        
     if settings.exclude_cargo:
         cargo_text = """
 ├─ cargo location : [yellow]none[/]
@@ -883,6 +937,8 @@ def print_settings(settings) -> None:
 ├─ stage in path  : [yellow]none[/]
 └─ address cargo  : [yellow]none[/]"""
         cargo_status = "[bold yellow]off[/]"
+        task_cargo = "[bold yellow]-[/]"
+        cpu_cargo = "[bold yellow]-[/]"
 
     # print settings
     text = f"""
@@ -899,12 +955,19 @@ def print_settings(settings) -> None:
 ├─ total nodes    : {settings.nodes}
 |   ├─ app        : {settings.app_nodes}
 |   └─ ftio       : 1
-├─ procs          : {settings.procs}
-|   ├─ app        : {settings.procs_app}
-|   ├─ demon      : {settings.procs_demon}
-|   ├─ proxy      : {settings.procs_proxy}
-|   ├─ cargo      : {settings.procs_cargo}
-|   └─ ftio       : {settings.procs_ftio}
+├─ tasks per node : -  
+|   ├─ app        : {settings.procs_app} 
+|   ├─ demon      : {task_demon}
+|   ├─ proxy      : {task_proxy}
+|   ├─ cargo      : {task_cargo}
+|   └─ ftio       : {task_ftio}
+├─ cpus per task  : {settings.procs} 
+|   ├─ app        : 1
+|   ├─ demon      : {cpu_demon}
+|   ├─ proxy      : {cpu_proxy}
+|   ├─ cargo      : {cpu_cargo}
+|   └─ ftio       : {cpu_ftio}
+├─ OMP threads    : {settings.omp_threads}
 ├─ max time       : {settings.max_time}
 └─ job id         : {settings.job_id}
 
@@ -915,8 +978,8 @@ def print_settings(settings) -> None:
 [bold green] cargo[/]{cargo_text}
 
 [bold green]app[/]
-├─ precall        : {settings.precall}
-├─ app_call       : {settings.app_call}
+├─ app dir        : {settings.app_dir}
+├─ app call       : {settings.app_call}
 ├─ # nodes        : {settings.app_nodes}
 └─ app nodes      : {settings.app_nodes_command.replace('--nodelist=', '')}
 [bold green]##################[/]
@@ -930,12 +993,15 @@ def print_to_file(text, file):
     for r in remove:
         text = text.replace(r, "")
 
-    with open(file, "w") as file:
+    with open(file, "a") as file:
         file.write(text)
 
 
-def jit_print(s: str):
-    console.print(f"[bold green]JIT[/][green] {s}[/]")
+def jit_print(s: str, new_line:bool=False) -> None:
+    if new_line:
+        console.print(f"\n[bold green]JIT[/][green] {s}[/]")
+    else:
+        console.print(f"[bold green]JIT[/][green] {s}[/]")
 
 
 
@@ -1018,11 +1084,9 @@ def update_hostfile_mpi(settings:JitSettings):
     # Execute the command and capture the hostnames
     hostnames = subprocess.check_output(scontrol_command, shell=True).decode().splitlines()
 
-    # Path to the output file
-    hostfile_mpi_path = os.path.expanduser("~/hostfile_mpi")
     
     # Write the hostnames to the file, excluding the Ftio node
-    with open(hostfile_mpi_path, 'w') as hostfile:
+    with open(f"{settings.app_dir}/hostfile_mpi", "w") as hostfile:
         for hostname in hostnames:
             if hostname.strip() != settings.ftio_node:
                 hostfile.write(hostname + '\n')

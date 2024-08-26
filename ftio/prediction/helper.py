@@ -1,5 +1,7 @@
 """ Helper functions"""
 from __future__ import annotations
+import json
+import os
 import numpy as np
 from rich.console import Console
 
@@ -140,3 +142,15 @@ def format_jsonl(data: list[dict]) -> tuple[str,str]:
 
     return string,out_ranks
 
+
+def dump_json(b:np.ndarray,t:np.ndarray, filename:str="bandwidth.json") -> None:
+
+    data = {
+        "b": b.tolist(),
+        "t": t.tolist()
+    }
+    json_file_path = os.path.join(os.getcwd(), filename)
+
+    # Dump the dictionary to a JSON file in the current directory
+    with open(json_file_path, "w") as json_file:
+        json.dump(data, json_file)

@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import glob
 from ftio.cli.ftio_core import core
@@ -11,6 +12,9 @@ from ftio.freq.helper import format_plot
 from ftio.plot.units import set_unit
 from ftio.freq.helper import MyConsole
 import argparse
+
+from ftio.prediction.async_process import handle_in_process
+from ftio.prediction.helper import dump_json
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -56,7 +60,8 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
     if "JSON" in ext.upper():
         scale = [1.07 * 1e6, 1e-3, 1e-3]
     elif any(x in ext.upper() for x in ["MSG", "ZMQ"]): 
-        scale = [1, 1e-6, 1e-6]
+        # scale = [1, 1e-6, 1e-6]
+        scale = [1e6, 1e-6, 1e-6]
         
     b_rank   = np.array(data_rank["avg_thruput_mib"]) * scale[0]
     t_rank_s = np.array(data_rank["start_t_micro"]) * scale[1]
@@ -77,6 +82,8 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
     else:
         t = np.array(list(b))
         b = np.array(list(t))
+
+    process = handle_in_process(dump_json, args=(b,t),)
 
     # 6) plot to check:
     if any(x in args.engine for x in ["mat", "plot"]):
@@ -103,7 +110,8 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
     display_prediction("ftio", prediction)
 
     convert_and_plot(data, dfs, args)
-
+    process.join()
+    
     return prediction, args, data_rank["flush_t"]
 
 
@@ -113,3 +121,5 @@ if __name__ == "__main__":
     path = r"/d/github/FTIO/examples/API/gekkoFs/MSGPACK/write*.msgpack"
     matched_files_or_msgs = glob.glob(path)
     run(matched_files_or_msgs)
+
+

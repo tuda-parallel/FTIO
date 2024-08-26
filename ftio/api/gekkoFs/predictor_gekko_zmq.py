@@ -99,7 +99,7 @@ def main(args: list[str] = sys.argv[1:]) -> None:
                 ranks = 0
                 socks = dict(poller.poll(1000))
                 start = time.time()
-                while socks or time.time() < start + 0.5:
+                while socks: #r time.time() < start + 0.5:
                     if socks.get(socket) == zmq.POLLIN:
                         msg = socket.recv(zmq.NOBLOCK)
                         msgs.append(msg)

@@ -1,5 +1,8 @@
+import json
+import os
 from rich.console import Console
 from rich.panel import Panel
+from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 
 
 class JitTime:
@@ -68,3 +71,57 @@ class JitTime:
                 title_align="left",
             )
         )
+        return text
+
+    def to_dict(self):
+        return {
+            "app": self._app,
+            "stage_in": self._stage_in,
+            "stage_out": self._stage_out,
+        }
+
+    def dump_json(self, settings: JitSettings):
+        data = {**self.to_dict(), **settings.to_dict()}
+        parent = os.path.dirname(settings.log_dir)
+        json_path = os.path.join(parent, "result.json")
+        try:
+            with open(json_path, "r+") as file:
+                try:
+                    existing_data = json.load(file)
+                except json.JSONDecodeError:
+                    existing_data = []
+
+                # Check if there is an existing entry with the same number of nodes and mode
+                for entry in existing_data:
+                    if entry.get("nodes") == data["nodes"]:
+                        for i, data_entry in enumerate(entry["data"]):
+                            if data_entry["mode"] == data["mode"]:
+                                entry["data"][i] = data  # Overwrite the existing data
+                                break
+                        else:
+                            entry["data"].append(data)  # Add new entry if no mode match
+                        break
+                else:
+                    # If no entry with the same nodes exists, add a new one
+                    existing_data.append({"nodes": data["nodes"], "data": [data]})
+
+                # Write the updated data back to the file
+                file.seek(0)
+                json.dump(existing_data, file, indent=4)
+                file.truncate()
+
+        except FileNotFoundError:
+            # If the file does not exist, create it with the new data
+            with open(json_path, "w") as file:
+                json.dump([{"nodes": data["nodes"], "data": [data]}], file, indent=4)
+
+
+    def print_and_save_time(self, settings: JitSettings):
+        # get the time
+        text = self.print_time()
+        # write it out to the file
+        time_log_file = os.path.join(settings.log_dir, "time.log")
+        with open(time_log_file, "a") as file:
+            file.write(text)
+
+        self.dump_json(settings)

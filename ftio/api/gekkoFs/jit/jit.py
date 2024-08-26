@@ -25,6 +25,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     allocate,
     log_dir,
     print_settings,
+    set_dir_gekko,
     soft_kill,
 )
 
@@ -61,7 +62,10 @@ def main() -> None:
     # 1.4 Get address carg
     get_address_cargo(settings)
 
-    # 1.5 Print settings
+    # 1.5 Set Gekko Root dir
+    set_dir_gekko(settings)
+
+    # 1.6 Print settings
     print_settings(settings)
 
     # 2.0 Start Gekko Server (Daemon)
@@ -90,7 +94,8 @@ def main() -> None:
     post_call(settings)
 
     # 9.0 Display total time
-    runtime.print_time()
+    # _ = runtime.print_time()
+    runtime.print_and_save_time(settings)
 
     # 10.0 Soft kill
     soft_kill(settings)

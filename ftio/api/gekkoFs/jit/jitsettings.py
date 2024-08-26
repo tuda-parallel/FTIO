@@ -1,5 +1,6 @@
 import os
 import socket
+import numpy as np
 from rich.console import Console
 
 console = Console()
@@ -7,11 +8,16 @@ console = Console()
 
 class JitSettings:
     def __init__(self) -> None:
-        """sets the internal variables, don't modify this part.
-        """
+        """sets the internal variables, don't modify this part."""
 
         # self.script_dir = os.path.dirname(os.path.realpath(__file__))
-        self.log_dir = ""
+        self.set_tasks_affinity = True
+        self.debug = True
+        self.verbose = True
+        self.nodelocal = True
+
+        self.log_suffix = "DPCF"
+        self.app_dir = ""
 
         # Variable initialization
         self.cluster = False
@@ -39,7 +45,7 @@ class JitSettings:
         self.app_log = ""
         self.app_err = ""
 
-        #exclude flags
+        # exclude flags
         self.exclude_ftio = False
         self.exclude_cargo = False
         self.exclude_demon = False
@@ -59,23 +65,26 @@ class JitSettings:
         self.address_cargo = "127.0.0.1"
         self.port = "5555"
         self.nodes = 1
-        self.procs = 128
         self.max_time = 30
-        self.debug = True
+        self.confirm = False
 
+
+        self.procs = os.cpu_count() or 128
+        self.omp_threads = 64
+        self.task_set_0 = ""
+        self.task_set_1 = ""
         self.procs_demon = 0
         self.procs_proxy = 0
         self.procs_cargo = 0
-        self.procs_app   = 0
-        self.procs_ftio  = 0
-        
+        self.procs_app = 0
+        self.procs_ftio = 0
+
         self.set_cluster_mode()
         self.set_default_procs()
         self.set_variables()
 
     def set_cluster_mode(self) -> None:
-        """automatically identifies if it's a cluster or local machine
-        """
+        """automatically identifies if it's a cluster or local machine"""
         hostname = socket.gethostname()
         if "cpu" in hostname or "mogon" in hostname:
             self.cluster = True
@@ -90,26 +99,34 @@ class JitSettings:
         """updates the flags and pass variables after the passed options are read.
         This is necessary, to adapt to the cluster mode and the installation path
         """
-        self.set_falgs()
+        self.set_flags()
         self.set_variables()
+        self.set_absolute_path()
 
-    def  set_default_procs(self) -> None:
-    #default values for the procs in proc_list is not passed
+    def set_absolute_path(self) -> None:
+        self.app_dir = os.path.expanduser(self.app_dir)
+        self.ftio_bin_location = os.path.expanduser(self.ftio_bin_location)
+
+    def set_default_procs(self) -> None:
+        # default values for the procs in proc_list is not passed
         if self.cluster:
-            self.procs_demon = self.procs
-            self.procs_proxy = self.procs
-            self.procs_ftio  = self.procs
+            self.procs_proxy = int(np.floor(self.procs/2))
+            self.procs_demon = int(np.floor(self.procs/2))
+            self.procs_cargo = 2
+            self.procs_ftio = self.procs
+            self.procs_app = int(np.floor(self.procs/2))
         else:
             self.procs = 10
             self.procs_demon = 1
             self.procs_proxy = 1
-            self.procs_ftio  = 1
+            self.procs_cargo = 2
+            self.procs_ftio = 1
+            self.procs_app = self.procs
+            
+        
+        
 
-        self.procs_cargo = 2
-        self.procs_app = self.procs
-
-
-    def set_falgs(self) -> None:
+    def set_flags(self) -> None:
         """sets the flags in case exclude all is specified
         in the options passed
         """
@@ -128,7 +145,7 @@ class JitSettings:
                 )
 
         if self.exclude_ftio:
-            self.procs_ftio  = 0
+            self.procs_ftio = 0
         if self.exclude_cargo:
             self.procs_cargo = 0
         if self.exclude_demon:
@@ -136,100 +153,158 @@ class JitSettings:
         if self.exclude_proxy:
             self.procs_proxy = 0
 
+
+        if self.set_tasks_affinity:
+            self.task_set_0 = f"taskset -c 0-{np.floor(self.procs/2)-1:.0f}"
+            if self.procs - np.floor(self.procs / 2) >= self.procs_app:
+                self.task_set_1 = (
+                    f"taskset -c {np.ceil(self.procs/2):.0f}-{self.procs-1:.0f}"
+                )
+
     def set_log_dirs(self):
         self.gekko_demon_log = os.path.join(self.log_dir, "gekko_demon.log")
         self.gekko_demon_err = os.path.join(self.log_dir, "gekko_demon.err")
         self.gekko_proxy_log = os.path.join(self.log_dir, "gekko_proxy.log")
         self.gekko_proxy_err = os.path.join(self.log_dir, "gekko_proxy.err")
         self.gekko_client_log = os.path.join(self.log_dir, "gekko_client.log")
-        self.cargo_log       = os.path.join(self.log_dir, "cargo.log")
-        self.cargo_err       = os.path.join(self.log_dir, "cargo.err")
-        self.ftio_log        = os.path.join(self.log_dir, "ftio.log")
-        self.ftio_err        = os.path.join(self.log_dir, "ftio.err")
-        self.app_log         = os.path.join(self.log_dir, "app.log")
-        self.app_err        = os.path.join(self.log_dir, "app.err")
+        self.cargo_log = os.path.join(self.log_dir, "cargo.log")
+        self.cargo_err = os.path.join(self.log_dir, "cargo.err")
+        self.ftio_log = os.path.join(self.log_dir, "ftio.log")
+        self.ftio_err = os.path.join(self.log_dir, "ftio.err")
+        self.app_log = os.path.join(self.log_dir, "app.log")
+        self.app_err = os.path.join(self.log_dir, "app.err")
 
-        
+    def to_dict(self):  # -> dict[str, Any]:
+        return {
+            "nodes": self.nodes,
+            "app nodes": self.app_nodes,
+            "procs": self.procs,
+            "procs demon": self.procs_demon,
+            "procs proxy": self.procs_proxy,
+            "procs cargo": self.procs_cargo,
+            "procs app  ": self.procs_app,
+            "procs ftio ": self.procs_ftio,
+            "task_set_0": self.task_set_0,
+            "task_set_1": self.task_set_1,
+            "OpenMP threads": self.omp_threads,
+            "app dir": self.app_dir,
+            "app call": self.app_call,
+            "id": self.job_id,
+            "mode": self.log_suffix,
+        }
+
+    #!##########################
     #! only modify here
+    #!##########################
     def set_variables(self) -> None:
-        """sets the path variables
-        """
-        # install location
+        """sets the path variables"""
+        # ****** install location ******
         if self.cluster:
             self.install_location = "/beegfs/home/Shared/admire/JIT"
 
-        # job allocation call
+        # ****** job allocation call ******
         # self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
-        self.alloc_call_flags = "--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082,cpu0083"
+        self.alloc_call_flags = "--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084"
 
-        # ftio variables
-        self.ftio_activate = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin/activate"
 
-        # gekko variables
-        self.gkfs_demon = (
-            "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/bin/gkfs_daemon"
-        )
+        #? TOOLS
+        #?#######################
+        # ****** ftio variables ******
+        self.ftio_bin_location = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin"
+
+        # ****** gkfs variables ******
+        self.gkfs_demon = "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/bin/gkfs_daemon"
         self.gkfs_intercept = "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
         self.gkfs_hostfile = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
-        self.gkfs_proxy = (
-            "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
-        )
+        self.gkfs_proxy = "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
         self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
 
-        # cargo variables
+        #****** cargo variables ******
         self.cargo = "/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
         self.cargo_cli = "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
         self.cargo_server = "ofi+sockets://127.0.0.1:62000"
 
 
-        # APP settings
-        ###########################
-        # app call
+        #? APP settings
+        #?##########################
+        # ****** app call ******
+        #  ├─ IOR
         # self.app="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
         # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
+        #  ├─ NEK5000
         self.app_call = "./nek5000"
-        # app folder (only used in this file)
-        # self.app_folder = "/home/tarrafah/nhr-admire/vef/admire/turbPipe/run_gkfs"
-        self.app_folder = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
-        
+        self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
+        #  └─ Wacom++
+        # self.app_call = "./wacommplusplus"
+        # self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build" 
+
+        # ****** pre and post app call ******
         # Application specific calls executed before the actual run. Executed as
         # > ${PRE_APP_CALL}
-        # > ${PRECALL} mpiexec ${some flags} ..${APP_CALL}
+        # > cd self.app_dir && mpiexec ${some flags} ..${APP_CALL}
         # > ${POST_APP_CALL}
-        # Precall
-        self.precall = (
-            f"cd {self.app_folder} &&"
-        )
-        # Pre and post *app* call 
-        if self.exclude_all:
-            self.pre_app_call = f"echo -e 'turbPipe\\n{self.app_folder}/input' > {self.app_folder}/SESSION.NAME"
-            self.post_app_call = f"rm {self.app_folder}/input/*.f* || echo true"
+        # ├─ Nek5000
+        if "nek" in self.app_call:
+            if self.exclude_all:
+                self.pre_app_call = f"echo -e 'turbPipe\\n{self.app_dir}/input' > {self.app_dir}/SESSION.NAME"
+                self.post_app_call = f"rm {self.app_dir}/input/*.f* || echo true"
+            else:
+                self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > {self.app_dir}/SESSION.NAME"
+                self.post_app_call = ""
+        # ├─ Wacom++
+        elif "wacom" in self.app_call:
+            if self.exclude_all:
+                # in case a previous simulation fails
+                self.pre_app_call = f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json"
+                self.post_app_call = ""
+            else:
+                self.pre_app_call  =  f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.gkfs.json {self.app_dir}/wacomm.json"
+                self.post_app_call = f"ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json"
+        # └─ Other
         else:
-            self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > {self.app_folder}/SESSION.NAME"
+            self.pre_app_call  =  ""
             self.post_app_call = ""
 
 
-        # Stage in/out
-        ###########################
-        # stage out variables
-        self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
+        #? Stage in/out
+        #?##########################
+        # ├─ Nek5000
+        if "nek" in self.app_call:
+            self.stage_in_path = f"{self.app_dir}/input" 
+            self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
+        # ├─ Wacom++
+        elif "wacom" in self.app_call:
+            self.stage_in_path = f"{self.app_dir}/stage-in" 
+            self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
+        # └─ Other
+        else:
+            self.stage_in_path = f"{self.app_dir}/stage-in" 
+            self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
+
+
+        #? Regex if needed
+        #?##########################
         self.regex_file = "/lustre/project/nhr-admire/shared/nek_regex4cargo.txt"
-        self.regex_match = "^/[a-zA-Z0-9]*turbPipe0\\.f\\d+"
+        # ├─ Nek5000
+        if "nek" in self.app_call:
+            self.regex_match = "^/[a-zA-Z0-9]*turbPipe0\\.f\\d+"
+        # ├─ Wacom++
+        elif "wacom" in self.app_call:
+            self.regex_match = "^(\\/output|\\/results|\\/restart|\\/input)\\/[^\\/]+$" # "^ocm3_d03_\\d+Z\d+\\.nc$"
+        # └─ Other
+        else:
+            self.regex_match = ""
 
-        # stage in variables
-        self.stage_in_path = (
-            f"{self.app_folder}/input"
-        )
 
-        # local machine settings
-        ################################
+        #? local machine settings
+        #?###############################
         if not self.cluster:
             self.install_location = "/d/github/JIT"
             self.regex_file = f"{self.install_location}/nek_regex4cargo.txt"
 
-            self.ftio_activate = "/d/github/FTIO/.venv/bin/activate"
+            self.ftio_bin_location = "/d/github/FTIO/.venv/bin"
             self.gkfs_demon = f"{self.install_location}/iodeps/bin/gkfs_daemon"
             self.gkfs_intercept = (
                 f"{self.install_location}/iodeps/lib/libgkfs_intercept.so"
@@ -243,18 +318,20 @@ class JitSettings:
             self.gkfs_proxyfile = f"{self.install_location}/tarraf_gkfs_proxy.pid"
             self.cargo = f"{self.install_location}/cargo/build/src/cargo"
             self.cargo_cli = f"{self.install_location}/cargo/build/cli"
-            
 
             # Nek5000
-            self.precall = "cd /d/benchmark/Nek5000/turbPipe/run/ &&"
+            self.app_dir = "/d/benchmark/Nek5000/turbPipe/run"
             self.app_call = "./nek5000"
             self.stage_in_path = "/d/benchmark/Nek5000/turbPipe/run/input"
+            self.stage_out_path = "/tmp/output"
             if self.exclude_all:
                 self.pre_app_call = "echo -e 'turbPipe\\n/d/benchmark/Nek5000/turbPipe/run/input' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
-                self.post_app_call = "rm /d/benchmark/Nek5000/turbPipe/run/input/*.f* || true"
+                self.post_app_call = (
+                    "rm /d/benchmark/Nek5000/turbPipe/run/input/*.f* || true"
+                )
             else:
                 self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
                 self.post_app_call = f"rm {self.stage_out_path}/*.f* || true"
 
-            self.stage_in_path = "/tmp/input"
-            self.stage_out_path = "/tmp/output"
+            # self.stage_in_path = "/tmp/input"
+            # self.stage_out_path = "/tmp/output"

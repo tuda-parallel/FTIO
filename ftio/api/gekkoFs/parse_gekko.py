@@ -95,6 +95,7 @@ def assign(data:dict,unpacker, io_type = "w")->dict:
         index += 1
 
     if not skip:
+        # convert later
         b = np.array(object=data["req_size"])/(np.array(data["end_t_micro"]) - np.array(data["start_t_micro"]))
         if np.isnan(b).any() or np.isnan(b).any():
             print(f'b_rank : {b} \nt_rank_s : {data["start_t_micro"]} \nt_rank_e : {data["end_t_micro"]} \n')
