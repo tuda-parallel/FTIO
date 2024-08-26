@@ -154,6 +154,10 @@ class JitSettings:
     def set_variables(self) -> None:
         """sets the path variables
         """
+        # install location
+        if self.cluster:
+            self.install_location = "/beegfs/home/Shared/admire/JIT"
+
         # job allocation call
         # self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
         self.alloc_call_flags = "--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082,cpu0083"
@@ -179,6 +183,35 @@ class JitSettings:
         self.cargo_cli = "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
         self.cargo_server = "ofi+sockets://127.0.0.1:62000"
 
+
+        # APP settings
+        ###########################
+        # app call
+        # self.app="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
+        # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
+        self.app_call = "./nek5000"
+        # app folder (only used in this file)
+        self.app_folder = "/home/tarrafah/nhr-admire/vef/admire/turbPipe/run_gkfs"
+        
+        # Application specific calls executed before the actual run. Executed as
+        # > ${PRE_APP_CALL}
+        # > ${PRECALL} mpiexec ${some flags} ..${APP_CALL}
+        # > ${POST_APP_CALL}
+        # Precall
+        self.precall = (
+            f"cd {self.app_folder} &&"
+        )
+        # Pre and post *app* call 
+        if self.exclude_all:
+            self.pre_app_call = f"echo -e 'turbPipe\\n{self.app_folder}/input' > {self.app_folder}/SESSION.NAME"
+            self.post_app_call = f"rm {self.app_folder}/input/*.f* || echo true"
+        else:
+            self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > {self.app_folder}/SESSION.NAME"
+            self.post_app_call = ""
+
+
+        # Stage in/out
+        ###########################
         # stage out variables
         self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
         self.regex_file = "/lustre/project/nhr-admire/shared/nek_regex4cargo.txt"
@@ -189,34 +222,8 @@ class JitSettings:
             "/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input"
         )
 
-        # pre call
-        # execute as ${PRECALL} mpiexec ${some flags} ..${APP_CALL}
-        self.precall = (
-            "cd /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs &&"
-        )
-
-        # pre and post app call
-        # Application specific calls executed before the actual run. Executed as
-        # ${PRE_APP_CALL}
-        # ${PRECALL} mpiexec ${some flags} ..${APP_CALL}
-        # ${POST_APP_CALL}
-        if self.exclude_all:
-            self.pre_app_call = "echo -e 'turbPipe\\n/lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input' > /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/SESSION.NAME"
-            self.post_app_call = "rm /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/input/*.f* || echo true"
-        else:
-            self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > /lustre/project/nhr-admire/tarraf/admire/turbPipe/run_gkfs/SESSION.NAME"
-            self.post_app_call = ""
-
-        # app call
-        # self.app="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
-        # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
-        self.app_call = "./nek5000"
-
-        # install location
-        if self.cluster:
-            self.install_location = "/beegfs/home/Shared/admire/JIT"
-
         # local machine settings
+        ################################
         if not self.cluster:
             self.install_location = "/d/github/JIT"
             self.regex_file = f"{self.install_location}/nek_regex4cargo.txt"
@@ -235,8 +242,7 @@ class JitSettings:
             self.gkfs_proxyfile = f"{self.install_location}/tarraf_gkfs_proxy.pid"
             self.cargo = f"{self.install_location}/cargo/build/src/cargo"
             self.cargo_cli = f"{self.install_location}/cargo/build/cli"
-            self.stage_in_path = "/tmp/input"
-            self.stage_out_path = "/tmp/output"
+            
 
             # Nek5000
             self.precall = "cd /d/benchmark/Nek5000/turbPipe/run/ &&"
@@ -248,3 +254,6 @@ class JitSettings:
             else:
                 self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
                 self.post_app_call = f"rm {self.stage_out_path}/*.f* || true"
+
+            self.stage_in_path = "/tmp/input"
+            self.stage_out_path = "/tmp/output"
