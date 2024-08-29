@@ -75,7 +75,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
     try:
         opts, args = getopt.getopt(
             args,
-            "a:p:n:c:r:o:t:j:l:i:e:xyh",
+            "a:r:n:p:c:o:t:j:l:i:e:xdvyh",
             [
                 "address=",
                 "port=",
@@ -86,10 +86,12 @@ def parse_options(settings: JitSettings, args: list) -> None:
                 "max-time=",
                 "job-id=",
                 "log-name=",
-                "install-location=",
+                "install_location=",
                 "exclude=",
                 "exclude-all",
-                "confirm",
+                "dry_run",
+                "verbose",
+                "skip_confirm",
                 "help",
             ],
         )
@@ -100,7 +102,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
     for opt, arg in opts:
         if opt in ("-a", "--address"):
             settings.address_ftio = arg
-        elif opt in ("-p", "--port"):
+        elif opt in ("-r", "--port"):
             settings.port = arg
         elif opt in ("-n", "--nodes"):
             settings.nodes = int(arg)
@@ -111,18 +113,16 @@ def parse_options(settings: JitSettings, args: list) -> None:
             settings.static_allocation = True
         elif opt in ("-l", "--log-name"):
             settings.log_dir = arg
-        elif opt in ("-i", "--install-location"):
+        elif opt in ("-i", "--install_location"):
             settings.install_location = arg
             install_all(settings)
-        elif opt in ("-c","--procs"):
+        elif opt in ("-p","--procs"):
             settings.procs = int(arg)
         elif opt in ("-o","--omp_threads"):
             settings.omp_threads = int(arg)
-        elif opt in("-r", "--procs_list"):
+        elif opt in("-c", "--procs_list"):
             # Split the argument by comma to get the list of numbers
             procs_list = arg.split(",")
-
-            # Convert the list of strings to a list of integers
             try:
                 procs_list = [int(proc) for proc in procs_list]
             except ValueError:
@@ -143,6 +143,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
                 settings.procs_cargo = int(procs_list[3])
             if len(procs_list) > 4:
                 settings.procs_ftio = int(procs_list[4])
+
         elif opt in ("-e", "--exclude"):
             jit_print("[bold yellow]>> Excluding: [/]")
             if not arg or arg.startswith("-"):
@@ -187,8 +188,12 @@ def parse_options(settings: JitSettings, args: list) -> None:
         elif opt in ("-x", "--exclude-all"):
             settings.exclude_all = True
             settings.log_suffix = ""
-        elif opt in ("-y", "--confirm"):
-            settings.confirm = True
+        elif opt in ("-d", "--dry_run"):
+            settings.dry_run = True
+        elif opt in ("-v", "--verbose"):
+            settings.verbose = True
+        elif opt in ("-y", "--skip_confirm"):
+            settings.skip_confirm = True
         elif opt in ("-h", "--help"):
             error_usage(settings)
             sys.exit(1)
@@ -206,13 +211,14 @@ def error_usage(settings: JitSettings):
     console.print(
         f"""
 [bold]Usage: {sys.argv[0]} [OPTION] ... [/]
+
     -a | --address: X.X.X.X <string>
         default: [bold yellow]{settings.address_ftio}[/]
         Address where FTIO is executed. On a cluster, this is found 
         automatically by determining the address of node where FTIO 
         runs.
 
-    -p | --port: XXXX <int>
+    -r | --port: XXXX <int>
         default: [bold yellow]{settings.port}[/]
         port for FTIO and GekkoFS.
 
@@ -222,11 +228,11 @@ def error_usage(settings: JitSettings):
         executed on a single node, while the rest (including the
         application) get X-1 nodes.
 
-    -c | --procs: X <int>
+    -p | --procs: X <int>
         default: [bold yellow]{settings.procs}[/]
         if procs_list is skipped, this is the default number of procs assigned to all
         
-    -r | --procs_list: x,x,..,x <list>
+    -c | --procs_list: x,x,..,x <list>
         default: [bold yellow]{settings.procs_app},{settings.procs_demon},{settings.procs_proxy},{settings.procs_cargo},{settings.procs_ftio}[/]
         List of task per node/cpu per proc for app, demon, proxy, cargo, and ftio, respectively.
         Assignment is from right to left depending on the length of the list.
@@ -261,12 +267,20 @@ def error_usage(settings: JitSettings):
         If this flag is provided, the setup is executed without FTIO, 
         GekkoFs, and Cargo.
 
-    -y | --confirm 
-        default: [bold yellow]{settings.confirm}[/]
+    -y | --skip_confirm 
+        default: [bold yellow]{settings.skip_confirm}[/]
         If this flag is provided, the setup automatically cancels running jobs 
         name JIT
 
-    -i | --install-location: full_path <str>
+    -d | --dry_run 
+        default: [bold yellow]{settings.dry_run}[/]
+        If provided, the tools and the app are not executed
+
+    -v | --verbose
+        default: [bold yellow]{settings.verbose}[/]
+        If provided, the tools output of each step is shown
+
+    -i | --install_location: full_path <str>
         default: [bold yellow]{settings.install_location}[/]
         Installs everything in the provided directory.
 
@@ -497,7 +511,7 @@ def cancel_jit_jobs(settings:JitSettings):
             )
             console.print(job_list)
 
-            if not settings.confirm:
+            if not settings.skip_confirm:
                 # Prompt the user to confirm cancellation
                 confirmation = (
                     input("Do you want to cancel all 'JIT' jobs? (yes/no): ").strip().lower()
@@ -520,16 +534,16 @@ def cancel_jit_jobs(settings:JitSettings):
 
 
 
-def relevant_files(settings: JitSettings, verbose: bool = False):
+def relevant_files(settings: JitSettings):
 
-    if verbose:  # Mimicking checking for the number of arguments
+    if settings.verbose:  # Mimicking checking for the number of arguments
         jit_print(f"[cyan]>> Setting up ignored files[/]")
 
     # Create or update the regex file with the settings.regex_match
     with open(settings.regex_file, "w") as file:
         file.write(f"{settings.regex_match}\n")
 
-    if verbose:
+    if settings.verbose:
         jit_print(
             f"[cyan]>> Files that match {settings.regex_match} are ignored [/]"
         )
@@ -692,7 +706,10 @@ def get_pid(settings: JitSettings, name: str, pid: int):
         call = f"ps aux | grep 'srun' | grep '{settings.job_id}' | grep '{name}' | grep -v grep | tail -1 | awk '{{print $2}}'"
         res = subprocess.run(call, shell=True, check=True, capture_output=True, text=True)
         if res.stdout.strip():
-            pid = res.stdout.strip() 
+            try:
+                pid = int(res.stdout.strip())
+            except:
+                pid = res.stdout.strip() 
 
     if name.lower() in "cargo":
         settings.cargo_pid = pid
@@ -814,7 +831,7 @@ def log_dir(settings:JitSettings):
 
 def get_address_ftio(settings: JitSettings) -> None:
     # Get Address and port
-    jit_print("####### Getting FTIO ADDRESS")
+    jit_print(">> Getting FTIO ADDRESS")
     if settings.cluster:
         call = f"srun --jobid={settings.job_id} {settings.ftio_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
         jit_print(f"[bold cyan]>> Executing: {call}")
@@ -827,18 +844,12 @@ def get_address_ftio(settings: JitSettings) -> None:
             jit_print(f"[bold red]>>Error occurred: {e}")
             settings.address_ftio = ""
 
-    jit_print(f">> Address FTIO: {settings.address_ftio}", True)
+    jit_print(f">> Address FTIO: {settings.address_ftio}")
 
-
-def set_dir_gekko(settings: JitSettings) -> None:
-    if settings.nodelocal and settings.cluster:
-        jit_print("####### Setting Gekko root dir to node local")
-        settings.gkfs_rootdir = f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_rootdir)}"
-        jit_print(f">> Gekko root dir set to: {settings.gkfs_rootdir}", True)
 
 
 def get_address_cargo(settings: JitSettings) -> None:
-    jit_print("####### Getting Cargo ADDRESS")
+    jit_print(">> Getting Cargo ADDRESS")
     if settings.cluster:
         call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
         jit_print(f"[bold cyan]>> Executing: {call}")
@@ -856,7 +867,14 @@ def get_address_cargo(settings: JitSettings) -> None:
         settings.cargo_server = f"ofi+tcp://{settings.address_cargo}:62000"
 
     jit_print(f">> Address CARGO: {settings.address_cargo}")
-    jit_print(f">> CARGO server:  {settings.cargo_server} ", True)
+    jit_print(f">> CARGO server:  {settings.cargo_server} ")
+
+
+def set_dir_gekko(settings: JitSettings) -> None:
+    if settings.node_local and settings.cluster:
+        jit_print(">> Setting Gekko root dir to node local")
+        settings.gkfs_rootdir = f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_rootdir)}"
+        jit_print(f">> Gekko root dir set to: {settings.gkfs_rootdir}", True)
 
 
 def print_settings(settings) -> None:
@@ -1065,6 +1083,9 @@ def elapsed_time(settings: JitSettings, runtime:JitTime, name, elapsed):
 
 
 def check(settings: JitSettings):
+    if settings.dry_run:
+        return
+
     try:
         files = subprocess.check_output(
             f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} ls {settings.gkfs_mntdir}",

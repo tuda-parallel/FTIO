@@ -95,13 +95,11 @@ def start_gekko_demon(settings: JitSettings) -> None:
 
         jit_print("[cyan]>> Starting Demons[/]")
         
+        process = execute_background_and_log(settings, call, settings.gekko_demon_log, "demon",settings.gekko_demon_err)
         if settings.verbose:
-            process = execute_background_and_log(settings, call, settings.gekko_demon_log, "demon",settings.gekko_demon_err)
             monitor_log_file(settings.gekko_demon_err,"Error Demon")
-        else:
-            process = execute_background_and_log(settings, call, settings.gekko_demon_log, "demon")
         
-        wait_for_file(settings.gkfs_hostfile)
+        wait_for_file(settings.gkfs_hostfile, dry_run = settings.dry_run)
         console.print("\n")
 
 
@@ -130,11 +128,10 @@ def start_gekko_proxy(settings: JitSettings) -> None:
             )
         jit_print("[cyan]>> Starting Proxy[/]")
 
+        process = execute_background_and_log(settings, call, settings.gekko_proxy_log, "proxy", settings.gekko_proxy_err)
         if settings.verbose:
-            process = execute_background_and_log(settings, call, settings.gekko_proxy_log, "proxy", settings.gekko_proxy_err)
             monitor_log_file(settings.gekko_proxy_err,"Error Proxy")
-        else:
-            process = execute_background_and_log(settings, call, settings.gekko_proxy_log, "proxy")
+
         console.print("\n")
 
 
@@ -175,14 +172,13 @@ def start_cargo(settings: JitSettings) -> None:
 
         jit_print("[cyan]>> Starting Cargo[/]")
 
+        process = execute_background_and_log(settings, call, settings.cargo_log, "cargo", settings.cargo_err)
         if settings.verbose:
-            process = execute_background_and_log(settings, call, settings.cargo_log, "cargo", settings.cargo_err)
             monitor_log_file(settings.cargo_err,"Error Cargo")
-        else:
-            process = execute_background_and_log(settings, call, settings.cargo_log, "cargo")
+        
         # wait for line to appear
-        time.sleep(5)
-        wait_for_line(settings.cargo_log, "Start up successful")
+        time.sleep(1)
+        wait_for_line(settings.cargo_log, "Start up successful",dry_run = settings.dry_run)
         console.print("\n")
 
 #! start FTIO
@@ -191,7 +187,7 @@ def start_ftio(settings: JitSettings) -> None:
     if settings.exclude_ftio or settings.exclude_all:
         console.print(f"[bold yellow]####### Skipping FTIO [/][black][{get_time()}][/]")
 
-        relevant_files(settings, True)
+        relevant_files(settings)
 
         if not settings.exclude_cargo and settings.cluster:
             console.print(
@@ -215,7 +211,7 @@ def start_ftio(settings: JitSettings) -> None:
     else:
         console.print(f"[bold green]####### Starting FTIO [/][black][{get_time()}][/]")
 
-        relevant_files(settings, True)
+        relevant_files(settings)
 
         if settings.cluster:
             jit_print(
@@ -243,13 +239,11 @@ def start_ftio(settings: JitSettings) -> None:
 
         jit_print("[cyan]>> Starting FTIO[/]")
 
+        process = execute_background_and_log(settings, call, settings.ftio_log, "ftio", settings.ftio_err)
         if settings.verbose:
-            process = execute_background_and_log(settings, call, settings.ftio_log, "ftio", settings.ftio_err)
             monitor_log_file(settings.ftio_err,"Error Ftio")
-        else:
-            process = execute_background_and_log(settings, call, settings.ftio_log, "ftio")
         
-        wait_for_line(settings.ftio_log, "FTIO is running on:", "Waiting for FTIO startup")
+        wait_for_line(settings.ftio_log, "FTIO is running on:", "Waiting for FTIO startup",dry_run=settings.dry_run)
         time.sleep(5)
         console.print("\n")
 
@@ -272,6 +266,7 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
             call,
             settings.cargo_log,
             "retval: CARGO_SUCCESS, status: {state: completed",
+            settings.dry_run
         )
         # process = execute_background(call, cargo_log)
         # wait_for_line(cargo_log, "Start up successful")
@@ -288,14 +283,16 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
     else:
         console.print(f"[bold green]####### Staging out [/][black][{get_time()}][/]")
         reset_relevant_files(settings)       
-        time.sleep(8)
+        # time.sleep(8)
 
-        try:
-            command_ls = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} ls -R {settings.gkfs_mntdir}"
-            files = subprocess.check_output(command_ls, shell=True).decode()
-            console.print(f"[cyan]>> gekko_ls {settings.gkfs_mntdir}: \n{files}[/]")
-        except Exception as e:
-                jit_print(f"[red] >> Error during test:\n{e}")
+        if not settings.dry_run:
+            try:
+                command_ls = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} ls -R {settings.gkfs_mntdir}"
+                files = subprocess.check_output(command_ls, shell=True).decode()
+                console.print(f"[cyan]>> gekko_ls {settings.gkfs_mntdir}: \n{files}[/]")
+            except Exception as e:
+                    jit_print(f"[red] >> Error during test:\n{e}")
+
         # Reset relevant files
         if settings.cluster:
             call = (f"srun --jobid={settings.job_id} {settings.single_node_command} "
@@ -312,13 +309,14 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
         execute_background_and_wait_line(
             call,
             settings.cargo_log,
-            "[info] Transfer finished for ["
+            "[info] Transfer finished for [",
+            settings.dry_run
         )
         end_of_transfer(settings, settings.cargo_log,call)
         elapsed_time(settings, runtime, "Stage out", time.time() - start)
         # Set ignored files to default again
         relevant_files(settings)
-        time.sleep(5)
+        # time.sleep(5)
 
 
 #! App call
@@ -330,15 +328,8 @@ def start_application(settings: JitSettings, runtime: JitTime):
     jit_print(f">> Current directory {original_dir}")
     os.chdir(settings.app_dir)
     jit_print(f">> Changing directory to  {os.getcwd()}")
-
-    check_setup(settings)
-
-    # out = execute_block(f"srun --jobid={settings.job_id} --exclude={settings.ftio_node} ls {settings.gkfs_mntdir}") 
-    # jit_print(f"[cyan]>> Creating directory\n{out}[/]")
-    # out = execute_block(f"srun --jobid={settings.job_id} --exclude={settings.ftio_node} cp {settings.stage_in_path}/* {settings.gkfs_mntdir}") 
-    # jit_print(f"[cyan]>> Creating directory\n{out}[/]")
-    # out = execute_block(f"srun --jobid={settings.job_id} --exclude={settings.ftio_node} ls {settings.gkfs_mntdir}") 
-    # jit_print(f"[cyan]>> Creating directory\n{out}[/]")
+    if not settings.dry_run:
+        check_setup(settings)
 
     # s_call=""
     if settings.cluster:
@@ -419,11 +410,12 @@ def start_application(settings: JitSettings, runtime: JitTime):
     # elapsed = execute_block_and_log(call, settings.app_log_dir)   
     start = time.time()
 
-    process = execute_background(call, settings.app_log, settings.app_err)
+    process = execute_background(call, settings.app_log, settings.app_err, settings.dry_run)
     # p_app = multiprocessing.Process(target=execute_background_and_log_in_process,args=(call, settings.app_log, settings.app_err))
     # p_app.start()
-    monitor_log_file(settings.app_log,"")
-    monitor_log_file(settings.app_err,"error")
+    if settings.verbose:
+        monitor_log_file(settings.app_log,"")
+        monitor_log_file(settings.app_err,"error")
 
     # p_app.join()
     _, stderr = process.communicate()
@@ -440,8 +432,6 @@ def start_application(settings: JitSettings, runtime: JitTime):
         shut_down(settings, "FTIO", settings.ftio_pid)
 
     os.chdir(original_dir)
-    # p_app_log.join()
-    # p_app_err.join()
     jit_print(f">> Changing directory to {os.getcwd()}")
 
 

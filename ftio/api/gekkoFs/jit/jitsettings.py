@@ -10,11 +10,14 @@ class JitSettings:
     def __init__(self) -> None:
         """sets the internal variables, don't modify this part."""
 
-        # self.script_dir = os.path.dirname(os.path.realpath(__file__))
+        # flags
         self.set_tasks_affinity = True
         self.debug = True
         self.verbose = True
-        self.nodelocal = True
+        #execute in node local
+        self.node_local = True
+        # dont run the experiments
+        self.dry_run = True
 
         self.log_suffix = "DPCF"
         self.app_dir = ""
@@ -66,7 +69,7 @@ class JitSettings:
         self.port = "5555"
         self.nodes = 1
         self.max_time = 30
-        self.confirm = False
+        self.skip_confirm = False
 
 
         self.procs = os.cpu_count() or 128

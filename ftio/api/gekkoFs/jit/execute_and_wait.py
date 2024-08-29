@@ -10,7 +10,6 @@ from rich.status import Status
 from rich.markup import escape
 
 
-
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.setup_helper import jit_print, get_pid
 
@@ -94,7 +93,9 @@ def execute_block_and_log(call: str, log_file: str) -> float:
     return end - start
 
 
-def execute_background(call: str, log_file: str = "", log_err_file: str = ""):
+def execute_background(
+    call: str, log_file: str = "", log_err_file: str = "", dry_run=False
+):
     """executes a call in the background and sets up a log dir
 
     Args:
@@ -108,6 +109,9 @@ def execute_background(call: str, log_file: str = "", log_err_file: str = ""):
     jit_print(f"[cyan]>> Executing {call}")
     with open(log_file, "a") as file:
         file.write(f">> Executing {call}")
+
+    if dry_run:
+        call = ""
 
     if log_file and log_err_file:
         with open(log_file, "a") as log_out:
@@ -141,17 +145,16 @@ def execute_background_and_log(
     Returns:
         subprocess.Popen: process
     """
-    process = execute_background(call, log_file, err_file)
+    process = execute_background(call, log_file, err_file, settings.dry_run)
     get_pid(settings, name, process.pid)
     # demon is noisy
     monitor_log_file(log_file, name)
     return process
 
 
-
 def execute_background_and_log_in_process(
     call: str, log_file: str, name="", err_file: str = ""
-) :
+):
     """execute call in background and returns process. The output is displayed using a
     thread that reads the log file
 
@@ -176,6 +179,7 @@ def execute_background_and_log_in_process(
     else:
         pass
 
+
 def execute_block_and_wait_line(call: str, filename: str, target_line: str) -> None:
     """executes a call and wait for a line to appear
 
@@ -190,7 +194,7 @@ def execute_block_and_wait_line(call: str, filename: str, target_line: str) -> N
 
 
 def execute_background_and_wait_line(
-    call: str, filename: str, target_line: str
+    call: str, filename: str, target_line: str, dry_run: bool = False
 ) -> None:
     """executes a call and wait for a line to appear
 
@@ -200,16 +204,17 @@ def execute_background_and_wait_line(
         target_line (str): target line that need to appear in filename to
         stop the execution of this function
     """
-    process = execute_background(call, filename)
+    process = execute_background(call, filename, dry_run=dry_run)
     monitor_log_file(filename, "")
-    wait_for_line(filename, target_line)
-    stdout, stderr = process.communicate()
-    if process.returncode != 0:
-        console.print(f"[red]Error executing command:{call}")
-        console.print(f"[red] Error was:\n{stderr}")
-    else:
-        # console.print(stdout, style="bold green")
-        pass
+    if not dry_run:
+        wait_for_line(filename, target_line)
+        stdout, stderr = process.communicate()
+        if process.returncode != 0:
+            console.print(f"[red]Error executing command:{call}")
+            console.print(f"[red] Error was:\n{stderr}")
+        else:
+            # console.print(stdout, style="bold green")
+            pass
 
 
 def monitor_log_file(file: str, src: str = "") -> None:
@@ -224,12 +229,14 @@ def monitor_log_file(file: str, src: str = "") -> None:
     monitor_process = multiprocessing.Process(target=print_file, args=(file, src))
     monitor_process.daemon = True
     monitor_process.start()
-    
 
 
 def end_of_transfer(
     settings: JitSettings, log_file: str, call: str, monitored_files: list[str] = []
 ) -> None:
+    if settings.dry_run:
+        return
+
     online = False
     stuck = False
     hits = 0
@@ -338,8 +345,12 @@ def get_files(settings: JitSettings, verbose=True):
     if files:
         files = files.splitlines()
         files = [f for f in files if "LIBGKFS" not in f]
-        files = [file.replace(f"{settings.gkfs_mntdir}", "") for file in files if file.replace(f"{settings.gkfs_mntdir}", "")]
-    
+        files = [
+            file.replace(f"{settings.gkfs_mntdir}", "")
+            for file in files
+            if file.replace(f"{settings.gkfs_mntdir}", "")
+        ]
+
     monitored_files = files_filtered(files, settings.regex_match, verbose)
     if verbose:
         timestamp = get_time()
@@ -433,12 +444,15 @@ def print_file(file, src=""):
                     )
 
 
-def wait_for_file(filename: str, timeout: int = 180) -> None:
+def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
     """Waits for a file to be created
 
     Args:
         file (str): absolute file path
     """
+    if dry_run:
+        return
+
     start_time = time.time()
     with Status(
         f"[cyan]Waiting for {filename} to be created...\n", console=console
@@ -461,7 +475,7 @@ def wait_for_file(filename: str, timeout: int = 180) -> None:
 
 
 def wait_for_line(
-    filename: str, target_line: str, msg: str = "", timeout: int = 180
+    filename: str, target_line: str, msg: str = "", timeout: int = 180, dry_run=False
 ) -> None:
     """
     Waits for a specific line to appear in a log file
@@ -472,6 +486,8 @@ def wait_for_line(
         msg (str): Message to print
         timeout (int): maximal timeout
     """
+    if dry_run:
+        return
     start_time = time.time()
     if not msg:
         msg = "Waiting for line to appear..."
