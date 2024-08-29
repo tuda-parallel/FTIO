@@ -17,7 +17,7 @@ class JitSettings:
         #execute in node local
         self.node_local = True
         # dont run the experiments
-        self.dry_run = True
+        self.dry_run = False
 
         self.log_suffix = "DPCF"
         self.app_dir = ""
