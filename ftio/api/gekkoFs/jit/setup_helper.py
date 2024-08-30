@@ -850,7 +850,7 @@ def get_address_cargo(settings: JitSettings) -> None:
                 call, shell=True, capture_output=True, text=True, check=True
             )
             settings.address_cargo = result.stdout.strip()
-            settings.cargo_server = f"ofi+sockets://{settings.address_cargo}:62000"
+            settings.cargo_server = f"{settings.gkfs_demon_protocol}://{settings.address_cargo}:62000"
         except subprocess.CalledProcessError as e:
             jit_print(f"[bold red]>>Error occurred: {e}")
             settings.address_cargo = ""

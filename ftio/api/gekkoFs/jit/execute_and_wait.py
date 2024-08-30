@@ -383,7 +383,7 @@ def end_of_transfer_online(
             while len(monitored_files) > 0:
                 time.sleep(0.1)  # Short sleep interval to quickly catch new lines
                 # jit_print(f"[cyan]>> Files in mount dir {monitored_files}",True)
-                status.update(f"Waiting for {len(monitored_files)}")
+                status.update(f"Waiting for {len(monitored_files)} files")
                 
                 passed_time = int(time.time() - start_time)
                 time_since_last_cargo = int(time.time() - last_cargo_time)
@@ -417,14 +417,13 @@ def end_of_transfer_online(
                         jit_print(f"[cyan]>> Stucked increased to {stuck_time}\n")
                         jit_print(f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}")
                         hit = 0
-                        if stuck_time == 4:
-                            stuck_files = len(monitored_files)
-                        elif stuck_time == 8 and stuck_files == len(monitored_files):
+                        if stuck_time >= 8 and stuck_files == len(monitored_files):
                             jit_print(f">> Stopping stage out")
                             break
                     if "Transfer finished for []" in last_lines:
                         break
 
+                stuck_files = len(monitored_files)
                 monitored_files = get_files(settings, False)
             
             timestamp = get_time()

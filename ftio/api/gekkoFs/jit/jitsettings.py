@@ -12,11 +12,11 @@ class JitSettings:
 
         # flags
         self.set_tasks_affinity = True
-        self.gkfs_demon_protocol = "ofi+sockets"
+        self.gkfs_demon_protocol = "ofi+sockets" #"ofi+verbs"
         self.debug = True
         self.verbose = True
         # execute in node local
-        self.node_local = True
+        self.node_local = False
         # dont run the experiments
         self.dry_run = False
 
@@ -253,15 +253,14 @@ class JitSettings:
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
         self.gkfs_hostfile = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
-        self.gkfs_proxy = (
-            "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
-        )
+        self.gkfs_proxy = "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
+        
         self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
 
         # ****** cargo variables ******
         self.cargo = "/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
         self.cargo_cli = "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
-        self.cargo_server = "ofi+sockets://127.0.0.1:62000"
+        self.cargo_server = f"{self.gkfs_demon_protocol}://127.0.0.1:62000"
 
         # ? APP settings
         # ?##########################
@@ -270,11 +269,11 @@ class JitSettings:
         # self.app="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
         # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
         #  ├─ NEK5000
-        self.app_call = "./nek5000"
-        self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
+        # self.app_call = "./nek5000"
+        # self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
         #  └─ Wacom++
-        # self.app_call = "./wacommplusplus"
-        # self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
+        self.app_call = "./wacommplusplus"
+        self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
 
         # ****** pre and post app call ******
         # Application specific calls executed before the actual run. Executed as

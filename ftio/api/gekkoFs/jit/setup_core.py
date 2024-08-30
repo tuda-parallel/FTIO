@@ -58,6 +58,11 @@ def start_gekko_demon(settings: JitSettings) -> None:
                 f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap "
                 f"--oversubscribe --mem=0 mkdir -p {settings.gkfs_mntdir}"
                     )
+            call_1 =(
+                f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap "
+                f"--oversubscribe --mem=0 mkdir -p {settings.gkfs_rootdir}"
+                    )
             if settings.exclude_proxy:
                 # Demon call without proxy
                 # call = (
@@ -70,7 +75,7 @@ def start_gekko_demon(settings: JitSettings) -> None:
                     f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile} -c -l ib0 -P {settings.gkfs_demon_protocol}"
+                    f"-H {settings.gkfs_hostfile} -c --clean-rootdir -l ib0 -P {settings.gkfs_demon_protocol}"
                 )
             else:
                 # Demon call with proxy
@@ -82,20 +87,22 @@ def start_gekko_demon(settings: JitSettings) -> None:
                     f"srun {debug_flag} --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile} -c -l ib0 -P {settings.gkfs_demon_protocol} -p ofi+verbs -L ib0"
+                    f"-H {settings.gkfs_hostfile} -c --clean-rootdir -l ib0 -P {settings.gkfs_demon_protocol} -p ofi+verbs -L ib0"
                 )
 
         else:
             call_0 = f"mkdir -p {settings.gkfs_mntdir}"
+            call_1 = f"mkdir -p {settings.gkfs_rootdir}"
 
             # Gekko demon call
             call = (
                 f"GKFS_DAEMON_LOG_LEVEL=info GKFS_DAEMON_LOG_PATH={settings.gekko_demon_log} {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                f"-H {settings.gkfs_hostfile} -c -l lo -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp"
+                f"-H {settings.gkfs_hostfile} -c --clean-rootdir -l lo -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp"
             )
 
         out = execute_block(call_0)
-        jit_print(f"[cyan]>> Creating directory\n{out}[/]")
+        out = execute_block(call_1)
+        jit_print(f"[cyan]>> Creating directories\n{out}[/]")
 
         jit_print("[cyan]>> Starting Demons[/]")
 
