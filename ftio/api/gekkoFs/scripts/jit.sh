@@ -33,7 +33,8 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	
 	# 1.2 create folder for logs
 	log_dir
-	
+	update_settings
+
 	#1.3 get the address
 	get_address_ftio 
 	get_address_cargo
@@ -41,20 +42,20 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 
 	# 1.4
 	# print settings
-	print_settings | tee ${LOG_DIR}/settings.log 
+	print_settings 
 
 	
 	# 2. Start Gekko Server (Demon)
-	start_geko_demon | tee ${LOG_DIR}/geko_demon.log &
+	start_geko_demon |tee  ${GEKKO_DEMON_LOG} &
 	sleep $((${NODES}*1))
 	get_pid ${GKFS_DEMON} $!
-	start_geko_proxy | tee ${LOG_DIR}/geko_proxy.log&
+	start_geko_proxy &
 	sleep $((${NODES}*3))
 	get_pid ${GKFS_PROXY} $!
 	
 	# 3. Start Cargo Server
-	start_cargo | tee ${LOG_DIR}/cargo.log &
-	if [ "${EXCLUDE_ALL}" == false ]; then
+	start_cargo &
+	if [ "${EXCLUDE_CARGO}" == false ]; then
 		wait_msg "${LOG_DIR}/cargo.log" "Start up successful"
 	fi
 	sleep $((${NODES}*1))
@@ -65,9 +66,9 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 	# sleep $((${NODES}*5))
 
 	# 5. Start FTIO
-	start_ftio | tee ${LOG_DIR}/ftio.log &
+	start_ftio &
 	# TODO: this can lead to a deadlock if wait_msg is reached after start_ftio was completed
-	if [ "${EXCLUDE_ALL}" == false ]; then
+	if [ "${EXCLUDE_CARGO}" == false ]; then
 		wait_msg "${LOG_DIR}/cargo.log" "retval: CARGO_SUCCESS, status: {state: completed"
 	fi
 	sleep $((${NODES}*2))
@@ -75,7 +76,7 @@ if [ $? -eq 0 ]; then # Check return code of is_port_in_use function (0 for free
 
 	# 6. pre- and application with Gekko intercept
 	pre_call
-	start_application | tee ${LOG_DIR}/app.log 
+	start_application 
 	
 	# 7. stage out
 	stage_out | tee ${LOG_DIR}/stage_out.log 

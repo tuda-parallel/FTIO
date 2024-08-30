@@ -80,7 +80,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
                 "address=",
                 "port=",
                 "nodes=",
-                "procs=",
+                "total_procs=",
                 "procs_list=",
                 "omp_threads=",
                 "max-time=",
@@ -116,11 +116,11 @@ def parse_options(settings: JitSettings, args: list) -> None:
         elif opt in ("-i", "--install_location"):
             settings.install_location = arg
             install_all(settings)
-        elif opt in ("-p","--procs"):
+        elif opt in ("-c","--total_procs"):
             settings.procs = int(arg)
         elif opt in ("-o","--omp_threads"):
             settings.omp_threads = int(arg)
-        elif opt in("-c", "--procs_list"):
+        elif opt in("-p", "--procs_list"):
             # Split the argument by comma to get the list of numbers
             procs_list = arg.split(",")
             try:
@@ -148,37 +148,29 @@ def parse_options(settings: JitSettings, args: list) -> None:
             jit_print("[bold yellow]>> Excluding: [/]")
             if not arg or arg.startswith("-"):
                 settings.exclude_ftio = True
-                settings.log_suffix =  settings.log_suffix.replace("F","")
                 console.print("[yellow]- ftio[/]")
             else:
                 excludes = arg.split(",")
                 for exclude in excludes:
                     if exclude.lower() == "ftio":
                         settings.exclude_ftio = True
-                        settings.log_suffix =  settings.log_suffix.replace("F","")
                         console.print("[yellow]- ftio[/]")
                     elif exclude.lower() == "cargo":
                         settings.exclude_cargo = True
-                        settings.log_suffix =  settings.log_suffix.replace("C","")
                         console.print("[yellow]- cargo[/]")
                     elif exclude.lower() in ("gkfs", "demon", "proxy"):
                         if exclude.lower() == "gkfs":
                             settings.exclude_demon = True
                             settings.exclude_proxy = True
-                            settings.log_suffix =  settings.log_suffix.replace("D","")
-                            settings.log_suffix =  settings.log_suffix.replace("P","")
                             console.print("[yellow]- gkfs[/]")
                         elif exclude.lower() == "demon":
                             settings.exclude_demon = True
-                            settings.log_suffix =  settings.log_suffix.replace("D","")
                             console.print("[yellow]- demon[/]")
                         elif exclude.lower() == "proxy":
                             settings.exclude_proxy = True
-                            settings.log_suffix =  settings.log_suffix.replace("P","")
                             console.print("[yellow]- proxy[/]")
                     elif exclude.lower() == "all":
                         settings.exclude_all = True
-                        settings.log_suffix = ""
                         console.print("[yellow]- all[/]")
                     else:
                         jit_print(
@@ -187,7 +179,6 @@ def parse_options(settings: JitSettings, args: list) -> None:
                         sys.exit(1)
         elif opt in ("-x", "--exclude-all"):
             settings.exclude_all = True
-            settings.log_suffix = ""
         elif opt in ("-d", "--dry_run"):
             settings.dry_run = True
         elif opt in ("-v", "--verbose"):
@@ -228,11 +219,11 @@ def error_usage(settings: JitSettings):
         executed on a single node, while the rest (including the
         application) get X-1 nodes.
 
-    -p | --procs: X <int>
+    -c | --total_procs: X <int>
         default: [bold yellow]{settings.procs}[/]
         if procs_list is skipped, this is the default number of procs assigned to all
         
-    -c | --procs_list: x,x,..,x <list>
+    -p | --procs_list: x,x,..,x <list>
         default: [bold yellow]{settings.procs_app},{settings.procs_demon},{settings.procs_proxy},{settings.procs_cargo},{settings.procs_ftio}[/]
         List of task per node/cpu per proc for app, demon, proxy, cargo, and ftio, respectively.
         Assignment is from right to left depending on the length of the list.
@@ -599,15 +590,14 @@ def allocate(settings: JitSettings) -> None:
             jit_print("[green] ####### Allocating resources[/]")
 
             call = f"salloc -N {settings.nodes} -t {settings.max_time} {settings.alloc_call_flags}"
-            console.print(f"[bold green]JIT [cyan] >> Executing: {call} [/]")
-
+            jit_print(f"[cyan] >> Executing: {call} [/]")
             # Execute the salloc command
             subprocess.run(call, shell=True, check=True)
 
             # Get JIT_ID
             try:
                 result = subprocess.run(
-                    "squeue -o '%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R' | grep ' JIT ' | sort -k1,1rn | head -n 1 | awk '{print $1}'",
+                    f"squeue -o '%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R' | grep '{settings.job_name}' | sort -k1,1rn | head -n 1 | awk '{{print $1}}'",
                     shell=True,
                     capture_output=True,
                     text=True,
@@ -691,9 +681,10 @@ def allocate(settings: JitSettings) -> None:
                 jit_print(
                     f"[cyan]>> content of {settings.app_dir}/hostfile_mpi: \n{hostfile_content} [/]"
                 )
+            settings.update_geko_files()
         else:
             jit_print(
-                "[bold red]>> JIT_ID could not be retrieved[/]"
+                "[bold red]>> JOB ID could not be retrieved[/]"
             )
 
 
@@ -725,15 +716,16 @@ def get_pid(settings: JitSettings, name: str, pid: int):
         console.print(f"[green ]JIT >> Ftio startup successful. PID is {pid}[/]")
 
 
-# Function to handle SIGINT (Ctrl+C)
 def handle_sigint(settings: JitSettings):
     jit_print("[bold blue]>> Keyboard interrupt detected. Exiting script.[/]")
     soft_kill(settings)
     hard_kill(settings)
-    if settings.cluster:
-        _ = subprocess.run(f"scancel {settings.job_id}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
-        )
+    # if settings.cluster:
+    #     _ = subprocess.run(f"scancel {settings.job_id}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash")
+    jit_print("[bold red]>> Hard kill executed.[/]")
+
     sys.exit(0)
+
 
 
 def soft_kill(settings: JitSettings) -> None:
@@ -1087,14 +1079,33 @@ def check(settings: JitSettings):
         return
 
     try:
+        additional_arguments = load_flags(settings)
+        call = f"{additional_arguments} ls -lahrt {settings.gkfs_mntdir}"
+        
         files = subprocess.check_output(
-            f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} ls {settings.gkfs_mntdir}",
+            f"{call}",
             shell=True,
             text=True,
         )
-        jit_print(f"[cyan]>> geko_ls {settings.gkfs_mntdir}: [/]\n{files}")
+        jit_print(f"[cyan]>> {call}: [/]\n{files}")
     except subprocess.CalledProcessError as e:
         jit_print(f"[red]>> Failed to list files in {settings.gkfs_mntdir}: {e}[/]")
+
+
+def load_flags(settings:JitSettings) -> str:
+    additional_arguments = ""
+    if not settings.exclude_ftio:
+        additional_arguments += f" LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port}  LIBGKFS_ENABLE_METRICS=on "
+    if not settings.exclude_proxy:
+            additional_arguments += f" LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+    if not settings.exclude_demon:
+        additional_arguments += (
+            f" LIBGKFS_LOG=info,warnings,errors "
+            f" LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
+            f" LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+            f" LD_PRELOAD={settings.gkfs_intercept} "
+            )
+    return additional_arguments
 
 
 def update_hostfile_mpi(settings:JitSettings):

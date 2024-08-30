@@ -11,18 +11,21 @@ from rich.markup import escape
 
 
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
-from ftio.api.gekkoFs.jit.setup_helper import jit_print, get_pid
+from ftio.api.gekkoFs.jit.setup_helper import check, jit_print, get_pid, load_flags
 
 console = Console()
 
 
-def execute_block(call: str, raise_exception: bool = True) -> str:
+def execute_block(call: str, raise_exception: bool = True, dry_run=False) -> str:
     """Executes a call and blocks till it is finished
 
     Args:
         call (str): bash call to execute
     """
     jit_print(f">> Executing {call}")
+    if dry_run:
+        print(call)
+        return ""
     out = ""
     try:
         # process = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -111,8 +114,17 @@ def execute_background(
         file.write(f">> Executing {call}")
 
     if dry_run:
+        print(call)
         call = ""
 
+    # if log_file and log_err_file:
+    #     call = f"{call} >> {log_file} 2>> {log_err_file}"
+    # elif log_file:
+    #     call = f"{call} >> {log_file}"
+    # else:
+    #     pass
+    # print(call)
+    # process = subprocess.Popen(call, shell=True, preexec_fn=os.setpgrp,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if log_file and log_err_file:
         with open(log_file, "a") as log_out:
             with open(log_err_file, "w") as log_err:
@@ -153,7 +165,7 @@ def execute_background_and_log(
 
 
 def execute_background_and_log_in_process(
-    call: str, log_file: str, name="", err_file: str = ""
+    call: str, log_file: str, name="", err_file: str = "", dry_run=False
 ):
     """execute call in background and returns process. The output is displayed using a
     thread that reads the log file
@@ -168,10 +180,14 @@ def execute_background_and_log_in_process(
     Returns:
         subprocess.Popen: process
     """
-    process = execute_background(call, log_file, err_file)
+    if dry_run:
+        print(call)
+        call = ""
+
+    process = execute_background(call, log_file, err_file, dry_run)
     # get_pid(settings, name, process.pid)
     # demon is noisy
-    monitor_log_file(log_file, name)
+    monitor_log_file(log_file, src=name)
     _, stderr = process.communicate()
     if process.returncode != 0:
         console.print(f"[red]Error executing command:{call}")
@@ -259,7 +275,6 @@ def end_of_transfer(
             file.seek(0, 2)
             last_pos = file.tell()
             buffer = ""
-
             with Status(
                 f"[cyan]Waiting for end of transfer...monitoring {n} files",
                 console=console,
@@ -290,6 +305,7 @@ def end_of_transfer(
                         else:
                             buffer = ""
 
+                        check(settings)
                         # Process each line
                         for line in lines:
                             content = line.strip()
@@ -300,13 +316,13 @@ def end_of_transfer(
                                     if name in content:
                                         monitored_files.remove(name)
                                         jit_print(
-                                            "[cyan]>> finished moving '{name}'. Remaining files ({len(monitored_files)})"
+                                            f"[cyan]>> finished moving '{name}'. Remaining files ({len(monitored_files)})",True
                                         )
                                         console.print(
                                             f"Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}"
                                         )
                                         jit_print(
-                                            "[cyan]>> Files in mount dir {monitored_files}"
+                                            f"[cyan]>> Files in mount dir {monitored_files}",True
                                         )
                                         status.update(
                                             f"Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}"
@@ -339,24 +355,107 @@ def end_of_transfer(
                 )
 
 
-def get_files(settings: JitSettings, verbose=True):
-    command_ls = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} find {settings.gkfs_mntdir}"
-    files = subprocess.check_output(command_ls, shell=True).decode()
-    if files:
-        files = files.splitlines()
-        files = [f for f in files if "LIBGKFS" not in f]
-        files = [
-            file.replace(f"{settings.gkfs_mntdir}", "")
-            for file in files
-            if file.replace(f"{settings.gkfs_mntdir}", "")
-        ]
+def end_of_transfer_online(
+    settings: JitSettings, log_file: str, call: str, timeout = 180
+) -> None:
+    if settings.dry_run:
+        return
+    
+    copy = True #copy if cargo get's stuck
+    monitored_files = get_files(settings, True)
+    stuck_time = 1
+    last_lines = read_last_n_lines(log_file)
+    n = len(monitored_files)
+    if "Transfer finished for []" in last_lines:
+        # Nothing to move
+        return
+    elif n == 0:
+        return
+    else:
+        with Status(
+            f"[cyan]Waiting for end of transfer...monitoring {n} files",
+            console=console,
+        ) as status:
+            start_time = time.time()
+            last_cargo_time = start_time
+            hit = 0
+            while len(monitored_files) > 0:
+                time.sleep(0.1)  # Short sleep interval to quickly catch new lines
+                # jit_print(f"[cyan]>> Files in mount dir {monitored_files}",True)
+                status.update(f"Waiting for {len(monitored_files)}")
+                
+                passed_time = int(time.time() - start_time)
+                time_since_last_cargo = int(time.time() - last_cargo_time)
 
-    monitored_files = files_filtered(files, settings.regex_match, verbose)
-    if verbose:
-        timestamp = get_time()
-        jit_print(f"[cyan]>> Files that need to be stage out: [{timestamp}]")
-        for f in monitored_files:
-            console.print(f"[cyan]{f}[/]")
+                if passed_time >= timeout:
+                    status.update("Timeout reached")
+                    jit_print("[bold red]>> Timeout reached[/]")
+                    return
+
+                if time_since_last_cargo >= stuck_time:
+                    jit_print(f"[cyan]>> Stucked for {stuck_time} sec. Triggering cargo again\n")
+                    # if stuck_time == 4:
+                    #     additional_arguments = load_flags(settings)
+                    #     mv_call = f"{additional_arguments} mv  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
+                    #     execute_block(mv_call)
+                    # else:
+                    _ = execute_background(
+                        call, settings.cargo_log, settings.cargo_err
+                        )   
+                    last_cargo_time = time.time()
+                    hit += 1
+                    if hit == 3:
+                        if copy:
+                            try:
+                                status.update(f"Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}")
+                                jit_print("[cyan]>> Triggering old school copy\n")
+                                status.update("Copying ... ")
+                                additional_arguments = load_flags(settings)
+                                call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
+                                _ = execute_block(call, dry_run=settings.dry_run)
+                                break
+                            except Exception as e:
+                                jit_print("[yellow]>> copy failed\n")
+                        stuck_time = stuck_time*2
+                        jit_print(f"[cyan]>> Stucked increased to {stuck_time}\n")
+                        hit = 0
+                    if "Transfer finished for []" in last_lines:
+                        break
+
+                monitored_files = get_files(settings, False)
+            
+            timestamp = get_time()
+            status.update(
+                f"\n[bold green]JIT [cyan]>> finished moving all files at  [{timestamp}]"
+            )
+            jit_print(
+                f"\n[cyan]>> finished moving all files at [{timestamp}]", True
+            )
+
+def get_files(settings: JitSettings, verbose=True):
+    monitored_files = []
+    files = ""
+    try:
+        additional_arguments = load_flags(settings)
+        command_ls = f"{additional_arguments} find {settings.gkfs_mntdir}"
+        files = subprocess.check_output(command_ls, shell=True).decode()
+        if files:
+            files = files.splitlines()
+            files = [f for f in files if "LIBGKFS" not in f]
+            files = [
+                file.replace(f"{settings.gkfs_mntdir}", "")
+                for file in files
+                if file.replace(f"{settings.gkfs_mntdir}", "")
+            ]
+
+        monitored_files = files_filtered(files, settings.regex_match, verbose)
+        if verbose:
+            timestamp = get_time()
+            jit_print(f"[cyan]>> Files that need to be stage out: [{timestamp}]")
+            for f in monitored_files:
+                console.print(f"[cyan]{f}[/]")
+    except Exception as e:
+        jit_print(f"[red] >> Error running test script:\n{e}")
 
     return monitored_files
 
@@ -407,6 +506,13 @@ def print_file(file, src=""):
 
         if color:
             close = "[/]"
+    
+    while not os.path.exists(file):
+        if "error" in src.lower():
+            time.sleep(0.1)
+        else:
+            with console.status(f"[bold green]Waiting for {file} to appear ...") as status:
+                time.sleep(0.1)
 
     with open(file, "r") as file:
         # Go to the end of the file
@@ -467,7 +573,7 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
             status.update(
                 f"[cyan]Waiting for {filename} to be created... ({passed_time}/{timeout}) s"
             )
-            time.sleep(1)  # Wait for 1 second before checking again
+            time.sleep(0.1)  # Wait for 1 second before checking again
 
         # When the file is created, update the status
         status.update(f"{filename} has been created.")
@@ -491,6 +597,10 @@ def wait_for_line(
     start_time = time.time()
     if not msg:
         msg = "Waiting for line to appear..."
+
+    while not os.path.exists(filename):
+        with console.status(f"[bold green]Waiting for {filename} to appear ...") as status:
+            time.sleep(0.1)
 
     with open(filename, "r") as file:
         # Move to the end of the file to start monitoring

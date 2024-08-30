@@ -11,12 +11,15 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     create_hostfile,
     elapsed_time,
     jit_print,
+    load_flags,
     relevant_files,
     reset_relevant_files,
     shut_down,
 )
 from ftio.api.gekkoFs.jit.execute_and_wait import (
     end_of_transfer,
+    end_of_transfer_online,
+    execute_background_and_log_in_process,
     # execute_background_and_log_in_process,
     execute_block,
     execute_block_and_log,
@@ -94,7 +97,12 @@ def start_gekko_demon(settings: JitSettings) -> None:
         jit_print(f"[cyan]>> Creating directory\n{out}[/]")
 
         jit_print("[cyan]>> Starting Demons[/]")
-        
+
+        # p = multiprocessing.Process(target=execute_background, args= (call, settings.gekko_demon_log, settings.gekko_demon_err, settings.dry_run))
+        # p.start()
+        # if settings.verbose:
+        #     monitor_log_file(settings.gekko_demon_err,"Error Demon")
+        #     monitor_log_file(settings.gekko_demon_log,"Demon")
         process = execute_background_and_log(settings, call, settings.gekko_demon_log, "demon",settings.gekko_demon_err)
         if settings.verbose:
             monitor_log_file(settings.gekko_demon_err,"Error Demon")
@@ -128,6 +136,12 @@ def start_gekko_proxy(settings: JitSettings) -> None:
             )
         jit_print("[cyan]>> Starting Proxy[/]")
 
+        # p = multiprocessing.Process(target=execute_background, args= (call, settings.gekko_proxy_log, settings.gekko_proxy_err, settings.dry_run))
+        # p.start()
+        # if settings.verbose:
+        #     monitor_log_file(settings.gekko_proxy_log,"Proxy")
+        #     monitor_log_file(settings.gekko_proxy_err,"Error Proxy")
+        
         process = execute_background_and_log(settings, call, settings.gekko_proxy_log, "proxy", settings.gekko_proxy_err)
         if settings.verbose:
             monitor_log_file(settings.gekko_proxy_err,"Error Proxy")
@@ -155,10 +169,13 @@ def start_cargo(settings: JitSettings) -> None:
             # )
             # The above call just gives more resources to the same proc, but not more. Cargo need at least two
             call = (
-                f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LIBGKFS_LOG_OUTPUT={settings.gekko_client_log},LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
+                f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LIBGKFS_LOG_OUTPUT={settings.gekko_client_log}_cargo,LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
                 f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} --jobid={settings.job_id} "
-                f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                f"--ntasks={settings.app_nodes*settings.procs_cargo} --cpus-per-task={settings.procs_cargo} --ntasks-per-node={settings.procs_cargo} "
+                f"{settings.app_nodes_command} --disable-status "
+                # f"-N {settings.app_nodes} --ntasks={settings.app_nodes} "
+                # f"--cpus-per-task={settings.procs_cargo} --ntasks-per-node=1 "
+                f"-N {settings.app_nodes} --ntasks={settings.app_nodes*settings.procs_cargo} "
+                f"--cpus-per-task={settings.procs_cargo} --ntasks-per-node={settings.procs_cargo} "
                 f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
                 f"--listen ofi+sockets://ib0:62000 -b 65536"
             )
@@ -172,10 +189,15 @@ def start_cargo(settings: JitSettings) -> None:
 
         jit_print("[cyan]>> Starting Cargo[/]")
 
+        # p_cargo = multiprocessing.Process(target=execute_background,args=(call, settings.cargo_log, settings.cargo_err, settings.dry_run))
+        # p_cargo.start()
+        # if settings.verbose:
+        #     monitor_log_file(settings.cargo_log,"Cargo")
+        #     monitor_log_file(settings.cargo_err,"Error Cargo")
+        
         process = execute_background_and_log(settings, call, settings.cargo_log, "cargo", settings.cargo_err)
         if settings.verbose:
             monitor_log_file(settings.cargo_err,"Error Cargo")
-        
         # wait for line to appear
         time.sleep(1)
         wait_for_line(settings.cargo_log, "Start up successful",dry_run = settings.dry_run)
@@ -189,7 +211,7 @@ def start_ftio(settings: JitSettings) -> None:
 
         relevant_files(settings)
 
-        if not settings.exclude_cargo and settings.cluster:
+        if settings.cluster and not  settings.exclude_cargo:
             console.print(
                 "[bold yellow]Executing the calls below used later for staging out[/]"
             )
@@ -242,9 +264,16 @@ def start_ftio(settings: JitSettings) -> None:
         process = execute_background_and_log(settings, call, settings.ftio_log, "ftio", settings.ftio_err)
         if settings.verbose:
             monitor_log_file(settings.ftio_err,"Error Ftio")
+
+        # p_ftio = multiprocessing.Process(target=execute_background,args=(call, settings.ftio_log, settings.ftio_err, settings.dry_run))
+        # p_ftio.start()
+        
+        # if settings.verbose:
+        #     monitor_log_file(settings.ftio_log,"Ftio")
+        #     monitor_log_file(settings.ftio_err,"Error Ftio")
         
         wait_for_line(settings.ftio_log, "FTIO is running on:", "Waiting for FTIO startup",dry_run=settings.dry_run)
-        time.sleep(5)
+        time.sleep(8)
         console.print("\n")
 
 #! Stage in
@@ -254,23 +283,28 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
         console.print(f"[bold yellow]####### Skipping Stage in [/][black][{get_time()}][/]")
     else:
         console.print(f"[bold green]####### Staging in [/][black][{get_time()}][/]")
-
-        if settings.cluster:
-            call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
+        if settings.exclude_cargo:
+            call = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}"
+            start = time.time()
+            _ = execute_block(call,dry_run=settings.dry_run)
+            elapsed_time(settings, runtime, "Stage in", time.time() - start)
         else:
-            call = f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
+            if settings.cluster:
+                call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
+            else:
+                call = f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
 
-        start = time.time()
+            start = time.time()
 
-        execute_background_and_wait_line(
-            call,
-            settings.cargo_log,
-            "retval: CARGO_SUCCESS, status: {state: completed",
-            settings.dry_run
-        )
-        # process = execute_background(call, cargo_log)
-        # wait_for_line(cargo_log, "Start up successful")
-        
+            execute_background_and_wait_line(
+                call,
+                settings.cargo_log,
+                "retval: CARGO_SUCCESS, status: {state: completed",
+                settings.dry_run
+            )
+            # process = execute_background(call, cargo_log)
+            # wait_for_line(cargo_log, "Start up successful")
+            
         elapsed_time(settings, runtime, "Stage in", time.time() - start)
         check(settings)
 
@@ -281,42 +315,50 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
     if settings.exclude_all:
         console.print(f"[bold yellow]####### Skipping  Stage out [/][black][{get_time()}][/]")
     else:
-        console.print(f"[bold green]####### Staging out [/][black][{get_time()}][/]")
-        reset_relevant_files(settings)       
-        # time.sleep(8)
-
-        if not settings.dry_run:
-            try:
-                command_ls = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} ls -R {settings.gkfs_mntdir}"
-                files = subprocess.check_output(command_ls, shell=True).decode()
-                console.print(f"[cyan]>> gekko_ls {settings.gkfs_mntdir}: \n{files}[/]")
-            except Exception as e:
-                    jit_print(f"[red] >> Error during test:\n{e}")
-
-        # Reset relevant files
-        if settings.cluster:
-            call = (f"srun --jobid={settings.job_id} {settings.single_node_command} "
-                    f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
-                    f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/cargo_ftio "
-                    f"--server {settings.cargo_server} --run")
+        if settings.exclude_cargo:
+            additional_arguments = load_flags(settings)
+            call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
+            start = time.time()
+            _ = execute_block(call, dry_run=settings.dry_run)
+            elapsed_time(settings, runtime, "Stage in", time.time() - start)
         else:
-            call = (f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/cargo_ftio "
-                    f"--server {settings.cargo_server} --run")
+            console.print(f"[bold green]####### Staging out [/][black][{get_time()}][/]")
+            reset_relevant_files(settings)       
+            # time.sleep(8)
 
-        
-        # Measure and print elapsed time
-        start = time.time()
-        execute_background_and_wait_line(
-            call,
-            settings.cargo_log,
-            "[info] Transfer finished for [",
-            settings.dry_run
-        )
-        end_of_transfer(settings, settings.cargo_log,call)
-        elapsed_time(settings, runtime, "Stage out", time.time() - start)
-        # Set ignored files to default again
-        relevant_files(settings)
-        # time.sleep(5)
+            if not settings.dry_run:
+                try:
+                    command_ls = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} ls -R {settings.gkfs_mntdir}"
+                    files = subprocess.check_output(command_ls, shell=True).decode()
+                    console.print(f"[cyan]>> gekko_ls {settings.gkfs_mntdir}: \n{files}[/]")
+                except Exception as e:
+                        jit_print(f"[red] >> Error during test:\n{e}")
+
+            # Reset relevant files
+            if settings.cluster:
+                call = (f"srun --jobid={settings.job_id} {settings.single_node_command} "
+                        f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
+                        f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/cargo_ftio "
+                        f"--server {settings.cargo_server} --run")
+            else:
+                call = (f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/cargo_ftio "
+                        f"--server {settings.cargo_server} --run")
+
+            
+            # Measure and print elapsed time
+            start = time.time()
+            execute_background_and_wait_line(
+                call,
+                settings.cargo_log,
+                "[info] Transfer finished for [",
+                settings.dry_run
+            )
+            # end_of_transfer(settings, settings.cargo_log,call)
+            end_of_transfer_online(settings, settings.cargo_log,call)
+            elapsed_time(settings, runtime, "Stage out", time.time() - start)
+            # Set ignored files to default again
+            relevant_files(settings)
+            time.sleep(5)
 
 
 #! App call
@@ -340,36 +382,57 @@ def start_application(settings: JitSettings, runtime: JitTime):
 		#? [--stag in--]   [so]  [so] ... [so]
 		#?              [---APP---]
 
-        if settings.exclude_all:
-            call = (
+
+        additional_arguments = ""
+        if not settings.exclude_ftio:
+            additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
+        if not settings.exclude_proxy:
+            additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+        if not settings.exclude_demon:
+            additional_arguments += (
+                    f"-x LIBGKFS_LOG=info,warnings,errors "
+                    f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
+                    f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                    f"-x LD_PRELOAD={settings.gkfs_intercept} "
+                    )
+
+        call = (
                 f" mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
                 f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
+                f"{additional_arguments} "
                 f"{settings.task_set_1} {settings.app_call}"
             )
-        elif settings.exclude_ftio:
-            call = (
-                f" mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
-                f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
-                f"-x LIBGKFS_LOG=info,warnings,errors "
-                f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-                f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
-                f"-x LD_PRELOAD={settings.gkfs_intercept} "
-                f"{settings.task_set_1} {settings.app_call}"
-            )
-        else:
-            call = (
-                f" mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
-                f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
-                f"-x LIBGKFS_LOG=info,warnings,errors "
-                f"-x LIBGKFS_ENABLE_METRICS=on "
-                f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
-                f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-                f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
-                f"-x LD_PRELOAD={settings.gkfs_intercept} "
-                f"{settings.task_set_1} {settings.app_call}"
-            )
+
+        # if settings.exclude_all:
+        #     call = (
+        #         f" mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+        #         f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
+        #         f"{settings.task_set_1} {settings.app_call}"
+        #     )
+        # elif settings.exclude_ftio:
+        #     call = (
+        #         f" mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+        #         f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
+        #         f"-x LIBGKFS_LOG=info,warnings,errors "
+        #         f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+        #         f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+        #         f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
+        #         f"-x LD_PRELOAD={settings.gkfs_intercept} "
+        #         f"{settings.task_set_1} {settings.app_call}"
+        #     )
+        # else:
+        #     call = (
+        #         f" mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+        #         f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
+        #         f"-x LIBGKFS_LOG=info,warnings,errors "
+        #         f"-x LIBGKFS_ENABLE_METRICS=on "
+        #         f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
+        #         f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+        #         f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+        #         f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
+        #         f"-x LD_PRELOAD={settings.gkfs_intercept} "
+        #         f"{settings.task_set_1} {settings.app_call}"
+        #     )
             # s_call =(
             #     f" srun "
             #     f"--export="
@@ -408,17 +471,18 @@ def start_application(settings: JitSettings, runtime: JitTime):
             )
 
     # elapsed = execute_block_and_log(call, settings.app_log_dir)   
+    check(settings)
     start = time.time()
-
-    process = execute_background(call, settings.app_log, settings.app_err, settings.dry_run)
-    # p_app = multiprocessing.Process(target=execute_background_and_log_in_process,args=(call, settings.app_log, settings.app_err))
+    # p_app = multiprocessing.Process(target=execute_background_and_log_in_process, args=(call, settings.app_log,"", settings.app_err, settings.dry_run))
     # p_app.start()
+    # p_app.join()
+    
+    process = execute_background(call, settings.app_log, settings.app_err, settings.dry_run)
     if settings.verbose:
         monitor_log_file(settings.app_log,"")
         monitor_log_file(settings.app_err,"error")
-
-    # p_app.join()
     _, stderr = process.communicate()
+
     elapsed_time(settings, runtime, "App", time.time() - start)
 
     if process.returncode != 0:

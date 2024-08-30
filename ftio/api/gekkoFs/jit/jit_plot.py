@@ -84,8 +84,11 @@ def extract_and_plot(results,json_file_path:str, title:str):
     with open(json_file_path, "r") as json_file:
             data = json.load(json_file)
 
+    data = sorted(data, key=lambda x: x['nodes'])
     for d in data:
         results.add_dict(d)
+
+
 
     results.plot(title)
 
@@ -126,15 +129,15 @@ class JitResult:
         tmp_stage_in  = [0.0,0.0,0.0]
 
         for i in data_list["data"]:
-            if "DPCF" in i["mode"]:
+            if i["mode"] in {"DPCF","DCF"}:
                 index = 0
-            elif "DPC" in i["mode"]:
+            elif i["mode"] in {"DC","DPC"}:
                 index = 1
             else:
                 index = 2
             tmp_app[index] = i["app"]
-            tmp_stage_out[index] = i["stage_in"]
-            tmp_stage_in[index] = i["stage_out"]
+            tmp_stage_out[index] = i["stage_out"]
+            tmp_stage_in[index] = i["stage_in"]
                 
         self.add_experiment(tmp_app,tmp_stage_out,tmp_stage_in,f"# {data_list["nodes"]}")
         

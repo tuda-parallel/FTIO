@@ -44,23 +44,16 @@ def check_setup(settings:JitSettings):
 
             additional_arguments = ""
             if not settings.exclude_ftio:
-                additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
+                additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
             if not settings.exclude_proxy:
                 additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-
-            # call = (
-            #     f"mpiexec -np 1 --oversubscribe "
-            #     f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node -x LIBGKFS_LOG=errors "
-            #     f"-x LIBGKFS_ENABLE_METRICS=on  "
-            #     f"-x LD_PRELOAD={settings.gkfs_intercept} "
-            #     f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-            #     f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-            #     f"{additional_arguments} "
-            #     f" ls {settings.gkfs_mntdir} "
-            # )
-            # jit_print("[cyan] >> Checking mpiexec with Gekko")
-            # out = execute_block(call, False)
-            # console.print(f"{out}")
+            if not settings.exclude_demon:
+                additional_arguments += (
+                    f"-x LIBGKFS_LOG=info,warnings,errors "
+                    f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
+                    f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                    f"-x LD_PRELOAD={settings.gkfs_intercept} "
+                    )
 
 
             #test script
@@ -69,12 +62,10 @@ def check_setup(settings:JitSettings):
                 timestamp = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
                 file = create_test_file("test.sh"+timestamp, settings)
                 call = (
-                        f"mpiexec -np {settings.app_nodes} --oversubscribe "
-                        f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node -x LIBGKFS_LOG=info,warnings,errors "
-                        f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
-                        f"-x LD_PRELOAD={settings.gkfs_intercept} "
-                        f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                        f" mpiexec -np {settings.app_nodes} --oversubscribe "
+                        f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
                         f"{additional_arguments} "
+                        
                         f"{file}"
                     )
                 out = execute_block(call, False)

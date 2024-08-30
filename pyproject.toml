@@ -13,7 +13,7 @@ name = "ftio-hpc"
 dynamic = ["version"]
 dependencies = [
 	"scikit-learn",
-	"zmq",
+	"pyzmq",
 	"numba",
 	"darshan",
 	"fastdtw",

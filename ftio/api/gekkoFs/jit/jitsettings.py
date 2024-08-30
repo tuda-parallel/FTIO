@@ -14,7 +14,7 @@ class JitSettings:
         self.set_tasks_affinity = True
         self.debug = True
         self.verbose = True
-        #execute in node local
+        # execute in node local
         self.node_local = True
         # dont run the experiments
         self.dry_run = False
@@ -52,7 +52,7 @@ class JitSettings:
         self.exclude_ftio = False
         self.exclude_cargo = False
         self.exclude_demon = False
-        self.exclude_proxy = False
+        self.exclude_proxy = True
         self.exclude_all = False
 
         # pid of processes
@@ -71,9 +71,8 @@ class JitSettings:
         self.max_time = 30
         self.skip_confirm = False
 
-
         self.procs = os.cpu_count() or 128
-        self.omp_threads = 64
+        self.omp_threads = 1
         self.task_set_0 = ""
         self.task_set_1 = ""
         self.procs_demon = 0
@@ -105,6 +104,15 @@ class JitSettings:
         self.set_flags()
         self.set_variables()
         self.set_absolute_path()
+        self.update_settings()
+
+    def update_settings(self):
+        if self.dry_run:
+            new_name = "Dry_" + self.job_name
+            self.alloc_call_flags = self.alloc_call_flags.replace(
+                self.job_name, new_name
+            )
+            self.job_name = new_name
 
     def set_absolute_path(self) -> None:
         self.app_dir = os.path.expanduser(self.app_dir)
@@ -113,11 +121,11 @@ class JitSettings:
     def set_default_procs(self) -> None:
         # default values for the procs in proc_list is not passed
         if self.cluster:
-            self.procs_proxy = int(np.floor(self.procs/2))
-            self.procs_demon = int(np.floor(self.procs/2))
+            self.procs_proxy = int(np.floor(self.procs / 2))
+            self.procs_demon = int(np.floor(self.procs / 2))
             self.procs_cargo = 2
             self.procs_ftio = self.procs
-            self.procs_app = int(np.floor(self.procs/2))
+            self.procs_app = int(np.floor(self.procs / 2))
         else:
             self.procs = 10
             self.procs_demon = 1
@@ -125,19 +133,37 @@ class JitSettings:
             self.procs_cargo = 2
             self.procs_ftio = 1
             self.procs_app = self.procs
-            
-        
-        
+
+    def update_geko_files(self):
+        if not self.exclude_demon:
+            self.gkfs_hostfile = self.gkfs_hostfile.replace(
+                ".txt", f"_{self.job_id}.txt"
+            )
+        if not self.exclude_proxy:
+            self.gkfs_proxyfile = self.gkfs_proxyfile.replace(
+                ".pid", f"_{self.job_id}.pid"
+            )
 
     def set_flags(self) -> None:
         """sets the flags in case exclude all is specified
         in the options passed
         """
+
+        if (
+            self.exclude_ftio
+            and self.exclude_cargo
+            and self.exclude_demon
+            and self.exclude_proxy
+        ):
+            self.exclude_all = True
+            
+
         if self.exclude_all:
             self.exclude_ftio = True
             self.exclude_cargo = True
             self.exclude_demon = True
             self.exclude_proxy = True
+            
 
         if not self.cluster:
             if self.nodes > 1:
@@ -146,16 +172,19 @@ class JitSettings:
                 console.print(
                     f"[bold green]JIT [bold cyan]>> correcting nodes to {self.nodes} and processes to {self.procs} [/]"
                 )
-
-        if self.exclude_ftio:
-            self.procs_ftio = 0
-        if self.exclude_cargo:
-            self.procs_cargo = 0
+        self.log_suffix = "DPCF"
         if self.exclude_demon:
             self.procs_demon = 0
+            self.log_suffix =  self.log_suffix.replace("D","")
         if self.exclude_proxy:
             self.procs_proxy = 0
-
+            self.log_suffix =  self.log_suffix.replace("P","")
+        if self.exclude_cargo:
+            self.procs_cargo = 0
+            self.log_suffix =  self.log_suffix.replace("C","")
+        if self.exclude_ftio:
+            self.procs_ftio = 0
+            self.log_suffix =  self.log_suffix.replace("F","")
 
         if self.set_tasks_affinity:
             self.task_set_0 = f"taskset -c 0-{np.floor(self.procs/2)-1:.0f}"
@@ -207,31 +236,34 @@ class JitSettings:
 
         # ****** job allocation call ******
         # self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
-        self.alloc_call_flags = "--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name JIT --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084"
+        self.job_name = "JIT"
+        self.alloc_call_flags = f"--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084"
 
-
-        #? TOOLS
-        #?#######################
+        # ? TOOLS
+        # ?#######################
         # ****** ftio variables ******
         self.ftio_bin_location = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin"
 
         # ****** gkfs variables ******
-        self.gkfs_demon = "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/bin/gkfs_daemon"
+        self.gkfs_demon = (
+            "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/bin/gkfs_daemon"
+        )
         self.gkfs_intercept = "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
         self.gkfs_hostfile = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
-        self.gkfs_proxy = "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
+        self.gkfs_proxy = (
+            "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
+        )
         self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
 
-        #****** cargo variables ******
+        # ****** cargo variables ******
         self.cargo = "/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
         self.cargo_cli = "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
         self.cargo_server = "ofi+sockets://127.0.0.1:62000"
 
-
-        #? APP settings
-        #?##########################
+        # ? APP settings
+        # ?##########################
         # ****** app call ******
         #  ├─ IOR
         # self.app="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
@@ -241,7 +273,7 @@ class JitSettings:
         self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
         #  └─ Wacom++
         # self.app_call = "./wacommplusplus"
-        # self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build" 
+        # self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
 
         # ****** pre and post app call ******
         # Application specific calls executed before the actual run. Executed as
@@ -263,46 +295,45 @@ class JitSettings:
                 self.pre_app_call = f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json"
                 self.post_app_call = ""
             else:
-                self.pre_app_call  =  f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.gkfs.json {self.app_dir}/wacomm.json"
-                self.post_app_call = f"ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json"
+                self.pre_app_call = f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.gkfs.json {self.app_dir}/wacomm.json"
+                self.post_app_call = (
+                    f"ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json"
+                )
         # └─ Other
         else:
-            self.pre_app_call  =  ""
+            self.pre_app_call = ""
             self.post_app_call = ""
 
-
-        #? Stage in/out
-        #?##########################
+        # ? Stage in/out
+        # ?##########################
         # ├─ Nek5000
         if "nek" in self.app_call:
-            self.stage_in_path = f"{self.app_dir}/input" 
+            self.stage_in_path = f"{self.app_dir}/input"
             self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
         # ├─ Wacom++
         elif "wacom" in self.app_call:
-            self.stage_in_path = f"{self.app_dir}/stage-in" 
+            self.stage_in_path = f"{self.app_dir}/stage-in"
             self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
         # └─ Other
         else:
-            self.stage_in_path = f"{self.app_dir}/stage-in" 
+            self.stage_in_path = f"{self.app_dir}/stage-in"
             self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
 
-
-        #? Regex if needed
-        #?##########################
+        # ? Regex if needed
+        # ?##########################
         self.regex_file = "/lustre/project/nhr-admire/shared/nek_regex4cargo.txt"
         # ├─ Nek5000
         if "nek" in self.app_call:
             self.regex_match = "^/[a-zA-Z0-9]*turbPipe0\\.f\\d+"
         # ├─ Wacom++
         elif "wacom" in self.app_call:
-            self.regex_match = "^(\\/output|\\/results|\\/restart|\\/input)\\/[^\\/]+$" # "^ocm3_d03_\\d+Z\d+\\.nc$"
+            self.regex_match = "^(\\/output|\\/results|\\/restart|\\/input)\\/[^\\/]+$"  # "^ocm3_d03_\\d+Z\d+\\.nc$"
         # └─ Other
         else:
             self.regex_match = ""
 
-
-        #? local machine settings
-        #?###############################
+        # ? local machine settings
+        # ?###############################
         if not self.cluster:
             self.install_location = "/d/github/JIT"
             self.regex_file = f"{self.install_location}/nek_regex4cargo.txt"

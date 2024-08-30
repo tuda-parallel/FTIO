@@ -60,7 +60,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "scikit-learn",
-        "zmq",
+        "pyzmq",
         "numba",
         "darshan",
         "fastdtw",
