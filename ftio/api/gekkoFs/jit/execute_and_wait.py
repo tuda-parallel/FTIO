@@ -129,14 +129,14 @@ def execute_background(
         with open(log_file, "a") as log_out:
             with open(log_err_file, "w") as log_err:
                 process = subprocess.Popen(
-                    call, shell=True, stdout=log_out, stderr=log_err
+                    call, shell=True,executable='/bin/bash', stdout=log_out, stderr=log_err
                 )
     elif log_file:
         with open(log_file, "a") as log_out:
-            process = subprocess.Popen(call, shell=True, stdout=log_out, stderr=log_out)
+            process = subprocess.Popen(call, shell=True,executable='/bin/bash', stdout=log_out, stderr=log_out)
     else:
         process = subprocess.Popen(
-            call, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            call, shell=True,executable='/bin/bash', stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
     return process
 
@@ -206,7 +206,7 @@ def execute_block_and_wait_line(call: str, filename: str, target_line: str) -> N
         stop the execution of this function
     """
     execute_block(call)
-    wait_for_line(filename, target_line)
+    _ = wait_for_line(filename, target_line)
 
 
 def execute_background_and_wait_line(
@@ -223,7 +223,7 @@ def execute_background_and_wait_line(
     process = execute_background(call, filename, dry_run=dry_run)
     monitor_log_file(filename, "")
     if not dry_run:
-        wait_for_line(filename, target_line)
+        _ = wait_for_line(filename, target_line)
         stdout, stderr = process.communicate()
         if process.returncode != 0:
             console.print(f"[red]Error executing command:{call}")
@@ -365,6 +365,7 @@ def end_of_transfer_online(
     monitored_files = get_files(settings, True)
     stuck_time = 1
     last_lines = read_last_n_lines(log_file)
+    stuck_files = 0
     n = len(monitored_files)
     if "Transfer finished for []" in last_lines:
         # Nothing to move
@@ -394,11 +395,6 @@ def end_of_transfer_online(
 
                 if time_since_last_cargo >= stuck_time:
                     jit_print(f"[cyan]>> Stucked for {stuck_time} sec. Triggering cargo again\n")
-                    # if stuck_time == 4:
-                    #     additional_arguments = load_flags(settings)
-                    #     mv_call = f"{additional_arguments} mv  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
-                    #     execute_block(mv_call)
-                    # else:
                     _ = execute_background(
                         call, settings.cargo_log, settings.cargo_err
                         )   
@@ -407,7 +403,7 @@ def end_of_transfer_online(
                     if hit == 3:
                         if copy:
                             try:
-                                status.update(f"Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}")
+                                jit_print(f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}")
                                 jit_print("[cyan]>> Triggering old school copy\n")
                                 status.update("Copying ... ")
                                 additional_arguments = load_flags(settings)
@@ -416,9 +412,16 @@ def end_of_transfer_online(
                                 break
                             except Exception as e:
                                 jit_print("[yellow]>> copy failed\n")
+                                copy = False
                         stuck_time = stuck_time*2
                         jit_print(f"[cyan]>> Stucked increased to {stuck_time}\n")
+                        jit_print(f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}")
                         hit = 0
+                        if stuck_time == 4:
+                            stuck_files = len(monitored_files)
+                        elif stuck_time == 8 and stuck_files == len(monitored_files):
+                            jit_print(f">> Stopping stage out")
+                            break
                     if "Transfer finished for []" in last_lines:
                         break
 
@@ -582,7 +585,7 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
 
 def wait_for_line(
     filename: str, target_line: str, msg: str = "", timeout: int = 180, dry_run=False
-) -> None:
+) -> bool:
     """
     Waits for a specific line to appear in a log file
 
@@ -592,8 +595,9 @@ def wait_for_line(
         msg (str): Message to print
         timeout (int): maximal timeout
     """
+    success = True
     if dry_run:
-        return
+        return success
     start_time = time.time()
     if not msg:
         msg = "Waiting for line to appear..."
@@ -620,7 +624,8 @@ def wait_for_line(
                     if passed_time >= timeout:
                         status.update("Timeout reached.")
                         jit_print("[bold red]>> Timeout reached[/]", True)
-                        return
+                        success = False
+                        break
                     status.update(f"[cyan]{msg} ({passed_time}/{timeout})")
                     continue
 
@@ -629,6 +634,7 @@ def wait_for_line(
                     status.update(f"Found target line: '{target_line}'")
                     jit_print(f"[cyan]>> Stopped waiting at [{timestamp}]", True)
                     break
+        return success
 
 
 def read_last_n_lines(filename, n=3):

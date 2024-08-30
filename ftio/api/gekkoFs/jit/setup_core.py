@@ -10,6 +10,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     check_port,
     create_hostfile,
     elapsed_time,
+    handle_sigint,
     jit_print,
     load_flags,
     relevant_files,
@@ -63,13 +64,13 @@ def start_gekko_demon(settings: JitSettings) -> None:
                 #     f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                 #     f"--ntasks={settings.app_nodes*settings.procs_demon} --cpus-per-task={settings.procs_demon} --ntasks-per-node={settings.procs_demon} --overcommit --overlap "
                 #     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                #     f"-H {settings.gkfs_hostfile} -c -l ib0 -P ofi+sockets"
+                #     f"-H {settings.gkfs_hostfile} -c -l ib0 -P {settings.gkfs_demon_protocol}"
                 # )
                 call = (
                     f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile} -c -l ib0 -P ofi+sockets"
+                    f"-H {settings.gkfs_hostfile} -c -l ib0 -P {settings.gkfs_demon_protocol}"
                 )
             else:
                 # Demon call with proxy
@@ -81,7 +82,7 @@ def start_gekko_demon(settings: JitSettings) -> None:
                     f"srun {debug_flag} --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile} -c -l ib0 -P ofi+sockets -p ofi+verbs -L ib0"
+                    f"-H {settings.gkfs_hostfile} -c -l ib0 -P {settings.gkfs_demon_protocol} -p ofi+verbs -L ib0"
                 )
 
         else:
@@ -165,7 +166,7 @@ def start_cargo(settings: JitSettings) -> None:
             #     f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
             #     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_cargo} --ntasks-per-node=1 "
             #     f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
-            #     f"--listen ofi+sockets://ib0:62000 -b 65536"
+            #     f"--listen {settings.gkfs_demon_protocol}://ib0:62000 -b 65536"
             # )
             # The above call just gives more resources to the same proc, but not more. Cargo need at least two
             call = (
@@ -177,7 +178,7 @@ def start_cargo(settings: JitSettings) -> None:
                 f"-N {settings.app_nodes} --ntasks={settings.app_nodes*settings.procs_cargo} "
                 f"--cpus-per-task={settings.procs_cargo} --ntasks-per-node={settings.procs_cargo} "
                 f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
-                f"--listen ofi+sockets://ib0:62000 -b 65536"
+                f"--listen {settings.gkfs_demon_protocol}://ib0:62000 -b 65536"
             )
         else:
             # Command for non-cluster
@@ -200,7 +201,9 @@ def start_cargo(settings: JitSettings) -> None:
             monitor_log_file(settings.cargo_err,"Error Cargo")
         # wait for line to appear
         time.sleep(1)
-        wait_for_line(settings.cargo_log, "Start up successful",dry_run = settings.dry_run)
+        flag = wait_for_line(settings.cargo_log, "Start up successful",dry_run = settings.dry_run)
+        if not flag:
+            handle_sigint(settings)
         console.print("\n")
 
 #! start FTIO
@@ -272,7 +275,7 @@ def start_ftio(settings: JitSettings) -> None:
         #     monitor_log_file(settings.ftio_log,"Ftio")
         #     monitor_log_file(settings.ftio_err,"Error Ftio")
         
-        wait_for_line(settings.ftio_log, "FTIO is running on:", "Waiting for FTIO startup",dry_run=settings.dry_run)
+        _ = wait_for_line(settings.ftio_log, "FTIO is running on:", "Waiting for FTIO startup",dry_run=settings.dry_run)
         time.sleep(8)
         console.print("\n")
 
@@ -302,8 +305,6 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
                 "retval: CARGO_SUCCESS, status: {state: completed",
                 settings.dry_run
             )
-            # process = execute_background(call, cargo_log)
-            # wait_for_line(cargo_log, "Start up successful")
             
         elapsed_time(settings, runtime, "Stage in", time.time() - start)
         check(settings)
@@ -397,7 +398,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     )
 
         call = (
-                f" mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+                f" time -p mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
                 f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
                 f"{additional_arguments} "
                 f"{settings.task_set_1} {settings.app_call}"
@@ -452,17 +453,17 @@ def start_application(settings: JitSettings, runtime: JitTime):
     else:
         # Define the call for non-cluster environment
         if settings.exclude_all:
-            call = f" mpiexec -np {settings.procs_app} --oversubscribe {settings.app_call}"
+            call = f" time -p mpiexec -np {settings.procs_app} --oversubscribe {settings.app_call}"
         elif settings.exclude_ftio:
             call = (
-                f" mpiexec -np {settings.procs_app} --oversubscribe "
+                f" time -p mpiexec -np {settings.procs_app} --oversubscribe "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LIBGKFS_LOG=info,warnings,errors -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} {settings.app_call}"
             )
         else:
             call = (
-                f" mpiexec -np {settings.procs_app} --oversubscribe "
+                f" time -p mpiexec -np {settings.procs_app} --oversubscribe "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LIBGKFS_LOG=none -x LIBGKFS_ENABLE_METRICS=on "
                 f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
@@ -483,7 +484,21 @@ def start_application(settings: JitSettings, runtime: JitTime):
         monitor_log_file(settings.app_err,"error")
     _, stderr = process.communicate()
 
-    elapsed_time(settings, runtime, "App", time.time() - start)
+    # get the real time
+    # The timing result will be in stderr because 'time' outputs to stderr by default
+    
+    # Extract the 'real' time from the output
+    real_time = time.time() - start
+    try:
+        with open(settings.app_err, 'r') as file:
+            for line in file:
+                if line.startswith("real"):
+                    real_time = min(float(line.split()[1]),real_time)
+                    break
+    except Exception as e:
+        jit_print(f">>[red] Could not extract real time due to \n {e}[/]\n")
+
+    elapsed_time(settings, runtime, "App", real_time)
 
     if process.returncode != 0:
         console.print(f"[red]Error executing command:{call}")

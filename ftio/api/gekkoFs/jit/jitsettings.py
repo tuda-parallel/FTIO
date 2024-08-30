@@ -12,6 +12,7 @@ class JitSettings:
 
         # flags
         self.set_tasks_affinity = True
+        self.gkfs_demon_protocol = "ofi+sockets"
         self.debug = True
         self.verbose = True
         # execute in node local
