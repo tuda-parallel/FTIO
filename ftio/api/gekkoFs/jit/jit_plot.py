@@ -9,7 +9,6 @@ from ftio.plot.helper import format_plot
 
 
 def main(filenames):
-
     if not filenames:
         results = JitResult()
         # # run with x nodes  128 procs [jit | jit_no_ftio | pure] (now in old folder)
@@ -65,7 +64,7 @@ def main(filenames):
         # filename = "results_mogon/procs16_steps50_writeinterval10.json "
         
         title = "Nek5000 with 16 procs checkpointing every 5 steps with a total of 50 steps"
-        filename = "results_mogon/procs16_steps50_writeinterval5.json"
+        filename = "results_mogon/wacom++_app_proc_1_OMPthreads_64_12500000.json"
         current_directory =  os.path.dirname(os.path.abspath(__file__))
         json_file_path = os.path.join(current_directory, filename)
         
@@ -82,14 +81,11 @@ def main(filenames):
 
 def extract_and_plot(results,json_file_path:str, title:str):
     with open(json_file_path, "r") as json_file:
-            data = json.load(json_file)
-
-    data = sorted(data, key=lambda x: x['nodes'])
-    for d in data:
-        results.add_dict(d)
-
-
-
+        data = json.load(json_file)
+        data = sorted(data, key=lambda x: x['nodes'])
+        for d in data:
+            results.add_dict(d)
+    
     results.plot(title)
 
 
@@ -186,7 +182,7 @@ class JitResult:
             showlegend=True,
             title=title,
             barmode="relative",
-            width=1000,
+            width=1500,
             height=600,
             legend=dict(
                 orientation="h",
@@ -197,7 +193,8 @@ class JitResult:
                 )
             )
 
-        format_plot(fig)
+        fig.show()
+        format_plot(fig, x_minor=False)
         
         # Display the plot
         fig.show()

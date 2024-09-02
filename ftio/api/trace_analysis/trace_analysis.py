@@ -163,22 +163,23 @@ def statistics(df):
     df_dom.to_csv("ftio_flat.csv", index=False)
     prefixes = ["read", "write", "both"]
     color = ["purple4", "gold3", "deep_sky_blue1"]
-
-    for prefix in prefixes:
-        s = ""
-        s += periodic_apps(df, prefix)
-        s += compute_metrics(df_dom, prefix, "conf")
-        s += compute_metrics(df_dom, prefix, "dominant_freq", "Hz")
-        s += time_app(df, prefix)
-        console.print(
-            Panel.fit(
-                s,
-                title=prefix.capitalize(),
-                border_style=color[prefixes.index(prefix)],
-                title_align="left",
+    with open("ftio_output.txt", 'a') as file:
+        for prefix in prefixes:
+            s = ""
+            s += periodic_apps(df, prefix)
+            s += compute_metrics(df_dom, prefix, "conf")
+            s += compute_metrics(df_dom, prefix, "dominant_freq", "Hz")
+            s += time_app(df, prefix)
+            console.print(
+                Panel.fit(
+                    s,
+                    title=prefix.capitalize(),
+                    border_style=color[prefixes.index(prefix)],
+                    title_align="left",
+                )
             )
-        )
-        console.print("\n")
+            console.print("\n")
+            file.write(s + "\n\n")
     # print(dom_df)
 
 

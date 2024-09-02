@@ -223,6 +223,7 @@ class JitSettings:
             "task_set_0": self.task_set_0,
             "task_set_1": self.task_set_1,
             "OpenMP threads": self.omp_threads,
+            "protocol": self.gkfs_demon_protocol,
             "app dir": self.app_dir,
             "app call": self.app_call,
             "id": self.job_id,
