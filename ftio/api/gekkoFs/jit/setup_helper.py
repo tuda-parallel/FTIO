@@ -704,39 +704,41 @@ def get_pid(settings: JitSettings, name: str, pid: int):
 
     if name.lower() in "cargo":
         settings.cargo_pid = pid
-        console.print(f"[green ]JIT >> Cargo startup successful. PID is {pid}[/]")
+        jit_print(f">> Cargo startup successful. PID is {pid}")
     elif name.lower() in "gkfs_demon":
         settings.gekko_demon_pid = pid
-        console.print(f"[green ]JIT >> Gekko demon startup successful. PID is {pid}[/]")
+        jit_print(f">> Gekko demon startup successful. PID is {pid}")
     elif name.lower() in "gkfs_proxy":
         settings.gekko_proxy_pid = pid
-        console.print(f"[green ]JIT >> Gekko proxy startup successful. PID is {pid}[/]")
+        jit_print(f">> Gekko proxy startup successful. PID is {pid}")
     elif name.lower() in "ftio" or name.lower() in "predictor_jit":
         settings.ftio_pid = pid
-        console.print(f"[green ]JIT >> Ftio startup successful. PID is {pid}[/]")
+        jit_print(f">> Ftio startup successful. PID is {pid}")
 
 
 def handle_sigint(settings: JitSettings):
-    jit_print("[bold blue]>> Keyboard interrupt detected. Exiting script.[/]")
-    soft_kill(settings)
-    hard_kill(settings)
-    # if settings.cluster:
-    #     _ = subprocess.run(f"scancel {settings.job_id}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash")
-    jit_print("[bold red]>> Hard kill executed.[/]")
-
-    sys.exit(0)
+    if settings.trap_exit:
+        jit_print("[bold blue]>> Keyboard interrupt detected. Exiting script.[/]")
+        info = f"{settings.app_call} with {settings.nodes} ({settings.log_suffix})"
+        jit_print(f"[bold blue]>> Killing Job: {info}.\n Exiting script.[/]")
+        log_failed_jobs(settings, info)
+        soft_kill(settings)
+        hard_kill(settings)
+        jit_print(">> Exciting\n")
+        sys.exit(0)
 
 
 
 def soft_kill(settings: JitSettings) -> None:
-    jit_print("[bold green]####### Soft kill [/]", True)
+    if settings.soft_kill:
+        jit_print("[bold green]####### Soft kill [/]", True)
 
-    if not settings.exclude_ftio:
-        try:
-            shut_down(settings, "FTIO", settings.ftio_pid)
-            jit_print("[bold cyan] >> killed FTIO [/]")
-        except:
-            jit_print("[bold cyan] >> Unable to soft kill FTIO [/]")
+        if not settings.exclude_ftio:
+            try:
+                shut_down(settings, "FTIO", settings.ftio_pid)
+                jit_print("[bold cyan] >> killed FTIO [/]")
+            except:
+                jit_print("[bold cyan] >> Unable to soft kill FTIO [/]")
 
     if not settings.exclude_demon:
         try:
@@ -759,35 +761,40 @@ def soft_kill(settings: JitSettings) -> None:
         except:
             jit_print("[bold cyan] >> Unable to soft kill CARGO [/]")
 
+    jit_print(">> Soft kill finished")
+
 
 def hard_kill(settings) -> None:
-    jit_print(f"[bold green]####### Hard kill[/]", True)
+    if settings.hard_kill:
+        jit_print(f"[bold green]####### Hard kill[/]", True)
 
-    if settings.cluster and not settings.static_allocation:
-        # Cluster environment: use `scancel` to cancel the job
-        _ = subprocess.run(
-            f"scancel {settings.job_id}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
-        )
-    else:
-        # Non-cluster environment: use `kill` to terminate processes
-        processes = [
-            settings.gkfs_demon,
-            settings.gkfs_proxy,
-            settings.cargo,
-            f"{settings.ftio_bin_location}/predictor_jit",
-        ]
+        if settings.cluster and not settings.static_allocation:
+            # Cluster environment: use `scancel` to cancel the job
+            _ = subprocess.run(
+                f"scancel {settings.job_id}", shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"
+            )
+        else:
+            # Non-cluster environment: use `kill` to terminate processes
+            processes = [
+                settings.gkfs_demon,
+                settings.gkfs_proxy,
+                settings.cargo,
+                f"{settings.ftio_bin_location}/predictor_jit",
+            ]
 
-        for process in processes:
-            try:
-                # Find process IDs and kill them
-                kill_command = f"ps -aux | grep {process} | grep -v grep | awk '{{print $2}}' | xargs kill"
-                while(kill_command):
-                    _ = subprocess.run(
-                        kill_command, shell=True, capture_output=True, text=True, check=True
-                    )
+            for process in processes:
+                try:
+                    # Find process IDs and kill them
                     kill_command = f"ps -aux | grep {process} | grep -v grep | awk '{{print $2}}' | xargs kill"
-            except Exception as e:
-                console.print(f"[bold red]{process} already dead[/]")
+                    while(kill_command):
+                        _ = subprocess.run(
+                            kill_command, shell=True, capture_output=True, text=True, check=True
+                        )
+                        kill_command = f"ps -aux | grep {process} | grep -v grep | awk '{{print $2}}' | xargs kill"
+                except Exception as e:
+                    console.print(f"[bold red]{process} already dead[/]")
+
+        jit_print(">> Hard kill finished")
 
 
 
@@ -836,7 +843,7 @@ def get_address_ftio(settings: JitSettings) -> None:
             jit_print(f"[bold red]>>Error occurred: {e}")
             settings.address_ftio = ""
 
-    jit_print(f">> Address FTIO: {settings.address_ftio}")
+    jit_print(f">> Address FTIO: {settings.address_ftio}", True)
 
 
 
@@ -859,7 +866,7 @@ def get_address_cargo(settings: JitSettings) -> None:
         settings.cargo_server = f"ofi+tcp://{settings.address_cargo}:62000"
 
     jit_print(f">> Address CARGO: {settings.address_cargo}")
-    jit_print(f">> CARGO server:  {settings.cargo_server} ")
+    jit_print(f">> CARGO server:  {settings.cargo_server} ", True)
 
 
 def set_dir_gekko(settings: JitSettings) -> None:
@@ -1022,10 +1029,10 @@ def create_hostfile(settings):
         if os.path.exists(settings.gkfs_hostfile):
             os.remove(settings.gkfs_hostfile)
         else:
-            jit_print("[blue]>> No hostfile found[/blue]")
+            jit_print("[yellow]>> No hostfile found[/]",True)
 
     except Exception as e:
-        jit_print(f"[bold red]Error removing hostfile:[/bold red] {e}")
+        jit_print(f"[bold red]Error removing hostfile:[/bold red] {e}",True)
 
     # # Optionally, recreate the hostfile and populate it if needed
     # try:
@@ -1108,7 +1115,7 @@ def load_flags(settings:JitSettings) -> str:
     return additional_arguments
 
 
-def update_hostfile_mpi(settings:JitSettings):
+def update_hostfile_mpi(settings:JitSettings) -> None:
         # Command to get the list of hostnames for the job
     squeue_command = f"squeue -j {settings.job_id} -o '%N' | tail -n +2"
     scontrol_command = f"scontrol show hostname $({squeue_command})"
@@ -1122,3 +1129,31 @@ def update_hostfile_mpi(settings:JitSettings):
         for hostname in hostnames:
             if hostname.strip() != settings.ftio_node:
                 hostfile.write(hostname + '\n')
+
+
+def log_failed_jobs(settings:JitSettings, info:str) -> None:
+    """Add failed job to a file
+
+    Args:
+        settings (JitSettings): Jit settings
+        info (str): log text
+    """
+    parent = os.path.dirname(settings.log_dir)
+    execution_path = os.path.join(parent, "execution.txt")
+    try:
+        jit_print(f"[yellow]>> Adding execution to list of failed jobs in {execution_path}.[/]")
+        with open(execution_path, "a") as file:
+            file.write(f"- {info}\n")
+    except:
+        jit_print(f"[Red]>> Killing Job: {info}.\n Exiting script.[/]")
+
+
+def save_bandwidth(settings:JitSettings):
+    if not settings.exclude_ftio:
+        try:
+            command = f"{os.path.dirname(settings.log_dir)}/bandwidth.json settings.log_dir || true"
+            _ = subprocess.run(
+                            command, shell=True, capture_output=True, text=True, check=True
+                        )
+        except:
+            pass

@@ -100,11 +100,11 @@ def start_gekko_demon(settings: JitSettings) -> None:
                 f"-H {settings.gkfs_hostfile} -c --clean-rootdir -l lo -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp"
             )
 
+        jit_print(f"[cyan]>> Creating directories[/]")
         out = execute_block(call_0)
         out = execute_block(call_1)
-        jit_print(f"[cyan]>> Creating directories\n{out}[/]")
 
-        jit_print("[cyan]>> Starting Demons[/]")
+        jit_print("[cyan]>> Starting Demons[/]", True)
 
         # p = multiprocessing.Process(target=execute_background, args= (call, settings.gekko_demon_log, settings.gekko_demon_err, settings.dry_run))
         # p.start()
@@ -293,6 +293,14 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
         console.print(f"[bold yellow]####### Skipping Stage in [/][black][{get_time()}][/]")
     else:
         console.print(f"[bold green]####### Staging in [/][black][{get_time()}][/]")
+
+        # remove locks 
+        jit_print("[cyan]>> Cleaning locks")
+        if settings.stage_in_path:
+            execute_block(f"cd {settings.stage_in_path} && rm -f  $(find .  | grep .lock)")
+
+        jit_print(f"[cyan]>> Staging in to {settings.stage_in_path}",True)
+        
         if settings.exclude_cargo:
             call = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}"
             start = time.time()
@@ -539,7 +547,3 @@ def post_call(settings: JitSettings) -> None:
         _ = execute_block_and_log(
             settings.post_app_call, settings.app_log
         )
-
-
-
-

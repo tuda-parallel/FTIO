@@ -45,7 +45,7 @@ def main( argv=sys.argv[1:],verbose=True):
                 console.print(f"[bold]Sampling rate set to {t_s}[/]")
         else:
             flag_index = argv.index('-f')
-            f_s = int(argv[flag_index + 1])
+            f_s = float(argv[flag_index + 1])
             if verbose:
                 console.print(f"[bold green]Sampling rate set to {f_s}[/]")
         

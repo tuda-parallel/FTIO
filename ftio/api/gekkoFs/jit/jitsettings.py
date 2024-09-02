@@ -71,9 +71,12 @@ class JitSettings:
         self.nodes = 1
         self.max_time = 30
         self.skip_confirm = False
+        self.trap_exit = True
+        self.soft_kill = True
+        self.hard_kill = True
 
         self.procs = os.cpu_count() or 128
-        self.omp_threads = 1
+        self.omp_threads = 64
         self.task_set_0 = ""
         self.task_set_1 = ""
         self.procs_demon = 0
@@ -292,13 +295,17 @@ class JitSettings:
         elif "wacom" in self.app_call:
             if self.exclude_all:
                 # in case a previous simulation fails
-                self.pre_app_call = f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json"
+                self.pre_app_call = (
+                    f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json; "
+                    f"cd {self.app_dir} && rm -rf input restart results processed output; cp -r stage-in/* . "
+                )
                 self.post_app_call = ""
             else:
-                self.pre_app_call = f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.gkfs.json {self.app_dir}/wacomm.json"
-                self.post_app_call = (
-                    f"ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json"
-                )
+                # modify wacomm.gkfs.json to include gkfs_mntdir
+                self.pre_app_call = (
+                    f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.gkfs.json {self.app_dir}/wacomm.json; "
+                                    )
+                self.post_app_call = f"ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json"
         # └─ Other
         else:
             self.pre_app_call = ""

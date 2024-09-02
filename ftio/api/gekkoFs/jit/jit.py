@@ -1,5 +1,4 @@
 import sys
-import time
 import signal
 from rich.console import Console
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
@@ -25,6 +24,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     allocate,
     log_dir,
     print_settings,
+    save_bandwidth,
     set_dir_gekko,
     soft_kill,
 )
@@ -97,10 +97,13 @@ def main() -> None:
     # _ = runtime.print_time()
     runtime.print_and_save_time(settings)
 
-    # 10.0 Soft kill
+    # save_bandwidth
+    save_bandwidth(settings)
+
+    # 11.0 Soft kill
     soft_kill(settings)
 
-    # 11.0 Hard kill
+    # 12.0 Hard kill
     hard_kill(settings)
 
     console.print("[bold green]############### JIT completed ###############[/]")
