@@ -116,10 +116,10 @@ def main(argv=sys.argv[1:]) -> None:
             f"[blue]Location:[/] {folder_path}\n"
             f"[blue]Pattern:[/] {pattern}\n"
         )
-        statisitcs(df)
+        statistics(df)
     except KeyboardInterrupt:
         progress.console.print("[bold red]Keyboard interrupt![/]\n")
-        statisitcs(df)
+        statistics(df)
         sys.exit()
     console.print(f"[blue]Execution time:[/] {time.time()  - start_time:.4f} seconds")
 
@@ -156,7 +156,7 @@ def flatten_dict(d):
     return flat
 
 
-def statisitcs(df):
+def statistics(df):
     # print(df)
     df_dom = reduce_to_max_conf(df)
     df.to_csv("ftio.csv", index=False)
@@ -220,14 +220,22 @@ def reduce_to_max_conf(df: pd.DataFrame) -> pd.DataFrame:
         for prefix in prefixes:
             conf_col = f"{prefix}_conf"
             freq_col = f"{prefix}_dominant_freq"
+            amp_col = f"{prefix}_amp"
+            phi_col = f"{prefix}_phi"
             freq = np.nan
             conf = np.nan
+            amp  = np.nan
+            phi  = np.nan
             if isinstance(row[conf_col], list) and len(row[conf_col]) > 0:
                 dominant_index = np.argmax(row[conf_col])
                 freq = row[freq_col][dominant_index]
                 conf = row[conf_col][dominant_index]
-            df.at[i, conf_col] = conf
+                amp  = row[amp_col][dominant_index]
+                phi  = row[phi_col][dominant_index]
             df.at[i, freq_col] = freq
+            df.at[i, conf_col] = conf
+            df.at[i, amp_col]  = amp
+            df.at[i, phi_col]  = phi
 
     return df
 

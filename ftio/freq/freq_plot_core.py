@@ -1069,7 +1069,8 @@ def plot_spectrum(
     if percent:
         name = "Normed " + name
         unit = unit + " (%)"
-        amp = 100 * amp / amp.sum()
+        if amp.sum() > 0:
+            amp = 100 * amp / amp.sum() 
 
     df_tmp = pd.DataFrame(
         data={

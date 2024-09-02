@@ -75,39 +75,39 @@ def z_score(
 
     Args:
         amp (np.ndarray): amplitude or psd
-        freq_arr (np.ndarray): freuqencies
+        freq_arr (np.ndarray): frequencies
         args (argsparse): arguments
 
     Returns:
-        tuple[list[float], np.ndarray, str]: [dominant freuqency/ies, confidence, text]
+        tuple[list[float], np.ndarray, str]: [dominant frequency/ies, confidence, text]
     """
     text = "[green]Spectrum[/]: Amplitude spectrum\n"
     if args.psd:
         amp = amp*amp/len(amp)
         text = "[green]Spectrum[/]: Power spectrum\n"
 
-    indecies = np.arange(1, int(len(amp) / 2) + 1)
-    amp_tmp = np.array(2 * amp[indecies])
+    indices = np.arange(1, int(len(amp) / 2) + 1)
+    amp_tmp = np.array(2 * amp[indices])
     # norm the data
-    amp_tmp = amp_tmp/ amp_tmp.sum()
+    amp_tmp = amp_tmp/ amp_tmp.sum() if amp_tmp.sum() > 0 else amp_tmp
     
     tol = args.tol
     dominant_index = []
     mean = np.mean(amp_tmp)
     std = np.std(amp_tmp)
-    z_k = abs(amp_tmp - mean) / std
+    z_k = abs(amp_tmp - mean) / std if std > 0 else np.zeros(len(amp_tmp))
     conf = np.zeros(len(z_k))
     # find outliers
-    index = np.where((z_k/np.max(z_k) > tol) & (z_k > 3))
-    text += f"[green]mean[/]: {mean/np.sum(amp_tmp):.3e}\n[green]std[/]: {std:.3e}\n"
+    index = np.where((z_k/np.max(z_k) > tol) & (z_k > 3)) if np.max(z_k) > 0 else  (np.array([], dtype=np.int64),)
+    text += f"[green]mean[/]: {mean/np.sum(amp_tmp) if np.sum(amp_tmp) else 0:.3e}\n[green]std[/]: {std:.3e}\n"
     text += f"Frequencies with Z-score > 3 -> [green]{len(z_k[z_k>3])}[/] candidates\n"
     text += f"         + Z > Z_max*{tol*100}% > 3 -> [green]{len(index[0])}[/] candidates\n"
     # text += f"         + Z > Z_max*{tol*100}% > 3 -> [green]{len(z_k[(z_k>np.max(z_k)*tol) & (z_k>3)])}[/] candidates\n"
-    index, removed_index, msg = remove_harmonics(freq_arr, amp_tmp,  indecies[index[0]])
+    index, removed_index, msg = remove_harmonics(freq_arr, amp_tmp,  indices[index[0]])
     text+= msg
     
     if len(index) == 0:
-        text += "[red]No dominant frequency -> Signal might be not perodic[/]\n"
+        text += "[red]No dominant frequency -> Signal might be not periodic[/]\n"
     else:
         removed_index = [i-1 for i in removed_index] #tmp starts at 1
         # conf[index] = (z_k[index]/max_z  + z_k[index]/np.sum(z_k[index]) + 1/np.sum(z_k > 3))/3
@@ -130,10 +130,10 @@ def z_score(
         text+= msg
         
     if "plotly" in args.engine:
-        i = np.repeat(1, len(indecies))
+        i = np.repeat(1, len(indices))
         if len(dominant_index) != 0:
             i[np.array(dominant_index) - 1] = -1
-        plot_outliers(args,freq_arr, amp, indecies, conf, i)
+        plot_outliers(args,freq_arr, amp, indices, conf, i)
 
     return dominant_index, conf, text
 
@@ -148,11 +148,11 @@ def db_scan(
 
     Args:
         amp (np.ndarray): amplitude or psd
-        freq_arr (np.ndarray): freuqencies
+        freq_arr (np.ndarray): frequencies
         args (argsparse): arguments
 
     Returns:
-        tuple[list[float], np.ndarray, str]: [dominant freuqency/ies, confidence]
+        tuple[list[float], np.ndarray, str]: [dominant frequency/ies, confidence]
     """
     text = "[green]Spectrum[/]: Amplitude spectrum\n" 
     if args.psd:
@@ -187,7 +187,7 @@ def db_scan(
             pow((d[:, 1].max() - d[:, 1].min())*(1-args.tol), 2) + pow(d[1, 0] - d[0, 0], 2)
         )
         conf = d[:, 1] / d[:, 1].max()
-    else:  # find distance using knee mehtod
+    else:  # find distance using knee method
         text += "Calculating eps using knee method\n"
         observation = int(len(amp) / 5)
         nbrs = NearestNeighbors(n_neighbors=observation).fit(d)
@@ -238,11 +238,11 @@ def isolation_forest(
 
     Args:
         amp (np.ndarray): amplitude or psd
-        freq_arr (np.ndarray): freuqencies
+        freq_arr (np.ndarray): frequencies
         args (argsparse): arguments
 
     Returns:
-        tuple[list[float], np.ndarray, str]: [dominant freuqency/ies, confidence]
+        tuple[list[float], np.ndarray, str]: [dominant frequency/ies, confidence]
     """
     text = "[green]Spectrum[/]: Amplitude spectrum\n" 
     if args.psd:
@@ -282,11 +282,11 @@ def lof(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.nd
 
     Args:
         amp (np.ndarray): amplitude or psd
-        freq_arr (np.ndarray): freuqencies
+        freq_arr (np.ndarray): frequencies
         args (argsparse): arguments
 
     Returns:
-        tuple[list[float], np.ndarray, str]: [dominant freuqency/ies, confidence]
+        tuple[list[float], np.ndarray, str]: [dominant frequency/ies, confidence]
     """
     text = "[green]Spectrum[/]: Amplitude spectrum\n" 
     if args.psd:
@@ -327,11 +327,11 @@ def peaks(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.
 
     Args:
         amp (np.ndarray): amplitude or psd
-        freq_arr (np.ndarray): freuqencies
+        freq_arr (np.ndarray): frequencies
         args (argsparse): arguments
 
     Returns:
-        tuple[list[float], np.ndarray, str]: [dominant freuqency/ies, confidence]
+        tuple[list[float], np.ndarray, str]: [dominant frequency/ies, confidence]
     """
     text = "[green]Spectrum[/]: Amplitude spectrum\n" 
     if args.psd:

@@ -34,7 +34,8 @@ def set_unit(arr:np.ndarray, suffix = "B/s") -> tuple[str, float]:
         order = 1e-3
         unit = "K"+suffix
     else:
-        pass
+        order = 1 # in case order is negative 
+        unit = suffix
 
     return unit, order
 

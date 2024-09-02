@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
 
 from ftio.api.trace_analysis.trace_ftio_v2 import main as trace_ftio
-from ftio.api.trace_analysis.trace_analysis import convert_dict, flatten_dict, statisitcs
+from ftio.api.trace_analysis.trace_analysis import convert_dict, flatten_dict, statistics
 
 # Initialize the console for printing
 console = Console()
@@ -71,7 +71,9 @@ def main(argv=sys.argv[1:]) -> None:
         folder_path = argv[0]
         argv.pop(0)
     else:
+        # folder_path = "/d/traces/traces_from_plafrim/projets/traceflow/sdumont"
         folder_path = "/d/github/FTIO/ftio/api/trace_analysis/plafrim"
+        
 
     folder_path = os.path.abspath(folder_path)
     console.print(f"[bold green]Path is: {folder_path}[/]")
@@ -124,10 +126,10 @@ def main(argv=sys.argv[1:]) -> None:
             f"[blue]Location:[/] {folder_path}\n"
             f"[blue]Pattern:[/] {pattern}\n"
         )
-        statisitcs(df)
+        statistics(df)
     except KeyboardInterrupt:
         progress.console.print("[bold red]Keyboard interrupt![/]\n")
-        statisitcs(df)
+        statistics(df)
         sys.exit()
     console.print(f"[blue]Execution time:[/] {time.time() - start_time:.4f} seconds")
 

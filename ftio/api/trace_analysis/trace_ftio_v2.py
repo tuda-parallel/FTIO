@@ -36,30 +36,39 @@ def main( argv=sys.argv[1:],verbose=True):
         time_diffs_in_seconds = [(dt - t_s).total_seconds() for dt in entries]
         t = np.array(time_diffs_in_seconds)
     else:
-        f_s = 1 #get this value from the name of a file
-        t_s = 1/f_s
-        t = np.arange(0,len(b_w)*t_s,t_s).astype(float)
-        if '-f' not in argv:
-            argv.extend(['-f', '1'])
+        t_step =np.nan
+        if '--time-step' not in argv:
+            t_step = 1
             if verbose:
-                console.print(f"[bold]Sampling rate set to {t_s}[/]")
+                console.print(f"[bold]Sampling rate set to {t_step}[/]")
         else:
-            flag_index = argv.index('-f')
-            f_s = float(argv[flag_index + 1])
+            flag_index = argv.index('--time-step')
+            t_step = float(argv[flag_index + 1])
+            argv[flag_index:flag_index+2] = []
             if verbose:
-                console.print(f"[bold green]Sampling rate set to {f_s}[/]")
-        
+                console.print(f"[bold green]Sampling rate set to {t_step} sec[/]")
+
+        t = np.arange(0,len(b_w)*t_step,t_step).astype(float)
+
     total_bytes_r = 0#np.sum(np.repeat(t_s,len(b_r))*len(b_r))
     total_bytes_w = 0#np.sum(np.repeat(t_s,len(b_w))*len(b_w))
     total_bytes_b = 0#np.sum(np.repeat(t_s,len(b_b))*len(b_b))
 
+
+    # set sampling frequency if not set
+    if '-f' not in argv:
+        argv.extend(['-f', f'{1/t_step}'])
+        if verbose:
+            console.print(f"[bold green]Sampling rate set to {t_step} sec ({1/t_step:.3f}) Hz[/]")
     # plot
     # quick_plot(t,b_w)
 
     # adapt for FTIO
     # command line arguments
     argv = [x for x in argv if '.py' not in x and '.csv' not in x]
-    argv.extend(['-e', 'no'])
+    if not '-e' in argv:
+        argv.extend(['-e', 'no'])
+
     if verbose:
         console.print(f"Args: {argv}")
     # argv = ['-e', 'mat']
@@ -67,6 +76,7 @@ def main( argv=sys.argv[1:],verbose=True):
     res_r={}
     res_w={}
     res_b={}
+    
     if 'read' in arrays:
         res_r = quick_ftio(argv,b_r,t, total_bytes_r, ranks, 'read',verbose)
     if 'write' in arrays:
