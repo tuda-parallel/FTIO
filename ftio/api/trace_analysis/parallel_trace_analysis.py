@@ -20,22 +20,24 @@ def process_file(file_path, argv, verbose, name, index, total_files):
 
         # Create the new file name by replacing the pattern
         base_name = os.path.basename(file_path)
-        new_file_name = base_name.replace(f"_signal_{name}.csv", f"_freq_{name}.json")
-        new_file_path = os.path.join(os.path.dirname(file_path), new_file_name)
+        json_file = base_name.replace(f"_signal_{name}.csv", f"_freq_{name}.json")
+        json_path = os.path.join(os.path.dirname(file_path), json_file)
 
         # Convert NumPy arrays to lists
         data_converted = convert_dict(res)
-        if new_file_name.endswith("json"):
-            with open(new_file_path, "w") as file:
+        if json_file.endswith("json"):
+            with open(json_path, "w") as file:
                 json.dump(data_converted, file, indent=4)
         else:
-            console.print(f"[bold red]Cannot dump Json file in {new_file_path}[/]")
+            console.print(f"[bold red]Cannot dump Json file in {json_path}[/]")
 
         flat_res = flatten_dict(res)
         try:
             flat_res["job_id"] = base_name.split("_")[0]
+            flat_res["file"] = file_path
         except:
             flat_res["job_id"] = "??"
+            flat_res["file"] = "??"
             console.print("[bold red]Unable to extract job id[/]")
 
         # Return the flattened result along with index and total number of files
