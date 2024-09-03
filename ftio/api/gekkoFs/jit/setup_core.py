@@ -238,8 +238,9 @@ def start_ftio(settings: JitSettings) -> None:
                 f"--server {settings.cargo_server} --input / --output {settings.stage_out_path} "
                 f"--if gekkofs --of parallel"
             )
-            _ = execute_block(call_0)
-            _ = execute_block(call_1)
+        
+            _ = execute_block(call_0,dry_run=settings.dry_run)
+            _ = execute_block(call_1,dry_run=settings.dry_run)
     else:
         console.print(f"[bold green]####### Starting FTIO [/][black][{get_time()}][/]")
 
