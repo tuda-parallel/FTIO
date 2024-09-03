@@ -181,8 +181,7 @@ def statistics(df):
                 )
             )
             console.print("\n")
-            content += s + "\n\n"
-        content = cleaned_text(f"{prefix.capitalize()}"+ "\n" + content)
+            content += cleaned_text(f"{prefix.capitalize()}" + "\n----------------\n"+ s + "\n\n")
         file.write(content)
     # print(dom_df)
 
