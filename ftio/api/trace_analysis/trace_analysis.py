@@ -190,7 +190,7 @@ def periodic_apps(df, prefix) -> str:
     all = len(df[f"{prefix}_dominant_freq"])
     # n = df[f'{prefix}_dominant_freq'].apply(lambda x: len(x)>0).sum()
     n = df[f"{prefix}_dominant_freq"].apply(lambda x: not np.isnan(x)).sum()
-    # out = f"[blue]Periodic {prefix.capitalize()}: {n:.2f}/{all:.2f} ({n/all*100:.2f}%)[/]"
+    # out = f"[blue]Periodic {prefix.capitalize()}: {n:.3e}/{all:.3e} ({n/all*100:.3e}%)[/]"
     out = f"[blue]Periodic I/O:[/]\n - {n:.0f}/{all:.0f} ({n/all*100:.2f}%)\n\n"
     return out
 
@@ -206,8 +206,8 @@ def compute_metrics(df: pd.DataFrame, prefix, suffix="conf", unit="%", title="")
     nanmean = np.nanmean(df[conf_col])
     nanmedian = np.nanmedian(df[conf_col])
     scale = 100 if "conf" in suffix else 1
-    # out = f"[green]{prefix.capitalize()} {title}:\n - range: [{min*scale:.2f},{max*scale:.2f}] {unit}\n - mean: {mean*scale:.2f} {unit}\n - nanmean: {nanmean*scale:.2f} {unit}\n - median: {median*scale:.2f} {unit}\n - nanmedian: {nanmedian*scale:.2f} {unit}\n[/]"
-    out = f"[gray][green]{title}:[/]\n - range: [{min*scale:.2f},{max*scale:.2f}] {unit}\n - mean: {mean*scale:.2f} {unit}\n - nanmean: {nanmean*scale:.2f} {unit}\n - median: {median*scale:.2f} {unit}\n - nanmedian: {nanmedian*scale:.2f} {unit}\n\n[/]"
+    # out = f"[green]{prefix.capitalize()} {title}:\n - range: [{min*scale:.3e},{max*scale:.3e}] {unit}\n - mean: {mean*scale:.3e} {unit}\n - nanmean: {nanmean*scale:.3e} {unit}\n - median: {median*scale:.3e} {unit}\n - nanmedian: {nanmedian*scale:.3e} {unit}\n[/]"
+    out = f"[gray][green]{title}:[/]\n - range: [{min*scale:.3e},{max*scale:.3e}] {unit}\n - mean: {mean*scale:.3e} {unit}\n - nanmean: {nanmean*scale:.3e} {unit}\n - median: {median*scale:.3e} {unit}\n - nanmedian: {nanmedian*scale:.3e} {unit}\n\n[/]"
     return out
 
 
