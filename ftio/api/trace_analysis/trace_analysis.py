@@ -165,7 +165,7 @@ def statistics(df):
     prefixes = ["read", "write", "both"]
     color = ["purple4", "gold3", "deep_sky_blue1"]
     content = ""
-    with open("ftio_output.txt", 'a') as file:
+    with open("ftio_output.txt", 'w') as file:
         for prefix in prefixes:
             s = ""
             s += periodic_apps(df, prefix)
