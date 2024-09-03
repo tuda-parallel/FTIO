@@ -42,7 +42,7 @@ def main(argv=sys.argv[1:]):
     )
 
     # plot 
-    single_plot(combined_df_long)
+    # single_plot(combined_df_long)
     sub_plots(combined_df_long)
 
 
@@ -88,6 +88,20 @@ def sub_plots(df):
                 subplot_titles.append(metric)
                 order.append([i+1,row])
 
+    suffixes = []
+    for title in subplot_titles:
+        suffix = title.split('_', 1)[1]  # Split only at the first underscore
+        if suffix not in suffixes:
+            suffixes.append(suffix)
+
+    # Reorder the list based on the prefix order and original suffix order
+    subplot_titles = [
+        f"{prefix}_{suffix}"
+        for suffix in suffixes
+        for prefix in fields
+        if f"{prefix}_{suffix}" in subplot_titles
+    ]
+
     col = 0
     for i in order:
         col = max(i[0],col)
@@ -106,10 +120,16 @@ def sub_plots(df):
 
         # Create a box plot for the current metric
         box_trace = go.Box(
-            x=metric_df["Source File"], y=metric_df["Value"], name=metric
+            x=metric_df["Source File"], y=metric_df["Value"], name=metric,
+            # hide points
+            boxpoints=False, 
+            # std and mean
+            boxmean='sd'
         )
         # Clean the 'Value' column: Convert to numeric, coerce errors to NaN
-        metric_df['Value'] = pd.to_numeric(metric_df['Value'], errors='coerce')
+        # metric_df['Value'] = pd.to_numeric(metric_df['Value'], errors='coerce')
+        metric_df.loc[:, 'Value'] = pd.to_numeric(metric_df['Value'], errors='coerce')
+        
         # Drop rows where 'Value' could not be converted to numeric (i.e., NaN)
         metric_df = metric_df.dropna(subset=['Value'])
 
@@ -130,7 +150,7 @@ def sub_plots(df):
     fig.update_layout(
         title="Box Plots by Metric",
         height=400 * row,  # Adjust height for number of metrics
-        width=300*col*n,  # Adjust width for visibility
+        width=300 +80*col*n,  # Adjust width for visibility
         xaxis_title="Source File",
         yaxis_title="Values",
         showlegend=False,  # Hide legend to reduce clutter
@@ -138,6 +158,13 @@ def sub_plots(df):
 
     # Show the plot
     fig.show()
+    print(f"Saving HTML filer out.html in {os.getcwd()}")
+    fig.write_html(f"{os.getcwd()}/out.html")
+    # print(
+    #     f"Saving online HTML filer out_online.html in {os.getcwd()}."
+    #     f"This file needs an internet connection to be viewed for plotly js"
+    #     )
+    # fig.write_html(f"{os.getcwd()}/out_online.html",include_plotlyjs=False)
 
 
 if __name__ == "__main__":

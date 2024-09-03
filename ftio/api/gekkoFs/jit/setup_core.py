@@ -40,9 +40,9 @@ console = Console()
 
 #! Start gekko
 #!#################
-def start_gekko_demon(settings: JitSettings) -> None:
+def start_gekko_daemon(settings: JitSettings) -> None:
 
-    if settings.exclude_demon:
+    if settings.exclude_daemon:
         console.print(f"[bold yellow]####### Skipping Gkfs Demon [/][black][{get_time()}][/]")
     else:
         console.print(f"[bold green]####### Starting Gkfs Demon [/][black][{get_time()}][/]")
@@ -55,27 +55,27 @@ def start_gekko_demon(settings: JitSettings) -> None:
             # call_0 = f"srun --jobid={settings.job_id} {settings.single_node_command} -N 1 --ntasks=1 mkdir -p {settings.gkfs_mntdir}"
             call_0 =(
                 f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap "
+                f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                 f"--oversubscribe --mem=0 mkdir -p {settings.gkfs_mntdir}"
                     )
             call_1 =(
                 f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap "
+                f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                 f"--oversubscribe --mem=0 mkdir -p {settings.gkfs_rootdir}"
                     )
             if settings.exclude_proxy:
                 # Demon call without proxy
                 # call = (
                 #     f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                #     f"--ntasks={settings.app_nodes*settings.procs_demon} --cpus-per-task={settings.procs_demon} --ntasks-per-node={settings.procs_demon} --overcommit --overlap "
-                #     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                #     f"-H {settings.gkfs_hostfile} -c -l ib0 -P {settings.gkfs_demon_protocol}"
+                #     f"--ntasks={settings.app_nodes*settings.procs_daemon} --cpus-per-task={settings.procs_daemon} --ntasks-per-node={settings.procs_daemon} --overcommit --overlap "
+                #     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+                #     f"-H {settings.gkfs_hostfile} -c -l ib0 -P {settings.gkfs_daemon_protocol}"
                 # )
                 call = (
                     f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                    f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap "
-                    f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile} -c --clean-rootdir -l ib0 -P {settings.gkfs_demon_protocol}"
+                    f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
+                    f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+                    f"-H {settings.gkfs_hostfile} -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol}"
                 )
             else:
                 # Demon call with proxy
@@ -85,18 +85,18 @@ def start_gekko_demon(settings: JitSettings) -> None:
 
                 call = (
                     f"srun {debug_flag} --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                    f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap "
-                    f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile} -c --clean-rootdir -l ib0 -P {settings.gkfs_demon_protocol} -p ofi+verbs -L ib0"
+                    f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
+                    f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+                    f"-H {settings.gkfs_hostfile} -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol} -p ofi+verbs -L ib0"
                 )
 
         else:
             call_0 = f"mkdir -p {settings.gkfs_mntdir}"
             call_1 = f"mkdir -p {settings.gkfs_rootdir}"
 
-            # Gekko demon call
+            # Gekko daemon call
             call = (
-                f"GKFS_DAEMON_LOG_LEVEL=info GKFS_DAEMON_LOG_PATH={settings.gekko_demon_log} {settings.gkfs_demon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+                f"GKFS_DAEMON_LOG_LEVEL=info GKFS_DAEMON_LOG_PATH={settings.gekko_daemon_log} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
                 f"-H {settings.gkfs_hostfile} -c --clean-rootdir -l lo -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp"
             )
 
@@ -106,14 +106,14 @@ def start_gekko_demon(settings: JitSettings) -> None:
 
         jit_print("[cyan]>> Starting Demons[/]", True)
 
-        # p = multiprocessing.Process(target=execute_background, args= (call, settings.gekko_demon_log, settings.gekko_demon_err, settings.dry_run))
+        # p = multiprocessing.Process(target=execute_background, args= (call, settings.gekko_daemon_log, settings.gekko_daemon_err, settings.dry_run))
         # p.start()
         # if settings.verbose:
-        #     monitor_log_file(settings.gekko_demon_err,"Error Demon")
-        #     monitor_log_file(settings.gekko_demon_log,"Demon")
-        process = execute_background_and_log(settings, call, settings.gekko_demon_log, "demon",settings.gekko_demon_err)
+        #     monitor_log_file(settings.gekko_daemon_err,"Error Demon")
+        #     monitor_log_file(settings.gekko_daemon_log,"Demon")
+        process = execute_background_and_log(settings, call, settings.gekko_daemon_log, "daemon",settings.gekko_daemon_err)
         if settings.verbose:
-            monitor_log_file(settings.gekko_demon_err,"Error Demon")
+            monitor_log_file(settings.gekko_daemon_err,"Error Demon")
         
         wait_for_file(settings.gkfs_hostfile, dry_run = settings.dry_run)
         console.print("\n")
@@ -173,7 +173,7 @@ def start_cargo(settings: JitSettings) -> None:
             #     f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
             #     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_cargo} --ntasks-per-node=1 "
             #     f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
-            #     f"--listen {settings.gkfs_demon_protocol}://ib0:62000 -b 65536"
+            #     f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
             # )
             # The above call just gives more resources to the same proc, but not more. Cargo need at least two
             call = (
@@ -185,7 +185,7 @@ def start_cargo(settings: JitSettings) -> None:
                 f"-N {settings.app_nodes} --ntasks={settings.app_nodes*settings.procs_cargo} "
                 f"--cpus-per-task={settings.procs_cargo} --ntasks-per-node={settings.procs_cargo} "
                 f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
-                f"--listen {settings.gkfs_demon_protocol}://ib0:62000 -b 65536"
+                f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
             )
         else:
             # Command for non-cluster
@@ -404,7 +404,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
             additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
         if not settings.exclude_proxy:
             additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-        if not settings.exclude_demon:
+        if not settings.exclude_daemon:
             additional_arguments += (
                     f"-x LIBGKFS_LOG=info,warnings,errors "
                     f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "

@@ -136,7 +136,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
             elif len(procs_list) > 0:
                 settings.procs_app = int(procs_list[0])
             if len(procs_list) > 1:
-                settings.procs_demon = int(procs_list[1])
+                settings.procs_daemon = int(procs_list[1])
             if len(procs_list) > 2:
                 settings.procs_proxy = int(procs_list[2])
             if len(procs_list) > 3:
@@ -158,14 +158,14 @@ def parse_options(settings: JitSettings, args: list) -> None:
                     elif exclude.lower() == "cargo":
                         settings.exclude_cargo = True
                         console.print("[yellow]- cargo[/]")
-                    elif exclude.lower() in ("gkfs", "demon", "proxy"):
+                    elif exclude.lower() in ("gkfs", "daemon", "proxy"):
                         if exclude.lower() == "gkfs":
-                            settings.exclude_demon = True
+                            settings.exclude_daemon = True
                             settings.exclude_proxy = True
                             console.print("[yellow]- gkfs[/]")
-                        elif exclude.lower() == "demon":
-                            settings.exclude_demon = True
-                            console.print("[yellow]- demon[/]")
+                        elif exclude.lower() == "daemon":
+                            settings.exclude_daemon = True
+                            console.print("[yellow]- daemon[/]")
                         elif exclude.lower() == "proxy":
                             settings.exclude_proxy = True
                             console.print("[yellow]- proxy[/]")
@@ -224,10 +224,10 @@ def error_usage(settings: JitSettings):
         if procs_list is skipped, this is the default number of procs assigned to all
         
     -p | --procs_list: x,x,..,x <list>
-        default: [bold yellow]{settings.procs_app},{settings.procs_demon},{settings.procs_proxy},{settings.procs_cargo},{settings.procs_ftio}[/]
-        List of task per node/cpu per proc for app, demon, proxy, cargo, and ftio, respectively.
+        default: [bold yellow]{settings.procs_app},{settings.procs_daemon},{settings.procs_proxy},{settings.procs_cargo},{settings.procs_ftio}[/]
+        List of task per node/cpu per proc for app, daemon, proxy, cargo, and ftio, respectively.
         Assignment is from right to left depending on the length of the list.
-        FTIO, GekkoFS (proxy and demon) always have 1 task per node. The 
+        FTIO, GekkoFS (proxy and daemon) always have 1 task per node. The 
         assignment in this list specifics the cpu per task. For cargo and the app, the task per node
         is calculated as nodes*procs_cargo or nodes*procs_app, respectively.
 
@@ -250,7 +250,7 @@ def error_usage(settings: JitSettings):
     -e | --exclude: <str>,<str>,...,<str>
         default: ftio
         If this flag is provided, the setup is executed without the tool(s).
-        Supported options include: ftio, demon, proxy, gkfs (demon + proxy), 
+        Supported options include: ftio, daemon, proxy, gkfs (daemon + proxy), 
         cargo, and all (same as -x).
 
     -x | --exclude-all
@@ -705,9 +705,9 @@ def get_pid(settings: JitSettings, name: str, pid: int):
     if name.lower() in "cargo":
         settings.cargo_pid = pid
         jit_print(f">> Cargo startup successful. PID is {pid}")
-    elif name.lower() in "gkfs_demon":
-        settings.gekko_demon_pid = pid
-        jit_print(f">> Gekko demon startup successful. PID is {pid}")
+    elif name.lower() in "gkfs_daemon":
+        settings.gekko_daemon_pid = pid
+        jit_print(f">> Gekko daemon startup successful. PID is {pid}")
     elif name.lower() in "gkfs_proxy":
         settings.gekko_proxy_pid = pid
         jit_print(f">> Gekko proxy startup successful. PID is {pid}")
@@ -740,9 +740,9 @@ def soft_kill(settings: JitSettings) -> None:
             except:
                 jit_print("[bold cyan] >> Unable to soft kill FTIO [/]")
 
-    if not settings.exclude_demon:
+    if not settings.exclude_daemon:
         try:
-            shut_down(settings, "GEKKO", settings.gekko_demon_pid)
+            shut_down(settings, "GEKKO", settings.gekko_daemon_pid)
             jit_print("[bold cyan] >> killed GEKKO DEMON [/]")
         except:
             jit_print("[bold cyan] >> Unable to soft kill GEKKO DEMON [/]")
@@ -776,7 +776,7 @@ def hard_kill(settings) -> None:
         else:
             # Non-cluster environment: use `kill` to terminate processes
             processes = [
-                settings.gkfs_demon,
+                settings.gkfs_daemon,
                 settings.gkfs_proxy,
                 settings.cargo,
                 f"{settings.ftio_bin_location}/predictor_jit",
@@ -857,7 +857,7 @@ def get_address_cargo(settings: JitSettings) -> None:
                 call, shell=True, capture_output=True, text=True, check=True
             )
             settings.address_cargo = result.stdout.strip()
-            settings.cargo_server = f"{settings.gkfs_demon_protocol}://{settings.address_cargo}:62000"
+            settings.cargo_server = f"{settings.gkfs_daemon_protocol}://{settings.address_cargo}:62000"
         except subprocess.CalledProcessError as e:
             jit_print(f"[bold red]>>Error occurred: {e}")
             settings.address_cargo = ""
@@ -879,12 +879,12 @@ def set_dir_gekko(settings: JitSettings) -> None:
 def print_settings(settings) -> None:
     # Default values
     ftio_status = f"[bold green]ON[/]"
-    gkfs_demon_status = f"[bold green]ON[/]"
+    gkfs_daemon_status = f"[bold green]ON[/]"
     gkfs_proxy_status = f"[bold green]ON[/]"
     cargo_status = f"[bold green]ON[/]"
 
-    task_demon = f"{settings.app_nodes}"
-    cpu_demon  = f"{settings.procs_demon}"
+    task_daemon = f"{settings.app_nodes}"
+    cpu_daemon  = f"{settings.procs_daemon}"
     task_proxy = f"{settings.app_nodes}"
     cpu_proxy  = f"{settings.procs_proxy}"
     task_cargo = f"{settings.app_nodes*settings.procs_cargo}"
@@ -900,8 +900,8 @@ def print_settings(settings) -> None:
 ├─ # nodes        : 1
 └─ ftio node      : {settings.ftio_node_command.replace('--nodelist=', '')}"""
 
-    gkfs_demon_text = f"""
-├─ gkfs demon     : {settings.gkfs_demon}
+    gkfs_daemon_text = f"""
+├─ gkfs daemon     : {settings.gkfs_daemon}
 ├─ gkfs intercept : {settings.gkfs_intercept}
 ├─ gkfs mntdir    : {settings.gkfs_mntdir}
 ├─ gkfs rootdir   : {settings.gkfs_rootdir}
@@ -928,16 +928,16 @@ def print_settings(settings) -> None:
         task_ftio  = "[bold yellow]-[/]"
         cpu_ftio  = "[bold yellow]-[/]"
         
-    if settings.exclude_demon:
-        gkfs_demon_text = """
-├─ gkfs demon     : [yellow]none[/]
+    if settings.exclude_daemon:
+        gkfs_daemon_text = """
+├─ gkfs daemon    : [yellow]none[/]
 ├─ gkfs intercept : [yellow]none[/]
 ├─ gkfs mntdir    : [yellow]none[/]
 ├─ gkfs rootdir   : [yellow]none[/]
 ├─ gkfs hostfile  : [yellow]none[/]"""
-        gkfs_demon_status = "[bold yellow]off[/]"
-        task_demon = "[bold yellow]-[/]"
-        cpu_demon = "[bold yellow]-[/]"
+        gkfs_daemon_status = "[bold yellow]off[/]"
+        task_daemon = "[bold yellow]-[/]"
+        cpu_daemon = "[bold yellow]-[/]"
 
     if settings.exclude_proxy:
         gkfs_proxy_text = """
@@ -965,7 +965,7 @@ def print_settings(settings) -> None:
 ├─ logs dir       : {settings.log_dir}
 ├─ pwd            : {os.getcwd()}
 ├─ ftio           : {ftio_status}
-├─ gkfs demon     : {gkfs_demon_status}
+├─ gkfs daemon     : {gkfs_daemon_status}
 ├─ gkfs proxy     : {gkfs_proxy_status}
 ├─ cargo          : {cargo_status}
 ├─ cluster        : {settings.cluster}
@@ -974,13 +974,13 @@ def print_settings(settings) -> None:
 |   └─ ftio       : 1
 ├─ tasks per node : -  
 |   ├─ app        : {settings.procs_app} 
-|   ├─ demon      : {task_demon}
+|   ├─ daemon      : {task_daemon}
 |   ├─ proxy      : {task_proxy}
 |   ├─ cargo      : {task_cargo}
 |   └─ ftio       : {task_ftio}
 ├─ cpus per task  : {settings.procs} 
 |   ├─ app        : 1
-|   ├─ demon      : {cpu_demon}
+|   ├─ daemon      : {cpu_daemon}
 |   ├─ proxy      : {cpu_proxy}
 |   ├─ cargo      : {cpu_cargo}
 |   └─ ftio       : {cpu_ftio}
@@ -990,7 +990,7 @@ def print_settings(settings) -> None:
 
 [bold green]ftio[/]{ftio_text}
 
-[bold green]gekko[/]{gkfs_demon_text}{gkfs_proxy_text}
+[bold green]gekko[/]{gkfs_daemon_text}{gkfs_proxy_text}
 
 [bold green] cargo[/]{cargo_text}
 
@@ -1105,7 +1105,7 @@ def load_flags(settings:JitSettings) -> str:
         additional_arguments += f" LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port}  LIBGKFS_ENABLE_METRICS=on "
     if not settings.exclude_proxy:
             additional_arguments += f" LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-    if not settings.exclude_demon:
+    if not settings.exclude_daemon:
         additional_arguments += (
             f" LIBGKFS_LOG=info,warnings,errors "
             f" LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
@@ -1151,7 +1151,7 @@ def log_failed_jobs(settings:JitSettings, info:str) -> None:
 def save_bandwidth(settings:JitSettings):
     if not settings.exclude_ftio:
         try:
-            command = f"{os.path.dirname(settings.log_dir)}/bandwidth.json settings.log_dir || true"
+            command = f"cp {os.path.dirname(settings.log_dir)}/bandwidth.json {settings.log_dir}/bandwidth.json || true"
             _ = subprocess.run(
                             command, shell=True, capture_output=True, text=True, check=True
                         )

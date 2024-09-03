@@ -151,7 +151,7 @@ def execute_background_and_log(
         settings (JitSettings): jit settings
         call (str): bash call to execute
         log_file (str): absolute location of the log file to monitor
-        name (str, optional): The src of the file. If set to demon, proxy, or ftio, the output
+        name (str, optional): The src of the file. If set to daemon, proxy, or ftio, the output
         is colored. Defaults to "".. Defaults to "".
 
     Returns:
@@ -159,7 +159,7 @@ def execute_background_and_log(
     """
     process = execute_background(call, log_file, err_file, settings.dry_run)
     get_pid(settings, name, process.pid)
-    # demon is noisy
+    # daemon is noisy
     monitor_log_file(log_file, name)
     return process
 
@@ -174,7 +174,7 @@ def execute_background_and_log_in_process(
         settings (JitSettings): jit settings
         call (str): bash call to execute
         log_file (str): absolute location of the log file to monitor
-        name (str, optional): The src of the file. If set to demon, proxy, or ftio, the output
+        name (str, optional): The src of the file. If set to daemon, proxy, or ftio, the output
         is colored. Defaults to "".. Defaults to "".
 
     Returns:
@@ -186,7 +186,7 @@ def execute_background_and_log_in_process(
 
     process = execute_background(call, log_file, err_file, dry_run)
     # get_pid(settings, name, process.pid)
-    # demon is noisy
+    # daemon is noisy
     monitor_log_file(log_file, src=name)
     _, stderr = process.communicate()
     if process.returncode != 0:
@@ -239,7 +239,7 @@ def monitor_log_file(file: str, src: str = "") -> None:
 
     Args:
         file (str): absolute File path
-        src (str, optional): The src of the file. If set to demon, proxy, or ftio, the output
+        src (str, optional): The src of the file. If set to daemon, proxy, or ftio, the output
         is colored. Defaults to "".
     """
     monitor_process = multiprocessing.Process(target=print_file, args=(file, src))
@@ -490,7 +490,7 @@ def print_file(file, src=""):
     close = ""
     wait_time = 0.05
     if src:
-        if "demon" in src.lower():
+        if "daemon" in src.lower():
             color = "[purple4]"
             wait_time = 0.1
         elif "proxy" in src.lower():

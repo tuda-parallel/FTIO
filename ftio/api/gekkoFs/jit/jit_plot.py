@@ -193,9 +193,8 @@ class JitResult:
                 )
             )
 
-        fig.show()
-        format_plot(fig, x_minor=False)
         
+        format_plot(fig, x_minor=False)
         # Display the plot
         fig.show()
 

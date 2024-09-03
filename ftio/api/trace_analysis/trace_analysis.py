@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 import json
 import time
 from rich.console import Console
@@ -163,6 +164,7 @@ def statistics(df):
     df_dom.to_csv("ftio_flat.csv", index=False)
     prefixes = ["read", "write", "both"]
     color = ["purple4", "gold3", "deep_sky_blue1"]
+    content = ""
     with open("ftio_output.txt", 'a') as file:
         for prefix in prefixes:
             s = ""
@@ -179,7 +181,9 @@ def statistics(df):
                 )
             )
             console.print("\n")
-            file.write(s + "\n\n")
+            content += s + "\n\n"
+        content = cleaned_text(f"{prefix.capitalize()}"+ "\n" + content)
+        file.write(content)
     # print(dom_df)
 
 
@@ -240,6 +244,12 @@ def reduce_to_max_conf(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
+
+def cleaned_text(text:str) -> str:
+    # Remove color tags and placeholders for rich console
+    text = re.sub(r'\[\w+\]', '', text)  # Remove [color] tags
+    text = re.sub(r'\[\/\]', '', text)  # Remove [/] tags
+    return text
 
 if __name__ == "__main__":
     main(sys.argv[1:])

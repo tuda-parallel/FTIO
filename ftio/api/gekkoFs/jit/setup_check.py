@@ -29,11 +29,11 @@ def check_setup(settings:JitSettings):
         # files = subprocess.check_output(ls_command, shell=True).decode()
         # console.print(f"[cyan]>> geko_ls {gkfs_mntdir}: \n{files}[/]")
 
-        if settings.cluster and settings.debug and not settings.exclude_demon:
+        if settings.cluster and settings.debug and not settings.exclude_daemon:
             #srun dies not work with gekko
             # call = (
             #     f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} --ntasks={settings.app_nodes} "
-            #     f"--cpus-per-task={settings.procs_demon} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
+            #     f"--cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
             #     f"--export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')},LD_PRELOAD={settings.gkfs_intercept} "
             #     f"/usr/bin/ls {settings.gkfs_mntdir} "
             # )
@@ -47,7 +47,7 @@ def check_setup(settings:JitSettings):
                 additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
             if not settings.exclude_proxy:
                 additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-            if not settings.exclude_demon:
+            if not settings.exclude_daemon:
                 additional_arguments += (
                     f"-x LIBGKFS_LOG=info,warnings,errors "
                     f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "

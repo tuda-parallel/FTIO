@@ -11,7 +11,7 @@ from ftio.api.gekkoFs.jit.setup_core import (
     start_application,
     start_cargo,
     start_ftio,
-    start_gekko_demon,
+    start_gekko_daemon,
     start_gekko_proxy,
 )
 from ftio.api.gekkoFs.jit.setup_helper import (
@@ -69,7 +69,7 @@ def main() -> None:
     print_settings(settings)
 
     # 2.0 Start Gekko Server (Daemon)
-    start_gekko_demon(settings)
+    start_gekko_daemon(settings)
 
     # 2.1 Start Proxy
     start_gekko_proxy(settings)

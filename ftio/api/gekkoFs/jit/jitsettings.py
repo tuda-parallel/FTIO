@@ -12,7 +12,7 @@ class JitSettings:
 
         # flags
         self.set_tasks_affinity = True
-        self.gkfs_demon_protocol = "ofi+sockets" #"ofi+verbs"
+        self.gkfs_daemon_protocol = "ofi+sockets" #"ofi+verbs"
         self.debug = True
         self.verbose = True
         # execute in node local
@@ -37,8 +37,8 @@ class JitSettings:
         self.single_node_command = ""
 
         self.log_dir = ""
-        self.gekko_demon_log = ""
-        self.gekko_demon_err = ""
+        self.gekko_daemon_log = ""
+        self.gekko_daemon_err = ""
         self.gekko_proxy_log = ""
         self.gekko_proxy_err = ""
         self.gekko_client_log = ""
@@ -52,13 +52,13 @@ class JitSettings:
         # exclude flags
         self.exclude_ftio = False
         self.exclude_cargo = False
-        self.exclude_demon = False
+        self.exclude_daemon = False
         self.exclude_proxy = True
         self.exclude_all = False
 
         # pid of processes
         self.ftio_pid = 0
-        self.gekko_demon_pid = 0
+        self.gekko_daemon_pid = 0
         self.gekko_proxy_pid = 0
         self.cargo_pid = 0
         self.log_speed = 0.1
@@ -79,7 +79,7 @@ class JitSettings:
         self.omp_threads = 64
         self.task_set_0 = ""
         self.task_set_1 = ""
-        self.procs_demon = 0
+        self.procs_daemon = 0
         self.procs_proxy = 0
         self.procs_cargo = 0
         self.procs_app = 0
@@ -126,20 +126,20 @@ class JitSettings:
         # default values for the procs in proc_list is not passed
         if self.cluster:
             self.procs_proxy = int(np.floor(self.procs / 2))
-            self.procs_demon = int(np.floor(self.procs / 2))
+            self.procs_daemon = int(np.floor(self.procs / 2))
             self.procs_cargo = 2
             self.procs_ftio = self.procs
             self.procs_app = int(np.floor(self.procs / 2))
         else:
             self.procs = 10
-            self.procs_demon = 1
+            self.procs_daemon = 1
             self.procs_proxy = 1
             self.procs_cargo = 2
             self.procs_ftio = 1
             self.procs_app = self.procs
 
     def update_geko_files(self):
-        if not self.exclude_demon:
+        if not self.exclude_daemon:
             self.gkfs_hostfile = self.gkfs_hostfile.replace(
                 ".txt", f"_{self.job_id}.txt"
             )
@@ -156,7 +156,7 @@ class JitSettings:
         if (
             self.exclude_ftio
             and self.exclude_cargo
-            and self.exclude_demon
+            and self.exclude_daemon
             and self.exclude_proxy
         ):
             self.exclude_all = True
@@ -165,7 +165,7 @@ class JitSettings:
         if self.exclude_all:
             self.exclude_ftio = True
             self.exclude_cargo = True
-            self.exclude_demon = True
+            self.exclude_daemon = True
             self.exclude_proxy = True
             
 
@@ -177,8 +177,8 @@ class JitSettings:
                     f"[bold green]JIT [bold cyan]>> correcting nodes to {self.nodes} and processes to {self.procs} [/]"
                 )
         self.log_suffix = "DPCF"
-        if self.exclude_demon:
-            self.procs_demon = 0
+        if self.exclude_daemon:
+            self.procs_daemon = 0
             self.log_suffix =  self.log_suffix.replace("D","")
         if self.exclude_proxy:
             self.procs_proxy = 0
@@ -198,8 +198,8 @@ class JitSettings:
                 )
 
     def set_log_dirs(self):
-        self.gekko_demon_log = os.path.join(self.log_dir, "gekko_demon.log")
-        self.gekko_demon_err = os.path.join(self.log_dir, "gekko_demon.err")
+        self.gekko_daemon_log = os.path.join(self.log_dir, "gekko_daemon.log")
+        self.gekko_daemon_err = os.path.join(self.log_dir, "gekko_daemon.err")
         self.gekko_proxy_log = os.path.join(self.log_dir, "gekko_proxy.log")
         self.gekko_proxy_err = os.path.join(self.log_dir, "gekko_proxy.err")
         self.gekko_client_log = os.path.join(self.log_dir, "gekko_client.log")
@@ -215,7 +215,7 @@ class JitSettings:
             "nodes": self.nodes,
             "app nodes": self.app_nodes,
             "procs": self.procs,
-            "procs demon": self.procs_demon,
+            "procs daemon": self.procs_daemon,
             "procs proxy": self.procs_proxy,
             "procs cargo": self.procs_cargo,
             "procs app  ": self.procs_app,
@@ -223,7 +223,7 @@ class JitSettings:
             "task_set_0": self.task_set_0,
             "task_set_1": self.task_set_1,
             "OpenMP threads": self.omp_threads,
-            "protocol": self.gkfs_demon_protocol,
+            "protocol": self.gkfs_daemon_protocol,
             "app dir": self.app_dir,
             "app call": self.app_call,
             "id": self.job_id,
@@ -250,21 +250,19 @@ class JitSettings:
         self.ftio_bin_location = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin"
 
         # ****** gkfs variables ******
-        self.gkfs_demon = (
-            "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/bin/gkfs_daemon"
-        )
+        self.gkfs_daemon    = "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/bin/gkfs_daemon"
         self.gkfs_intercept = "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
-        self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
-        self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
-        self.gkfs_hostfile = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
-        self.gkfs_proxy = "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
-        
+        self.gkfs_mntdir    = "/dev/shm/tarraf_gkfs_mountdir"
+        self.gkfs_rootdir   = "/dev/shm/tarraf_gkfs_rootdir"
+        self.gkfs_hostfile  = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
+        self.gkfs_proxy     = "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
         self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
 
+
         # ****** cargo variables ******
-        self.cargo = "/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
-        self.cargo_cli = "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
-        self.cargo_server = f"{self.gkfs_demon_protocol}://127.0.0.1:62000"
+        self.cargo        = "/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
+        self.cargo_cli    = "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
+        self.cargo_server = f"{self.gkfs_daemon_protocol}://127.0.0.1:62000"
 
         # ? APP settings
         # ?##########################
@@ -287,10 +285,10 @@ class JitSettings:
         # ├─ Nek5000
         if "nek" in self.app_call:
             if self.exclude_all:
-                self.pre_app_call = f"echo -e 'turbPipe\\n{self.app_dir}/input' > {self.app_dir}/SESSION.NAME"
+                self.pre_app_call  = f"echo -e 'turbPipe\\n{self.app_dir}/input' > {self.app_dir}/SESSION.NAME"
                 self.post_app_call = f"rm {self.app_dir}/input/*.f* || echo true"
             else:
-                self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > {self.app_dir}/SESSION.NAME"
+                self.pre_app_call  = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > {self.app_dir}/SESSION.NAME"
                 self.post_app_call = ""
         # ├─ Wacom++
         elif "wacom" in self.app_call:
@@ -347,7 +345,7 @@ class JitSettings:
             self.regex_file = f"{self.install_location}/nek_regex4cargo.txt"
 
             self.ftio_bin_location = "/d/github/FTIO/.venv/bin"
-            self.gkfs_demon = f"{self.install_location}/iodeps/bin/gkfs_daemon"
+            self.gkfs_daemon = f"{self.install_location}/iodeps/bin/gkfs_daemon"
             self.gkfs_intercept = (
                 f"{self.install_location}/iodeps/lib/libgkfs_intercept.so"
             )

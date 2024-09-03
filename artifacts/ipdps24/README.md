@@ -62,7 +62,7 @@ data
 ## Artifacts
 
 ### 1. Running Example and Overhead
-Throughout Section II of the paper "Capturing Periodic I/O Using Frequency Techniques", IOR was used to demonstrate the approach. Moreover, In Section III-C the overhead of our approach was examined using IOR with a varying number of ranks (from 1 to 10752 ranks).
+Throughout Section II of the paper "Capturing Periodic I/O Using Frequency Techniques", IOR was used to daemonstrate the approach. Moreover, In Section III-C the overhead of our approach was examined using IOR with a varying number of ranks (from 1 to 10752 ranks).
 
 - Follow the instructions provided in the [IOR/README.md](/artifacts/ipdps24/IOR/README.md) to set up and run IOR or execute `ftio` on the provided traces.  
 - Instructions regarding the overhead are provided [here](/artifacts/ipdps24/IOR/README.md#tracing-library-overhead).
