@@ -42,8 +42,7 @@ class FreqPlot:
             D3 = []
             j = 0
             self.check = 0
-            self.modes = ["write_async", "write_sync",
-                          "read_async", "read_sync"]
+            self.modes = ["write_async", "write_sync", "read_async", "read_sync"]
             self.s = []
             mode = "write_async"
             if isinstance(argv, list):
@@ -337,14 +336,10 @@ class FreqPlot:
             )
             if "conf" in self.D.data_df:
                 sorted_ref = self.D.data_df[index_data].sort_values("conf")
-                dominant = self.dominant[self.dominant["ranks"].isin(
-                    [r])]["k"].values
+                dominant = self.dominant[self.dominant["ranks"].isin([r])]["k"].values
                 # dominant=[0,7,14, 21, 28, 35,42,49, 56]
                 if all_or_10:
-                    dominant = np.concatenate(
-                        (dominant,
-                         self.D.settings_df[index_set]["N"][0] - dominant)
-                    )
+                    dominant = np.concatenate((dominant,self.D.settings_df[index_set]["N"][0] - dominant))
             else:
                 sorted_ref = self.D.data_df[index_data].sort_values("A")
                 dominant = sorted_ref.tail(3).index
@@ -422,8 +417,7 @@ class FreqPlot:
                             k,
                             phi[k],
                         )
-                        plt.plot(time, x * order, linewidth=0.7,
-                                 label="_nolegend_")
+                        plt.plot(time, x * order, linewidth=0.7,label="_nolegend_")
                     else:
                         if self.D.data_df[index_data].index[k] in top_x:
                             if k == 0 or k == len(samples) / 2:
@@ -432,13 +426,10 @@ class FreqPlot:
                                 a = 2
 
                             if round(freq[k], 2) > 0:
-                                s = f"{
-                                    a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2f}*t+{phi[k]:.2f})"
+                                s = f"{a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2f}*t+{phi[k]:.2f})"
                             else:
-                                s = f"{
-                                    a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2e}*t+{phi[k]:.2e})"
-                            plt.plot(time, a * x * order,
-                                     linewidth=0.9, label=s)
+                                s = f"{a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2e}*t+{phi[k]:.2e})"
+                            plt.plot(time, a * x * order,linewidth=0.9, label=s)
                             # if (k in dominant ):
                             if k in dominant and k != 0:
                                 if name_dominant:
@@ -453,11 +444,9 @@ class FreqPlot:
                         else:
                             a = 2
                         if round(freq[k], 1) > 0 and amp[k] < 100:
-                            s = f"{a / length * order*amp[k]:.1f}*cos(2\u03C0*{freq[k]:.2f}*t{
-                                self.D.data_df[index_data]['phi'].values[k]:+.2f})"
+                            s = f"{a / length * order*amp[k]:.1f}*cos(2\u03C0*{freq[k]:.2f}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
                         else:
-                            s = f"{a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2e}*t{
-                                self.D.data_df[index_data]['phi'].values[k]:+.2f})"
+                            s = f"{a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2e}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
                         # For the paper
                         # s = f"{a / length * order*amp[k]:.0f}*cos(2\u03C0*{freq[k]:.2f}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
                         f[-1].add_trace(
@@ -470,8 +459,7 @@ class FreqPlot:
                                 + "<br><b>Amplitude</b>: %{y}"
                                 + "<br><b>T</b>: %{text} s",
                                 text=len(samples)
-                                * [f"{self.D.data_df[index_data]
-                                      ['T'].values[k]:.2f}"],
+                                * [f"{self.D.data_df[index_data]['T'].values[k]:.2f}"],
                                 marker_color=(
                                     colors[color_counter]
                                     if color_counter != 1
@@ -949,6 +937,7 @@ def rangeslider(f, arr, limit, cond="", point_limit=2.5e3):
             )  # change type to date to show buttons
         except:
             pass
+
 
 
 def convert_and_plot(data, dfs: list, args) -> None:
