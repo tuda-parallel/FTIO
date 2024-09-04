@@ -13,6 +13,8 @@ class JitSettings:
         # flags
         self.set_tasks_affinity = True
         self.gkfs_daemon_protocol = "ofi+verbs" #"ofi+sockets" 
+        self.cargo_mode = "posix" #"parallel"
+
         self.debug = True
         self.verbose = True
         # execute in node local

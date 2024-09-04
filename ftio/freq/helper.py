@@ -1,7 +1,6 @@
 """Helper function for frequency techniques    
 """
 
-import plotly.graph_objects as go
 from rich.console import Console
 
 
@@ -46,56 +45,6 @@ def get_sim(data, mode):
         elif "sync" in mode:
             return data.write_sync
     raise Exception("undefined mode set")
-
-
-
-def format_plot(fig) -> go.Figure:
-    """makes plots uniform
-
-    Args:
-        fig (pltoly figure)
-    """
-    fig.update_layout(
-        plot_bgcolor="white",
-        legend=dict(
-            bgcolor="rgba(255,255,255,.99)",
-            bordercolor="Black",
-            borderwidth=1,
-        ),
-        font=dict(family="Courier New, monospace", size=24, color="black"),
-        # margin=dict(l=5, r=5, t=5, b=5) #IEEE
-        margin=dict(t=25),
-    )
-
-    fig.update_xaxes(
-        ticks="outside",
-        # tickwidth=1,
-        ticklen=10,
-        showgrid=True,
-        # gridwidth=1,
-        mirror=True,
-        showline=True,
-        linecolor="black",
-        gridcolor="lightgrey",
-        minor_ticks="outside",
-        minor=dict(ticklen=2),
-    )
-
-    fig.update_yaxes(
-        ticks="outside",
-        # tickwidth=1,
-        ticklen=10,
-        showgrid=True,
-        # gridwidth=1,
-        mirror=True,
-        showline=True,
-        linecolor="black",
-        gridcolor="lightgrey",
-        minor_ticks="outside",
-        minor=dict(ticklen=2),
-    )
-
-    return fig
 
 
 def merge_results(

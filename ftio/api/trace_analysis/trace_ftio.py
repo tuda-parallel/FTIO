@@ -4,7 +4,7 @@ import numpy as np
 from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
 from ftio.freq._dft import display_prediction
-from ftio.freq.freq_plot_core import convert_and_plot
+from ftio.plot.freq_plot import convert_and_plot
 from ftio.parse.bandwidth import overlap
 from ftio.parse.csv_reader import read_csv_file
 

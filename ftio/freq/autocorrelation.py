@@ -6,7 +6,7 @@ from rich.panel import Panel
 import plotly.graph_objects as go
 # from rich.padding import Padding
 import ftio.freq.discretize as dis
-from ftio.freq.helper import format_plot
+from ftio.plot.helper import format_plot_simple
 from ftio.freq.helper import MyConsole
 
 

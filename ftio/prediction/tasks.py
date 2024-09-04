@@ -4,7 +4,7 @@ from ftio.parse.args import parse_args
 from ftio.freq._dft import display_prediction
 import numpy as np
 # from ftio.prediction.helper import get_dominant
-# from ftio.freq.freq_plot_core import convert_and_plot
+# from ftio.plot.freq_plot import convert_and_plot
 from ftio.freq.helper import MyConsole
 
 CONSOLE = MyConsole()

@@ -1,30 +1,30 @@
 from __future__ import annotations
 import os
-from threading import Thread
+
 import datetime
 import json
 import numpy as np
 import pandas as pd
-from scipy.spatial.distance import euclidean
-from fastdtw import fastdtw
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 import matplotlib
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-# import plotly.offline
 import plotly.express as px
-from plotly.subplots import make_subplots
 
+from ftio.freq.dtw import threaded_dtw
 from ftio.freq.freq_data import FreqData
-from ftio.freq.helper import format_plot
+from ftio.plot.helper import format_plot_simple
+from ftio.plot.spectrum import plot_one_spectrum
 from ftio.plot.units import set_unit
 from ftio.freq.freq_html import create_html
 
 # import plotly.io as pio
 
 matplotlib.rcParams["backend"] = "TkAgg"
+
 
 class FreqPlot:
     """For plotting the result of ftio"""
@@ -42,7 +42,8 @@ class FreqPlot:
             D3 = []
             j = 0
             self.check = 0
-            self.modes = ["write_async", "write_sync", "read_async", "read_sync"]
+            self.modes = ["write_async", "write_sync",
+                          "read_async", "read_sync"]
             self.s = []
             mode = "write_async"
             if isinstance(argv, list):
@@ -60,7 +61,8 @@ class FreqPlot:
             else:
                 self.paths = [argv]
 
-            print("\033[1;32m--------------------------------------------\n\033[1;32m")
+            print(
+                "\033[1;32m--------------------------------------------\n\033[1;32m")
             self.Print_info(argv[0])
             print("\n\033[1;35mPlot mode is %s\033[1;0m\n" % (mode))
             for path in self.paths:
@@ -81,14 +83,16 @@ class FreqPlot:
                                 f = open(file)
                                 data = json.load(f)
                                 mode = self.Check_Mode(data, mode)
-                                D1.append(pd.DataFrame(data=data.get(mode).get("data")))
+                                D1.append(pd.DataFrame(
+                                    data=data.get(mode).get("data")))
                                 D2.append(
                                     pd.DataFrame(
                                         data=data.get(mode).get("settings"), index=[j]
                                     )
                                 )
                                 D3.append(
-                                    pd.DataFrame(data=data.get(mode).get("original"))
+                                    pd.DataFrame(data=data.get(
+                                        mode).get("original"))
                                 )
                                 D1[j] = pd.concat(
                                     [
@@ -145,9 +149,11 @@ class FreqPlot:
                     mode = self.Check_Mode(data, mode)
                     D1.append(pd.DataFrame(data=data.get(mode).get("data")))
                     D2.append(
-                        pd.DataFrame(data=data.get(mode).get("settings"), index=[j])
+                        pd.DataFrame(data=data.get(
+                            mode).get("settings"), index=[j])
                     )
-                    D3.append(pd.DataFrame(data=data.get(mode).get("original")))
+                    D3.append(pd.DataFrame(
+                        data=data.get(mode).get("original")))
                     D1[j] = pd.concat(
                         [
                             D1[j],
@@ -177,7 +183,8 @@ class FreqPlot:
                             [
                                 D3[j],
                                 pd.DataFrame(
-                                    {"ranks": [D2[j]["ranks"][j]] * len(D3[j]["b"])}
+                                    {"ranks": [D2[j]["ranks"][j]]
+                                        * len(D3[j]["b"])}
                                 ),
                             ],
                             axis=1,
@@ -229,8 +236,8 @@ class FreqPlot:
                     print("\033[1;35mMode adjusted %s\033[1;0m" % (mode))
         return mode
 
-    def Print_info(self, s):
-        name = text[text.rfind("/") + 1 : -3].capitalize()
+    def Print_info(self, text: str) -> None:
+        name = text[text.rfind("/") + 1: -3].capitalize()
         console = Console()
         title = Panel(
             Text(name, justify="center"),
@@ -307,10 +314,10 @@ class FreqPlot:
                 index_original = self.D.original_df["ranks"].isin([r])
 
             samples = np.arange(0, self.D.settings_df["N"][index_set].values)
-            amp     = np.array(self.D.data_df[index_data]["A"])
-            freq    = np.array(self.D.data_df[index_data]["freq"])
-            phi     = np.array(self.D.data_df[index_data]["phi"])
-            found   = False
+            amp = np.array(self.D.data_df[index_data]["A"])
+            freq = np.array(self.D.data_df[index_data]["freq"])
+            phi = np.array(self.D.data_df[index_data]["phi"])
+            found = False
 
             # reconstruct time
             time = (
@@ -330,11 +337,13 @@ class FreqPlot:
             )
             if "conf" in self.D.data_df:
                 sorted_ref = self.D.data_df[index_data].sort_values("conf")
-                dominant = self.dominant[self.dominant["ranks"].isin([r])]["k"].values
+                dominant = self.dominant[self.dominant["ranks"].isin(
+                    [r])]["k"].values
                 # dominant=[0,7,14, 21, 28, 35,42,49, 56]
                 if all_or_10:
                     dominant = np.concatenate(
-                        (dominant, self.D.settings_df[index_set]["N"][0] - dominant)
+                        (dominant,
+                         self.D.settings_df[index_set]["N"][0] - dominant)
                     )
             else:
                 sorted_ref = self.D.data_df[index_data].sort_values("A")
@@ -345,7 +354,8 @@ class FreqPlot:
             top.append(top_3[-2:-1][0])
             if not all_or_10:
                 # top_x = self.D.data_df[index_data].sort_values('A').tail(20).index
-                top_x = self.D.data_df[index_data].sort_values("A").tail(5).index
+                top_x = self.D.data_df[index_data].sort_values(
+                    "A").tail(5).index
                 top_x = top_x[top_x < limit[0]]
 
             name_dominant = ""
@@ -412,7 +422,8 @@ class FreqPlot:
                             k,
                             phi[k],
                         )
-                        plt.plot(time, x * order, linewidth=0.7, label="_nolegend_")
+                        plt.plot(time, x * order, linewidth=0.7,
+                                 label="_nolegend_")
                     else:
                         if self.D.data_df[index_data].index[k] in top_x:
                             if k == 0 or k == len(samples) / 2:
@@ -421,10 +432,13 @@ class FreqPlot:
                                 a = 2
 
                             if round(freq[k], 2) > 0:
-                                s = f"{a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2f}*t+{phi[k]:.2f})"
+                                s = f"{
+                                    a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2f}*t+{phi[k]:.2f})"
                             else:
-                                s = f"{a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2e}*t+{phi[k]:.2e})"
-                            plt.plot(time, a * x * order, linewidth=0.9, label=s)
+                                s = f"{
+                                    a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2e}*t+{phi[k]:.2e})"
+                            plt.plot(time, a * x * order,
+                                     linewidth=0.9, label=s)
                             # if (k in dominant ):
                             if k in dominant and k != 0:
                                 if name_dominant:
@@ -439,10 +453,12 @@ class FreqPlot:
                         else:
                             a = 2
                         if round(freq[k], 1) > 0 and amp[k] < 100:
-                            s = f"{a / length * order*amp[k]:.1f}*cos(2\u03C0*{freq[k]:.2f}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
+                            s = f"{a / length * order*amp[k]:.1f}*cos(2\u03C0*{freq[k]:.2f}*t{
+                                self.D.data_df[index_data]['phi'].values[k]:+.2f})"
                         else:
-                            s = f"{a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2e}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
-                        ## For the paper
+                            s = f"{a / length * order*amp[k]:.1e}*cos(2\u03C0*{freq[k]:.2e}*t{
+                                self.D.data_df[index_data]['phi'].values[k]:+.2f})"
+                        # For the paper
                         # s = f"{a / length * order*amp[k]:.0f}*cos(2\u03C0*{freq[k]:.2f}*t{self.D.data_df[index_data]['phi'].values[k]:+.2f})"
                         f[-1].add_trace(
                             Scatter(
@@ -454,7 +470,8 @@ class FreqPlot:
                                 + "<br><b>Amplitude</b>: %{y}"
                                 + "<br><b>T</b>: %{text} s",
                                 text=len(samples)
-                                * [f"{self.D.data_df[index_data]['T'].values[k]:.2f}"],
+                                * [f"{self.D.data_df[index_data]
+                                      ['T'].values[k]:.2f}"],
                                 marker_color=(
                                     colors[color_counter]
                                     if color_counter != 1
@@ -477,31 +494,14 @@ class FreqPlot:
                         #     s = "%.1ecos(2pi*%.2f*t%+.2f)" % (a*amp[k], freq[k], self.D.data_df[index_data]["phi"].values[k])
                         #     f[-1].add_trace(Scatter(x=time,y=a*x,mode='lines',name=s, hovertemplate ='<b>Time</b>: %{x:.2f} s'+ '<br><b>Amplitude</b>: %{y}'+'<br><b>T</b>: %{text} s',text = len(samples)*['%.2f'%(self.D.data_df[index_data]["T"].values[k])]))
             if self.dtw:
-                threads = []
-                print("    '-> \033[1;35mCalculating DTW\033[1;0m")
-                threads.append(
-                    Thread(
-                        target=evaluate_dtw,
-                        args=(
-                            dominant_X1,
-                            sum_all_components,
-                            self.D.data_df.iloc[dominant_k1]["freq"],
-                        ),
-                    )
+                threads = threaded_dtw(
+                    sum_all_components,
+                    self.D.data_df,
+                    dominant_X1,
+                    dominant_k1,
+                    dominant_X2,
+                    dominant_k2,
                 )
-                threads.append(
-                    Thread(
-                        target=evaluate_dtw,
-                        args=(
-                            dominant_X2,
-                            sum_all_components,
-                            self.D.data_df.iloc[dominant_k2]["freq"],
-                        ),
-                    )
-                )
-                # t.append(Thread(target=evaluate_dtw, args=(dominant_X3,sum,self.D.data_df.iloc[dominant_k3]['freq'])))
-                for thread in threads:
-                    thread.start()
 
             if "mat" in self.plot_engine:
                 plt.plot(
@@ -646,10 +646,10 @@ class FreqPlot:
                 if not full:
                     n_samples = len(freq)
                     last = int(n_samples / 2) - 1
-                    amp = 2 * amp[0 : last + 1]
+                    amp = 2 * amp[0: last + 1]
                     amp[last] = amp[last] / 2
                     amp[0] = amp[0] / 2
-                    freq = freq[0 : int(n_samples / 2)]
+                    freq = freq[0: int(n_samples / 2)]
 
                 mode = "Amplitude"
                 if self.psd:
@@ -706,7 +706,7 @@ class FreqPlot:
                 )
                 # f[-1].update_layout(legend=dict(orientation="h", yanchor="bottom",y=1.02, xanchor="right", x=1))
                 f[-1].update_xaxes(range=[time[0], time[-1]])
-                f[-1] = format_plot(f[-1])
+                f[-1] = format_plot_simple(f[-1])
                 f[-1].show(config=conf)
 
                 f.append(go.Figure())
@@ -717,7 +717,9 @@ class FreqPlot:
 
                 #! Dominant plot
                 #!######################
-                if not self.D.original_df.empty and (self.render == "dynamic" or  len(time) < 1e3):
+                if not self.D.original_df.empty and (
+                    self.render == "dynamic" or len(time) < 1e3
+                ):
                     f[-1].add_trace(
                         Scatter(
                             x=self.D.original_df[index_original]["t"],
@@ -832,11 +834,12 @@ class FreqPlot:
                     f[-1].update_yaxes(
                         range=[
                             min(sum_dominant),
-                            1.2 * self.D.original_df[index_original]["b"].max(),
+                            1.2 *
+                            self.D.original_df[index_original]["b"].max(),
                         ]
                     )
                 # f[-1].update_yaxes(range=[-2000, 72000])
-                f[-1] = format_plot(f[-1])
+                f[-1] = format_plot_simple(f[-1])
                 # f[-1].show(config=conf)
 
                 #! Frequency spectrum
@@ -866,7 +869,8 @@ class FreqPlot:
 
             if "plotly" == self.plot_engine:
                 fig_tmp = plot_one_spectrum(self.psd, freq, amp, True)
-                fig_tmp.update_traces(marker_line=dict(width=0.1, color=color_bar))
+                fig_tmp.update_traces(
+                    marker_line=dict(width=0.1, color=color_bar))
                 fig_tmp.update_layout(
                     font=font_settings,
                     width=width,
@@ -885,120 +889,10 @@ class FreqPlot:
                     len(samples) > 1e3 and slider_cond,
                 )
 
-                # bar_plot.update_layout(barmode="group", template=template)
-                # bar_plot.add_trace(
-                #     go.Bar(
-                #         x=samples,
-                #         y=amp,
-                #         textposition="inside",
-                #         textangle=0,
-                #         name=("Ranks %i") % r,
-                #         hovertemplate="<br><b>Frequency</b>: %{x} Hz<br>"
-                #         + "<b>Amplitude</b>: %{y:.2e}"
-                #         + "<br><b>T</b>: %{text} s<br>",
-                #         text=["%.2f" % i for i in self.D.data_df[index_data]["T"]],
-                #     )
-                # )
-                # bar_plot.update_layout(
-                #     xaxis_title="Frequency bins",
-                #     yaxis_title="Amplitude",
-                #     width=width,
-                #     height=height,
-                #     title="Frequency Plot",
-                #     font=font_settings,
-                #     barmode="group",
-                # )
-
-            #! 3d plot
-            # prediction_plot.add_traces(list(px.scatter_3d(self.D.data_df.iloc[top_3], x='A', y='ranks', z='k' ,color='T', symbol='ranks',opacity=0.7,hover_data={'ranks':True, 'k'  :True, 'A':':.2f', 'F': (':.2f (Hz)',self.D.data_df.iloc[top_3]['freq']), 'T': ':.2f (s)'}).select_traces()))
-
         if "plotly" == self.plot_engine:
-            # bar_plot.update_xaxes(range=[0, 100])
-            # f.append(bar_plot)
-
-            #! 3d plot
-            # prediction_plot.update_layout(template = template,margin=dict(l=0, r=0, b=0, t=0), width=width, height = height, title = 'Frequency Prediction', font=font_settings, coloraxis_colorbar=dict(title='Perodicity (s)', yanchor="top", y=1, x=0,ticks="outside"),scene = dict(xaxis_title='Amplitude',yaxis_title='Ranks',zaxis_title='Frequency (Hz)',xaxis=dict(showgrid=True, gridwidth=1, gridcolor='gray'),yaxis=dict(showgrid=True, gridwidth=1, gridcolor='gray'),zaxis=dict(showgrid=True, gridwidth=1, gridcolor='gray')))
-            # prediction_plot.layout.scene.aspectratio = {'x':2, 'y':1, 'conf':1}
-            # f.append(prediction_plot)
-
-            # fig_tmp = px.scatter_3d(self.D.data_df, x='k', y='ranks', z='A',color='A', symbol='ranks', opacity=0.7)
-            # tight layout
-            # fig_tmp.update_layout(
-            # template = template,
-            # margin=dict(l=0, r=0, b=0, t=0), width=width, height = height, title = 'Frequency Plot',
-            # font=font_settings,
-            # coloraxis_colorbar=dict(title='Frequency (Hz)', yanchor="top", y=1, x=0, ticks="outside"),
-            # scene = dict(xaxis_title='Frequency (Hz)',yaxis_title='Ranks', zaxis_title='Bandwidth (B/s)',
-            # xaxis=dict(showgrid=True, gridwidth=1, gridcolor='gray'),
-            # yaxis=dict(showgrid=True, gridwidth=1, gridcolor='gray'),
-            # zaxis=dict(showgrid=True, gridwidth=1, gridcolor='gray')))
-            # fig_tmp.layout.scene.aspectratio = {'x':2, 'y':1, 'conf':1}
-            # f.append(fig_tmp)
-
-            # f.append(go.Figure())
-            # f[-1].add_traces(
-            #     list(
-            #         px.line(
-            #             self.D.data_df.iloc[top],
-            #             x="ranks",
-            #             y="T",
-            #             color="k",
-            #             markers=True,
-            #             hover_data={
-            #                 "ranks": True,
-            #                 "k": True,
-            #                 "A": ":.2f",
-            #                 "F": (":.2f (Hz)", self.D.data_df.iloc[top]["freq"]),
-            #                 "T": True,
-            #             },
-            #         ).select_traces()
-            #     )
-            # )
-            # f[-1].update_layout(
-            #     xaxis_title="Ranks",
-            #     yaxis_title="Period (s)",
-            #     font=font_settings,
-            #     width=width,
-            #     height=height,
-            #     title="Prediction",
-            #     template=template,
-            # )
             create_html(f, self.render, conf, "freq")
         else:
             input()
-
-
-##Fill DTW Matrix
-def fill_dtw_cost_matrix(s1, s2):
-    l_s_1, l_s_2 = len(s1), len(s2)
-    cost_matrix = np.zeros((l_s_1 + 1, l_s_2 + 1))
-    for i in range(l_s_1 + 1):
-        for j in range(l_s_2 + 1):
-            cost_matrix[i, j] = np.inf
-    cost_matrix[0, 0] = 0
-
-    for i in range(1, l_s_1 + 1):
-        for j in range(1, l_s_2 + 1):
-            cost = abs(s1[i - 1] - s2[j - 1])
-            # take last min from the window
-            prev_min = np.min(
-                [
-                    cost_matrix[i - 1, j],
-                    cost_matrix[i, j - 1],
-                    cost_matrix[i - 1, j - 1],
-                ]
-            )
-            cost_matrix[i, j] = cost + prev_min
-
-    return cost_matrix[-1, -1]
-
-
-##Call DTW function
-
-
-def fdtw(s1, s2):
-    distance, path = fastdtw(s1, s2, dist=euclidean)
-    return distance, path
 
 
 def rangeslider(f, arr, limit, cond="", point_limit=2.5e3):
@@ -1021,7 +915,8 @@ def rangeslider(f, arr, limit, cond="", point_limit=2.5e3):
                                 dict(label="all", step="all"),
                             ]
                         ),
-                        rangeslider=dict(visible=True, range=[arr[0], arr[-1]]),
+                        rangeslider=dict(visible=True, range=[
+                                         arr[0], arr[-1]]),
                         type="linear",
                         range=myrange,
                     )
@@ -1046,145 +941,14 @@ def rangeslider(f, arr, limit, cond="", point_limit=2.5e3):
                             dict(label="all", step="all"),
                         ]
                     ),
-                    rangeslider=dict(visible=True, range=[arr[0], arr[len(arr) - 1]]),
+                    rangeslider=dict(visible=True, range=[
+                                     arr[0], arr[len(arr) - 1]]),
                     type="linear",
                     range=myrange,
                 )
             )  # change type to date to show buttons
         except:
             pass
-
-
-def evaluate_dtw(discret_arr, original_discret_signal, freq):
-    dtw_k1, _ = fastdtw(discret_arr, original_discret_signal, dist=euclidean)
-    print("    '-> \033[1;32mfreq %.2f Hz\033[1;0m --> dtw: %d" % (freq, dtw_k1))
-
-
-def plot_spectrum(
-    amp: np.ndarray, freq: np.ndarray, mode: str = "Amplitude", percent: bool = False
-):
-    template = "plotly"
-    name = "Amplitude" if "amp" in mode.lower() else "Power"
-    unit = ""
-    if percent:
-        name = "Normed " + name
-        unit = unit + " (%)"
-        if amp.sum() > 0:
-            amp = 100 * amp / amp.sum() 
-
-    df_tmp = pd.DataFrame(
-        data={
-            "A": amp,
-            "freq": freq,
-        }
-    )
-    # fig_tmp = px.bar(df_tmp, x="freq", y="A", color="A", color_continuous_scale='Bluered')
-    # fig_tmp = px.bar(df_tmp, x="freq", y="A", color="A", color_continuous_scale=["rgb(0,10,130)", "rgb(130,30,130)", "rgb(255,50,50)"])
-    # fig_tmp = px.bar(df_tmp, x="freq", y="A", color="A", color_continuous_scale="plasma")
-    # cyan - purple
-    # fig_tmp = px.bar(df_tmp, x="freq", y="A", color="A", color_continuous_scale=[ "rgb(90, 40, 90)", "rgb(113, 221, 255)" ])
-    fig_tmp = px.bar(
-        df_tmp,
-        x="freq",
-        y="A",
-        color="A",
-        color_continuous_scale=["rgb(0,50,150)", "rgb(150,50,150)", "rgb(255,50,0)"],
-    )
-
-    fig_tmp.update_traces(
-        marker_line=dict(width=0.2, color="black"),
-        hovertemplate="<b>Frequency</b>: %{x:.2e} Hz <br><b>"
-        + f"{name}"
-        + "</b>: %{y:.2e}"
-        + f"{unit}",
-    )
-    fig_tmp.update_layout(
-        xaxis_title="Frequency (Hz)",
-        yaxis_title=name + unit,
-        coloraxis_colorbar=dict(yanchor="top", y=1, x=0, ticks="outside"),
-        template=template,
-    )
-    fig_tmp = format_plot(fig_tmp)
-    return fig_tmp, name + unit
-
-
-def plot_both_spectrums(args, freq: np.ndarray, amp: np.ndarray, full: bool = True):
-    fig_1 = make_subplots(
-        rows=2,
-        cols=2,
-        specs=[[{"colspan": 2}, None], [{"colspan": 2}, None]],
-    )
-
-    start = 1
-
-    if not full:
-        indecies = np.arange(start, int(len(amp) / 2) + 1)
-        freq = freq[indecies]
-        amp = 2 * amp[indecies]
-        amp[-1] = amp[-1] / 2
-        if start == 0:
-            amp[0] = amp[0] / 2
-
-    if args.psd:
-        power = amp
-        amplitude = np.sqrt(amp) * len(amp)
-    else:
-        power = amp * amp / len(amp)
-        amplitude = amp
-
-    fig_tmp, name_plt = plot_spectrum(amplitude, freq, "Amplitude", False)
-    layout = fig_tmp.layout
-    for trace in list(fig_tmp.select_traces()):
-        trace.update(marker={"coloraxis": "coloraxis"})
-        fig_1.append_trace(trace, row=1, col=1)
-    fig_tmp, name_plt1 = plot_spectrum(power, freq, "Power", True)
-    for trace in list(fig_tmp.select_traces()):
-        trace.update(marker={"coloraxis": "coloraxis2"})
-        fig_1.append_trace(trace, row=2, col=1)
-    fig_1.update_layout(layout)
-    fig_1.update_layout(
-        coloraxis={
-            "colorbar": {
-                "x": 1,
-                "len": 0.4,
-                "y": 0.8,
-            },
-        },
-        coloraxis2={
-            "colorbar": {
-                "x": 1,
-                "len": 0.4,
-                "y": 0.2,
-            },
-        },
-    )
-
-    return fig_1, [name_plt, name_plt1]
-
-
-def plot_one_spectrum(
-    psd_flag: bool,
-    freq: np.ndarray,
-    amp: np.ndarray,
-    full: bool = True,
-    percent: bool = False,
-) -> go.Figure:
-    if not full:
-        n_samples = len(freq)
-        last = int(n_samples / 2) - 1
-        amp = 2 * amp[0 : last + 1]
-        amp[last] = amp[last] / 2
-        amp[0] = amp[0] / 2
-        freq = freq[0 : int(n_samples / 2)]
-
-    if psd_flag:
-        amp = amp * amp / len(amp)
-        mode = "Power"
-    else:
-        mode = "Amplitude"
-
-    fig_tmp, _ = plot_spectrum(amp, freq, mode, percent)
-    return fig_tmp
 
 
 def convert_and_plot(data, dfs: list, args) -> None:

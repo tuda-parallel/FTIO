@@ -236,7 +236,7 @@ def start_ftio(settings: JitSettings) -> None:
                 f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
                 f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp "
                 f"--server {settings.cargo_server} --input / --output {settings.stage_out_path} "
-                f"--if gekkofs --of parallel"
+                f"--if gekkofs --of {settings.cargo_mode}"
             )
         
             _ = execute_block(call_0,dry_run=settings.dry_run)
@@ -309,9 +309,9 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
             elapsed_time(settings, runtime, "Stage in", time.time() - start)
         else:
             if settings.cluster:
-                call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
+                call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
             else:
-                call = f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if parallel"
+                call = f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
 
             start = time.time()
 

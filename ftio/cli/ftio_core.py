@@ -12,7 +12,7 @@ from rich.console import Group
 from rich.panel import Panel
 from ftio.parse.scales import Scales
 from ftio.parse.extract import get_time_behavior
-from ftio.freq.freq_plot_core import convert_and_plot
+from ftio.plot.freq_plot import convert_and_plot
 from ftio.freq.helper import get_mode, MyConsole, merge_results
 from ftio.freq.autocorrelation import find_autocorrelation
 from ftio.freq.anomaly_detection import outlier_detection

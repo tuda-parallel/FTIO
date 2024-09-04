@@ -17,7 +17,7 @@ from sklearn.neighbors import LocalOutlierFactor
 from scipy.signal import find_peaks
 # all
 import numpy as np
-from ftio.freq.anomaly_plot import  plot_outliers,  plot_decision_boundaries
+from ftio.plot.anomaly_plot import  plot_outliers, plot_decision_boundaries
 
 
 def outlier_detection(amp:np.ndarray, freq_arr:np.ndarray, args) -> tuple[list[float], np.ndarray, Panel]:
@@ -26,7 +26,7 @@ def outlier_detection(amp:np.ndarray, freq_arr:np.ndarray, args) -> tuple[list[f
     Args:
         A (list[float]): Amplitudes array
         freq_arr (list[float]): frequency array
-        args (object, optional): arguments containgin: outlier detection method (Z-Score, DB-Scan). 
+        args (object, optional): arguments containing: outlier detection method (Z-Score, DB-Scan). 
         Defaults to 'Z-score'.
 
     Returns:

@@ -8,8 +8,8 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 from sklearn.inspection import DecisionBoundaryDisplay
 from ftio.freq.freq_html import create_html
-from ftio.freq.helper import format_plot
-from ftio.freq.freq_plot_core import plot_both_spectrums
+from ftio.plot.helper import format_plot_simple
+from ftio.plot.spectrum import plot_both_spectrums
 
 
 # ?#################################
@@ -41,7 +41,7 @@ def plot_outliers(
     figs = []
     for i in np.arange(0, 5):
         f = go.Figure()
-        f = format_plot(f)
+        f = format_plot_simple(f)
         figs.append(f)
 
     #prepare symbols
