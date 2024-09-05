@@ -126,7 +126,8 @@ def main(argv=sys.argv[1:]) -> None:
             f"[blue]Location:[/] {folder_path}\n"
             f"[blue]Pattern:[/] {pattern}\n"
         )
-        statistics(df)
+        ellapsed_time = f"Execution time {time.time() - start_time:.4f} seconds"
+        statistics(df, ellapsed_time)
     except KeyboardInterrupt:
         progress.console.print("[bold red]Keyboard interrupt![/]\n")
         statistics(df)

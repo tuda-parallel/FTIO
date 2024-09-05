@@ -157,7 +157,7 @@ def flatten_dict(d):
     return flat
 
 
-def statistics(df):
+def statistics(df,ellapsed_time=""):
     # print(df)
     df_dom = reduce_to_max_conf(df)
     df.to_csv("ftio.csv", index=False)
@@ -182,7 +182,7 @@ def statistics(df):
             )
             console.print("\n")
             content += cleaned_text(f"{prefix.capitalize()}" + "\n----------------\n"+ s + "\n\n")
-        file.write(content)
+        file.write(content +cleaned_text(ellapsed_time))
     # print(dom_df)
 
 
