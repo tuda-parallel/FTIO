@@ -901,7 +901,7 @@ def print_settings(settings) -> None:
 └─ ftio node      : {settings.ftio_node_command.replace('--nodelist=', '')}"""
 
     gkfs_daemon_text = f"""
-├─ gkfs daemon     : {settings.gkfs_daemon}
+├─ gkfs daemon    : {settings.gkfs_daemon}
 ├─ gkfs intercept : {settings.gkfs_intercept}
 ├─ gkfs mntdir    : {settings.gkfs_mntdir}
 ├─ gkfs rootdir   : {settings.gkfs_rootdir}
@@ -965,7 +965,7 @@ def print_settings(settings) -> None:
 ├─ logs dir       : {settings.log_dir}
 ├─ pwd            : {os.getcwd()}
 ├─ ftio           : {ftio_status}
-├─ gkfs daemon     : {gkfs_daemon_status}
+├─ gkfs daemon    : {gkfs_daemon_status}
 ├─ gkfs proxy     : {gkfs_proxy_status}
 ├─ cargo          : {cargo_status}
 ├─ cluster        : {settings.cluster}

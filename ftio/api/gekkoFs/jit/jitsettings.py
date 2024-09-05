@@ -8,28 +8,27 @@ console = Console()
 
 class JitSettings:
     def __init__(self) -> None:
-        """sets the internal variables, don't modify this part."""
-
+        """sets the internal variables, don't modify this part (except flags if needed).
+        only Adjust the paths in the function set_variables
+        """
+        
         # flags
+        ##############
         self.set_tasks_affinity = True
-        self.gkfs_daemon_protocol = "ofi+verbs" #"ofi+sockets" 
-        self.cargo_mode = "posix" #"parallel"
-
+        self.gkfs_daemon_protocol = "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
+        self.cargo_mode = "parallel" #"parallel" or "posix"
         self.debug = True
         self.verbose = True
-        # execute in node local
-        self.node_local = False
-        # dont run the experiments
-        self.dry_run = False
+        self.node_local = False # execute in node local space        
 
+        # Variable initialization (don't change)
+        ################
+        self.dry_run = False 
         self.log_suffix = "DPCF"
         self.app_dir = ""
-
-        # Variable initialization
         self.cluster = False
         self.job_id = 0
         self.static_allocation = False
-
         self.ftio_node = ""
         self.single_node = ""
         self.app_nodes = 0

@@ -406,12 +406,31 @@ def end_of_transfer_online(
                                 jit_print(f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}")
                                 jit_print("[cyan]>> Triggering old school copy\n")
                                 status.update("Copying ... ")
-                                additional_arguments = load_flags(settings)
-                                call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
-                                _ = execute_block(call, dry_run=settings.dry_run)
+                                if settings.cluster:
+                                    call_setup = ( 
+                                        f"srun --jobid={settings.job_id} {settings.single_node_command} "
+                                        f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
+                                        f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp "
+                                        f"--server {settings.cargo_server} --input / --output {settings.stage_out_path} "
+                                        f"--if gekkofs --of posix"
+                                        )
+                                    call = (f"srun --jobid={settings.job_id} {settings.single_node_command} "
+                                            f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
+                                            f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/cargo_ftio "
+                                            f"--server {settings.cargo_server} --run")
+                                    _ = execute_background(call_setup, dry_run=settings.dry_run)
+                                    time.sleep(0.1)
+                                    _ = execute_background(call, dry_run=settings.dry_run)
+                                else:
+                                    call = (f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/cargo_ftio "
+                                            f"--server {settings.cargo_server} --run")
+                                    _ = execute_block(call, dry_run=settings.dry_run)
+                                # additional_arguments = load_flags(settings)
+                                # call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
+                                # _ = execute_block(call, dry_run=settings.dry_run)
                                 break
                             except Exception as e:
-                                jit_print("[yellow]>> copy failed\n")
+                                jit_print("[yellow]>> call failed\n")
                                 copy = False
                         stuck_time = stuck_time*2
                         jit_print(f"[cyan]>> Stucked increased to {stuck_time}\n")
