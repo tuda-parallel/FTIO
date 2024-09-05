@@ -207,7 +207,7 @@ def compute_metrics(df: pd.DataFrame, prefix, suffix="conf", unit="%", title="")
     nanmedian = np.nanmedian(df[conf_col])
     scale = 100 if "conf" in suffix else 1
     # out = f"[green]{prefix.capitalize()} {title}:\n - range: [{min*scale:.3e},{max*scale:.3e}] {unit}\n - mean: {mean*scale:.3e} {unit}\n - nanmean: {nanmean*scale:.3e} {unit}\n - median: {median*scale:.3e} {unit}\n - nanmedian: {nanmedian*scale:.3e} {unit}\n[/]"
-    out = f"[gray][green]{title}:[/]\n - range: [{min*scale:.3e},{max*scale:.3e}] {unit}\n - mean: {mean*scale:.3e} {unit}\n - nanmean: {nanmean*scale:.3e} {unit}\n - median: {median*scale:.3e} {unit}\n - nanmedian: {nanmedian*scale:.3e} {unit}\n\n[/]"
+    out = f"[gray][green]{title}:[/]\n - range: [{min*scale:.3f},{max*scale:.3f}] {unit}\n - mean: {mean*scale:.3f} {unit}\n - nanmean: {nanmean*scale:.3f} {unit}\n - median: {median*scale:.3f} {unit}\n - nanmedian: {nanmedian*scale:.3f} {unit}\n\n[/]"
     return out
 
 
