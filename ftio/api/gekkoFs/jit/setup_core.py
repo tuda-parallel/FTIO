@@ -77,7 +77,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
                     f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile} -l ib0 -P {settings.gkfs_daemon_protocol}" #-c --clean-rootdir
+                    f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol}" #-c --clean-rootdir
                 )
             else:
                 # Demon call with proxy
@@ -89,7 +89,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
                     f"srun {debug_flag} --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile} -l ib0 -P {settings.gkfs_daemon_protocol} -p ofi+verbs -L ib0" #-c --clean-rootdir
+                    f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol} -p ofi+verbs -L ib0" #-c --clean-rootdir
                 )
 
         else:
@@ -99,7 +99,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
             # Gekko daemon call
             call = (
                 f"GKFS_DAEMON_LOG_LEVEL=info GKFS_DAEMON_LOG_PATH={settings.gekko_daemon_log} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                f"-H {settings.gkfs_hostfile} -l lo -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp" #-c --clean-rootdir
+                f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l lo -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp" #-c --clean-rootdir
             )
 
         jit_print(f"[cyan]>> Creating directories[/]")

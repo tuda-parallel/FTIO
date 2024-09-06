@@ -491,7 +491,7 @@ def files_filtered(list_of_files: list[str], regex_pattern, verbose=True) -> lis
             while "/" in regex_pattern:
                 regex_pattern = regex_pattern.split("/", 1)[1]
             if verbose:
-                jit_print("[cyan]>> Cleaned Regex pattern to: {regex_pattern} ")
+                jit_print(f"[cyan]>> Cleaned Regex pattern to: {regex_pattern} ")
         regex = re.compile(regex_pattern)
 
         for f in list_of_files:
