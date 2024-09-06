@@ -14,6 +14,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     handle_sigint,
     jit_print,
     load_flags,
+    load_flags_mpi,
     relevant_files,
     reset_relevant_files,
     shut_down,
@@ -167,27 +168,26 @@ def start_cargo(settings: JitSettings) -> None:
         console.print(f"[bold green]####### Starting Cargo [/][black][{get_time()}][/]")
 
         if settings.cluster:
-            # Command for cluster
-            # call = (
-            #     f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
-            #     f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} --jobid={settings.job_id} "
-            #     f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-            #     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_cargo} --ntasks-per-node=1 "
-            #     f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
-            #     f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
-            # )
-            # The above call just gives more resources to the same proc, but not more. Cargo need at least two
-            call = (
-                f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LIBGKFS_LOG_OUTPUT={settings.gekko_client_log}_cargo,LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
-                f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} --jobid={settings.job_id} "
-                f"{settings.app_nodes_command} --disable-status "
-                # f"-N {settings.app_nodes} --ntasks={settings.app_nodes} "
-                # f"--cpus-per-task={settings.procs_cargo} --ntasks-per-node=1 "
-                f"-N {settings.app_nodes} --ntasks={settings.app_nodes*settings.procs_cargo} "
-                f"--cpus-per-task={settings.procs_cargo} --ntasks-per-node={settings.procs_cargo} "
-                f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
-                f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
-            )
+            srun = False
+            if srun:
+                #srun
+                call = (
+                    f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LIBGKFS_LOG_OUTPUT={settings.gekko_client_log}_cargo,LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
+                    f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
+                    f"--jobid={settings.job_id} "
+                    f"{settings.app_nodes_command} --disable-status "
+                    f"-N {settings.app_nodes} --ntasks={settings.app_nodes*settings.procs_cargo} "
+                    f"--cpus-per-task={settings.procs_cargo} --ntasks-per-node={settings.procs_cargo} "
+                    f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
+                    f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
+                )
+            else:
+                # mpiexec
+                call = (
+                    f"{settings.cargo} "
+                    f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
+                )
+                call = load_flags_mpi(settings,call,settings.app_nodes*settings.procs_cargo)
         else:
             # Command for non-cluster
             call = (
@@ -348,8 +348,8 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
 
             if not settings.dry_run:
                 try:
-                    command_ls = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} ls -R {settings.gkfs_mntdir}"
-                    files = subprocess.check_output(command_ls, shell=True).decode()
+                    call = geko_flagged_call(settings, f"ls -R {settings.gkfs_mntdir}")
+                    files = subprocess.check_output(call, shell=True).decode()
                     console.print(f"[cyan]>> gekko_ls {settings.gkfs_mntdir}: \n{files}[/]")
                 except Exception as e:
                         jit_print(f"[red] >> Error during test:\n{e}")

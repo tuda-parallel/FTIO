@@ -1038,7 +1038,7 @@ def print_settings(settings) -> None:
 |   └─ ftio       : 1
 ├─ tasks per node : -  
 |   ├─ app        : {settings.procs_app} 
-|   ├─ daemon      : {task_daemon}
+|   ├─ daemon     : {task_daemon}
 |   ├─ proxy      : {task_proxy}
 |   ├─ cargo      : {task_cargo}
 |   └─ ftio       : {task_ftio}
@@ -1173,9 +1173,9 @@ def geko_flagged_call(settings:JitSettings, call:str, node:int=1) -> str:
     return call
 
 
-def load_flags_mpi(settings:JitSettings, command:str,node:int=1) -> str:
+def load_flags_mpi(settings:JitSettings, command:str,node:int=1, ftio_metrics:bool=False) -> str:
     additional_arguments = ""
-    if not settings.exclude_ftio:
+    if not settings.exclude_ftio and ftio_metrics:
         additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
     if not settings.exclude_proxy:
         additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
@@ -1188,16 +1188,16 @@ def load_flags_mpi(settings:JitSettings, command:str,node:int=1) -> str:
             )
     call = (
             f" mpiexec -np {node} --oversubscribe "
-            f"--hostfile {settings.app_dir}/hostfile_mpi "
+            f"--hostfile {settings.app_dir}/hostfile_mpi -map-by node "
             f"{additional_arguments} "
-            f"{settings.task_set_1} {command}"
+            f"{settings.task_set_0} {command}"
         )
     return call
 
 
-def load_flags(settings:JitSettings) -> str:
+def load_flags(settings:JitSettings,ftio_metrics:bool=False) -> str:
     additional_arguments = ""
-    if not settings.exclude_ftio:
+    if not settings.exclude_ftio and ftio_metrics:
         additional_arguments += f" LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port}  LIBGKFS_ENABLE_METRICS=on "
     if not settings.exclude_proxy:
             additional_arguments += f" LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "

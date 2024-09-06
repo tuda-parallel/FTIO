@@ -11,7 +11,7 @@ from rich.markup import escape
 
 
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
-from ftio.api.gekkoFs.jit.setup_helper import check, jit_print, get_pid, load_flags
+from ftio.api.gekkoFs.jit.setup_helper import check, geko_flagged_call, jit_print, get_pid
 
 console = Console()
 
@@ -456,8 +456,7 @@ def get_files(settings: JitSettings, verbose=True):
     monitored_files = []
     files = ""
     try:
-        additional_arguments = load_flags(settings)
-        command_ls = f"{additional_arguments} find {settings.gkfs_mntdir}"
+        command_ls = geko_flagged_call(settings, f" find {settings.gkfs_mntdir}")
         files = subprocess.check_output(command_ls, shell=True).decode()
         if files:
             files = files.splitlines()

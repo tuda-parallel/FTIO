@@ -101,7 +101,6 @@ def check_setup(settings:JitSettings):
     time.sleep(1)
 
 
-
 def create_test_file(name:str, settings:JitSettings) -> str:
     # Define the content of the shell script
     script_content = "#!/bin/bash\n"

@@ -14,7 +14,7 @@ class JitSettings:
         
         # flags
         ##############
-        self.set_tasks_affinity = True
+        self.set_tasks_affinity = True #required for ls and cp
         self.gkfs_daemon_protocol = "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
         self.cargo_mode = "parallel" #"parallel" or "posix"
         self.debug = True
