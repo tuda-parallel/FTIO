@@ -229,13 +229,13 @@ def start_ftio(settings: JitSettings) -> None:
             call_0 = (
                 f"srun --jobid={settings.job_id} {settings.single_node_command} "
                 f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
-                f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/cargo_ftio "
+                f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/cargo_ftio "
                 f"--server {settings.cargo_server} --run"
             )
             call_1 = (
                 f"srun --jobid={settings.job_id} {settings.single_node_command} "
                 f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
-                f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp "
+                f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/ccp "
                 f"--server {settings.cargo_server} --input / --output {settings.stage_out_path} "
                 f"--if gekkofs --of {settings.cargo_mode}"
             )
@@ -260,14 +260,14 @@ def start_ftio(settings: JitSettings) -> None:
                 f"--disable-status -N 1 --ntasks=1 --cpus-per-task={settings.procs_ftio} "
                 f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
                 f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} "
-                f"--cargo_cli {settings.cargo_cli} --cargo_server {settings.cargo_server} "
+                f"--cargo_bin {settings.cargo_bin} --cargo_server {settings.cargo_server} "
                 f"--cargo_out {settings.stage_out_path}"
             )
         else:
             check_port(settings)
             call = (
                 f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} "
-                f"--cargo_cli {settings.cargo_cli} --cargo_server {settings.cargo_server} "
+                f"--cargo_bin {settings.cargo_bin} --cargo_server {settings.cargo_server} "
                 f"--cargo_out {settings.stage_out_path}"
             )
 
@@ -311,9 +311,9 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
             elapsed_time(settings, runtime, "Stage in", time.time() - start)
         else:
             if settings.cluster:
-                call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
+                call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
             else:
-                call = f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
+                call = f"mpiexec -np 1 --oversubscribe {settings.cargo_bin}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
 
             start = time.time()
 
@@ -358,10 +358,10 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             if settings.cluster:
                 call = (f"srun --jobid={settings.job_id} {settings.single_node_command} "
                         f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
-                        f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/cargo_ftio "
+                        f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/cargo_ftio "
                         f"--server {settings.cargo_server} --run")
             else:
-                call = (f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/cargo_ftio "
+                call = (f"mpiexec -np 1 --oversubscribe {settings.cargo_bin}/cargo_ftio "
                         f"--server {settings.cargo_server} --run")
 
             

@@ -32,13 +32,13 @@ def main(args: list[str] = sys.argv[1:]) -> None:
     if CARGO:
         #1. Perform stage in outside FTIO with cpp
         #2. Setup für Cargo Stage-out für cargo_ftio
-        call = f"{tmp_args.cargo_cli}/cargo_ftio --server {tmp_args.cargo_server} --run"
+        call = f"{tmp_args.cargo_bin}/cargo_ftio --server {tmp_args.cargo_server} --run"
         CONSOLE.print("[bold green][Init][/][green]" +call+"\n")
         os.system(call)
 
         # 3. tells cargo that for all next cargo_ftio calls use the cpp
         # input is relative from GekokFS
-        call = f"{tmp_args.cargo_cli}/ccp --server {tmp_args.cargo_server} --input / --output {tmp_args.cargo_out} --if gekkofs --of parallel"
+        call = f"{tmp_args.cargo_bin}/ccp --server {tmp_args.cargo_server} --input / --output {tmp_args.cargo_out} --if gekkofs --of parallel"
         CONSOLE.print("[bold green][Init][/][green]" +call+"\n")
         os.system(call)
         # 4. trigger with the thread
@@ -261,8 +261,8 @@ def trigger_cargo(sync_trigger,args):
 
                         if not skip_flag:
                             if CARGO:
-                                # call = f"{args.cargo_cli}/cargo_ftio --server {args.cargo_server} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']}"
-                                call = f"{args.cargo_cli}/cargo_ftio --server {args.cargo_server} --run"
+                                # call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']}"
+                                call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
                                 os.system(call)
 
                             # to use maybe later

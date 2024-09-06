@@ -977,7 +977,7 @@ def print_settings(settings) -> None:
 
     cargo_text = f"""
 ├─ cargo          : {settings.cargo}
-├─ cargo cli      : {settings.cargo_cli}
+├─ cargo cli      : {settings.cargo_bin}
 ├─ stage in path  : {settings.stage_in_path}
 └─ address cargo  : {settings.address_cargo}"""
 

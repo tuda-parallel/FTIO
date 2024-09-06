@@ -409,19 +409,19 @@ def end_of_transfer_online(
                                     # call_setup = ( 
                                     #     f"srun --jobid={settings.job_id} {settings.single_node_command} "
                                     #     f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
-                                    #     f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/ccp "
+                                    #     f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/ccp "
                                     #     f"--server {settings.cargo_server} --input / --output {settings.stage_out_path} "
                                     #     f"--if gekkofs --of {settings.cargo_mode}" # posix
                                     #     )
                                     call = (f"srun --jobid={settings.job_id} {settings.single_node_command} "
                                             f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
-                                            f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_cli}/cargo_ftio "
+                                            f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/cargo_ftio "
                                             f"--server {settings.cargo_server} --run")
                                     # _ = execute_background(call_setup, dry_run=settings.dry_run)
                                     # time.sleep(0.1)
                                     _ = execute_background(call, dry_run=settings.dry_run)
                                 else:
-                                    call = (f"mpiexec -np 1 --oversubscribe {settings.cargo_cli}/cargo_ftio "
+                                    call = (f"mpiexec -np 1 --oversubscribe {settings.cargo_bin}/cargo_ftio "
                                             f"--server {settings.cargo_server} --run")
                                     _ = execute_block(call, dry_run=settings.dry_run)
                                 # additional_arguments = load_flags(settings)
