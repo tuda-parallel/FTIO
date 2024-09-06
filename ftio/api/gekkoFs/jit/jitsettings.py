@@ -261,8 +261,8 @@ class JitSettings:
 
 
         # ****** cargo variables ******
-        self.cargo        = "/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
-        self.cargo_cli    = "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
+        self.cargo        = "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/bin/cargo"#"/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
+        self.cargo_cli    = "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/bin"#"/lustre/project/nhr-admire/tarraf/cargo/build/cli"
         self.cargo_server = f"{self.gkfs_daemon_protocol}://127.0.0.1:62000"
 
         # ? APP settings

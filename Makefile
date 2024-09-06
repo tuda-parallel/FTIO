@@ -1,6 +1,7 @@
 PYTHON = .venv/bin/python3
 SHELL := /bin/bash
 
+
 #check if python exist in venv, otherwise fallback to default
 ifeq ("$(PYTHON)",".venv/bin/python3")
 ifeq ("$(wildcard ${PYTHON})","")
@@ -10,6 +11,19 @@ endif
 else 
 $(info Using python: $(PYTHON))
 endif
+
+# Minimum required Python version
+REQUIRED_PYTHON_VERSION := 3.8
+PYTHON_VERSION := $(shell python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+
+version_check = $(shell python3 -c 'import sys; from distutils.version import StrictVersion; \
+    sys.exit(StrictVersion("$(PYTHON_VERSION)") < StrictVersion("$(REQUIRED_PYTHON_VERSION)"))')
+
+# Terminate the make process if the version is below the required version
+ifeq ($(version_check),1)
+$(error Python $(REQUIRED_PYTHON_VERSION) or higher is required. Installed version: $(PYTHON_VERSION))
+endif
+
 
 all: install  
 
@@ -114,6 +128,7 @@ pack:
 	$(PYTHON) -m  pip install --upgrade pip
 	$(PYTHON) -m  pip install --upgrade build 
 	$(PYTHON) -m build
+
 
 
 .PHONY: all test test_all clean clean_all build pack testpypi ftio

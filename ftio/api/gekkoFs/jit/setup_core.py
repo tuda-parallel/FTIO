@@ -10,6 +10,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     check_port,
     create_hostfile,
     elapsed_time,
+    geko_flagged_call,
     handle_sigint,
     jit_print,
     load_flags,
@@ -75,7 +76,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
                     f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile} -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol}"
+                    f"-H {settings.gkfs_hostfile} -l ib0 -P {settings.gkfs_daemon_protocol}" #-c --clean-rootdir
                 )
             else:
                 # Demon call with proxy
@@ -87,7 +88,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
                     f"srun {debug_flag} --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile} -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol} -p ofi+verbs -L ib0"
+                    f"-H {settings.gkfs_hostfile} -l ib0 -P {settings.gkfs_daemon_protocol} -p ofi+verbs -L ib0" #-c --clean-rootdir
                 )
 
         else:
@@ -97,7 +98,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
             # Gekko daemon call
             call = (
                 f"GKFS_DAEMON_LOG_LEVEL=info GKFS_DAEMON_LOG_PATH={settings.gekko_daemon_log} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                f"-H {settings.gkfs_hostfile} -c --clean-rootdir -l lo -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp"
+                f"-H {settings.gkfs_hostfile} -l lo -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp" #-c --clean-rootdir
             )
 
         jit_print(f"[cyan]>> Creating directories[/]")
@@ -303,7 +304,8 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
         jit_print(f"[cyan]>> Staging in to {settings.stage_in_path}",True)
         
         if settings.exclude_cargo:
-            call = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}"
+            # call = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}"
+            call = geko_flagged_call(settings,f"cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}")
             start = time.time()
             _ = execute_block(call,dry_run=settings.dry_run)
             elapsed_time(settings, runtime, "Stage in", time.time() - start)
@@ -333,8 +335,9 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
         console.print(f"[bold yellow]####### Skipping  Stage out [/][black][{get_time()}][/]")
     else:
         if settings.exclude_cargo:
-            additional_arguments = load_flags(settings)
-            call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
+            # additional_arguments = load_flags(settings)
+            # call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
+            call = geko_flagged_call(settings, f"cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path}")
             start = time.time()
             _ = execute_block(call, dry_run=settings.dry_run)
             elapsed_time(settings, runtime, "Stage in", time.time() - start)

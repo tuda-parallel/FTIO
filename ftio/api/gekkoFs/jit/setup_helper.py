@@ -289,61 +289,113 @@ def install_all(settings: JitSettings) -> None:
     with console.status("[bold green]Starting installation...") as status:
         try:
             # Create directory
-            jit_print(">>> Creating directory[/]")
+            jit_print(">>> Creating directory")
             status.update("[bold green]JIT >>> Creating directory[/]",speed=30)
             os.makedirs(settings.install_location, exist_ok=True)
 
+            # unload CUDA for Gekko
+            command = 'module -t list 2>&1 | grep -q "CUDA" && module unload $(module -t list 2>&1 | grep "CUDA")'
+            try:
+                # Execute the bash command
+                subprocess.run(command, shell=True, check=True)
+                jit_print(">>> CUDA module unloaded successfully.")
+            except subprocess.CalledProcessError:
+                jit_print(">>> CUDA module not found or failed to unload.")
+
             # Clone GKFS
-            jit_print(">>> Installing GKFS[/]")
-            status.update("[bold green]JIT >>> Installing GKFS[/]",speed=30)
-            subprocess.run(
-                [
-                    "git",
-                    "clone",
-                    "--recurse-submodules",
-                    "https://storage.bsc.es/gitlab/hpc/gekkofs.git",
-                ],
-                cwd=settings.install_location,
-                check=True,
-            )
-            os.chdir(os.path.join(settings.install_location, "gekkofs"))
-            subprocess.run(["git", "pull", "--recurse-submodules"], check=True)
-            os.chdir(settings.install_location)
+            jit_print(">>> Installing GKFS")
+            if os.path.isdir(os.path.join(settings.install_location, "gekkofs")):
+                jit_print(">>> GKFS exists, skipping installation")
+            else:
+                status.update("[bold green]JIT >>> Installing GKFS[/]",speed=30)
+                subprocess.run(
+                    [
+                        "git",
+                        "clone",
+                        "--recurse-submodules",
+                        "https://storage.bsc.es/gitlab/hpc/gekkofs.git",
+                    ],
+                    cwd=settings.install_location,
+                    check=True,
+                )
+                os.chdir(os.path.join(settings.install_location, "gekkofs"))
+                subprocess.run(["git", "pull", "--recurse-submodules"], check=True)
+                os.chdir(settings.install_location)
 
-            # Build GKFS
-            jit_print(">>> Building GKFS[/]")
-            status.update("[bold green]JIT >>> Building GKFS[/]",speed=30)
-            subprocess.run(
-                [
-                    "gekkofs/scripts/gkfs_dep.sh",
-                    "-p",
-                    "default_zmq",
-                    f"{settings.install_location}/iodeps/git",
-                    f"{settings.install_location}/iodeps",
-                ],
-                check=True,
-            )
-            build_dir = os.path.join(settings.install_location, "gekkofs", "build")
-            os.makedirs(build_dir, exist_ok=True)
-            subprocess.run(
-                [
-                    "cmake",
-                    "-DCMAKE_BUILD_TYPE=Release",
-                    f"-DCMAKE_PREFIX_PATH={settings.install_location}/iodeps",
-                    "-DGKFS_BUILD_TESTS=OFF",
-                    f"-DCMAKE_INSTALL_PREFIX={settings.install_location}/iodeps",
-                    "-DGKFS_ENABLE_CLIENT_METRICS=ON",
-                    "..",
-                ],
-                cwd=build_dir,
-                check=True,
-            )
-            subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
+                # Build GKFS
+                jit_print(">>> Building GKFS")
+                status.update("[bold green]JIT >>> Building GKFS[/]",speed=30)
+                subprocess.run(
+                    [
+                        "gekkofs/scripts/gkfs_dep.sh",
+                        "-p",
+                        "default_zmq",
+                        f"{settings.install_location}/iodeps/git",
+                        f"{settings.install_location}/iodeps",
+                    ],
+                    check=True,
+                )
+                build_dir = os.path.join(settings.install_location, "gekkofs", "build")
+                os.makedirs(build_dir, exist_ok=True)
+                subprocess.run(
+                    [
+                        "cmake",
+                        "-DCMAKE_BUILD_TYPE=Release",
+                        f"-DCMAKE_PREFIX_PATH={settings.install_location}/iodeps",
+                        "-DGKFS_BUILD_TESTS=OFF",
+                        f"-DCMAKE_INSTALL_PREFIX={settings.install_location}/iodeps",
+                        "-DGKFS_ENABLE_CLIENT_METRICS=ON",
+                        "..",
+                    ],
+                    cwd=build_dir,
+                    check=True,
+                )
+                subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
 
-            jit_print(">>> GEKKO installed[/]")
-            status.update("[bold green]JIT >>> GEKKO installed[/]",speed=30)
+                jit_print(">>> GEKKO installed")
+                status.update("[bold green]JIT >>> GEKKO installed[/]",speed=30)
 
-            jit_print(">>> Installing Cereal[/]")
+            jit_print(">>> Installing Boost")
+            status.update("[bold green]JIT >>> Getting Boost[/]",speed=30)
+            if os.path.isfile(os.path.join(settings.install_location, "boost_1_84_0.tar.gz")):
+                print("File exists.")
+                jit_print(">>> Boost tar exists, skipping download")
+            else:
+                try: 
+                    subprocess.run(
+                        ["wget", "https://archives.boost.io/release/1.84.0/source/boost_1_84_0.tar.gz"],
+                        cwd=settings.install_location,
+                        check=True,
+                    )
+                except:
+                    jit_print(">>> Wget failed, copying boost from shared")
+                    subprocess.run(
+                        ["cp", "/lustre/project/nhr-admire/shared/boost_1_84_0.tar.gz", "."],
+                        cwd=settings.install_location,
+                        check=True,
+                    )
+            if os.path.isdir(os.path.join(settings.install_location, "boost_1_84_0")):
+                jit_print(">>> Boost exists, skipping installation")
+            else:
+                status.update("[bold green]JIT >>> Extracting boost from tar archive [/]",speed=30)
+                subprocess.run(
+                    ["tar", "-xzf", "boost_1_84_0.tar.gz"],
+                    cwd=settings.install_location,
+                    check=True,
+                )
+                status.update("[bold green]JIT >>> Installing Boost: bootstrap[/]",speed=30)
+                build_dir = os.path.join(settings.install_location, "boost_1_84_0")
+                os.chdir(build_dir)
+                subprocess.run(f"{build_dir}/bootstrap.sh", cwd=build_dir, check=True)
+                status.update("[bold green]JIT >>> Installing Boost: b2 install[/]",speed=30)
+                subprocess.run([f"{build_dir}/b2", "install", f"--prefix={settings.install_location}/iodeps", "toolset=gcc"],  cwd=build_dir, check=True)
+                status.update("[bold green]JIT >>> Installing Boost: b2 headers[/]",speed=30)
+                subprocess.run([f"{build_dir}/b2", "headers", f"--prefix={settings.install_location}/iodeps"],  cwd=build_dir, check=True)
+                jit_print(">>> Boost installed")
+                os.chdir(settings.install_location)
+                status.update("[bold green]JIT >>> Boost installed[/]",speed=30)
+
+            jit_print(">>> Installing Cereal")
             status.update("[bold green]JIT >>> Installing Cereal[/]",speed=30)
             subprocess.run(
                 ["git", "clone", "https://github.com/USCiLab/cereal"],
@@ -364,9 +416,11 @@ def install_all(settings: JitSettings) -> None:
                 check=True,
             )
             subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
+            jit_print(">>> Cereal installed")
+            status.update("[bold green]JIT >>> Cereal installed[/]",speed=30)
 
             # Install Cargo Dependencies: Thallium
-            jit_print(">>> Installing Thallium[/]")
+            jit_print(">>> Installing Thallium")
             status.update("[bold green]JIT >>> Installing Thallium[/]",speed=30)
             subprocess.run(
                 ["git", "clone", "https://github.com/mochi-hpc/mochi-thallium"],
@@ -389,9 +443,11 @@ def install_all(settings: JitSettings) -> None:
                 check=True,
             )
             subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
+            jit_print(">>> Mochi-thallium installed")
+            status.update("[bold green]JIT >>> Mochi-thallium installed[/]",speed=30)
 
             # Clone and Build Cargo
-            jit_print(">>> Installing Cargo[/]")
+            jit_print(">>> Installing Cargo")
             status.update("[bold green]JIT >>> Installing Cargo[/]",speed=30)
             subprocess.run(
                 ["git", "clone", "https://storage.bsc.es/gitlab/hpc/cargo.git"],
@@ -402,7 +458,10 @@ def install_all(settings: JitSettings) -> None:
             replace_line_in_file(
                 "src/master.cpp", 332, f'  auto patternFile = "{settings.regex_file}";'
             )
-
+            subprocess.run(
+                ["git", "checkout", "marc/nek5000"],
+                check=True,
+            )
             build_dir = os.path.join(settings.install_location, "cargo", "build")
             os.makedirs(build_dir, exist_ok=True)
             subprocess.run(
@@ -418,11 +477,11 @@ def install_all(settings: JitSettings) -> None:
             )
             subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
 
-            jit_print(">>> Cargo installed[/]")
+            jit_print(">>> Cargo installed")
             status.update("[bold green]JIT >>> Cargo installed[/]",speed=30)
 
             # Build IOR
-            jit_print(">>> Installing IOR[/]")
+            jit_print(">>> Installing IOR")
             status.update("[bold green]JIT >>> Installing IOR[/]",speed=30)
             subprocess.run(
                 ["git", "clone", "https://github.com/hpc/ior.git"],
@@ -434,7 +493,7 @@ def install_all(settings: JitSettings) -> None:
             subprocess.run(["./configure"], check=True)
             subprocess.run(["make", "-j", "4"], check=True)
 
-            jit_print(">> Installation finished[/]")
+            jit_print(">> Installation finished")
             status.update("[bold green]JIT >> Installation finished[/]",speed=30)
             console.print("\n>> Ready to go <<")
             status.update("\n>> Ready to go <<",speed=30)
@@ -442,7 +501,7 @@ def install_all(settings: JitSettings) -> None:
             status.update("Call: ./jit.sh -n NODES -t MAX_TIME",speed=30)
 
         except subprocess.CalledProcessError as e:
-            jit_print("[bold red] >>> Error encountered: {e}[/]")
+            jit_print(f"[bold red] >>> Error encountered: {e}[/]")
             status.update("[bold green]JIT [bold red] >>> Error encountered: {e}[/]",speed=30)
             abort()
 
@@ -718,6 +777,7 @@ def get_pid(settings: JitSettings, name: str, pid: int):
 
 def handle_sigint(settings: JitSettings):
     if settings.trap_exit:
+        settings.trap_exit= False
         jit_print("[bold blue]>> Keyboard interrupt detected. Exiting script.[/]")
         info = f"{settings.app_call} with {settings.nodes} ({settings.log_suffix})"
         jit_print(f"[bold blue]>> Killing Job: {info}.\n Exiting script.[/]")
@@ -817,6 +877,9 @@ def log_dir(settings:JitSettings):
     if not settings.log_dir:
         # Define default LOG_DIR if not set
         settings.log_dir = f"logs_nodes{settings.nodes}_Jobid{settings.job_id}"
+        # settings.gkfs_mntdir = f"{settings.gkfs_mntdir}_Jobid{settings.job_id}"
+        # settings.gkfs_rootdir = f"{settings.gkfs_rootdir}_Jobid{settings.job_id}"
+        
         if settings.log_suffix:
             settings.log_dir +=f"_{settings.log_suffix}"
 
@@ -873,7 +936,8 @@ def set_dir_gekko(settings: JitSettings) -> None:
     if settings.node_local and settings.cluster:
         jit_print(">> Setting Gekko root dir to node local")
         settings.gkfs_rootdir = f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_rootdir)}"
-        jit_print(f">> Gekko root dir set to: {settings.gkfs_rootdir}", True)
+        settings.gkfs_mntdir = f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_mntdir)}"
+        jit_print(f">> Gekko root dir set to: {settings.gkfs_rootdir}\n>> Gekko mnt dir set to: {settings.gkfs_mntdir}", True)
 
 
 def print_settings(settings) -> None:
@@ -1028,8 +1092,9 @@ def create_hostfile(settings):
     try:
         if os.path.exists(settings.gkfs_hostfile):
             os.remove(settings.gkfs_hostfile)
+            jit_print("[yellow]>> Hostfile removed[/]")
         else:
-            jit_print("[yellow]>> No hostfile found[/]",True)
+            jit_print("[green]>> No hostfile found to remove[/]")
 
     except Exception as e:
         jit_print(f"[bold red]Error removing hostfile:[/bold red] {e}",True)
@@ -1085,9 +1150,8 @@ def check(settings: JitSettings):
     if settings.dry_run:
         return
 
+    call = geko_flagged_call(settings,f"ls -lahrt {settings.gkfs_mntdir}")
     try:
-        additional_arguments = load_flags(settings)
-        call = f"{additional_arguments} ls -lahrt {settings.gkfs_mntdir}"
         
         files = subprocess.check_output(
             f"{call}",
@@ -1097,6 +1161,38 @@ def check(settings: JitSettings):
         jit_print(f"[cyan]>> {call}: [/]\n{files}")
     except subprocess.CalledProcessError as e:
         jit_print(f"[red]>> Failed to list files in {settings.gkfs_mntdir}: {e}[/]")
+
+
+def geko_flagged_call(settings:JitSettings, call:str, node:int=1) -> str:
+    if settings.cluster:
+        call = load_flags_mpi(settings, call, node)
+    else:
+        additional_arguments = load_flags(settings)
+        call = f"{additional_arguments} {call}"
+
+    return call
+
+
+def load_flags_mpi(settings:JitSettings, command:str,node:int=1) -> str:
+    additional_arguments = ""
+    if not settings.exclude_ftio:
+        additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
+    if not settings.exclude_proxy:
+        additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+    if not settings.exclude_daemon:
+        additional_arguments += (
+            f"-x LIBGKFS_LOG=info,warnings,errors "
+            f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
+            f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+            f"-x LD_PRELOAD={settings.gkfs_intercept} "
+            )
+    call = (
+            f" mpiexec -np {node} --oversubscribe "
+            f"--hostfile {settings.app_dir}/hostfile_mpi "
+            f"{additional_arguments} "
+            f"{command}"
+        )
+    return call
 
 
 def load_flags(settings:JitSettings) -> str:
@@ -1113,6 +1209,9 @@ def load_flags(settings:JitSettings) -> str:
             f" LD_PRELOAD={settings.gkfs_intercept} "
             )
     return additional_arguments
+
+
+
 
 
 def update_hostfile_mpi(settings:JitSettings) -> None:
