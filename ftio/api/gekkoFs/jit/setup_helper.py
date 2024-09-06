@@ -1190,7 +1190,7 @@ def load_flags_mpi(settings:JitSettings, command:str,node:int=1) -> str:
             f" mpiexec -np {node} --oversubscribe "
             f"--hostfile {settings.app_dir}/hostfile_mpi "
             f"{additional_arguments} "
-            f"{command}"
+            f"{settings.task_set_1} {command}"
         )
     return call
 
