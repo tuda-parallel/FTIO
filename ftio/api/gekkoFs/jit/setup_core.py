@@ -370,7 +370,8 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             execute_background_and_wait_line(
                 call,
                 settings.cargo_log,
-                "[info] Transfer finished for [",
+                # "[info] Transfer finished for [",
+                "ftio_int RPC was successful!",
                 settings.dry_run
             )
             # end_of_transfer(settings, settings.cargo_log,call)

@@ -360,9 +360,10 @@ def end_of_transfer_online(
     if settings.dry_run:
         return
     
-    copy = True #copy if cargo get's stuck
+    repeated_trigger = True
+    copy = False #Trigger cargo again
     monitored_files = get_files(settings, True)
-    stuck_time = 1
+    stuck_time = 5
     last_lines = read_last_n_lines(log_file)
     stuck_files = 0
     n = len(monitored_files)
@@ -382,7 +383,7 @@ def end_of_transfer_online(
             while len(monitored_files) > 0:
                 time.sleep(0.1)  # Short sleep interval to quickly catch new lines
                 # jit_print(f"[cyan]>> Files in mount dir {monitored_files}",True)
-                status.update(f"Waiting for {len(monitored_files)} files")
+                status.update(f"Waiting for {len(monitored_files)} files: {monitored_files}")
                 
                 passed_time = int(time.time() - start_time)
                 time_since_last_cargo = int(time.time() - last_cargo_time)
@@ -390,58 +391,25 @@ def end_of_transfer_online(
                 if passed_time >= timeout:
                     status.update("Timeout reached")
                     jit_print("[bold red]>> Timeout reached[/]")
-                    return
-
-                if time_since_last_cargo >= stuck_time:
-                    jit_print(f"[cyan]>> Stucked for {stuck_time} sec. Triggering cargo again\n")
-                    _ = execute_background(
-                        call, settings.cargo_log, settings.cargo_err
-                        )   
-                    last_cargo_time = time.time()
+                    break
+                if repeated_trigger:
                     hit += 1
-                    if hit == 3:
-                        if copy:
-                            try:
-                                jit_print(f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}")
-                                jit_print("[cyan]>> Triggering old school copy\n")
-                                status.update("Copying ... ")
-                                if settings.cluster:
-                                    # call_setup = ( 
-                                    #     f"srun --jobid={settings.job_id} {settings.single_node_command} "
-                                    #     f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
-                                    #     f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/ccp "
-                                    #     f"--server {settings.cargo_server} --input / --output {settings.stage_out_path} "
-                                    #     f"--if gekkofs --of {settings.cargo_mode}" # posix
-                                    #     )
-                                    call = (f"srun --jobid={settings.job_id} {settings.single_node_command} "
-                                            f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
-                                            f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/cargo_ftio "
-                                            f"--server {settings.cargo_server} --run")
-                                    # _ = execute_background(call_setup, dry_run=settings.dry_run)
-                                    # time.sleep(0.1)
-                                    _ = execute_background(call, dry_run=settings.dry_run)
-                                else:
-                                    call = (f"mpiexec -np 1 --oversubscribe {settings.cargo_bin}/cargo_ftio "
-                                            f"--server {settings.cargo_server} --run")
-                                    _ = execute_block(call, dry_run=settings.dry_run)
-                                # additional_arguments = load_flags(settings)
-                                # call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
-                                # _ = execute_block(call, dry_run=settings.dry_run)
-                                break
-                            except Exception as e:
-                                jit_print("[yellow]>> call failed\n")
-                                copy = False
+                    # jit_print(f"{time_since_last_cargo} >= {stuck_time} and {stuck_files} == {len(monitored_files)}")
+                    if time_since_last_cargo >= stuck_time and stuck_files == len(monitored_files):
+                        jit_print(f"[cyan]>> Stucked for {stuck_time} sec. Triggering cargo again\n")
+                        _ = execute_background(
+                            call, settings.cargo_log, settings.cargo_err
+                            )   
+                        last_cargo_time = time.time()
                         stuck_time = stuck_time*2
                         jit_print(f"[cyan]>> Stucked increased to {stuck_time}\n")
                         jit_print(f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}")
                         hit = 0
-                        if stuck_time >= 8 and stuck_files == len(monitored_files):
-                            jit_print(f">> Stopping stage out")
+                        if "Transfer finished for []" in last_lines:
                             break
-                    if "Transfer finished for []" in last_lines:
-                        break
-
-                stuck_files = len(monitored_files)
+                    if hit == 3:
+                        stuck_files = len(monitored_files)
+                        hit = 0
                 monitored_files = get_files(settings, False)
             
             timestamp = get_time()
@@ -451,6 +419,7 @@ def end_of_transfer_online(
             jit_print(
                 f"\n[cyan]>> finished moving all files at [{timestamp}]", True
             )
+
 
 def get_files(settings: JitSettings, verbose=True):
     monitored_files = []
@@ -466,6 +435,9 @@ def get_files(settings: JitSettings, verbose=True):
                 for file in files
                 if file.replace(f"{settings.gkfs_mntdir}", "")
             ]
+            # remove directories
+            files = [item for item in files if '.' in item]
+
 
         monitored_files = files_filtered(files, settings.regex_match, verbose)
         if verbose:

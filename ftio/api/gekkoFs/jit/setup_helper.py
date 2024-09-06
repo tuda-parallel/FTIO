@@ -883,11 +883,17 @@ def log_dir(settings:JitSettings):
         if settings.log_suffix:
             settings.log_dir +=f"_{settings.log_suffix}"
 
-    # Create directory if it does not exist
-    os.makedirs(settings.log_dir, exist_ok=True)
+    counter = 0
+    while os.path.exists(settings.log_dir):
+        settings.log_dir =f"{settings.log_dir}_{counter}"
 
     # Resolve and return the absolute path of LOG_DIR
     settings.log_dir = os.path.abspath(settings.log_dir)
+
+    # Create directory if it does not exist
+    os.makedirs(settings.log_dir, exist_ok=True)
+
+    
     settings.set_log_dirs()
 
 

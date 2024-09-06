@@ -128,14 +128,14 @@ class JitSettings:
         if self.cluster:
             self.procs_proxy = int(np.floor(self.procs / 2))
             self.procs_daemon = int(np.floor(self.procs / 2))
-            self.procs_cargo = 2
+            self.procs_cargo = 1#2 solved with new version
             self.procs_ftio = self.procs
             self.procs_app = int(np.floor(self.procs / 2))
         else:
             self.procs = 10
             self.procs_daemon = 1
             self.procs_proxy = 1
-            self.procs_cargo = 2
+            self.procs_cargo = 1#2
             self.procs_ftio = 1
             self.procs_app = self.procs
 
