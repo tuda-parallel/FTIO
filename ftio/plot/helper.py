@@ -9,7 +9,7 @@ def legend_fix(data, c) -> bool:
         return False
 
 
-def format_plot_simple(fig: go.Figure, legend=True, font=True, x_minor=True, y_minor=True) -> go.Figure:
+def format_plot(fig: go.Figure, legend=True, font=True, x_minor=True, y_minor=True) -> go.Figure:
     """Formats plots
 
     Args:

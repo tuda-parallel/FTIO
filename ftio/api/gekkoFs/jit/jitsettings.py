@@ -251,8 +251,9 @@ class JitSettings:
         self.ftio_bin_location = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin"
 
         # ****** gkfs variables ******
-        self.gkfs_daemon    = "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/bin/gkfs_daemon"
-        self.gkfs_intercept = "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
+        self.gkfs_deps      = "/lustre/project/nhr-admire/tarraf/deps"#_gcc12_2" 
+        self.gkfs_daemon    = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
+        self.gkfs_intercept = f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
         self.gkfs_mntdir    = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir   = "/dev/shm/tarraf_gkfs_rootdir"
         self.gkfs_hostfile  = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
@@ -261,22 +262,23 @@ class JitSettings:
 
 
         # ****** cargo variables ******
-        self.cargo_bin    = "/lustre/project/nhr-admire/tarraf/deps/gekkofs_zmq_install/bin"#"/lustre/project/nhr-admire/tarraf/cargo/build/cli"
+        self.cargo_bin    = f"{self.gkfs_deps}/gekkofs_zmq_install/bin"#"/lustre/project/nhr-admire/tarraf/cargo/build/cli"
         self.cargo        = f"{self.cargo_bin}/cargo"#"/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
         self.cargo_server = f"{self.gkfs_daemon_protocol}://127.0.0.1:62000"
 
         # ? APP settings
         # ?##########################
         # ****** app call ******
-        #  ├─ IOR
+        ##  ├─ IOR
         # self.app="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
         # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
-        #  ├─ NEK5000
+        ##  ├─ NEK5000 --> change gkfs_daemon_protocol to socketsr
         # self.app_call = "./nek5000"
         # self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
-        #  └─ Wacom++
+        ##  └─ Wacom++ --> change wacom.json if needed 
         self.app_call = "./wacommplusplus"
-        self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
+        self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build_gcc12_2"
+        
 
         # ****** pre and post app call ******
         # Application specific calls executed before the actual run. Executed as

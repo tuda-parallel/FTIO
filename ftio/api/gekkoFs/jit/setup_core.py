@@ -208,10 +208,11 @@ def start_cargo(settings: JitSettings) -> None:
         if settings.verbose:
             monitor_log_file(settings.cargo_err,"Error Cargo")
         # wait for line to appear
-        time.sleep(1)
+        time.sleep(2)
         flag = wait_for_line(settings.cargo_log, "Start up successful",dry_run = settings.dry_run)
         if not flag:
             handle_sigint(settings)
+        time.sleep(4)
         console.print("\n")
 
 #! start FTIO
@@ -337,7 +338,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
         if settings.exclude_cargo:
             # additional_arguments = load_flags(settings)
             # call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
-            call = geko_flagged_call(settings, f"cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path}")
+            call = geko_flagged_call(settings, f"cp -r  {settings.gkfs_mntdir} {settings.stage_out_path}")
             start = time.time()
             _ = execute_block(call, dry_run=settings.dry_run)
             elapsed_time(settings, runtime, "Stage in", time.time() - start)
@@ -424,36 +425,6 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f"{settings.task_set_1} {settings.app_call}"
             )
 
-        # if settings.exclude_all:
-        #     call = (
-        #         f" mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
-        #         f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
-        #         f"{settings.task_set_1} {settings.app_call}"
-        #     )
-        # elif settings.exclude_ftio:
-        #     call = (
-        #         f" mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
-        #         f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
-        #         f"-x LIBGKFS_LOG=info,warnings,errors "
-        #         f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-        #         f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-        #         f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
-        #         f"-x LD_PRELOAD={settings.gkfs_intercept} "
-        #         f"{settings.task_set_1} {settings.app_call}"
-        #     )
-        # else:
-        #     call = (
-        #         f" mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
-        #         f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
-        #         f"-x LIBGKFS_LOG=info,warnings,errors "
-        #         f"-x LIBGKFS_ENABLE_METRICS=on "
-        #         f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
-        #         f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-        #         f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-        #         f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
-        #         f"-x LD_PRELOAD={settings.gkfs_intercept} "
-        #         f"{settings.task_set_1} {settings.app_call}"
-        #     )
             # s_call =(
             #     f" srun "
             #     f"--export="

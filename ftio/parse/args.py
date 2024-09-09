@@ -39,7 +39,7 @@ Report any bugs to:
 COPYRIGHT:
 {__copyright__} 
 
-LICENCE:
+LICENSE:
 {__license__} 
 
 Full documentation:

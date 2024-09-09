@@ -777,9 +777,9 @@ def get_pid(settings: JitSettings, name: str, pid: int):
 
 def handle_sigint(settings: JitSettings):
     if settings.trap_exit:
-        settings.trap_exit= False
+        settings.trap_exit = False
         jit_print("[bold blue]>> Keyboard interrupt detected. Exiting script.[/]")
-        info = f"{settings.app_call} with {settings.nodes} ({settings.log_suffix})"
+        info = f"{settings.app_call} with {settings.nodes} nodes ({settings.log_suffix})"
         jit_print(f"[bold blue]>> Killing Job: {info}.\n Exiting script.[/]")
         log_failed_jobs(settings, info)
         soft_kill(settings)
