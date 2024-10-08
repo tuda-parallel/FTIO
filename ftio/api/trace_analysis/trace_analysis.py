@@ -196,15 +196,24 @@ def periodic_apps(df, prefix) -> str:
 
 
 def compute_metrics(df: pd.DataFrame, prefix, suffix="conf", unit="%", title="") -> str:
+    min = np.nan
+    max = np.nan
+    mean = np.nan
+    median = np.nan
+    nanmean = np.nan
+    nanmedian = np.nan
     if not title:
         title = suffix.capitalize()
+    
     conf_col = f"{prefix}_{suffix}"
-    min = np.min(df[conf_col])
-    max = np.max(df[conf_col])
-    mean = np.mean(df[conf_col])
-    median = np.median(df[conf_col])
-    nanmean = np.nanmean(df[conf_col])
-    nanmedian = np.nanmedian(df[conf_col])
+    if not df[conf_col].isna().all():
+        min = np.min(df[conf_col])
+        max = np.max(df[conf_col])
+        mean = np.mean(df[conf_col])
+        median = np.median(df[conf_col])
+        nanmean = np.nanmean(df[conf_col])
+        nanmedian = np.nanmedian(df[conf_col])
+    
     scale = 100 if "conf" in suffix else 1
     # out = f"[green]{prefix.capitalize()} {title}:\n - range: [{min*scale:.3e},{max*scale:.3e}] {unit}\n - mean: {mean*scale:.3e} {unit}\n - nanmean: {nanmean*scale:.3e} {unit}\n - median: {median*scale:.3e} {unit}\n - nanmedian: {nanmedian*scale:.3e} {unit}\n[/]"
     out = f"[gray][green]{title}:[/]\n - range: [{min*scale:.3f},{max*scale:.3f}] {unit}\n - mean: {mean*scale:.3f} {unit}\n - nanmean: {nanmean*scale:.3f} {unit}\n - median: {median*scale:.3f} {unit}\n - nanmedian: {nanmedian*scale:.3f} {unit}\n\n[/]"

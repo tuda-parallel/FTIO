@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 import numpy as np
+import numba
 
 
 def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, float, str]:
@@ -26,14 +27,7 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, floa
     if len(t) == 0:
         return np.empty(0), 0, " "
     if freq == -1:
-        t_rec = np.inf
-        for i in range(0, len(t) - 1):
-            if (
-                t_rec > (t[i + 1] - t[i])
-                and (t[i + 1] - t[i]) != 0
-                and (t[i + 1] - t[i]) >= 0.001
-            ):
-                t_rec = t[i + 1] - t[i]
+        t_rec = find_lowest_time_change(t)
         freq = 2 / t_rec
         text += f"Recommended sampling frequency: {freq:.3e} Hz\n"
     elif freq == -2:
@@ -57,7 +51,7 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, floa
     for _ in range(0, N):
         for i in range(n_old, n):
             if (t_step >= t[i]) and (t_step < t[i + 1]) or i == n - 1:
-                n_old = i  # no need to itterate over entire array
+                n_old = i  # no need to iterate over entire array
                 b_sampled[counter] = b[i]
                 counter = counter + 1
                 break
@@ -109,3 +103,24 @@ def sample_data_same_size(b: np.ndarray, t:np.ndarray, freq=-1, n_bins=-1) -> tu
 
     t = np.arange(0, n_bins) * 1 / freq
     return b_sampled, t
+
+
+@numba.njit
+def find_lowest_time_change(t:np.ndarray)-> float:
+    """finds the lowest time change
+
+    Args:
+        t (np.ndarray): array of time stamps
+
+    Returns:
+        float: smallest time change
+    """
+    t_rec = np.inf
+    for i in range(0, len(t) - 1):
+        if (
+            t_rec > (t[i + 1] - t[i])
+            and (t[i + 1] - t[i]) != 0
+            and (t[i + 1] - t[i]) >= 0.001
+        ):
+            t_rec = t[i + 1] - t[i]
+    return t_rec
