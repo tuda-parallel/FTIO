@@ -4,7 +4,7 @@ import time
 from multiprocessing import Pool, cpu_count
 import pandas as pd
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
+from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, MofNCompleteColumn,TaskProgressColumn, TextColumn, BarColumn
 
 from ftio.api.trace_analysis.trace_ftio_v2 import main as trace_ftio
 from ftio.api.trace_analysis.trace_analysis import convert_dict, flatten_dict, statistics
@@ -109,14 +109,17 @@ def main(argv=sys.argv[1:]) -> None:
     # Create a progress bar
     progress = Progress(
         SpinnerColumn(),
-        *Progress.get_default_columns(),
+        # *Progress.get_default_columns(),
+        TextColumn("[progress.description]{task.description} ({task.completed}/{task.total})"),
+        BarColumn(),
+        TaskProgressColumn(),
         "[yellow] -- runtime",
         TimeElapsedColumn(),
     )
 
     try:
         with progress:
-            task = progress.add_task("[green]Processing files...", total=len(trace_files))
+            task = progress.add_task("[green]Processing files", total=len(trace_files))
 
             # Use multiprocessing Pool
             if num_procs == -1:
