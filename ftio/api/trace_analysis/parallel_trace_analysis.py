@@ -1,8 +1,8 @@
 import os
 import sys
 import time
-import pandas as pd
 from multiprocessing import Pool, cpu_count
+import pandas as pd
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
 
@@ -59,7 +59,7 @@ def main(argv=sys.argv[1:]) -> None:
     # Specify the name with -n 
     if '-p' in argv:
         index = argv.index('-p')
-        num_procs = float(argv[index + 1])
+        num_procs = int(argv[index + 1])
         argv.pop(index)
         argv.pop(index)
     if '-n' in argv:
@@ -80,7 +80,7 @@ def main(argv=sys.argv[1:]) -> None:
     pattern = f"_signal_{name}.csv"
     df = pd.DataFrame()
     if json:
-        pattern = f".json"
+        pattern = ".json"
 
     # Handle command-line arguments properly
     if len(argv) > 0:
