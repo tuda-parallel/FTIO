@@ -131,6 +131,7 @@ def main(argv=sys.argv[1:]) -> None:
             future = True #managing tasks without blocking others due to slow processes
             
             if future:
+                counter = 0
                 with ProcessPoolExecutor(max_workers=num_procs) as executor:
                     # Submit tasks to the executor
                     futures = {executor.submit(process_file, file_path, argv, verbose, name, json, i, len(trace_files)): i for i, file_path in enumerate(trace_files)}
@@ -144,7 +145,8 @@ def main(argv=sys.argv[1:]) -> None:
                             df = pd.concat([df, pd.DataFrame([flat_res])], ignore_index=True)
                             # Update progress
                         progress.console.print(f"Processed ({index + 1}/{len(trace_files)}): {trace_files[index]}")
-                        progress.update(task, completed=index + 1)
+                        counter += 1
+                        progress.update(task, completed=counter)
             else:
                 with Pool(processes=num_procs) as pool:
                     # Pass the index and total files to process_file
