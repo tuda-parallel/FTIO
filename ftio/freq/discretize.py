@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 import numpy as np
-import numba
+from numba import jit
 
 
 def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, float, str]:
@@ -32,7 +32,7 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, floa
         text += f"Recommended sampling frequency: {freq:.3e} Hz\n"
     elif freq == -2:
         N = 10000
-        freq = N/np.floor((t[-1] - t[0]))
+        freq = N/np.floor((t[-1] - t[0])) if t[-1] != t[0] else 1000
     else:
         text += f"Sampling frequency:  {freq:.3e} Hz\n"
     N = int(np.floor((t[-1] - t[0]) * freq))
@@ -105,7 +105,8 @@ def sample_data_same_size(b: np.ndarray, t:np.ndarray, freq=-1, n_bins=-1) -> tu
     return b_sampled, t
 
 
-@numba.njit
+
+@jit(nopython=True, cache=True)
 def find_lowest_time_change(t:np.ndarray)-> float:
     """finds the lowest time change
 

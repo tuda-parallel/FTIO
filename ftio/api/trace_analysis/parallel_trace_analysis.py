@@ -2,6 +2,7 @@ import os
 import sys
 import time
 from multiprocessing import Pool, cpu_count
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import pandas as pd
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, MofNCompleteColumn,TaskProgressColumn, TextColumn, BarColumn
@@ -119,25 +120,44 @@ def main(argv=sys.argv[1:]) -> None:
 
     try:
         with progress:
-            task = progress.add_task("[green]Processing files", total=len(trace_files))
-
             # Use multiprocessing Pool
             if num_procs == -1:
                 num_procs = int(cpu_count()/2)  
+            
             console.print(f"[bold green]Using {num_procs} processes[/]\n")
-            # num_procs = min(10, cpu_count())  
-            with Pool(processes=num_procs) as pool:
-                # Pass the index and total files to process_file
-                results = [pool.apply_async(process_file, (file_path, argv, verbose, name, json, i, len(trace_files))) for i, file_path in enumerate(trace_files)]
-                
-                for result in results:
-                    flat_res, index, total_files = result.get()
-                    if flat_res:
-                        # Process result
-                        df = pd.concat([df, pd.DataFrame([flat_res])], ignore_index=True)
-                    # Update progress
-                    progress.console.print(f"Processed ({index + 1} /{total_files}): {trace_files[index]}")
-                    progress.update(task, completed=index + 1)
+            task = progress.add_task("[green]Processing files", total=len(trace_files))
+            
+            # use future or apply_async 
+            future = True #managing tasks without blocking others due to slow processes
+            
+            if future:
+                with ProcessPoolExecutor(max_workers=num_procs) as executor:
+                    # Submit tasks to the executor
+                    futures = {executor.submit(process_file, file_path, argv, verbose, name, json, i, len(trace_files)): i for i, file_path in enumerate(trace_files)}
+                    
+                    # Process results as they complete
+                    for future in as_completed(futures):
+                        index = futures[future]
+                        flat_res, _, _ = future.result()
+                        if flat_res:
+                            # Process result
+                            df = pd.concat([df, pd.DataFrame([flat_res])], ignore_index=True)
+                            # Update progress
+                        progress.console.print(f"Processed ({index + 1}/{len(trace_files)}): {trace_files[index]}")
+                        progress.update(task, completed=index + 1)
+            else:
+                with Pool(processes=num_procs) as pool:
+                    # Pass the index and total files to process_file
+                    results = [pool.apply_async(process_file, (file_path, argv, verbose, name, json, i, len(trace_files))) for i, file_path in enumerate(trace_files)]
+                    
+                    for result in results:
+                        flat_res, index, total_files = result.get()
+                        if flat_res:
+                            # Process result
+                            df = pd.concat([df, pd.DataFrame([flat_res])], ignore_index=True)
+                        # Update progress
+                        progress.console.print(f"Processed ({index + 1}/{total_files}): {trace_files[index]}")
+                        progress.update(task, completed=index + 1)
 
         progress.console.print("[bold green]All files processed successfully![/]\n")
         console.print(
