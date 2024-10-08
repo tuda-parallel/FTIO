@@ -64,7 +64,7 @@ def get_path(argv):
             print(f'current file: {full_path}')
     else:
         # provide the path manually 
-        full_path = f'{os.getcwd()}/data.csv'
+        full_path = f'{os.getcwd()}/data/data.csv'
 
     print(f'current file: {full_path}')
 

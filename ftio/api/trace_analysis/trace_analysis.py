@@ -162,7 +162,7 @@ def statistics(df,ellapsed_time=""):
     df_dom = reduce_to_max_conf(df)
     df.to_csv("ftio.csv", index=False)
     df_dom.to_csv("ftio_flat.csv", index=False)
-    prefixes = ["read", "write", "both"]
+    prefixes = relevant_prefix(df)
     color = ["purple4", "gold3", "deep_sky_blue1"]
     content = ""
     with open("ftio_output.txt", 'w') as file:
@@ -218,7 +218,8 @@ def time_app(df, prefix):
 
 
 def reduce_to_max_conf(df: pd.DataFrame) -> pd.DataFrame:
-    prefixes = ["read", "write", "both"]
+    prefixes = relevant_prefix(df)
+    print(prefixes)
     # Iterate over each row
     for i, row in df.iterrows():
         for prefix in prefixes:
@@ -243,6 +244,14 @@ def reduce_to_max_conf(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
+def relevant_prefix(df):
+    prefixes = ["read", "write", "both"]
+    res = []
+    for mode in prefixes:
+        matching_columns = df.columns[df.columns.str.contains(mode)]
+        if len(matching_columns) > 0:
+            res.append(mode)
+    return res
 
 def cleaned_text(text:str) -> str:
     # Remove color tags and placeholders for rich console

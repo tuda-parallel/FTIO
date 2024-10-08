@@ -243,7 +243,7 @@ class JitSettings:
         # ****** job allocation call ******
         # self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
         self.job_name = "JIT"
-        self.alloc_call_flags = f"--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084"
+        self.alloc_call_flags = f"--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0401"
 
         # ? TOOLS
         # ?#######################
@@ -251,7 +251,7 @@ class JitSettings:
         self.ftio_bin_location = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin"
 
         # ****** gkfs variables ******
-        self.gkfs_deps      = "/lustre/project/nhr-admire/tarraf/deps"#_gcc12_2" 
+        self.gkfs_deps      = "/lustre/project/nhr-admire/tarraf/deps_gcc12_2" 
         self.gkfs_daemon    = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
         self.gkfs_intercept = f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
         self.gkfs_mntdir    = "/dev/shm/tarraf_gkfs_mountdir"
