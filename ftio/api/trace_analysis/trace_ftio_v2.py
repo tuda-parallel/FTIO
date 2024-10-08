@@ -119,11 +119,11 @@ def run_ftio_on_group(argv, verbose, arrays, b_r, t_r, b_w, t_w, b_b=[], t_b=[])
     res_w={}
     res_b={}
     
-    if 'read' in arrays:
+    if 'read' in arrays and len(b_r) > 1:
         res_r = quick_ftio(argv,b_r,t_r, total_bytes_r, 10, 'read',verbose)
-    if 'write' in arrays:
+    if 'write' in arrays and len(b_w) > 1:
         res_w = quick_ftio(argv,b_w,t_w, total_bytes_w, 10, 'write',verbose)
-    if 'both' in arrays:
+    if 'both' in arrays and len(b_b) > 1:
         res_b = quick_ftio(argv,b_b,t_b, total_bytes_b, 10, 'both',verbose)
 
     return {"read":res_r,"write":res_w,"both":res_b}

@@ -46,7 +46,7 @@ def process_file(file_path, argv, verbose, name, json=False, index=0, total_file
         # Return the flattened result along with index and total number of files
         return (flat_res, index, total_files)
     except Exception as e:
-        console.print(f"[bold red]Error processing file {file_path}: {e}[/]")
+        console.print(f"\n[bold red]Error processing file {file_path}: {e}[/]")
         return (None, index, total_files)
 
 def main(argv=sys.argv[1:]) -> None:
