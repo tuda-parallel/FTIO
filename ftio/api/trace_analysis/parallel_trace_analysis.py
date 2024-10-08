@@ -5,7 +5,7 @@ from multiprocessing import Pool, cpu_count
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import pandas as pd
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, MofNCompleteColumn,TaskProgressColumn, TextColumn, BarColumn
+from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn, TimeRemainingColumn,TaskProgressColumn, TextColumn, BarColumn
 
 from ftio.api.trace_analysis.trace_ftio_v2 import main as trace_ftio
 from ftio.api.trace_analysis.trace_analysis import convert_dict, flatten_dict, statistics
@@ -55,6 +55,7 @@ def main(argv=sys.argv[1:]) -> None:
     name = "plafrim"
     json = False
     num_procs = -1
+    res_path = "."
 
     # Specify the name with -n 
     if '-p' in argv:
@@ -75,6 +76,11 @@ def main(argv=sys.argv[1:]) -> None:
         index = argv.index('-j')
         argv.pop(index)
         json = True
+    if '-o' in argv:
+        index = argv.index('-o')
+        res_path = str(argv[index + 1])
+        argv.pop(index)
+        argv.pop(index)
 
     start_time = time.time()
     pattern = f"_signal_{name}.csv"
@@ -114,7 +120,8 @@ def main(argv=sys.argv[1:]) -> None:
         TextColumn("[progress.description]{task.description} ({task.completed}/{task.total})"),
         BarColumn(),
         TaskProgressColumn(),
-        "[yellow] -- runtime",
+        TimeRemainingColumn(),
+        "[yellow]-- runtime",
         TimeElapsedColumn(),
     )
 
@@ -168,10 +175,10 @@ def main(argv=sys.argv[1:]) -> None:
             f"[blue]Pattern:[/] {pattern}\n"
         )
         ellapsed_time = f"Execution time {time.time() - start_time:.4f} seconds"
-        statistics(df, ellapsed_time)
+        statistics(df, ellapsed_time,res_path)
     except KeyboardInterrupt:
         progress.console.print("[bold red]Keyboard interrupt![/]\n")
-        statistics(df)
+        statistics(df, ellapsed_time,res_path)
         sys.exit()
     console.print(f"[blue]Execution time:[/] {time.time() - start_time:.4f} seconds")
 

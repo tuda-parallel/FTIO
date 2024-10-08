@@ -157,15 +157,13 @@ def flatten_dict(d):
     return flat
 
 
-def statistics(df,ellapsed_time=""):
+def statistics(df,ellapsed_time="",path="."):
     # print(df)
     df_dom = reduce_to_max_conf(df)
-    df.to_csv("ftio.csv", index=False)
-    df_dom.to_csv("ftio_flat.csv", index=False)
     prefixes = relevant_prefix(df)
     color = ["purple4", "gold3", "deep_sky_blue1"]
     content = ""
-    with open("ftio_output.txt", 'w') as file:
+    with open(f"{path}/ftio_output.txt", 'w') as file:
         for prefix in prefixes:
             s = ""
             s += periodic_apps(df, prefix)
@@ -182,7 +180,10 @@ def statistics(df,ellapsed_time=""):
             )
             console.print("\n")
             content += cleaned_text(f"{prefix.capitalize()}" + "\n----------------\n"+ s + "\n\n")
-        file.write(content +cleaned_text(ellapsed_time))
+        file.write(content+cleaned_text(ellapsed_time))
+    
+    df.to_csv(f"{path}/ftio.csv", index=False)
+    df_dom.to_csv(f"{path}/ftio_flat.csv", index=False)
     # print(dom_df)
 
 
