@@ -178,7 +178,7 @@ def main(argv=sys.argv[1:]) -> None:
         statistics(df, ellapsed_time,res_path)
     except KeyboardInterrupt:
         progress.console.print("[bold red]Keyboard interrupt![/]\n")
-        statistics(df, ellapsed_time,res_path)
+        statistics(df, "",res_path)
         sys.exit()
     console.print(f"[blue]Execution time:[/] {time.time() - start_time:.4f} seconds")
 
