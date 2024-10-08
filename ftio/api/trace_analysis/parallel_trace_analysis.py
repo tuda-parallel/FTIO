@@ -19,7 +19,6 @@ def process_file(file_path, argv, verbose, name, json=False, index=0, total_file
 
         # Create the new file name by replacing the pattern
         base_name = os.path.basename(file_path)
-        print(base_name)
         # if input file is not a json, save ftio result
         if not json:
             json_file = base_name.replace(f"_signal_{name}.csv", f"_freq_{name}.json")
