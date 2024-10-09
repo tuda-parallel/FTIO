@@ -13,7 +13,8 @@ from ftio.api.trace_analysis.trace_analysis import convert_dict, flatten_dict, s
 # Initialize the console for printing
 console = Console()
 
-def process_file(file_path, argv, verbose, name, json=False, index=0, total_files=0):
+def process_file(file_path, argv, verbose, name, json=False, index=0):
+    error = ''
     try:
         # Call your trace_ftio function (adjust the import and call as necessary)
         res = trace_ftio([file_path] + argv, verbose, json)
@@ -43,12 +44,13 @@ def process_file(file_path, argv, verbose, name, json=False, index=0, total_file
             flat_res["job_id"] = "??"
             flat_res["file"] = "??"
             console.print("[bold red]Unable to extract job id[/]")
-
-        # Return the flattened result along with index and total number of files
-        return (flat_res, index, total_files)
     except Exception as e:
         console.print(f"\n[bold red]Error processing file {file_path}: {e}[/]")
-        return (None, index, total_files)
+        error = str(e)
+        flat_res = None
+
+    return flat_res, index, file_path, error
+
 
 def main(argv=sys.argv[1:]) -> None:
     verbose = False
@@ -113,6 +115,7 @@ def main(argv=sys.argv[1:]) -> None:
         console.print(f"[bold red]No files matched the pattern: {pattern}![/]")
         return
 
+    total_files = len(trace_files)
     # Create a progress bar
     progress = Progress(
         SpinnerColumn(),
@@ -132,7 +135,10 @@ def main(argv=sys.argv[1:]) -> None:
                 num_procs = int(cpu_count()/2)  
             
             console.print(f"[bold green]Using {num_procs} processes[/]\n")
-            task = progress.add_task("[green]Processing files", total=len(trace_files))
+            task = progress.add_task("[green]Processing files", total=total_files)
+            
+            # List to store failed file details
+            failed_files = []
             
             # use future or apply_async 
             future = True #managing tasks without blocking others due to slow processes
@@ -141,34 +147,50 @@ def main(argv=sys.argv[1:]) -> None:
                 counter = 0
                 with ProcessPoolExecutor(max_workers=num_procs) as executor:
                     # Submit tasks to the executor
-                    futures = {executor.submit(process_file, file_path, argv, verbose, name, json, i, len(trace_files)): i for i, file_path in enumerate(trace_files)}
+                    futures = {executor.submit(process_file, file_path, argv, verbose, name, json, i): i for i, file_path in enumerate(trace_files)}
                     
                     # Process results as they complete
                     for future in as_completed(futures):
-                        index = futures[future]
-                        flat_res, _, _ = future.result()
-                        if flat_res:
-                            # Process result
+                        # index = futures[future]
+                        flat_res, index, file_path, error = future.result()
+                        if flat_res: # Process result
                             df = pd.concat([df, pd.DataFrame([flat_res])], ignore_index=True)
-                            # Update progress
+                        if error:  # Log any failed files
+                            failed_files.append((file_path, error))
+                        # Update progress
                         progress.console.print(f"Processed ({index + 1}/{len(trace_files)}): {trace_files[index]}")
                         counter += 1
                         progress.update(task, completed=counter)
             else:
                 with Pool(processes=num_procs) as pool:
                     # Pass the index and total files to process_file
-                    results = [pool.apply_async(process_file, (file_path, argv, verbose, name, json, i, len(trace_files))) for i, file_path in enumerate(trace_files)]
+                    results = [pool.apply_async(process_file, (file_path, argv, verbose, name, json, index)) for i, file_path in enumerate(trace_files)]
                     
                     for result in results:
-                        flat_res, index, total_files = result.get()
-                        if flat_res:
-                            # Process result
+                        flat_res, index, file_path, error = result.get()
+                        if flat_res: # Process result
                             df = pd.concat([df, pd.DataFrame([flat_res])], ignore_index=True)
+                        if error:  # Log any failed files
+                            failed_files.append((file_path, error))
                         # Update progress
                         progress.console.print(f"Processed ({index + 1}/{total_files}): {trace_files[index]}")
                         progress.update(task, completed=index + 1)
+        
+    
+        # After processing, log the files that failed
+        if failed_files:
+            progress.console.print(
+                f"\n[bold green]{total_files} files processed successfully![/]\n"
+                f"[bold red]{len(failed_files)} files failed[/]\n"
+            )
+            console.print("\n[bold yellow]The following files failed to process:[/]")
+            with open(f"{res_path}/log.err", 'w') as log:
+                for file_path, error in failed_files:
+                    console.print(f"[bold red]{file_path}[/]")
+                    log.write(f"{file_path}: {error}\n")
+        else:
+            progress.console.print("\n[bold green]All files processed successfully![/]\n")
 
-        progress.console.print("[bold green]All files processed successfully![/]\n")
         console.print(
             f"[blue]FTIO total time:[/] {time.time() - start_time:.4f} seconds\n"
             f"[blue]Location:[/] {folder_path}\n"
