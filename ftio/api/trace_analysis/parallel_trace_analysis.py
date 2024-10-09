@@ -152,7 +152,12 @@ def main(argv=sys.argv[1:]) -> None:
                     # Process results as they complete
                     for future in as_completed(futures):
                         # index = futures[future]
-                        flat_res, index, file_path, error = future.result()
+                        try:
+                            flat_res, index, file_path, error = future.result(timeout=120)
+                        except TimeoutError:
+                            index = futures[future]
+                            flat_res = None
+                            error = f"[red bold] {trace_files[index]} reached timeout"
                         if flat_res: # Process result
                             df = pd.concat([df, pd.DataFrame([flat_res])], ignore_index=True)
                         if error:  # Log any failed files
