@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import json
 from multiprocessing import Pool, cpu_count
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import pandas as pd
@@ -25,17 +26,18 @@ from ftio.api.trace_analysis.trace_analysis import (
 console = Console()
 
 
-def process_file(file_path, argv, verbose, name, json=False, index=0):
+def process_file(file_path, argv, settings, index=0):
     error = ""
     try:
         # Call your trace_ftio function (adjust the import and call as necessary)
-        res = trace_ftio([file_path] + argv, verbose, json)
+        res = trace_ftio([file_path] + argv, settings["verbose"], settings["json"])
 
         # Create the new file name by replacing the pattern
         base_name = os.path.basename(file_path)
+        
         # if input file is not a json, save ftio result
-        if not json:
-            json_file = base_name.replace(f"_signal_{name}.csv", f"_freq_{name}.json")
+        if not settings["json"] and settings["save"]:
+            json_file = base_name.replace(f"_signal_{settings["name"]}.csv", f"_freq_{settings["name"]}.json")
             json_path = os.path.join(os.path.dirname(file_path), json_file)
             # Convert NumPy arrays to lists and save the ftio results
             data_converted = convert_dict(res)
@@ -47,7 +49,7 @@ def process_file(file_path, argv, verbose, name, json=False, index=0):
 
         flat_res = flatten_dict(res)
         try:
-            if json:
+            if settings["json"]:
                 flat_res["job_id"] = base_name.removesuffix(".json")
             else:
                 flat_res["job_id"] = base_name.split("_")[0]
@@ -67,8 +69,9 @@ def process_file(file_path, argv, verbose, name, json=False, index=0):
 def main(argv=sys.argv[1:]) -> None:
     settings={
         "verbose": False,
-        "name": "plafrim",
         "json": False,
+        "save": False,
+        "name": "plafrim",
         "num_procs": -1,
         "res_path": ".",
         "frequency": 10,
@@ -94,12 +97,28 @@ def main(argv=sys.argv[1:]) -> None:
         index = argv.index("-j")
         argv.pop(index)
         settings["json"] = True
+    if "-s" in argv:
+        index = argv.index("-s")
+        argv.pop(index)
+        settings["save"] = True
     if "-o" in argv:
         index = argv.index("-o")
         settings["res_path"] = str(argv[index + 1])
         argv.pop(index)
         argv.pop(index)
-    if "-f" in argv:
+    if "-h" in argv:
+        console.print(
+            "Usage:  parallel_trace_analysis  <dir>\n\n"
+            "-n <str>: filter according if they contain the name\n"
+            "--time-step <float>: specifies the value of the implicit time steps between the samples\n"
+            "-o <str>: Output dir location\n"
+            "-j <bool>: Enables JSON search\n"
+            "-v <bool>: verbose\n"
+            "-s <bool>: save the FTIO result for each file in a file that contains the name _freq_\n"
+            "All ftio options (see ftio -h)\n\n"
+            )
+        sys.exit()
+    if "-f" in argv: #save the freq
         index = argv.index("-f")
         settings["freq"] = str(argv[index + 1])
 
@@ -168,8 +187,7 @@ def main(argv=sys.argv[1:]) -> None:
                     # Submit tasks to the executor
                     futures = {
                         executor.submit(
-                            process_file, file_path, argv, settings["verbose"], settings["name"], settings["json"], i
-                        ): i
+                            process_file, file_path, argv, settings, i): i
                         for i, file_path in enumerate(trace_files)
                     }
 
@@ -201,7 +219,7 @@ def main(argv=sys.argv[1:]) -> None:
                     # Pass the index and total files to process_file
                     results = [
                         pool.apply_async(
-                            process_file, (file_path, argv, settings["verbose"], settings["name"], settings["json"], index)
+                            process_file, (file_path, argv, settings, index)
                         )
                         for i, file_path in enumerate(trace_files)
                     ]
