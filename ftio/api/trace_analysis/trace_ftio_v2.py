@@ -91,9 +91,9 @@ def extract_arrays_from_csv(argv=sys.argv[1:],verbose=True):
 
     # set sampling frequency if not set
     if '-f' not in argv:
-        argv.extend(['-f', f'{1/t_step}'])
+        argv.extend(['-f', f'{2/t_step}'])
         if verbose:
-            console.print(f"[bold green]Sampling rate set to {t_step} sec ({1/t_step:.3f}) Hz[/]")
+            console.print(f"[bold green]Sampling rate set to {t_step} sec ({2/t_step:.3f}) Hz[/]")
     # plot
     # quick_plot(t,b_w)
 
