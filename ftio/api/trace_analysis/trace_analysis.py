@@ -157,11 +157,12 @@ def flatten_dict(d):
     return flat
 
 
-def statistics(df,ellapsed_time="",path="."):
+def statistics(df,elapsed_time="",settings={}) -> None:
     # print(df)
     df_dom = reduce_to_max_conf(df)
     prefixes = relevant_prefix(df)
     color = ["purple4", "gold3", "deep_sky_blue1"]
+    path = settings["res_path"]
     content = ""
     with open(f"{path}/ftio_output.txt", 'w') as file:
         for prefix in prefixes:
@@ -180,19 +181,22 @@ def statistics(df,ellapsed_time="",path="."):
             )
             console.print("\n")
             content += cleaned_text(f"{prefix.capitalize()}" + "\n----------------\n"+ s + "\n\n")
-        file.write(content+cleaned_text(ellapsed_time))
-    
+        file.write(content+cleaned_text(elapsed_time))
+        if settings:
+            for _, field in enumerate(settings):
+                file.write(f"\n{field}: {settings[field]}")
+
     df.to_csv(f"{path}/ftio.csv", index=False)
     df_dom.to_csv(f"{path}/ftio_flat.csv", index=False)
     # print(dom_df)
 
 
 def periodic_apps(df, prefix) -> str:
-    all = len(df[f"{prefix}_dominant_freq"])
+    all_freq = len(df[f"{prefix}_dominant_freq"])
     # n = df[f'{prefix}_dominant_freq'].apply(lambda x: len(x)>0).sum()
     n = df[f"{prefix}_dominant_freq"].apply(lambda x: not np.isnan(x)).sum()
-    # out = f"[blue]Periodic {prefix.capitalize()}: {n:.3e}/{all:.3e} ({n/all*100:.3e}%)[/]"
-    out = f"[blue]Periodic I/O:[/]\n - {n:.0f}/{all:.0f} ({n/all*100:.2f}%)\n\n"
+    # out = f"[blue]Periodic {prefix.capitalize()}: {n:.3e}/{all_freq:.3e} ({n/all_freq*100:.3e}%)[/]"
+    out = f"[blue]Periodic I/O:[/]\n - {n:.0f}/{all_freq:.0f} ({n/all_freq*100:.2f}%)\n\n"
     return out
 
 
