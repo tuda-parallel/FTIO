@@ -74,7 +74,7 @@ def main(argv=sys.argv[1:]) -> None:
         "name": "plafrim",
         "num_procs": -1,
         "res_path": ".",
-        "frequency": 10,
+        "freq": 10,
         "folder_path":""
     }
 
