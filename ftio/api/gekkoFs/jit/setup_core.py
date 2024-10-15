@@ -1,6 +1,6 @@
 import os
 import time
-import multiprocessing
+# import multiprocessing
 import subprocess
 from rich.console import Console
 
@@ -8,21 +8,21 @@ from ftio.api.gekkoFs.jit.setup_check import check_setup
 from ftio.api.gekkoFs.jit.setup_helper import (
     check,
     check_port,
-    create_hostfile,
     elapsed_time,
-    geko_flagged_call,
+    gekko_flagged_call,
     handle_sigint,
     jit_print,
-    load_flags,
-    load_flags_mpi,
+    # load_flags,
+    load_flags_mpiexec,
+    mpiexec_call,
     relevant_files,
     reset_relevant_files,
     shut_down,
 )
 from ftio.api.gekkoFs.jit.execute_and_wait import (
-    end_of_transfer,
+    # end_of_transfer,
     end_of_transfer_online,
-    execute_background_and_log_in_process,
+    # execute_background_and_log_in_process,
     # execute_background_and_log_in_process,
     execute_block,
     execute_block_and_log,
@@ -34,6 +34,7 @@ from ftio.api.gekkoFs.jit.execute_and_wait import (
     wait_for_file,
     wait_for_line,
 )
+from ftio.api.gekkoFs.jit.setup_init import init_gekko
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.jittime import JitTime
 
@@ -48,72 +49,48 @@ def start_gekko_daemon(settings: JitSettings) -> None:
         console.print(f"[bold yellow]####### Skipping Gkfs Demon [/][black][{get_time()}][/]")
     else:
         console.print(f"[bold green]####### Starting Gkfs Demon [/][black][{get_time()}][/]")
-
-        # Create host file
-        create_hostfile(settings)
+        # Create host file and dirs for geko
+        init_gekko(settings)
+        debug_flag = ""
+        if settings.debug:
+            debug_flag="--export=ALL,GKFS_DAEMON_LOG_LEVEL=trace"
 
         if settings.cluster:
-            # Display Demon
-            # call_0 = f"srun --jobid={settings.job_id} {settings.single_node_command} -N 1 --ntasks=1 mkdir -p {settings.gkfs_mntdir}"
-            call_0 =(
-                f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
-                f"--oversubscribe --mem=0 mkdir -p {settings.gkfs_mntdir}"
-                    )
-            call_1 =(
-                f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
-                f"--oversubscribe --mem=0 mkdir -p {settings.gkfs_rootdir}"
-                    )
-            if settings.exclude_proxy:
-                # Demon call without proxy
-                # call = (
-                #     f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                #     f"--ntasks={settings.app_nodes*settings.procs_daemon} --cpus-per-task={settings.procs_daemon} --ntasks-per-node={settings.procs_daemon} --overcommit --overlap "
-                #     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                #     f"-H {settings.gkfs_hostfile} -c -l ib0 -P {settings.gkfs_daemon_protocol}"
-                # )
+            if settings.use_mpirun:
+                # mpiexec
                 call = (
-                    f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                    f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
-                    f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol}" #-c --clean-rootdir
+                    f"{settings.gkfs_daemon} "
+                    f"-r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+                    f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol}" 
                 )
+                call = mpiexec_call(settings, call, settings.app_nodes)
             else:
-                # Demon call with proxy
-                debug_flag = ""
-                if settings.debug:
-                    debug_flag="--export=ALL,GKFS_DAEMON_LOG_LEVEL=trace"
-
                 call = (
                     f"srun {debug_flag} --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                #   f"--ntasks={settings.app_nodes*settings.procs_daemon} --cpus-per-task={settings.procs_daemon} --ntasks-per-node={settings.procs_daemon} --overcommit --overlap "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol} -p ofi+verbs -L ib0" #-c --clean-rootdir
+                    f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol}" 
                 )
-
-        else:
-            call_0 = f"mkdir -p {settings.gkfs_mntdir}"
-            call_1 = f"mkdir -p {settings.gkfs_rootdir}"
-
-            # Gekko daemon call
+            if not settings.exclude_proxy:
+                # Demon call with proxy
+                call += " -p ofi+verbs -L ib0"
+        else: # no cluster mode
             call = (
                 f"GKFS_DAEMON_LOG_LEVEL=info GKFS_DAEMON_LOG_PATH={settings.gekko_daemon_log} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l lo -P ofi+tcp --proxy-listen lo --proxy-protocol ofi+tcp" #-c --clean-rootdir
+                f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l lo -P ofi+tcp" 
             )
-
-        jit_print(f"[cyan]>> Creating directories[/]")
-        out = execute_block(call_0)
-        out = execute_block(call_1)
+            if not settings.exclude_proxy:
+                # Demon call with proxy
+                call += " --proxy-listen lo --proxy-protocol ofi+tcp"
 
         jit_print("[cyan]>> Starting Demons[/]", True)
-
         # p = multiprocessing.Process(target=execute_background, args= (call, settings.gekko_daemon_log, settings.gekko_daemon_err, settings.dry_run))
         # p.start()
         # if settings.verbose:
         #     monitor_log_file(settings.gekko_daemon_err,"Error Demon")
         #     monitor_log_file(settings.gekko_daemon_log,"Demon")
-        process = execute_background_and_log(settings, call, settings.gekko_daemon_log, "daemon",settings.gekko_daemon_err)
+        _ = execute_background_and_log(settings, call, settings.gekko_daemon_log, "daemon",settings.gekko_daemon_err)
         if settings.verbose:
             monitor_log_file(settings.gekko_daemon_err,"Error Demon")
         
@@ -152,7 +129,7 @@ def start_gekko_proxy(settings: JitSettings) -> None:
         #     monitor_log_file(settings.gekko_proxy_log,"Proxy")
         #     monitor_log_file(settings.gekko_proxy_err,"Error Proxy")
         
-        process = execute_background_and_log(settings, call, settings.gekko_proxy_log, "proxy", settings.gekko_proxy_err)
+        _ = execute_background_and_log(settings, call, settings.gekko_proxy_log, "proxy", settings.gekko_proxy_err)
         if settings.verbose:
             monitor_log_file(settings.gekko_proxy_err,"Error Proxy")
 
@@ -168,8 +145,14 @@ def start_cargo(settings: JitSettings) -> None:
         console.print(f"[bold green]####### Starting Cargo [/][black][{get_time()}][/]")
 
         if settings.cluster:
-            srun = False
-            if srun:
+            if settings.use_mpirun:
+                # mpiexec
+                call = (
+                    f"{settings.cargo} "
+                    f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
+                )
+                call = gekko_flagged_call(settings,call,settings.app_nodes*settings.procs_cargo)
+            else:
                 #srun
                 call = (
                     f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LIBGKFS_LOG_OUTPUT={settings.gekko_client_log}_cargo,LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
@@ -181,13 +164,6 @@ def start_cargo(settings: JitSettings) -> None:
                     f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
                     f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
                 )
-            else:
-                # mpiexec
-                call = (
-                    f"{settings.cargo} "
-                    f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
-                )
-                call = load_flags_mpi(settings,call,settings.app_nodes*settings.procs_cargo)
         else:
             # Command for non-cluster
             call = (
@@ -306,7 +282,7 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
         
         if settings.exclude_cargo:
             # call = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}"
-            call = geko_flagged_call(settings,f"cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}")
+            call = gekko_flagged_call(settings,f"cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}")
             start = time.time()
             _ = execute_block(call,dry_run=settings.dry_run)
             elapsed_time(settings, runtime, "Stage in", time.time() - start)
@@ -338,7 +314,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
         if settings.exclude_cargo:
             # additional_arguments = load_flags(settings)
             # call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
-            call = geko_flagged_call(settings, f"cp -r  {settings.gkfs_mntdir} {settings.stage_out_path}")
+            call = gekko_flagged_call(settings, f"cp -r  {settings.gkfs_mntdir} {settings.stage_out_path}")
             start = time.time()
             _ = execute_block(call, dry_run=settings.dry_run)
             elapsed_time(settings, runtime, "Stage in", time.time() - start)
@@ -349,7 +325,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
 
             if not settings.dry_run:
                 try:
-                    call = geko_flagged_call(settings, f"ls -R {settings.gkfs_mntdir}")
+                    call = gekko_flagged_call(settings, f"ls -R {settings.gkfs_mntdir}")
                     files = subprocess.check_output(call, shell=True).decode()
                     console.print(f"[cyan]>> gekko_ls {settings.gkfs_mntdir}: \n{files}[/]")
                 except Exception as e:

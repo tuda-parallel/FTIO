@@ -3,7 +3,6 @@ import subprocess
 import getopt
 import os
 import signal
-import time
 from rich.console import Console
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.jittime import JitTime
@@ -75,7 +74,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
     try:
         opts, args = getopt.getopt(
             args,
-            "a:r:n:p:c:o:t:j:l:i:e:xdvyh",
+            "a:r:n:p:c:o:t:j:l:i:e:xdvyuh",
             [
                 "address=",
                 "port=",
@@ -92,6 +91,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
                 "dry_run",
                 "verbose",
                 "skip_confirm",
+                "use-mpirun",
                 "help",
             ],
         )
@@ -185,6 +185,8 @@ def parse_options(settings: JitSettings, args: list) -> None:
             settings.verbose = True
         elif opt in ("-y", "--skip_confirm"):
             settings.skip_confirm = True
+        elif opt in ("-u", "--use-mpirun"):
+            settings.skip_confirm = True
         elif opt in ("-h", "--help"):
             error_usage(settings)
             sys.exit(1)
@@ -258,10 +260,6 @@ def error_usage(settings: JitSettings):
         If this flag is provided, the setup is executed without FTIO, 
         GekkoFs, and Cargo.
 
-    -y | --skip_confirm 
-        default: [bold yellow]{settings.skip_confirm}[/]
-        If this flag is provided, the setup automatically cancels running jobs 
-        name JIT
 
     -d | --dry_run 
         default: [bold yellow]{settings.dry_run}[/]
@@ -270,6 +268,18 @@ def error_usage(settings: JitSettings):
     -v | --verbose
         default: [bold yellow]{settings.verbose}[/]
         If provided, the tools output of each step is shown
+
+    -y | --skip_confirm 
+        default: [bold yellow]{settings.skip_confirm}[/]
+        If this flag is provided, the setup automatically cancels running jobs 
+        name JIT
+
+    -u | --use-mpirun
+        default: [bold yellow]{settings.use_mpirun}[/]
+        If this flag is provided, the setup avoids using srun and 
+        uses mpirun. Use -j JobID in combination with this flag, as 
+        all calls are executed with the assumption you already 
+        ssh to the host
 
     -i | --install_location: full_path <str>
         default: [bold yellow]{settings.install_location}[/]
@@ -641,8 +651,11 @@ def total_time(log_dir):
 
 def allocate(settings: JitSettings) -> None:
     settings.app_nodes = 1
-    if settings.cluster:
 
+    if settings.use_mpirun and settings.job_id == 0:
+        jit_print(" [bold yellow]>> Warning, executing mpiexec on remote. We advice using using fixed allocation with mpirun\n")
+    
+    if settings.cluster:
         #allocate if needed 
         if settings.job_id == 0:
             # Allocating resources
@@ -1156,7 +1169,7 @@ def check(settings: JitSettings):
     if settings.dry_run:
         return
 
-    call = geko_flagged_call(settings,f"ls -lahrt {settings.gkfs_mntdir}")
+    call = gekko_flagged_call(settings,f"ls -lahrt {settings.gkfs_mntdir}")
     try:
         
         files = subprocess.check_output(
@@ -1169,9 +1182,9 @@ def check(settings: JitSettings):
         jit_print(f"[red]>> Failed to list files in {settings.gkfs_mntdir}: {e}[/]")
 
 
-def geko_flagged_call(settings:JitSettings, call:str, node:int=1) -> str:
+def gekko_flagged_call(settings:JitSettings, call:str, node:int=1) -> str:
     if settings.cluster:
-        call = load_flags_mpi(settings, call, node)
+        call = load_flags_mpiexec(settings, call, node)
     else:
         additional_arguments = load_flags(settings)
         call = f"{additional_arguments} {call}"
@@ -1179,7 +1192,7 @@ def geko_flagged_call(settings:JitSettings, call:str, node:int=1) -> str:
     return call
 
 
-def load_flags_mpi(settings:JitSettings, command:str,node:int=1, ftio_metrics:bool=False) -> str:
+def load_flags_mpiexec(settings:JitSettings, command:str, procs:int=1, ftio_metrics:bool=False) -> str:
     additional_arguments = ""
     if not settings.exclude_ftio and ftio_metrics:
         additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
@@ -1192,12 +1205,13 @@ def load_flags_mpi(settings:JitSettings, command:str,node:int=1, ftio_metrics:bo
             f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
             f"-x LD_PRELOAD={settings.gkfs_intercept} "
             )
-    call = (
-            f" mpiexec -np {node} --oversubscribe "
-            f"--hostfile {settings.app_dir}/hostfile_mpi -map-by node "
-            f"{additional_arguments} "
-            f"{settings.task_set_0} {command}"
-        )
+    # call = (
+    #         f" mpiexec -np {procs} --oversubscribe "
+    #         f"--hostfile {settings.app_dir}/hostfile_mpi -map-by node "
+    #         f"{additional_arguments} "
+    #         f"{settings.task_set_0} {command}"
+    #     )
+    call = mpiexec_call(settings, command, procs, additional_arguments)
     return call
 
 
@@ -1217,7 +1231,14 @@ def load_flags(settings:JitSettings,ftio_metrics:bool=False) -> str:
     return additional_arguments
 
 
-
+def mpiexec_call(settings:JitSettings, command:str, procs:int=1, additional_arguments="") -> str:
+    call = (
+            f" mpiexec -np {procs} --oversubscribe "
+            f"--hostfile {settings.app_dir}/hostfile_mpi -map-by node "
+            f"{additional_arguments} "
+            f"{settings.task_set_0} {command}"
+        )
+    return call
 
 
 def update_hostfile_mpi(settings:JitSettings) -> None:

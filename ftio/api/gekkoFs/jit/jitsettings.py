@@ -72,6 +72,7 @@ class JitSettings:
         self.nodes = 1
         self.max_time = 30
         self.skip_confirm = False
+        self.use_mpirun = False
         self.trap_exit = True
         self.soft_kill = True
         self.hard_kill = True

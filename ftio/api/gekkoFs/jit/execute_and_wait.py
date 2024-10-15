@@ -8,10 +8,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.status import Status
 from rich.markup import escape
-
-
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
-from ftio.api.gekkoFs.jit.setup_helper import check, geko_flagged_call, jit_print, get_pid
+from ftio.api.gekkoFs.jit.setup_helper import check, gekko_flagged_call, jit_print, get_pid
 
 console = Console()
 
@@ -425,7 +423,7 @@ def get_files(settings: JitSettings, verbose=True):
     monitored_files = []
     files = ""
     try:
-        command_ls = geko_flagged_call(settings, f" find {settings.gkfs_mntdir}")
+        command_ls = gekko_flagged_call(settings, f" find {settings.gkfs_mntdir}")
         files = subprocess.check_output(command_ls, shell=True).decode()
         if files:
             files = files.splitlines()
