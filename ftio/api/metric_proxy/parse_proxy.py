@@ -60,12 +60,12 @@ def extract(json_data, match, verbose=False):
     return b_out,t_out
 
 
-def filter_deriv(json_data,deriv_and_not_deriv:bool=True, exclude=None):
+def filter_metrics(json_data,filter_deriv:bool=True, exclude=None):
     out = {}
     t = process_time()
     metrics = json_data['metrics'].keys()
     # extract either derive or all but not all
-    if not deriv_and_not_deriv:
+    if filter_deriv:
         metrics = clean_metrics(metrics)
         
     if exclude:
@@ -81,22 +81,23 @@ def filter_deriv(json_data,deriv_and_not_deriv:bool=True, exclude=None):
             out[metric]=[b_out,t_out]
     
     elapsed_time = process_time() - t
-    CONSOLE.info(f"\n[green]Parsing time: {elapsed_time} s[/]")
+    CONSOLE.info(f"[green]Parsing time: {elapsed_time} s[/]")
     
     return out
 
 
-def parse_all(file_path:str,deriv_and_not_deriv:bool=True, exclude=None)-> dict:
+def parse_all(file_path:str,filter_deriv:bool=True, exclude=None)-> dict:
     """parses all metrics from proxy
 
     Args:
         file_path (str): pass to proxy JSON file
-        deriv_and_not_deriv (bool, optional): Removes the metrics in case a similar metrics, which start with deriv is presented. Defaults to True.
+        filter_deriv (bool, optional): Removes the metrics in case a similar metrics, which start with deriv is presented. Defaults to True.
         exclude (list,optional): list of metrics to exclude
 
     Returns:
         dict: parsed metrics with 2D numpy array
     """
+    CONSOLE.info(f"\n[green]Current file: {file_path}[/]")
     try:
         with open(file_path, 'r') as json_file:
             json_data = json.load(json_file)
@@ -107,7 +108,7 @@ def parse_all(file_path:str,deriv_and_not_deriv:bool=True, exclude=None)-> dict:
         print(f"Error: Unable to decode JSON from file '{file_path}'. Check if the file is valid JSON.")
         return {}
 
-    return filter_deriv(json_data,deriv_and_not_deriv,exclude)
+    return filter_metrics(json_data,filter_deriv,exclude)
 
 
 def load_proxy_trace_stdin(deriv_and_not_deriv:bool=True, exclude=None):
@@ -117,7 +118,7 @@ def load_proxy_trace_stdin(deriv_and_not_deriv:bool=True, exclude=None):
     except json.JSONDecodeError as e:
         print(f"Error parsing JSON: {e}")
     else:
-        return filter_deriv(data,deriv_and_not_deriv,exclude)
+        return filter_metrics(data,deriv_and_not_deriv,exclude)
 
 
 def clean_metrics(metrics):

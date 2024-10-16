@@ -71,14 +71,14 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq=-1) -> tuple[np.ndarray, floa
 
 
 def sample_data_same_size(b: np.ndarray, t:np.ndarray, freq=-1, n_bins=-1) -> tuple[np.ndarray,np.ndarray]:
-    """Dsicretize the data according to the frequency and holds value
+    """Discretize the data according to the frequency and holds value
 
     Args:
         b (array): bandwidth
         t (array): time
         freq (int, optional): sampling frequency. Defaults to -1, calculates the optimal sampling
         frequency inside this function
-        n_bins (int,optinal): number of desired bins
+        n_bins (int, optional): number of desired bins
 
     Returns:
         _type_: b_sampled and sampling frequency (in case -1)

@@ -145,6 +145,7 @@ def plot_waves(arr: list[PhaseMode], t, n=None):
     if n:
         fig.update_layout(legend_title_text=f'{n} Frequencies')
     fig.show()
+    # fig.write_image("waves.png")
 
 
 def plot_waves_and_timeseries(metrics: dict, arr: list[PhaseMode], t, n=None):

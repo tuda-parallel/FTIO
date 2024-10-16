@@ -1,6 +1,15 @@
 import json
 import pandas as pd 
 import numpy as np
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+    TaskProgressColumn,
+    TextColumn,
+    BarColumn,
+)
 
 def extract_data(data):
     """Extracts relevant data that is not NaN 
@@ -46,3 +55,21 @@ class NpArrayEncode(json.JSONEncoder):
 
 def data_to_json(data: list[dict]) -> None:
     print(json.dumps(data, cls=NpArrayEncode))
+
+
+def create_process_bar(total_files):
+
+    
+    # Create a progress bar
+    progress = Progress(
+        SpinnerColumn(),
+        TextColumn(
+            "[progress.description]{task.description} ({task.completed}/{task.total})"
+        ),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeRemainingColumn(),
+        "[yellow]-- runtime",
+        TimeElapsedColumn(),
+    )
+    return progress
