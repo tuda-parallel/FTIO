@@ -18,7 +18,7 @@ ranks = 32
 
 # command line arguments
 argv = ["-e", "plotly"]  # ["-e", "no"] to disable the plot
-argv.extend(["-n","15"]) # finds up to n frequencies. Comment this out to go back to the default version
+argv.extend(["-n","2"]) # finds up to n frequencies. Comment this out to go back to the default version
 # ---------------------------------
 
 # set up data
@@ -33,6 +33,8 @@ prediction, dfs = core([data], args)
 # plot and print info
 convert_and_plot(data, dfs, args)
 display_prediction("ftio", prediction)
+
+# ------------------ 
 
 # Post processing
 if prediction and len(prediction["dominant_freq"]) != 0:

@@ -70,7 +70,7 @@ Full documentation:
 
     #! FTIO and Predictor Settings
     if 'ftio' in name.lower() or 'predictor' in name.lower():
-        parser.set_defaults(mode='sync write')
+        parser.set_defaults(mode='write_sync')
         parser.add_argument('-f', '--freq', dest='freq', type = float, help ='specifies the sampling rate with which the continuous signal is discretized (default=10Hz). This directly affects the highest captured frequency (Nyquist). The value is specified in Hz. In case this value is set to -1, the auto mode is launched which sets the sampling frequency automatically to the smallest change in the bandwidth detected. Note that the lowest allowed frequency in the auto mode is 2000 Hz')
         parser.set_defaults(freq = 10)
         parser.add_argument('-ts', '--ts',         type = float, help = 'modifies the start time of the examined time window')

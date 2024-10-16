@@ -186,7 +186,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
         elif opt in ("-y", "--skip_confirm"):
             settings.skip_confirm = True
         elif opt in ("-u", "--use-mpirun"):
-            settings.skip_confirm = True
+            settings.use_mpirun = True
         elif opt in ("-h", "--help"):
             error_usage(settings)
             sys.exit(1)
@@ -1063,7 +1063,7 @@ def print_settings(settings) -> None:
 |   └─ ftio       : {task_ftio}
 ├─ cpus per task  : {settings.procs} 
 |   ├─ app        : 1
-|   ├─ daemon      : {cpu_daemon}
+|   ├─ daemon     : {cpu_daemon}
 |   ├─ proxy      : {cpu_proxy}
 |   ├─ cargo      : {cpu_cargo}
 |   └─ ftio       : {cpu_ftio}

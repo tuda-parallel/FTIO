@@ -48,6 +48,7 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
 
     # 1) overlap for rank level metrics
     for file_or_msg in files_or_msgs:
+        # print(files_or_msgs.index(file_or_msg))
         data_rank, ext = parse(file_or_msg, data_rank, io_type = args.mode[0])
 
     # 2) exit if no new data
@@ -80,8 +81,8 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
         t = np.array(t_app[:])
         b = np.array(b_app[:])
     else:
-        t = np.array(list(b))
-        b = np.array(list(t))
+        t = np.array(list(t))
+        b = np.array(list(b))
 
     process = handle_in_process(dump_json, args=(b,t),)
 
@@ -89,6 +90,7 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
     if any(x in args.engine for x in ["mat", "plot"]):
         fig = go.Figure()
         unit, order = set_unit(b)
+        # fig.add_trace(go.Scatter(x=t, y=b * order, name="App Bandwidth",mode='lines+markers'))
         fig.add_trace(go.Scatter(x=t, y=b * order, name="App Bandwidth",line={"shape": "hv"}))
         fig.update_layout(xaxis_title="Time (s)", yaxis_title=f"Bandwidth ({unit})")
         fig = format_plot_simple(fig)
@@ -118,7 +120,8 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
 if __name__ == "__main__":
     # absolute path to search all text files_or_msgs inside a specific folder
     # path=r'/d/github/FTIO/examples/API/gekkoFs/JSON/*.json'
-    path = r"/d/github/FTIO/examples/API/gekkoFs/MSGPACK/write*.msgpack"
+    # path = r"/d/github/FTIO/examples/API/gekkoFs/MSGPACK/write*.msgpack"
+    path = r"/d/Downloads/metrics/metrics/write_*.msgpack"
     matched_files_or_msgs = glob.glob(path)
     run(matched_files_or_msgs)
 

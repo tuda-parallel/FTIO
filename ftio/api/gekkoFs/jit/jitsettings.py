@@ -252,7 +252,7 @@ class JitSettings:
         self.ftio_bin_location = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin"
 
         # ****** gkfs variables ******
-        self.gkfs_deps      = "/lustre/project/nhr-admire/tarraf/deps_gcc12_2" 
+        self.gkfs_deps      = "/lustre/project/nhr-admire/tarraf/deps"#_gcc12_2" 
         self.gkfs_daemon    = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
         self.gkfs_intercept = f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
         self.gkfs_mntdir    = "/dev/shm/tarraf_gkfs_mountdir"
@@ -278,7 +278,7 @@ class JitSettings:
         # self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
         ##  └─ Wacom++ --> change wacom.json if needed 
         self.app_call = "./wacommplusplus"
-        self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build_gcc12_2"
+        self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"#_gcc12_2"
         
 
         # ****** pre and post app call ******
