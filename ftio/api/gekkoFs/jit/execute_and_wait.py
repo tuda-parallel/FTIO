@@ -466,6 +466,7 @@ def files_filtered(list_of_files: list[str], regex_pattern, verbose=True) -> lis
 
         for f in list_of_files:
             if regex.match(f):
+                # jit_print(f"[yellow]>> Ignoring: {f} ")
                 monitored_files.append(f)
 
     return monitored_files

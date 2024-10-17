@@ -20,6 +20,7 @@ class JitSettings:
         self.debug = True
         self.verbose = True
         self.node_local = False # execute in node local space        
+        self.env_var =  {}
 
         # Variable initialization (don't change)
         ################
@@ -246,8 +247,10 @@ class JitSettings:
         self.job_name = "JIT"
         self.alloc_call_flags = f"--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0401"
 
-        # ? TOOLS
-        # ?#######################
+        
+
+        # ? Tools
+        # ?##########################
         # ****** ftio variables ******
         self.ftio_bin_location = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin"
 
@@ -261,11 +264,11 @@ class JitSettings:
         self.gkfs_proxy     = "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
         self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
 
-
         # ****** cargo variables ******
         self.cargo_bin    = f"{self.gkfs_deps}/gekkofs_zmq_install/bin"#"/lustre/project/nhr-admire/tarraf/cargo/build/cli"
         self.cargo        = f"{self.cargo_bin}/cargo"#"/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
         self.cargo_server = f"{self.gkfs_daemon_protocol}://127.0.0.1:62000"
+
 
         # ? APP settings
         # ?##########################
@@ -337,10 +340,13 @@ class JitSettings:
             self.regex_match = "^/[a-zA-Z0-9]*turbPipe0\\.f\\d+"
         # ├─ Wacom++
         elif "wacom" in self.app_call:
-            self.regex_match = "^(\\/output|\\/results|\\/restart|\\/input)\\/[^\\/]+$"  # "^ocm3_d03_\\d+Z\d+\\.nc$"
+            # self.regex_match = "^(\\/(output|results|restart|input|processed)\\/)\\.+$"  # 
+            self.regex_match = "\\/processed\\/^ocm3_d03_\\d+Z\d+\\.nc$"
         # └─ Other
         else:
             self.regex_match = ""
+
+        self.env_var={"CARGO_REGEX":self.regex_file}
 
         # ? local machine settings
         # ?###############################

@@ -22,6 +22,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     parse_options,
     cancel_jit_jobs,
     allocate,
+    set_env,
     log_dir,
     print_settings,
     save_bandwidth,
@@ -50,7 +51,10 @@ def main() -> None:
     # Clean other jobs
     cancel_jit_jobs(settings)
 
-    # 1.0 Allocate resources
+    # 1.0 set env variables
+    set_env(settings)
+
+    # 1.1 Allocate resources
     allocate(settings)
 
     # 1.2 Create folder for logs

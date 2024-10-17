@@ -1274,6 +1274,11 @@ def log_failed_jobs(settings:JitSettings, info:str) -> None:
         jit_print(f"[Red]>> Killing Job: {info}.\n Exiting script.[/]")
 
 
+def set_env(settings:JitSettings):
+    for _,key in enumerate(settings.env_var):
+        jit_print(f"[green]>> Setting {key} to {settings.env_var[key]}[/]")
+        os.environ[str(key)] = settings.env_var[key]
+
 def save_bandwidth(settings:JitSettings):
     if not settings.exclude_ftio:
         try:

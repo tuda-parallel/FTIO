@@ -261,7 +261,8 @@ def start_ftio(settings: JitSettings) -> None:
         #     monitor_log_file(settings.ftio_log,"Ftio")
         #     monitor_log_file(settings.ftio_err,"Error Ftio")
         
-        _ = wait_for_line(settings.ftio_log, "FTIO is running on:", "Waiting for FTIO startup",dry_run=settings.dry_run)
+        if not settings.exclude_cargo:
+            _ = wait_for_line(settings.ftio_log, "FTIO is running on:", "Waiting for FTIO startup",dry_run=settings.dry_run)
         time.sleep(8)
         console.print("\n")
 
@@ -285,7 +286,6 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
             call = gekko_flagged_call(settings,f"cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}")
             start = time.time()
             _ = execute_block(call,dry_run=settings.dry_run)
-            elapsed_time(settings, runtime, "Stage in", time.time() - start)
         else:
             if settings.cluster:
                 call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
