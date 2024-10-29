@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-from ftio.plot.helper import format_plot_simple
+from ftio.plot.helper import format_plot
 
 
 def plot_spectrum(
@@ -50,7 +50,7 @@ def plot_spectrum(
         coloraxis_colorbar=dict(yanchor="top", y=1, x=0, ticks="outside"),
         template=template,
     )
-    fig_tmp = format_plot_simple(fig_tmp)
+    fig_tmp = format_plot(fig_tmp)
     return fig_tmp, name + unit
 
 

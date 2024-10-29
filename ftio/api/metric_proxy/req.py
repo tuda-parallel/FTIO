@@ -1,5 +1,5 @@
+# import json
 import requests
-import json
 
 class MetricProxy:
     def __init__(self, url="http://localhost:1337"):

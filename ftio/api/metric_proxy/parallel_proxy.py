@@ -1,3 +1,4 @@
+from multiprocessing.managers import ListProxy
 import sys
 import numpy as np
 from multiprocessing import Manager, cpu_count
@@ -26,17 +27,20 @@ CONSOLE = MyConsole()
 CONSOLE.set(True)
 
 
-def main() -> None:
+def main(file:str = ""):
     # ---------------------------------
     # Modification area
     # ---------------------------------
-    argv = sys.argv
     parallel = True
     pools = False
     show = False  # shows the results from FTIO
-    proxy = False
+    argv = ["-e","no"]
+    # argv = ["-e", "mat"]  # ["-e", "plotly"]
+    # # finds up to n frequencies. Comment this out to go back to the default version
+    # argv.extend(["-n", "10"])
+    # ---------------------------------
 
-    if proxy:
+    if not file:
         mp = MetricProxy()
         # # Get a LIST of all JOBs
         jobs = mp.jobs()
@@ -49,30 +53,25 @@ def main() -> None:
         # metrics = get_all_metrics('4195024897')
     else:
         # file = "/d/github/FTIO/ftio/api/metric_proxy/traces/jb_traces/WACOM_PROCESS_BASED_json/wacommplusplus.36procs.trace.json"
-        file = "/d/github/FTIO/ftio/api/metric_proxy/traces/alberto_unito/bench_7x126.json"
         # file = "/d/sim/metric_proxy/traces/Mixed_1x8_5.json"
-        metrics = parse_all(file, filter_deriv=True,exclude=["size","hits"])
+        metrics = parse_all(file, filter_deriv=True,exclude=["size","hits"], scale_t=1e-3)
         
 
     ranks = 32
 
-    # command line arguments
-    argv = ["-e", "no"]  # ["-e", "plotly"]
-    # finds up to n frequencies. Comment this out to go back to the default version
-    # argv.extend(["-n", "10"])
-    # ---------------------------------
-
-    # plot_timeseries_metrics(metrics)
+    _ = plot_timeseries_metrics(metrics, 2000,500)
 
     if parallel:
-        execute_parallel(metrics, argv, ranks, show, pools)
+        data = execute_parallel(metrics, argv, ranks, show, pools)
     else:
-        execute(metrics, argv, ranks, show)
+        data = execute(metrics, argv, ranks, show)
+    
+    post(data, metrics, argv)
 
 
 def execute_parallel(
-    metrics: dict, argv: list, ranks: int, show: bool, pools: bool
-) -> None:
+    metrics: dict, argv: list, ranks: int, show: bool = False, pools: bool = False
+)  :
     # parallel
     manager = Manager()
     data = manager.list()
@@ -109,7 +108,7 @@ def execute_parallel(
             print("-- done -- ")
             exit()
 
-    post(data, metrics, argv)
+    return data
 
 
 def execute(metrics: dict, argv: list, ranks: int, show: bool):
@@ -135,15 +134,15 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
                     CONSOLE.print(f"[bold red]- {error_counter}. Error in {metric}:{err}[/]")
                     continue
             if save:
-                # save stuff in queue
+                # save stuff in queue, data is non empty
                 ftio_task_save(data, metric, arrays, argv, ranks, show)
             else:
                 # skip saving
                 ftio_task(metric, arrays, argv, ranks, show)
             counter += 1
             progress.update(task, completed=counter)
-        if save:
-            post(data, metrics, argv)
+
+    return data 
 
 def post(data, metrics, argv):
     if data:
@@ -162,7 +161,16 @@ def post(data, metrics, argv):
         density_heatmap(data)
         heatmap_2(data)
     else:
-        CONSOLE.print(f"[bold red] No data[/]")
+        CONSOLE.print("[bold red] No data[/]")
 
 if __name__ == "__main__":
-    main()
+    
+    # file = "/d/github/FTIO/ftio/api/metric_proxy/traces/alberto_unito/bench_8x144.json"
+    # file = "/d/github/FTIO/ftio/api/metric_proxy/traces/jb_traces/WACOM_PROCESS_BASED_json/wacommplusplus.36procs.trace.json"
+    # file = "/d/sim/metric_proxy/traces/Mixed_1x8_5.json"file = /d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json"
+    file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json"
+    main(file)
+    
+
+    # proxy
+    # main()

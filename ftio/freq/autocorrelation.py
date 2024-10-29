@@ -6,7 +6,7 @@ from rich.panel import Panel
 import plotly.graph_objects as go
 # from rich.padding import Padding
 import ftio.freq.discretize as dis
-from ftio.plot.helper import format_plot_simple
+from ftio.plot.helper import format_plot
 from ftio.freq.helper import MyConsole
 
 
@@ -126,7 +126,7 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
             fig[-1].update_layout(coloraxis_colorbar=dict(yanchor="top", y=1, x=0, ticks="outside", ticksuffix=" bills"))
             # fig[-1].update_layout(legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.01))
             fig[-1].update_layout(legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99))
-            fig[-1] = format_plot_simple(fig[-1])
+            fig[-1] = format_plot(fig[-1])
             fig[-1].show()
 
         #! finding peak locations and calc the average time differences between them:
@@ -205,7 +205,7 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
                     mode="markers",
                     name="relevant peaks",
                 )
-            fig[-1] = format_plot_simple(fig[-1])
+            fig[-1] = format_plot(fig[-1])
             fig[-1].show(config = {"toImageButtonOptions": {"format": "png", "scale": 5}})
 
         prediction["dominant_freq"] = 1/periodicity  if periodicity > 0 else np.nan

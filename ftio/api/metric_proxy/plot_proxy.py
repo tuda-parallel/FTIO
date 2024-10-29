@@ -344,7 +344,7 @@ def plot_heatmap(heatmap_diff, top):
     fig.show()
 
 
-def plot_timeseries_metrics(metrics):
+def plot_timeseries_metrics(metrics, width = None, height = None):
     fig = go.Figure()
     for metric, arrays in metrics.items():
         if len(arrays[0]) > 1:
@@ -356,4 +356,11 @@ def plot_timeseries_metrics(metrics):
         xaxis_title="Time (s)",
         yaxis_title="Metrics",
     )
+    if width and height:
+        fig.update_layout(
+            autosize=False,
+            width=width,
+            height=height
+        )
     fig.show()
+    return fig

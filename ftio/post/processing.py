@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from ftio.plot.helper import format_plot_simple
+from ftio.plot.helper import format_plot
 
 
 def label_phases(
@@ -157,7 +157,7 @@ def plot_classification(args, cosine_wave, t, time, n_waves = 0, b0 =np.array([]
             width=1800,
             height=600,
         )
-        fig = format_plot_simple(fig)
+        fig = format_plot(fig)
         fig.show()
 
         return fig

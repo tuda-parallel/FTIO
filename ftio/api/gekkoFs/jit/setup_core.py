@@ -398,7 +398,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f" time -p mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
                 f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
                 f"{additional_arguments} "
-                f"{settings.task_set_1} {settings.app_call}"
+                f"{settings.task_set_1} {settings.app_call} {settings.app_flags}"
             )
 
             # s_call =(
@@ -416,17 +416,17 @@ def start_application(settings: JitSettings, runtime: JitTime):
             #     f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
             #     f"--ntasks={settings.app_nodes*settings.procs_app} --cpus-per-task={settings.procs_app} --ntasks-per-node={settings.procs_app} "
             #     f"--overcommit --overlap --oversubscribe --mem=0 "
-            #     f"{settings.app_dir}/{settings.app_call}")
+            #     f"{settings.app_dir}/{settings.app_call} {settings.app_flags}")
     else:
         # Define the call for non-cluster environment
         if settings.exclude_all:
-            call = f" time -p mpiexec -np {settings.procs_app} --oversubscribe {settings.app_call}"
+            call = f" time -p mpiexec -np {settings.procs_app} --oversubscribe {settings.app_call} {settings.app_flags}"
         elif settings.exclude_ftio:
             call = (
                 f" time -p mpiexec -np {settings.procs_app} --oversubscribe "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LIBGKFS_LOG=info,warnings,errors -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-                f"-x LD_PRELOAD={settings.gkfs_intercept} {settings.app_call}"
+                f"-x LD_PRELOAD={settings.gkfs_intercept} {settings.app_call} {settings.app_flags}"
             )
         else:
             call = (
@@ -435,7 +435,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f"-x LIBGKFS_LOG=none -x LIBGKFS_ENABLE_METRICS=on "
                 f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
                 f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-                f"-x LD_PRELOAD={settings.gkfs_intercept} {settings.app_call}"
+                f"-x LD_PRELOAD={settings.gkfs_intercept} {settings.app_call} {settings.app_flags}"
             )
 
     # elapsed = execute_block_and_log(call, settings.app_log_dir)   

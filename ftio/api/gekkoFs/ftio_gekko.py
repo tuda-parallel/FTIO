@@ -8,7 +8,7 @@ from ftio.plot.freq_plot import convert_and_plot
 from ftio.parse.bandwidth import overlap
 from ftio.api.gekkoFs.parse_gekko import parse
 import plotly.graph_objects as go
-from ftio.plot.helper import format_plot_simple
+from ftio.plot.helper import format_plot
 from ftio.plot.units import set_unit
 from ftio.freq.helper import MyConsole
 import argparse
@@ -93,7 +93,7 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
         # fig.add_trace(go.Scatter(x=t, y=b * order, name="App Bandwidth",mode='lines+markers'))
         fig.add_trace(go.Scatter(x=t, y=b * order, name="App Bandwidth",line={"shape": "hv"}))
         fig.update_layout(xaxis_title="Time (s)", yaxis_title=f"Bandwidth ({unit})")
-        fig = format_plot_simple(fig)
+        fig = format_plot(fig)
         fig.show()
 
     # 7) set up data

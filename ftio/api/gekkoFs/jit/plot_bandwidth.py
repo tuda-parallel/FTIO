@@ -6,6 +6,7 @@ import numpy as np
 import argparse
 
 from ftio.plot.units import set_unit
+from ftio.plot.helper import format_plot_and_ticks
 
 def load_json_and_plot(filenames):
     # Get the current directory
@@ -13,7 +14,9 @@ def load_json_and_plot(filenames):
     
     # Create a list to hold traces
     traces = []
-    
+    unit = "MB"
+    order = 1e-6
+        
     for filename in filenames:
         # Define the path to the JSON file
         json_file_path = os.path.join(current_directory, filename)
@@ -26,8 +29,7 @@ def load_json_and_plot(filenames):
         b = np.array(data.get("b", []))
         t = np.array(data.get("t", []))
 
-        unit = "B"
-        order = 1
+        
         if filenames.index(filename) == 0:
             unit, order = set_unit(b)
         
@@ -54,6 +56,7 @@ def load_json_and_plot(filenames):
         yaxis_title=f"Bandwidth ({unit})",
         showlegend=True
     )
+    fig = format_plot_and_ticks(fig)
     
     # Show the plot
     pio.show(fig)

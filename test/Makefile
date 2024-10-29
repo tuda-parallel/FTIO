@@ -8,4 +8,4 @@ verbose:
 	python3 -m  pytest 
 
 clean:
-	@rm -f io_results __pycache__ *.json* -r
+	@rm -rf io_results __pycache__ *.json* -r

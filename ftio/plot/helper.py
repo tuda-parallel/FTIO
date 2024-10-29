@@ -9,7 +9,7 @@ def legend_fix(data, c) -> bool:
         return False
 
 
-def format_plot(fig: go.Figure, legend=True, font=True, x_minor=True, y_minor=True) -> go.Figure:
+def format_plot_and_ticks(fig: go.Figure, legend=True, font=True, x_minor=True, y_minor=True) -> go.Figure:
     """Formats plots
 
     Args:
@@ -73,7 +73,7 @@ def format_plot(fig: go.Figure, legend=True, font=True, x_minor=True, y_minor=Tr
     return fig
 
 
-def format_plot_simple(fig) -> go.Figure:
+def format_plot(fig, font_size=24) -> go.Figure:
     """makes plots uniform
 
     Args:
@@ -86,9 +86,9 @@ def format_plot_simple(fig) -> go.Figure:
             bordercolor="Black",
             borderwidth=1,
         ),
-        font=dict(family="Courier New, monospace", size=24, color="black"),
+        font=dict(family="Courier New, monospace", size=font_size, color="black"),
         # margin=dict(l=5, r=5, t=5, b=5) #IEEE
-        margin=dict(t=25),
+        # margin=dict(t=top_margin),
     )
 
     fig.update_xaxes(

@@ -16,7 +16,7 @@ import plotly.express as px
 
 from ftio.freq.dtw import threaded_dtw
 from ftio.freq.freq_data import FreqData
-from ftio.plot.helper import format_plot_simple
+from ftio.plot.helper import format_plot
 from ftio.plot.spectrum import plot_one_spectrum
 from ftio.plot.units import set_unit
 from ftio.freq.freq_html import create_html
@@ -694,7 +694,7 @@ class FreqPlot:
                 )
                 # f[-1].update_layout(legend=dict(orientation="h", yanchor="bottom",y=1.02, xanchor="right", x=1))
                 f[-1].update_xaxes(range=[time[0], time[-1]])
-                f[-1] = format_plot_simple(f[-1])
+                f[-1] = format_plot(f[-1])
                 f[-1].show(config=conf)
 
                 f.append(go.Figure())
@@ -827,7 +827,7 @@ class FreqPlot:
                         ]
                     )
                 # f[-1].update_yaxes(range=[-2000, 72000])
-                f[-1] = format_plot_simple(f[-1])
+                f[-1] = format_plot(f[-1])
                 # f[-1].show(config=conf)
 
                 #! Frequency spectrum

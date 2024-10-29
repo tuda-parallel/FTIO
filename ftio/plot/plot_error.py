@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from ftio.plot.helper import format_plot_simple
+from ftio.plot.helper import format_plot
 
 
 def make_sub():
@@ -152,7 +152,7 @@ def plot_error_bar(df, s, f=[]):
         width=900,
         height=560,
     )
-    f = format_plot_simple(f)
+    f = format_plot(f,17)
     # if 'B' in s and 'E' in s:
     # 	f[-1].show()
     # 	f[-1].write_image("%s.pdf"%s)
@@ -288,5 +288,5 @@ def plot_time_error_bar(df_time, modes, names, colors, symbols, markeredgecolor)
         height=640,
         title="I/O time with error bars (normed)",
     )
-    f = format_plot_simple(f)
+    f = format_plot(f,17)
     return f

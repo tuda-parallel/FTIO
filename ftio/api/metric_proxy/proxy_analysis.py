@@ -1,9 +1,10 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from ftio.freq.helper import MyConsole
 from ftio.plot.print_html import PrintHtml
-from ftio.plot.helper import format_plot
+from ftio.plot.helper import format_plot_and_ticks
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -14,9 +15,9 @@ def phases_and_timeseries(metrics, data, argv=[]):
 
     if argv and '-n' in argv:
         n = argv[argv.index('-n') + 1]
-        plot_waves_and_timeseries(metrics, phasemode_list, t, n)
+        plot_waves_and_timeseries(argv,metrics, phasemode_list, t, n)
     else:
-        plot_waves_and_timeseries(metrics, phasemode_list, t)
+        plot_waves_and_timeseries(argv,metrics, phasemode_list, t)
 
 
 def phases(data, argv=[]):
@@ -24,9 +25,9 @@ def phases(data, argv=[]):
 
     if argv and '-n' in argv:
         n = argv[argv.index('-n') + 1]
-        plot_waves(phasemode_list, t, n)
+        plot_waves(argv,phasemode_list, t, n)
     else:
-        plot_waves(phasemode_list, t)
+        plot_waves(argv,phasemode_list, t)
 
 
 def classify_waves(data, normed=True):
@@ -76,18 +77,22 @@ def classify_waves(data, normed=True):
     phasemode_list.append(PhaseMode('Other', other))
 
     sampling_freq = np.NaN
-    t_s = np.NaN
-    t_e = np.NaN
+    t_s = np.inf
+    t_e = 0
     for d in data:
         if len(d['dominant_freq']) > 0 and len(d['conf']) > 0:
             if np.isnan(sampling_freq):
                 sampling_freq = d['freq']
-                t_s = d['t_start']
-                t_e = d['t_end']
+                t_s = min(d['t_start'],t_s)
+                t_e = max(d['t_end'],t_e)
 
             add_metric(phasemode_list, d)
+    if not np.isnan(sampling_freq):
+        t = np.arange(t_s, t_e, 1 / sampling_freq)
+    else:
+        CONSOLE.print('[red] No metrics classified. Try increasing the sampling frequency[/]')    
+        exit(0)
 
-    t = np.arange(t_s, t_e, 1 / sampling_freq)
     text = print_len(phasemode_list, data)
     CONSOLE.print(f'[blue]{text}[/]')
     calculate_waves(phasemode_list, t, normed)
@@ -131,24 +136,49 @@ class PhaseMode:
             self.wave = norm(self.wave)
 
 
-def plot_waves(arr: list[PhaseMode], t, n=None):
-    fig = go.Figure()
-    for mode in arr:
-        fig.add_trace(
-            go.Scatter(x=t, y=mode.wave, mode='lines+markers', name=mode.name)
+def plot_waves(argv:list, arr: list[PhaseMode], t, n=None):
+    plot_mode = False
+    if argv and '-e' in argv:
+        plot_mode = "mat" in argv[argv.index('-e') + 1]
+
+    if plot_mode:
+        # Create a figure and axis using variables
+        fig, ax = plt.subplots()
+
+        # Loop through each mode in arr and plot
+        for mode in arr:
+            ax.plot(t, mode.wave, marker='o', label=mode.name)  # Plot with markers
+
+
+        # Set axis titles
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('Normed metrics')
+
+        # Set the legend title if n is provided
+        if n:
+            ax.legend(title=f'{n} Frequencies')
+        else:
+            ax.legend()
+
+        plt.show()
+    else:
+        fig = go.Figure()
+        for mode in arr:
+            fig.add_trace(
+                go.Scatter(x=t, y=mode.wave, mode='lines+markers', name=mode.name)
+            )
+
+        fig.update_layout(
+            xaxis_title='Time (s)',
+            yaxis_title='Normed metrics',
         )
-
-    fig.update_layout(
-        xaxis_title='Time (s)',
-        yaxis_title='Normed metrics',
-    )
-    if n:
-        fig.update_layout(legend_title_text=f'{n} Frequencies')
-    fig.show()
-    # fig.write_image("waves.png")
+        if n:
+            fig.update_layout(legend_title_text=f'{n} Frequencies')
+        fig.show()
+        # fig.write_image("waves.png")
 
 
-def plot_waves_and_timeseries(metrics: dict, arr: list[PhaseMode], t, n=None):
+def plot_waves_and_timeseries(argv:list,  metrics: dict, arr: list[PhaseMode], t, n=None):
     names = [] #get_names(arr)
 
     out = PrintHtml('./', names, outdir='phase_plots')
@@ -193,7 +223,7 @@ def plot_mode(mode,metrics,t,n,subfig=False)-> list[go.Figure]:
             )
 
     for fig in f:
-        fig = format_plot(fig, font=False)
+        fig = format_plot_and_ticks(fig, font=False)
         fig.update_layout(
             xaxis_title='Time (s)',
             yaxis_title=f'{mode.name.capitalize()} Metrics',

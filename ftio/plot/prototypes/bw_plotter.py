@@ -6,7 +6,7 @@ import numpy as np
 
 from ftio.plot.plot_core import PlotCore
 from ftio.plot.helper import legend_fix
-from ftio.plot.helper import format_plot_simple
+from ftio.plot.helper import format_plot
 
 def main(args=sys.argv):
     plotter = PlotCore(args)
@@ -80,7 +80,7 @@ def main(args=sys.argv):
     fig.update_xaxes(title_text="Ranks")
     fig.update_layout(xaxis_title="Ranks",yaxis_title="Aggregated Time (s)")
     fig.update_layout(legend_groupclick= 'toggleitem')
-    fig = format_plot_simple(fig)
+    fig = format_plot(fig)
     fig.update_layout(
         hovermode="x",
         legend_tracegroupgap=1,

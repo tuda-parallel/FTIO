@@ -1277,7 +1277,10 @@ def log_failed_jobs(settings:JitSettings, info:str) -> None:
 def set_env(settings:JitSettings):
     for _,key in enumerate(settings.env_var):
         jit_print(f"[green]>> Setting {key} to {settings.env_var[key]}[/]")
-        os.environ[str(key)] = settings.env_var[key]
+        os.environ[str(key)] = str(settings.env_var[key])
+        jit_print(f"[cyan]>> {key} set to {os.getenv(str(key))}[/]")
+        if os.getenv(str(key)) is None:
+            jit_print(f"[red bold]>> {key} not set, do this manually:\nexport {key}={settings.env_var[key]}[/]")
 
 def save_bandwidth(settings:JitSettings):
     if not settings.exclude_ftio:
@@ -1286,5 +1289,5 @@ def save_bandwidth(settings:JitSettings):
             _ = subprocess.run(
                             command, shell=True, capture_output=True, text=True, check=True
                         )
-        except:
-            pass
+        except Exception as e:
+            jit_print(f"[red] >> Error saving bandwidth:\n{e}")

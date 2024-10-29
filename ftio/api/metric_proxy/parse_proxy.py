@@ -60,7 +60,7 @@ def extract(json_data, match, verbose=False):
     return b_out,t_out
 
 
-def filter_metrics(json_data,filter_deriv:bool=True, exclude=None):
+def filter_metrics(json_data,filter_deriv:bool=True, exclude=None, scale_t:float = 1):
     out = {}
     t = process_time()
     metrics = json_data['metrics'].keys()
@@ -72,13 +72,13 @@ def filter_metrics(json_data,filter_deriv:bool=True, exclude=None):
         for metric in metrics:
             if all(n not in metric for n in exclude):
                 b_out,t_out = extract(json_data,metric, False)
-                out[metric]=[b_out,t_out]
+                out[metric]=[b_out,t_out*scale_t]
         text=', '.join([str(item) for item in exclude])
         CONSOLE.info(f"[green]Excluded matches for: \\[{text}]\nMetrics reduced further from {len(metrics)} to {len(out)}[/]")
     else:
         for metric in metrics:
             b_out,t_out = extract(json_data,metric, False)
-            out[metric]=[b_out,t_out]
+            out[metric]=[b_out,t_out*scale_t]
     
     elapsed_time = process_time() - t
     CONSOLE.info(f"[green]Parsing time: {elapsed_time} s[/]")
@@ -86,18 +86,21 @@ def filter_metrics(json_data,filter_deriv:bool=True, exclude=None):
     return out
 
 
-def parse_all(file_path:str,filter_deriv:bool=True, exclude=None)-> dict:
+def parse_all(file_path:str,filter_deriv:bool=True, exclude=None, scale_t:float = 1)-> dict:
     """parses all metrics from proxy
 
     Args:
         file_path (str): pass to proxy JSON file
         filter_deriv (bool, optional): Removes the metrics in case a similar metrics, which start with deriv is presented. Defaults to True.
         exclude (list,optional): list of metrics to exclude
+        scale_t (float, optional): scale time unit (default 1). Default unit is "s"
 
     Returns:
         dict: parsed metrics with 2D numpy array
     """
     CONSOLE.info(f"\n[green]Current file: {file_path}[/]")
+    if scale_t != 1:
+        CONSOLE.info(f"\n[yellow]Scaling time by: {scale_t}[/]")
     try:
         with open(file_path, 'r') as json_file:
             json_data = json.load(json_file)
@@ -108,7 +111,7 @@ def parse_all(file_path:str,filter_deriv:bool=True, exclude=None)-> dict:
         print(f"Error: Unable to decode JSON from file '{file_path}'. Check if the file is valid JSON.")
         return {}
 
-    return filter_metrics(json_data,filter_deriv,exclude)
+    return filter_metrics(json_data,filter_deriv,exclude, scale_t)
 
 
 def load_proxy_trace_stdin(deriv_and_not_deriv:bool=True, exclude=None):

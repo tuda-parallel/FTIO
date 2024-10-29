@@ -3,7 +3,7 @@ import json
 import os
 import plotly.graph_objects as go
 import numpy as np
-from ftio.plot.helper import format_plot
+from ftio.plot.helper import format_plot_and_ticks
 
 
 
@@ -194,7 +194,7 @@ class JitResult:
             )
 
         
-        format_plot(fig, x_minor=False)
+        format_plot_and_ticks(fig, x_minor=False)
         # Display the plot
         fig.show()
 

@@ -15,7 +15,7 @@ class JitSettings:
         # flags
         ##############
         self.set_tasks_affinity = True #required for ls and cp
-        self.gkfs_daemon_protocol = "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
+        self.gkfs_daemon_protocol = "ofi+verbs"#"ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
         self.cargo_mode = "parallel" #"parallel" or "posix"
         self.debug = True
         self.verbose = True
@@ -276,12 +276,18 @@ class JitSettings:
         ##  ├─ IOR
         # self.app="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
         # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
-        ##  ├─ NEK5000 --> change gkfs_daemon_protocol to socketsr
+        ##  ├─ DLIO --> 
+        self.app_call = "dlio_benchmark"
+        self.app_dir = "/d/github/dlio_benchmark"
+        self.app_flags = "workload=unet3d_my_a100"
+        ##  ├─ NEK5000 --> change gkfs_daemon_protocol to socket
         # self.app_call = "./nek5000"
         # self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
+        # self.app_flags = ""
         ##  └─ Wacom++ --> change wacom.json if needed 
-        self.app_call = "./wacommplusplus"
-        self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"#_gcc12_2"
+        # self.app_call = "./wacommplusplus"
+        # self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"#_gcc12_2"
+        # self.app_flags = ""
         
 
         # ****** pre and post app call ******
@@ -289,8 +295,16 @@ class JitSettings:
         # > ${PRE_APP_CALL}
         # > cd self.app_dir && mpiexec ${some flags} ..${APP_CALL}
         # > ${POST_APP_CALL}
+        # ├─ dlio
+        if "dlio" in self.app_call:
+            if self.exclude_all:
+                self.pre_app_call  = "mpirun -np 8 dlio_benchmark workload=unet3d_my_a100 ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                self.post_app_call = ""
+            else:
+                self.pre_app_call  = f"cd {self.gkfs_mntdir} && mpirun -np 8 dlio_benchmark workload=unet3d_my_a100 ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                self.post_app_call = ""
         # ├─ Nek5000
-        if "nek" in self.app_call:
+        elif "nek" in self.app_call:
             if self.exclude_all:
                 self.pre_app_call  = f"echo -e 'turbPipe\\n{self.app_dir}/input' > {self.app_dir}/SESSION.NAME"
                 self.post_app_call = f"rm {self.app_dir}/input/*.f* || echo true"
@@ -369,19 +383,32 @@ class JitSettings:
             self.cargo = f"{self.install_location}/cargo/build/src/cargo"
             self.cargo_bin = f"{self.install_location}/cargo/build/cli"
 
-            # Nek5000
-            self.app_dir = "/d/benchmark/Nek5000/turbPipe/run"
-            self.app_call = "./nek5000"
-            self.stage_in_path = "/d/benchmark/Nek5000/turbPipe/run/input"
-            self.stage_out_path = "/tmp/output"
-            if self.exclude_all:
-                self.pre_app_call = "echo -e 'turbPipe\\n/d/benchmark/Nek5000/turbPipe/run/input' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
-                self.post_app_call = (
-                    "rm /d/benchmark/Nek5000/turbPipe/run/input/*.f* || true"
-                )
-            else:
-                self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
-                self.post_app_call = f"rm {self.stage_out_path}/*.f* || true"
+            
+            if "dlio" in self.app_call: 
+                self.stage_in_path = "/d/github/dlio_benchmark/data"
+                # generate data with
+                # mpirun -np 8 dlio_benchmark workload=unet3d_my_a100 ++workload.workflow.generate_data=True ++workload.workflow.train=False
+                if self.exclude_all:
+                    self.app_dir = "/d/github/dlio_benchmark"
+                    self.pre_app_call  = ""
+                    self.post_app_call = ""
+                else:
+                    self.app_dir = f"{self.gkfs_mntdir}"
+                    self.pre_app_call  = ""
+                    self.post_app_call = ""
+                # ├─ Nek5000
+            elif "nek" in self.app_call:
+                self.app_dir = "/d/benchmark/Nek5000/turbPipe/run"
+                self.stage_in_path = "/d/benchmark/Nek5000/turbPipe/run/input"
+                if self.exclude_all:
+                    self.pre_app_call = "echo -e 'turbPipe\\n/d/benchmark/Nek5000/turbPipe/run/input' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
+                    self.post_app_call = (
+                        "rm /d/benchmark/Nek5000/turbPipe/run/input/*.f* || true"
+                    )
+                else:
+                    self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
+                    self.post_app_call = f"rm {self.stage_out_path}/*.f* || true"
 
+            self.stage_out_path = "/tmp/output"
             # self.stage_in_path = "/tmp/input"
             # self.stage_out_path = "/tmp/output"

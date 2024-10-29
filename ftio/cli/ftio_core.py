@@ -201,7 +201,6 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
 
         #? save up to n_freq from the top candidates
         if args.n_freq > 0:
-            #TODO use amp instead of conf
             arr = amp[0:int(np.ceil(len(amp)/2))]
             top_candidates = np.argsort(-arr) # from max to min
             n_freq = int(min(len(arr),args.n_freq))

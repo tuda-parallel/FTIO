@@ -302,7 +302,7 @@ class PlotCore:
             width=self.width,
             height=self.height,
         )
-        f[-1] = format_plot_simple(f[-1])
+        f[-1] = format_plot(f[-1],17)
 
         f.append(go.Figure())
         if df_t:
@@ -331,7 +331,7 @@ class PlotCore:
             width=self.width,
             height=self.height,
         )  # ,legend_title_text='Metrics' )
-        f[-1] = format_plot_simple(f[-1])
+        f[-1] = format_plot(f[-1],17)
 
         f.append(go.Figure())
         if df_t:
@@ -399,7 +399,7 @@ class PlotCore:
             width=self.width,
             height=self.height,
         )
-        f[-1] = format_plot_simple(f[-1])
+        f[-1] = format_plot(f[-1],17)
 
         _ = go.Figure(
             layout=dict(template="plotly")
@@ -422,7 +422,7 @@ class PlotCore:
                 xaxis_title="Throughput (B/s)",
                 yaxis_title="Count",
             )
-            fig_tmp = format_plot_simple(fig_tmp)
+            fig_tmp = format_plot(fig_tmp,17)
             f.append(fig_tmp)
 
         if df_b:
@@ -443,7 +443,7 @@ class PlotCore:
                 xaxis_title="Bandwidth (B/s)",
                 yaxis_title="Count",
             )
-            fig_tmp = format_plot_simple(fig_tmp)
+            fig_tmp = format_plot(fig_tmp,17)
             f.append(fig_tmp)
 
         io_stats = Metrics(args)
@@ -563,7 +563,7 @@ class PlotCore:
                         showlegend=True,
                         title=f"{i} Ranks (Run {j})",
                     )
-                    f[-1] = format_plot_simple(f[-1])
+                    f[-1] = format_plot(f[-1],17)
                     
                     if self.names and (args.avr or args.sum or args.ind):
                         f[-1].update_layout(
@@ -683,7 +683,7 @@ class PlotCore:
                     yaxis_title="Transfer Rate (B/s)",
                     title="Overlap Statistics: %s" % type.capitalize(),
                 )
-                f[-1] = format_plot_simple(f[-1])
+                f[-1] = format_plot(f[-1],17)
 
             f_1 = plot_error_bar(io_stats.t_avr, "T_{A}")
             f_2 = plot_error_bar(io_stats.t_sum, "T_{S}")
@@ -801,7 +801,7 @@ class PlotCore:
         self.f_t[-1].update_layout(hovermode="x", legend_tracegroupgap=1)
         self.f_t[-1].update_xaxes(showspikes=True, spikethickness=1, spikecolor="black")
         self.f_t[-1].update_yaxes(showspikes=True, spikethickness=1, spikecolor="black")
-        self.f_t[-1] = format_plot_simple(self.f_t[-1])
+        self.f_t[-1] = format_plot(self.f_t[-1],17)
 
         modes = ["delta_t_total", "delta_t_agg", "delta_t_overhead"]
         names = ["Total", "App", "Overhead"]
@@ -860,7 +860,7 @@ class PlotCore:
         )  # ,uniformtext_minsize=12, uniformtext_mode='show')
         self.f_t[-1].update_layout(barmode="relative")
         self.f_t[-1].update_yaxes(range=[0, 100])
-        self.f_t[-1] = format_plot_simple(self.f_t[-1])
+        self.f_t[-1] = format_plot(self.f_t[-1],17)
 
         self.f_t.append(go.Figure())
         delmiter = "<br>"
@@ -971,7 +971,7 @@ class PlotCore:
             barmode="stack",
         )  # ,uniformtext_minsize=12, uniformtext_mode='show')
         self.f_t[-1].update_yaxes(range=[0, 100])
-        self.f_t[-1] = format_plot_simple(self.f_t[-1])
+        self.f_t[-1] = format_plot(self.f_t[-1],17)
 
         self.f_t.append(add_fig_col(self.nRun))
         for i in range(0, self.nRun):
@@ -1037,7 +1037,7 @@ class PlotCore:
             title="Application Time",
         )
         self.f_t[-1].update_layout(hovermode="x", legend_tracegroupgap=1)
-        self.f_t[-1] = format_plot_simple(self.f_t[-1])
+        self.f_t[-1] = format_plot(self.f_t[-1],17)
 
         modes = ["delta_t_agg", "delta_t_com", "delta_t_agg_io"]
         names = ["App", "Compute", "I/O"]
@@ -1046,7 +1046,7 @@ class PlotCore:
                 self.data.df_time, modes, names, colors, symbols, markeredgecolor
             )
         )
-        self.f_t[-1] = format_plot_simple(self.f_t[-1])
+        self.f_t[-1] = format_plot(self.f_t[-1],17)
         self.f_t[-1].update_yaxes(type="log", row=1, col=1, showspikes=True)
 
         self.f_t.append(go.Figure())
@@ -1099,7 +1099,7 @@ class PlotCore:
             barmode="stack",
         )  # ,uniformtext_minsize=12, uniformtext_mode='show')
         self.f_t[-1].update_yaxes(range=[0, 100])
-        self.f_t[-1] = format_plot_simple(self.f_t[-1])
+        self.f_t[-1] = format_plot(self.f_t[-1],17)
 
         # ? I/O to compute ration
         self.f_t.append(add_fig_col(self.nRun))
@@ -1160,7 +1160,7 @@ class PlotCore:
             tickvals=self.data.df_time["delta_t_agg_io"][index],
             showspikes=True,
         )
-        self.f_t[-1] = format_plot_simple(self.f_t[-1])
+        self.f_t[-1] = format_plot(self.f_t[-1],17)
 
         #! I/O instensity for the malleability manager
         self.f_t.append(add_fig_col(self.nRun))
@@ -1235,7 +1235,7 @@ class PlotCore:
             height=self.height,
             title="I/O intensity",
         )
-        self.f_t[-1] = format_plot_simple(self.f_t[-1])
+        self.f_t[-1] = format_plot(self.f_t[-1],17)
         self.f_t[-1].update_yaxes(
             title_text="Ranks",
             secondary_y=True,
@@ -1424,7 +1424,7 @@ class PlotCore:
             barmode="stack",
             margin=dict(t=200),
         )
-        self.f_t[-1] = format_plot_simple(self.f_t[-1])
+        self.f_t[-1] = format_plot(self.f_t[-1],17)
 
         self.f_t.append(add_fig_col(self.nRun))
         for i in range(0, self.nRun):
@@ -1566,7 +1566,7 @@ class PlotCore:
             height=self.height,
             title="I/O time",
         )
-        self.f_t[-1] = format_plot_simple(self.f_t[-1])
+        self.f_t[-1] = format_plot(self.f_t[-1],17)
 
         self.f_t.append(add_fig_row(self.nRun, onefig=True))
         for i in range(0, self.nRun):
@@ -1699,7 +1699,7 @@ class PlotCore:
             height=self.height,
             title="I/O time",
         )
-        self.f_t[-1] = format_plot_simple(self.f_t[-1])
+        self.f_t[-1] = format_plot(self.f_t[-1],17)
 
         #! Error bar
         # modes = ["delta_t_sr", "delta_t_sw",  "delta_t_ar_lost", "delta_t_aw_lost",  "delta_t_ara",     "delta_t_awa",     "delta_t_arr",      "delta_t_awr"]
@@ -1792,7 +1792,7 @@ class PlotCore:
             height=self.height,
             title="Overhead",
         )
-        self.f_t[-1] = format_plot_simple(self.f_t[-1])
+        self.f_t[-1] = format_plot(self.f_t[-1],17)
 
         if (
             "delta_t_overhead_post_runtime" in self.data.df_time.head()
@@ -1847,7 +1847,7 @@ class PlotCore:
                 barmode="stack",
             )  # ,uniformtext_minsize=12, uniformtext_mode='show')
             self.f_t[-1].update_yaxes(range=[0, 100])
-            self.f_t[-1] = format_plot_simple(self.f_t[-1])
+            self.f_t[-1] = format_plot(self.f_t[-1],17)
 
         if "delta_t_rank0" in self.data.df_time.head():
             self.f_t.append(go.Figure())
@@ -1920,7 +1920,7 @@ class PlotCore:
                 barmode="stack",
             )
             self.f_t[-1].update_yaxes(range=[0, 100])
-            self.f_t[-1] = format_plot_simple(self.f_t[-1])
+            self.f_t[-1] = format_plot(self.f_t[-1],17)
 
             self.f_t.append(add_fig_col(self.nRun))
             for i in range(0, self.nRun):
@@ -1996,7 +1996,7 @@ class PlotCore:
             self.f_t[-1].update_yaxes(
                 showspikes=True, spikethickness=1, spikecolor="black"
             )
-            self.f_t[-1] = format_plot_simple(self.f_t[-1])
+            self.f_t[-1] = format_plot(self.f_t[-1],17)
 
             modes = [
                 "delta_t_rank0",
