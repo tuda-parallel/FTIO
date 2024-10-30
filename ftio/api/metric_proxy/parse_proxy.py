@@ -1,10 +1,10 @@
 import sys
 import numpy as np
 import json
+import re
 from time import process_time
 from ftio.freq.helper import MyConsole
 from ftio.api.metric_proxy.req import MetricProxy
-
 
 
 CONSOLE = MyConsole()
@@ -60,26 +60,40 @@ def extract(json_data, match, verbose=False):
     return b_out,t_out
 
 
-def filter_metrics(json_data,filter_deriv:bool=True, exclude=None, scale_t:float = 1):
+def filter_metrics(json_data,filter_deriv:bool=True, exclude=None, scale_t:float = 1, rename:dict = {}):
     out = {}
     t = process_time()
     metrics = json_data['metrics'].keys()
     # extract either derive or all but not all
     if filter_deriv:
         metrics = clean_metrics(metrics)
-        
+
     if exclude:
-        for metric in metrics:
-            if all(n not in metric for n in exclude):
-                b_out,t_out = extract(json_data,metric, False)
-                out[metric]=[b_out,t_out*scale_t]
+        old_length = len(metrics)
+        metrics = [metric for metric in metrics if all(n not in metric for n in exclude)]
         text=', '.join([str(item) for item in exclude])
-        CONSOLE.info(f"[green]Excluded matches for: \\[{text}]\nMetrics reduced further from {len(metrics)} to {len(out)}[/]")
-    else:
-        for metric in metrics:
-            b_out,t_out = extract(json_data,metric, False)
-            out[metric]=[b_out,t_out*scale_t]
+        CONSOLE.info(f"[green]\nExcluded matches for: \\[{text}]\nMetrics reduced further from {old_length} to {len(metrics)}[/]")
     
+    for metric in metrics:
+        b_out,t_out = extract(json_data,metric, False)
+        out[metric]=[b_out,t_out*scale_t]
+
+    # rename keys if only one metric passed
+    if exclude:
+        if "func" not in exclude:
+            keys_to_rename = [(metric, "f_"+re.findall(r'func__(.*?)__', metric)[0]) for metric in out if "func" in metric]
+            for old_key, new_key in keys_to_rename:
+                out[new_key] = out.pop(old_key)
+
+        if  len(set(["time", "hits", "size"]) & set(exclude)) == 2:
+            keys_to_rename = [(metric, metric.rsplit("__", 1)[-1]) for metric in out]
+            # Perform renaming after collecting all keys
+            if keys_to_rename:
+                CONSOLE.info(f"[green]\nRenaming Metrics: Removing [{keys_to_rename[-1][-1]}] from names[/]")
+
+            for old_key, new_key in keys_to_rename:
+                out[new_key] = out.pop(old_key)
+
     elapsed_time = process_time() - t
     CONSOLE.info(f"[green]Parsing time: {elapsed_time} s[/]")
     
@@ -124,7 +138,7 @@ def load_proxy_trace_stdin(deriv_and_not_deriv:bool=True, exclude=None):
         return filter_metrics(data,deriv_and_not_deriv,exclude)
 
 
-def clean_metrics(metrics):
+def clean_metrics(metrics:str):
     deriv_metrics =  [metric for metric in metrics if metric.startswith("deriv")]
     non_deriv_metrics = [metric for metric in metrics if not metric.startswith("deriv")]
     cleaned_metrics = [metric for metric in metrics if not (metric in non_deriv_metrics and "deriv__" + metric in deriv_metrics)]

@@ -28,7 +28,7 @@ def extract_data(data):
             max_conf_index = np.argmax(d['conf'])
             dominant_freq = d['dominant_freq'][max_conf_index]
             conf = d['conf'][max_conf_index]*100
-            phi = d['phi'][max_conf_index]
+            phi = d['phi'][max_conf_index] #np.degrees(d['phi'][max_conf_index])
             amp = d['amp'][max_conf_index]
             t_s = d['t_start']
             t_e = d['t_end']

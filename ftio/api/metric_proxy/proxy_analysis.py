@@ -5,6 +5,8 @@ from plotly.subplots import make_subplots
 from ftio.freq.helper import MyConsole
 from ftio.plot.print_html import PrintHtml
 from ftio.plot.helper import format_plot_and_ticks
+from ftio.api.metric_proxy.phasemode import PhaseMode
+
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -87,53 +89,19 @@ def classify_waves(data, normed=True):
                 t_e = max(d['t_end'],t_e)
 
             add_metric(phasemode_list, d)
+
     if not np.isnan(sampling_freq):
         t = np.arange(t_s, t_e, 1 / sampling_freq)
+        add_time(phasemode_list, t)
     else:
         CONSOLE.print('[red] No metrics classified. Try increasing the sampling frequency[/]')    
         exit(0)
 
     text = print_len(phasemode_list, data)
     CONSOLE.print(f'[blue]{text}[/]')
-    calculate_waves(phasemode_list, t, normed)
+    aggregate_wave_for_all_modes(phasemode_list, t, normed)
 
     return phasemode_list, t
-
-
-class PhaseMode:
-    def __init__(self, name: str, matches: list[str]) -> None:
-        self.name = name
-        self.matches = matches
-        self.data = []
-        self.wave = np.nan
-
-    def match(self, d: dict):
-        if any(n in d['metric'] for n in self.matches):
-            return True
-        else:
-            return False
-
-    def add(self, d: dict) -> None:
-        self.data.append(d)
-
-    def calculate_wave(self, t, normed=True):
-        self.wave = np.zeros(len(t))
-        for i in self.data:
-            if 'top_freq' in i:
-                for j in range(0, len(i['top_freq']['freq'])):
-                    self.wave = self.wave + i['top_freq']['amp'][j] * np.cos(
-                        2 * np.pi * i['top_freq']['freq'][j] * t
-                        + i['top_freq']['phi'][j]
-                    )
-            else:
-                max_conf_index = np.argmax(i['conf'])
-                self.wave = self.wave + i['amp'][max_conf_index] * np.cos(
-                    2 * np.pi * i['dominant_freq'][max_conf_index] * t
-                    + i['phi'][max_conf_index]
-                )
-                # self.wave = self.wave +np.cos(2* np.pi*i['dominant_freq'][max_conf_index]*t +  i['phi'][max_conf_index])
-        if normed:
-            self.wave = norm(self.wave)
 
 
 def plot_waves(argv:list, arr: list[PhaseMode], t, n=None):
@@ -174,6 +142,7 @@ def plot_waves(argv:list, arr: list[PhaseMode], t, n=None):
         )
         if n:
             fig.update_layout(legend_title_text=f'{n} Frequencies')
+        fig = format_plot_and_ticks(fig)
         fig.show()
         # fig.write_image("waves.png")
 
@@ -219,7 +188,20 @@ def plot_mode(mode,metrics,t,n,subfig=False)-> list[go.Figure]:
                     name=metric,
                     hovertemplate='<i>Time </i>: %{x} s'
                     + '<br><b>Metric</b>: %{y}<br>',
-                ),**spec[1]
+                    legendgroup=metric,
+                ),**spec[1],
+            )
+            wave,name = mode.get_wave(metric)
+            f[-1].add_trace(
+                go.Scatter(
+                    x=mode.get("t"),
+                    y=wave,
+                    mode='lines+markers',
+                    name=name,
+                    hovertemplate='<i>Time </i>: %{x} s'
+                    + '<br><b>Metric</b>: %{y}<br>',
+                    legendgroup=metric,
+                ),**spec[0],
             )
 
     for fig in f:
@@ -242,10 +224,7 @@ def plot_mode(mode,metrics,t,n,subfig=False)-> list[go.Figure]:
                 fig.update_layout(title=f'{mode.name.capitalize()}: Using Dominant Frequencies')
     return f
 
-def norm(wave: np.ndarray) -> np.ndarray:
-    max_value = np.max(np.abs(wave))
-    normed_wave = wave / max_value if max_value > 0 else wave
-    return normed_wave
+
 
 
 def add_metric(arr: list[PhaseMode], d):
@@ -254,6 +233,11 @@ def add_metric(arr: list[PhaseMode], d):
             mode.add(d)
             break
 
+def add_time(arr: list[PhaseMode], t):
+    for mode in arr:
+        mode.set_time(t)
+
+
 def get_names(arr:list[PhaseMode])-> list[str]:
     names = []
     for mode in arr:
@@ -261,9 +245,9 @@ def get_names(arr:list[PhaseMode])-> list[str]:
     return names 
 
 
-def calculate_waves(arr: list[PhaseMode], t, normed=True):
+def aggregate_wave_for_all_modes(arr: list[PhaseMode], t, normed=True):
     for mode in arr:
-        mode.calculate_wave(t, normed)
+        mode.aggregates_waves(t, normed)
 
 
 def print_len(arr: list[PhaseMode], data) -> str:

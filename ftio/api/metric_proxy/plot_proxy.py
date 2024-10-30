@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import fastcluster
 
+from ftio.plot.helper import format_plot_and_ticks
+
 
 def heatmap(data):
     # Prepare the data for the heatmap
@@ -79,13 +81,22 @@ def heatmap(data):
         # text_auto=True,
         origin="lower",
         color_continuous_scale="Viridis",
-        aspect="equal",  #'auto'
+        aspect="auto",  #'auto' or equal
     )
     fig.update_layout(
+        # height=1500,
         xaxis_tickangle=-45,
         margin=dict(l=100, r=100, t=50, b=150),
-        coloraxis_colorbar=dict(yanchor="top", y=1, ticks="outside", ticksuffix=" %"),
+        coloraxis_colorbar=dict(
+            yanchor="top",
+            y=1,
+            ticks="outside",
+            ticksuffix=" %",
+            # lenmode="pixels",
+            # len=200,
+        ),
     )
+    fig = format_plot_and_ticks(fig,False, True,False,False)
     fig.show()
 
 
@@ -129,17 +140,17 @@ def scatter2D(df) -> None:
         margin=dict(l=100, r=100, t=50, b=150),
         coloraxis_colorbar=dict(yanchor="top", y=1, ticks="outside", ticksuffix=" %"),
     )
+    fig = format_plot_and_ticks(fig,False, True,False,False)
     fig.show()
 
 
 def heatmap_2(data):
     # Prepare the data for the heatmap
-    zscore = False
+    zscore = True
     metrics = []
     dominant_freqs = []
     confs = []
     counter = 0
-    top = 0
 
     for d in data:
         metric = d["metric"]
@@ -151,8 +162,8 @@ def heatmap_2(data):
             continue
             dominant_freq = 0
             conf = 0
-        # metrics.append(metric)
-        metrics.append(f"{counter}")
+        metrics.append(metric)
+        # metrics.append(f"{counter}")
         dominant_freqs.append(dominant_freq)
         confs.append(conf)
         counter += 1
@@ -185,7 +196,7 @@ def heatmap_2(data):
 
     for i, metric_i in enumerate(metrics_unique):
         for j, metric_j in enumerate(metrics_unique):
-            if i < j:  # Only calculate for one half of the matrix
+            if i <= j:  # Only calculate for one half of the matrix
                 freq_i = dominant_freq_per_metric.loc[
                     dominant_freq_per_metric["Metric"] == metric_i, "Dominant Frequency"
                 ].values
@@ -214,17 +225,13 @@ def heatmap_2(data):
     #     heatmap_diff.at[metric, metric] = 0
 
     # Convert to numeric type
-    heatmap_diff = heatmap_diff.astype(float)
-
-    # find value where the were the diff is > 1
-    top = float(max(heatmap_diff))
-    if top < 100:
-        top = 100
+    # heatmap_diff = heatmap_diff.astype(float)
+    # top = float(max(heatmap_diff.max(),100))
 
     # Ensure the index and columns are correctly set to metrics_unique
     heatmap_diff.index = metrics_unique
     heatmap_diff.columns = metrics_unique
-    plot_heatmap(heatmap_diff, top)
+    plot_heatmap(heatmap_diff)
 
     heatmap_diff = heatmap_diff.fillna(0)  # Replace NaN with 0 or another strategy
     # Apply hierarchical clustering using fastcluster
@@ -238,6 +245,9 @@ def heatmap_2(data):
         col_linkage=linkage_matrix,
         cmap="viridis",
         annot=False,
+        xticklabels=metrics_unique,
+        yticklabels=metrics_unique,
+        figsize=(12, 10),
     )
     plt.show()
 
@@ -298,12 +308,12 @@ def density_heatmap(data) -> None:
     fig.show()
 
 
-def plot_heatmap(heatmap_diff, top):
+def plot_heatmap(heatmap_diff):
 
     # Create the heatmap with switched axes
     fig = px.imshow(
         heatmap_diff,
-        labels=dict(x="Metric", y="Metric", color="Difference in Dominant Frequency"),
+        labels=dict(x="", y="", color="Difference in Dominant Frequency"),
         # text_auto=True,
         origin="lower",
         # width=1200,  # Adjust width as needed
@@ -319,7 +329,6 @@ def plot_heatmap(heatmap_diff, top):
             (0.8, "blue"),
             (1, "purple"),
         ],
-        # color_continuous_scale=[(0, 'black'),(critical/10, 'red'),(critical/2, 'orange'), (critical, 'yellow'),(2*critical, 'white'),(10*critical, 'white') , (1, 'white')]
     )
 
     # Update layout to adjust margins and spacing
@@ -340,11 +349,11 @@ def plot_heatmap(heatmap_diff, top):
         ),
         margin=dict(l=100, r=100, t=50, b=150),  # Adjust margins to give more space
     )
-
+    fig = format_plot_and_ticks(fig,False, True,False,False)
     fig.show()
 
 
-def plot_timeseries_metrics(metrics, width = None, height = None):
+def plot_timeseries_metrics(metrics, width=None, height=None):
     fig = go.Figure()
     for metric, arrays in metrics.items():
         if len(arrays[0]) > 1:
@@ -357,10 +366,6 @@ def plot_timeseries_metrics(metrics, width = None, height = None):
         yaxis_title="Metrics",
     )
     if width and height:
-        fig.update_layout(
-            autosize=False,
-            width=width,
-            height=height
-        )
+        fig.update_layout(autosize=False, width=width, height=height)
     fig.show()
     return fig

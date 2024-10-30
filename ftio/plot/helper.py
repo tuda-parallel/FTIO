@@ -9,7 +9,7 @@ def legend_fix(data, c) -> bool:
         return False
 
 
-def format_plot_and_ticks(fig: go.Figure, legend=True, font=True, x_minor=True, y_minor=True) -> go.Figure:
+def format_plot_and_ticks(fig: go.Figure, legend=True, font=True, x_minor=True, y_minor=True, x_ticks = True, y_ticks = True) -> go.Figure:
     """Formats plots
 
     Args:
@@ -37,34 +37,38 @@ def format_plot_and_ticks(fig: go.Figure, legend=True, font=True, x_minor=True, 
     )
 
     x_settings = dict(
-        ticks = "outside",
-        ticklen = 10,
         mirror = True,
         showgrid = True,
         showline = True,
         linecolor = "black",
         gridcolor = "lightgrey"
         )
+    if x_ticks:
+        x_settings["ticks"] = "outside"
+        x_settings["ticklen"] = 10
+
     if x_minor:
-        x_settings['minor_ticks'] = "outside"
-        x_settings['minor'] = dict(
+        x_settings["minor_ticks"] = "outside"
+        x_settings["minor"] = dict(
             ticklen=2, tickcolor="black", tickmode="auto", nticks=5, showgrid=True
         )
 
     fig.update_xaxes(**x_settings)
     
     y_settings = dict(
-        ticks = "outside",
-        ticklen = 10,
         mirror = True,
         showgrid = True,
         showline = True,
         linecolor = "black",
         gridcolor = "lightgrey"
         )
+    if y_ticks:
+        y_settings["ticks"] = "outside"
+        y_settings["ticklen"] = 10
+
     if y_minor:
-        y_settings['minor_ticks'] = "outside"
-        y_settings['minor'] = dict(
+        y_settings["minor_ticks"] = "outside"
+        y_settings["minor"] = dict(
             ticklen=2, tickcolor="black", tickmode="auto", nticks=5, showgrid=True
         )
 

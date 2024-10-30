@@ -1,5 +1,4 @@
-from multiprocessing.managers import ListProxy
-import sys
+import argparse
 import numpy as np
 from multiprocessing import Manager, cpu_count
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -27,20 +26,25 @@ CONSOLE = MyConsole()
 CONSOLE.set(True)
 
 
-def main(file:str = ""):
+def main(args:argparse.Namespace) -> None:
+    file = args.file 
+    proxy= args.proxy
+    parallel =not args.disable_parallel
+    argv=args.argv
+
+    # shows the results from FTIO
+    pools = False
+    show = False
     # ---------------------------------
     # Modification area
     # ---------------------------------
-    parallel = True
-    pools = False
-    show = False  # shows the results from FTIO
-    argv = ["-e","no"]
+    argv.extend(["-e","no"])
     # argv = ["-e", "mat"]  # ["-e", "plotly"]
     # # finds up to n frequencies. Comment this out to go back to the default version
     # argv.extend(["-n", "10"])
     # ---------------------------------
 
-    if not file:
+    if proxy:
         mp = MetricProxy()
         # # Get a LIST of all JOBs
         jobs = mp.jobs()
@@ -52,14 +56,13 @@ def main(file:str = ""):
         # Workaround: proxy needs to be running
         # metrics = get_all_metrics('4195024897')
     else:
-        # file = "/d/github/FTIO/ftio/api/metric_proxy/traces/jb_traces/WACOM_PROCESS_BASED_json/wacommplusplus.36procs.trace.json"
-        # file = "/d/sim/metric_proxy/traces/Mixed_1x8_5.json"
-        metrics = parse_all(file, filter_deriv=True,exclude=["size","hits"], scale_t=1e-3)
+        # metrics = parse_all(file, filter_deriv=True,exclude=["size","hits","func"], scale_t=1e-3) # "mpi"
+        metrics = parse_all(file, filter_deriv=True,exclude=["func","size","hits","proxy"], scale_t=1e-3) # "mpi"
         
 
     ranks = 32
-
-    _ = plot_timeseries_metrics(metrics, 2000,500)
+    # plot the metrics if needed
+    # _ = plot_timeseries_metrics(metrics, 2000,500)
 
     if parallel:
         data = execute_parallel(metrics, argv, ranks, show, pools)
@@ -76,9 +79,9 @@ def execute_parallel(
     manager = Manager()
     data = manager.list()
     counter = 0
-    total_files = len(metrics)
-    progress = create_process_bar(total_files)
-    task = progress.add_task("[green]Processing files", total=total_files)
+    total_metrics = len(metrics)
+    progress = create_process_bar(total_metrics)
+    task = progress.add_task("[green]Processing metrics", total=total_metrics)
     with progress:
         try:
             if pools:
@@ -115,14 +118,13 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
     data = []
     save = True
     check = True
-
-    error_counter = 0 
+    error_counter = 0
     counter = 0
     total_files = len(metrics)
     progress = create_process_bar(total_files)
     
     with progress:
-        task = progress.add_task("[green]Processing files", total=total_files)
+        task = progress.add_task("[green]Processing metrics", total=total_files)
         for metric, arrays in metrics.items():
             if check:
                 decreasing_order = np.all(arrays[1][-1] >= arrays[1][1])
@@ -156,8 +158,7 @@ def post(data, metrics, argv):
             df, x="Phi", y="Dominant Frequency", color="Confidence", symbol="Metric"
         )
         _ = optics(df,"Phi","Dominant Frequency")
-        _ = dbscan(df,"Phi","Dominant Frequency")
-        # exit()
+        _ = dbscan(df,"Phi","Dominant Frequency",0.1)
         density_heatmap(data)
         heatmap_2(data)
     else:
@@ -169,8 +170,19 @@ if __name__ == "__main__":
     # file = "/d/github/FTIO/ftio/api/metric_proxy/traces/jb_traces/WACOM_PROCESS_BASED_json/wacommplusplus.36procs.trace.json"
     # file = "/d/sim/metric_proxy/traces/Mixed_1x8_5.json"file = /d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json"
     file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json"
-    main(file)
-    
+    # file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/wacom.json"
 
-    # proxy
-    # main()
+    parser = argparse.ArgumentParser(description="Executes FTIO in parallel on a JSON file from the proxy or by directly communicating with the proxy")
+    parser.add_argument(
+        '--file',
+        type=str,
+        nargs="?",  # '*' allows zero or more filenames
+        default=file,
+        help="The paths to the JSON file from the proxy"
+    )
+    parser.add_argument('--proxy', action = 'store_true', default=False, help="parallel or not")
+    parser.add_argument('--disable_parallel', action = 'store_true', default=False, help="parallel or not")
+    args, unknown = parser.parse_known_args()
+    args.argv = unknown
+    main(args)
+    
