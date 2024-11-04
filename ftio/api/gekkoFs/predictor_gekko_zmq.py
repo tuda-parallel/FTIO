@@ -1,7 +1,6 @@
 import sys
 import time
 import os
-import subprocess
 from multiprocessing import Manager
 from rich.console import Console
 import numpy as np
@@ -15,6 +14,7 @@ from ftio.prediction.analysis import display_result, save_data, data_analysis
 from ftio.prediction.async_process import join_procs
 from ftio.freq.helper import MyConsole
 from ftio.parse.args import parse_args
+from ftio.prediction.processes_zmq import bind_socket, receive_messages
 
 
 T_S = time.time()
@@ -29,41 +29,15 @@ def main(args: list[str] = sys.argv[1:]) -> None:
     addr = tmp_args.zmq_address
     port = tmp_args.zmq_port
 
-    if CARGO:
-        #1. Perform stage in outside FTIO with cpp
-        #2. Setup für Cargo Stage-out für cargo_ftio
-        call = f"{tmp_args.cargo_bin}/cargo_ftio --server {tmp_args.cargo_server} --run"
-        CONSOLE.print("\n[bold green][Init][/][green]" +call+"\n")
-        os.system(call)
-
-        # 3. tells cargo that for all next cargo_ftio calls use the cpp
-        # input is relative from GekokFS
-        call = f"{tmp_args.cargo_bin}/ccp --server {tmp_args.cargo_server} --input / --output {tmp_args.cargo_out} --if gekkofs --of parallel"
-        CONSOLE.print("\n[bold green][Init][/][green]" +call+"\n")
-        os.system(call)
-        # 4. trigger with the thread
-        # 5. Do a stage out outside FTIO with cargo_ftio --run
+    #start cargo
+    setup_cargo(tmp_args)
 
     ranks = 0
     args.extend(["-e", "no", "-f", "10", "-m", "write"])
     # args.extend(["-e", "plotly", "-f", "10", "-m", "write"])
-    context = zmq.Context()
-    socket = context.socket(socket_type=zmq.PULL)
 
-    
-    try:
-        socket.bind(f"tcp://{addr}:{port}")
-    except zmq.error.ZMQError as e:
-        CONSOLE.print(f"[yellow]Error encountered:\n{e}[/]")
-        CONSOLE.print("[yellow]Wrong ip address. FTIO is running on:[/]")
-        addr = str(subprocess.check_output("ip addr | grep 'inet 10' | awk  '{print $2}'", shell=True))
-        end   = addr.rfind("/")
-        start = addr.find("'")
-        addr = addr[start+1:end]
-        CONSOLE.print("[bold green]correcting Listing IP address[/]")
-        socket.bind(f"tcp://{addr}:{port}")
-    
-    CONSOLE.print(f"[green]FTIO is running on: {addr}[/]")
+    # bind to socket
+    socket = bind_socket(addr,port)
     # can be extended to listen to multiple sockets
     poller = zmq.Poller()
     poller.register(socket, zmq.POLLIN)
@@ -71,7 +45,7 @@ def main(args: list[str] = sys.argv[1:]) -> None:
     # Init
     manager = Manager()
     queue = manager.Queue()
-    data = manager.list()  # stores prediction
+    data = manager.list()  
     aggregated_bytes = manager.Value("d", 0.0)
     hits = manager.Value("d", 0.0)
     start_time = manager.Value("d", 0.0)
@@ -91,21 +65,10 @@ def main(args: list[str] = sys.argv[1:]) -> None:
     try:
         with CONSOLE.status("[green] started\n",spinner="arrow3") as status:
             while True:
-                if procs:
-                    procs = join_procs(procs)
+                procs = join_procs(procs)
 
                 # get all messages
-                msgs = []
-                ranks = 0
-                socks = dict(poller.poll(1000))
-                start = time.time()
-                while socks: #r time.time() < start + 0.5:
-                    if socks.get(socket) == zmq.POLLIN:
-                        msg = socket.recv(zmq.NOBLOCK)
-                        msgs.append(msg)
-                        # CONSOLE.print(f"[cyan]Got message {ranks}:[/] {msg}")
-                        ranks += 1
-                    socks = dict(poller.poll(1000))
+                msgs, ranks = receive_messages(socket, poller)
 
                 if not msgs:
                     # CONSOLE.print("[red]No messages[/]")
@@ -278,6 +241,23 @@ def trigger_cargo(sync_trigger,args):
             time.sleep(0.01)
         except KeyboardInterrupt:
             exit()
+
+
+def setup_cargo(tmp_args):
+    if CARGO:
+        #1. Perform stage in outside FTIO with cpp
+        #2. Setup für Cargo Stage-out für cargo_ftio
+        call = f"{tmp_args.cargo_bin}/cargo_ftio --server {tmp_args.cargo_server} --run"
+        CONSOLE.print("\n[bold green][Init][/][green]" + call +"\n")
+        os.system(call)
+
+        # 3. tells cargo that for all next cargo_ftio calls use the cpp
+        # input is relative from GekokFS
+        call = f"{tmp_args.cargo_bin}/ccp --server {tmp_args.cargo_server} --input / --output {tmp_args.cargo_out} --if gekkofs --of parallel"
+        CONSOLE.print("\n[bold green][Init][/][green]" + call + "\n")
+        os.system(call)
+        # 4. trigger with the thread
+        # 5. Do a stage out outside FTIO with cargo_ftio --run
 
 
 if __name__ == "__main__":

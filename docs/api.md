@@ -114,7 +114,7 @@ def main(args: list[str] = []) -> None:
 
 ## GekkoFS with ZMQ
 
-The file [`predictor_zmq_gekko`](https://github.com/tuda-parallel/FTIO/blob/main/ftio/api/gekkoFs/predictor_zmq_gekko.py) deploys this functionality. 
+The file [`predictor_zmq_gekko`](https://github.com/tuda-parallel/FTIO/blob/main/ftio/api/gekkoFs/predictor_gekko_zmq.py) deploys this functionality. 
 
 Download and compile the file [`test_mpi.cxx`](https://github.com/tuda-parallel/TMIO/blob/main/test/zmq/test_mpi.cxx) from the `TMIO` repo. Then either execute it with a single rank (interactive) or with multiple ranks (with sleep). Simply execute the [Makefile](https://github.com/tuda-parallel/TMIO/blob/main/test/zmq) in the folder:
 

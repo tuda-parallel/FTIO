@@ -7,13 +7,16 @@ from ftio.parse.input_template import init_data
 def extract(msgs, args:list) -> tuple[dict, int]:
     # init
     start = time.time() 
-    ranks = 0
     mode, io_data, io_time = init_data(args)
 
+    # unpack data
     unpacked_data = msgpack.unpackb(msgs)
 
     # Access the data
-    ranks           = unpacked_data["ranks"]
+    if "ranks" in unpacked_data:
+        ranks           = unpacked_data["ranks"]
+    else:
+        ranks = 0
     b               = unpacked_data["b"]
     ts              = unpacked_data["ts"]
     te              = unpacked_data["te"]

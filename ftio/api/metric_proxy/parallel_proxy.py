@@ -27,14 +27,12 @@ CONSOLE.set(True)
 
 
 def main(args:argparse.Namespace) -> None:
-    file = args.file 
-    proxy= args.proxy
-    parallel =not args.disable_parallel
-    argv=args.argv
-
+    argv=args.argv 
     # shows the results from FTIO
-    pools = False
     show = False
+    # pools or future
+    pools = False
+    
     # ---------------------------------
     # Modification area
     # ---------------------------------
@@ -44,11 +42,9 @@ def main(args:argparse.Namespace) -> None:
     # argv.extend(["-n", "10"])
     # ---------------------------------
 
-    if proxy:
+    if args.proxy:
         mp = MetricProxy()
-        # # Get a LIST of all JOBs
         jobs = mp.jobs()
-        # Get a JSONL for this JOB
         job_id = jobs[0]["jobid"]
         jsonl = mp.trace(job_id)
         metrics = filter_metrics(jsonl,filter_deriv=True)
@@ -56,15 +52,18 @@ def main(args:argparse.Namespace) -> None:
         # Workaround: proxy needs to be running
         # metrics = get_all_metrics('4195024897')
     else:
-        # metrics = parse_all(file, filter_deriv=True,exclude=["size","hits","func"], scale_t=1e-3) # "mpi"
-        metrics = parse_all(file, filter_deriv=True,exclude=["func","size","hits","proxy"], scale_t=1e-3) # "mpi"
-        
+        metrics = parse_all(args.file , filter_deriv=True,exclude=["size","hits","proxy"], scale_t=1e-3) # "mpi"
 
+    CONSOLE.print("[blue]\nSettings:\n---------[/]")
+    CONSOLE.print(f"[blue] - parallel: {not args.disable_parallel}[/]")
+    CONSOLE.print(f"[blue] - future: {not pools}[/]")
+    CONSOLE.print(f"[blue] - proxy: {args.proxy}[/]\n")
     ranks = 32
+
     # plot the metrics if needed
     # _ = plot_timeseries_metrics(metrics, 2000,500)
 
-    if parallel:
+    if not args.disable_parallel:
         data = execute_parallel(metrics, argv, ranks, show, pools)
     else:
         data = execute(metrics, argv, ranks, show)
@@ -169,8 +168,12 @@ if __name__ == "__main__":
     # file = "/d/github/FTIO/ftio/api/metric_proxy/traces/alberto_unito/bench_8x144.json"
     # file = "/d/github/FTIO/ftio/api/metric_proxy/traces/jb_traces/WACOM_PROCESS_BASED_json/wacommplusplus.36procs.trace.json"
     # file = "/d/sim/metric_proxy/traces/Mixed_1x8_5.json"file = /d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json"
-    file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json"
+    # file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json"
     # file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/wacom.json"
+    file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/wacoml.json"
+    # file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/lulesh_8_procs.json"
+    # file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/lulesh_27_procs.json"
+    
 
     parser = argparse.ArgumentParser(description="Executes FTIO in parallel on a JSON file from the proxy or by directly communicating with the proxy")
     parser.add_argument(

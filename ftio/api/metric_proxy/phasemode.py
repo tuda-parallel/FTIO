@@ -37,7 +37,7 @@ class PhaseMode:
             if normed:
                 self.wave = norm(self.wave)
 
-    def get_wave(self,metric:str) -> np.ndarray:
+    def get_wave(self,metric:str) :
         wave = np.array([])
         name = ""
         if self.t.size != 0:
@@ -58,11 +58,12 @@ def calculate_wave(prediction:dict, t:np.ndarray = np.array([]))  :# -> tuple[ND
             t = np.arange(prediction["t_start"], prediction["t_end"], 1 / prediction["freq"])
 
         if 'top_freq' in prediction:
+            wave = np.zeros_like(t)
             for j in range(0, len(prediction['top_freq']['freq'])):
                 amp  = prediction['top_freq']['amp'][j]
                 freq = prediction['top_freq']['freq'][j]
                 phi  =  prediction['top_freq']['phi'][j]
-                wave =  2 / n *amp * np.cos(2 * np.pi * freq * t+ phi)
+                wave = wave +  2 / n *amp * np.cos(2 * np.pi * freq * t+ phi)
                 if j < 3:
                     name += f"{2 / n *amp:.1e}*cos(2\u03C0*{freq:.2e}*t+{phi:.2e})"
                 elif j == 4:

@@ -72,7 +72,7 @@ def filter_metrics(json_data,filter_deriv:bool=True, exclude=None, scale_t:float
         old_length = len(metrics)
         metrics = [metric for metric in metrics if all(n not in metric for n in exclude)]
         text=', '.join([str(item) for item in exclude])
-        CONSOLE.info(f"[green]\nExcluded matches for: \\[{text}]\nMetrics reduced further from {old_length} to {len(metrics)}[/]")
+        CONSOLE.info(f"[blue]\nExcluded matches for: \\[{text}]\nMetrics reduced further from {old_length} to {len(metrics)}[/]")
     
     for metric in metrics:
         b_out,t_out = extract(json_data,metric, False)
@@ -81,21 +81,29 @@ def filter_metrics(json_data,filter_deriv:bool=True, exclude=None, scale_t:float
     # rename keys if only one metric passed
     if exclude:
         if "func" not in exclude:
-            keys_to_rename = [(metric, "f_"+re.findall(r'func__(.*?)__', metric)[0]) for metric in out if "func" in metric]
+            keys_to_rename = []
+            for metric in out:
+                if "func" in metric:
+                    keys_to_rename.append((metric, "f_"+re.findall(r'func__(.*?)__', metric)[0]))
             for old_key, new_key in keys_to_rename:
+                original_new_key = new_key  
+                suffix = 1
+                while new_key in out:
+                    new_key = f"{original_new_key}_{suffix}"
+                    suffix += 1
                 out[new_key] = out.pop(old_key)
 
         if  len(set(["time", "hits", "size"]) & set(exclude)) == 2:
             keys_to_rename = [(metric, metric.rsplit("__", 1)[-1]) for metric in out]
             # Perform renaming after collecting all keys
             if keys_to_rename:
-                CONSOLE.info(f"[green]\nRenaming Metrics: Removing [{keys_to_rename[-1][-1]}] from names[/]")
+                CONSOLE.info(f"[blue]\nRenaming Metrics: Removing [{keys_to_rename[-1][-1]}] from names[/]")
 
             for old_key, new_key in keys_to_rename:
                 out[new_key] = out.pop(old_key)
 
     elapsed_time = process_time() - t
-    CONSOLE.info(f"[green]Parsing time: {elapsed_time} s[/]")
+    CONSOLE.info(f"[blue]Parsing time: {elapsed_time} s[/]")
     
     return out
 
@@ -112,7 +120,7 @@ def parse_all(file_path:str,filter_deriv:bool=True, exclude=None, scale_t:float 
     Returns:
         dict: parsed metrics with 2D numpy array
     """
-    CONSOLE.info(f"\n[green]Current file: {file_path}[/]")
+    CONSOLE.info(f"\n[blue]Current file: {file_path}[/]")
     if scale_t != 1:
         CONSOLE.info(f"\n[yellow]Scaling time by: {scale_t}[/]")
     try:
@@ -142,7 +150,7 @@ def clean_metrics(metrics:str):
     deriv_metrics =  [metric for metric in metrics if metric.startswith("deriv")]
     non_deriv_metrics = [metric for metric in metrics if not metric.startswith("deriv")]
     cleaned_metrics = [metric for metric in metrics if not (metric in non_deriv_metrics and "deriv__" + metric in deriv_metrics)]
-    CONSOLE.info(f"[green]Metrics reduced from {len(metrics)} to {len(cleaned_metrics)}[/]")
+    CONSOLE.info(f"[blue]Metrics reduced from {len(metrics)} to {len(cleaned_metrics)}[/]")
     return cleaned_metrics
 
 
