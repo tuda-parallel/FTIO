@@ -9,7 +9,7 @@ from rich.panel import Panel
 from rich.status import Status
 from rich.markup import escape
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
-from ftio.api.gekkoFs.jit.setup_helper import check, gekko_flagged_call, jit_print, get_pid
+from ftio.api.gekkoFs.jit.setup_helper import check, flaged_mpiexec_call, jit_print, get_pid
 
 console = Console()
 
@@ -93,6 +93,22 @@ def execute_block_and_log(call: str, log_file: str) -> float:
             file.write(log_message)
     return end - start
 
+def execute_block_and_monitor (verbose:bool, call: str, log_file: str = "", log_err_file: str = "", dry_run=False):
+    if not log_err_file:
+        log_err_file = log_file
+
+    process = execute_background(call, log_file, log_err_file, dry_run)
+    if verbose:
+        out  = monitor_log_file(log_file,"")
+        if log_err_file != log_file:
+            err  = monitor_log_file(log_err_file,"")
+
+    _ = process.communicate()
+    if verbose:
+        out.terminate()
+        if log_err_file != log_file:
+            err.terminate()
+
 
 def execute_background(
     call: str, log_file: str = "", log_err_file: str = "", dry_run=False
@@ -158,7 +174,7 @@ def execute_background_and_log(
     process = execute_background(call, log_file, err_file, settings.dry_run)
     get_pid(settings, name, process.pid)
     # daemon is noisy
-    monitor_log_file(log_file, name)
+    _  = monitor_log_file(log_file, name)
     return process
 
 
@@ -185,7 +201,7 @@ def execute_background_and_log_in_process(
     process = execute_background(call, log_file, err_file, dry_run)
     # get_pid(settings, name, process.pid)
     # daemon is noisy
-    monitor_log_file(log_file, src=name)
+    _ = monitor_log_file(log_file, src=name)
     _, stderr = process.communicate()
     if process.returncode != 0:
         console.print(f"[red]Error executing command:{call}")
@@ -219,7 +235,7 @@ def execute_background_and_wait_line(
         stop the execution of this function
     """
     process = execute_background(call, filename, dry_run=dry_run)
-    monitor_log_file(filename, "")
+    _ = monitor_log_file(filename, "")
     if not dry_run:
         _ = wait_for_line(filename, target_line)
         stdout, stderr = process.communicate()
@@ -230,7 +246,7 @@ def execute_background_and_wait_line(
             # console.print(stdout, style="bold green")
             pass
 
-def monitor_log_file(file: str, src: str = "") -> None:
+def monitor_log_file(file: str, src: str = "")  -> multiprocessing.Process:
     """monitors a file and displays its output on the console. A process is
     in charge of monitoring the file.
 
@@ -242,6 +258,8 @@ def monitor_log_file(file: str, src: str = "") -> None:
     monitor_process = multiprocessing.Process(target=print_file, args=(file, src))
     monitor_process.daemon = True
     monitor_process.start()
+
+    return monitor_process
 
 
 def end_of_transfer(
@@ -423,7 +441,7 @@ def get_files(settings: JitSettings, verbose=True):
     monitored_files = []
     files = ""
     try:
-        command_ls = gekko_flagged_call(settings, f" find {settings.gkfs_mntdir}")
+        command_ls = flaged_mpiexec_call(settings, f" find {settings.gkfs_mntdir}")
         files = subprocess.check_output(command_ls, shell=True).decode()
         if files:
             files = files.splitlines()

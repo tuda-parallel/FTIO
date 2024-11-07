@@ -278,7 +278,7 @@ class JitSettings:
         # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
         ##  ├─ DLIO --> 
         self.app_call = "dlio_benchmark"
-        self.app_dir = "/d/github/dlio_benchmark"
+        self.app_dir = "/d/github/dlio_benchmark" #TODO: Set to mogon
         self.app_flags = "workload=unet3d_my_a100"
         ##  ├─ NEK5000 --> change gkfs_daemon_protocol to socket
         # self.app_call = "./nek5000"
@@ -383,18 +383,19 @@ class JitSettings:
             self.cargo = f"{self.install_location}/cargo/build/src/cargo"
             self.cargo_bin = f"{self.install_location}/cargo/build/cli"
 
-            
+            self.regex_file = "/tmp/jit/nek_regex4cargo.txt"
+            self.env_var={"CARGO_REGEX":self.regex_file}
+
             if "dlio" in self.app_call: 
                 self.stage_in_path = "/d/github/dlio_benchmark/data"
                 # generate data with
-                # mpirun -np 8 dlio_benchmark workload=unet3d_my_a100 ++workload.workflow.generate_data=True ++workload.workflow.train=False
                 if self.exclude_all:
                     self.app_dir = "/d/github/dlio_benchmark"
-                    self.pre_app_call  = ""
+                    self.pre_app_call  = "mpirun -np 8 dlio_benchmark workload=unet3d_my_a100 ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                     self.post_app_call = ""
                 else:
                     self.app_dir = f"{self.gkfs_mntdir}"
-                    self.pre_app_call  = ""
+                    self.pre_app_call  = [f"cd {self.gkfs_mntdir}", "mpirun -np 8 dlio_benchmark workload=unet3d_my_a100 ++workload.workflow.generate_data=True ++workload.workflow.train=False"]
                     self.post_app_call = ""
                 # ├─ Nek5000
             elif "nek" in self.app_call:
