@@ -411,8 +411,9 @@ def start_application(settings: JitSettings, runtime: JitTime):
     # set up dir
     original_dir = os.getcwd()
     jit_print(f">> Current directory {original_dir}")
-    os.chdir(settings.app_dir)
-    jit_print(f">> Changing directory to  {os.getcwd()}")
+    if settings.app_dir:
+        os.chdir(settings.app_dir)
+        jit_print(f">> Changing directory to  {os.getcwd()}")
     if not settings.dry_run:
         check_setup(settings)
 
@@ -541,12 +542,12 @@ def pre_call(settings: JitSettings) -> None:
             call = settings.pre_app_call
             if any(x in call for x in ['mpiex','mpirun']):
                 call = flaged_mpiexec_call(settings,call) 
-            execute_block_and_monitor(settings.verbose, call, settings.app_log)
+            execute_block_and_monitor(settings.verbose, call, settings.app_log, settings.app_err,settings.dry_run)
         elif isinstance(settings.pre_app_call, list):
             for call in settings.pre_app_call:
                 if any(x in call for x in ['mpiex','mpirun']):
                     call = flaged_mpiexec_call(settings,call) 
-                execute_block_and_monitor(settings.verbose, call, settings.app_log)
+                execute_block_and_monitor(settings.verbose, call, settings.app_log, settings.app_err,settings.dry_run)
         # _ = execute_block_and_log(
         #     settings.pre_app_call, settings.app_log
         # )
@@ -562,9 +563,9 @@ def post_call(settings: JitSettings) -> None:
         additional_arguments = ""  # load_flags(settings)
         if isinstance(settings.post_app_call, str):
             call = f"{additional_arguments} {settings.post_app_call}"
-            execute_block_and_monitor(settings.verbose, call, settings.app_log)
+            execute_block_and_monitor(settings.verbose, call, settings.app_log, settings.app_err,settings.dry_run)
         elif isinstance(settings.post_app_call, list):
             call = ""
             for s in settings.post_app_call:
                 call = f"{additional_arguments} {s}"
-                execute_block_and_monitor(settings.verbose, call, settings.app_log)
+                execute_block_and_monitor(settings.verbose, call, settings.app_log, settings.app_err,settings.dry_run)

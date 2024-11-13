@@ -1233,7 +1233,7 @@ def flaged_mpiexec_call(settings: JitSettings, call: str, procs: int = 1) -> str
     else:
         call = (
             f"mpiexec -np {procs} --oversubscribe "
-            f"-x LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
+            # f"-x LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
             f"{additional_arguments} {call}"
         )
 

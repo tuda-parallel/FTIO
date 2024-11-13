@@ -64,3 +64,4 @@ def prediction_process(
         data.append(queue.get())
 
     _ = find_probability(data)
+    

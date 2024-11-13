@@ -11,20 +11,22 @@ class JitSettings:
         """sets the internal variables, don't modify this part (except flags if needed).
         only Adjust the paths in the function set_variables
         """
-        
+
         # flags
         ##############
-        self.set_tasks_affinity = True #required for ls and cp
-        self.gkfs_daemon_protocol = "ofi+verbs"#"ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
-        self.cargo_mode = "parallel" #"parallel" or "posix"
+        self.set_tasks_affinity = True  # required for ls and cp
+        self.gkfs_daemon_protocol = (
+            "ofi+verbs"  # "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
+        )
+        self.cargo_mode = "parallel"  # "parallel" or "posix"
         self.debug = True
         self.verbose = True
-        self.node_local = False # execute in node local space        
-        self.env_var =  {}
+        self.node_local = False  # execute in node local space
+        self.env_var = {}
 
         # Variable initialization (don't change)
         ################
-        self.dry_run = False 
+        self.dry_run = False
         self.log_suffix = "DPCF"
         self.app_dir = ""
         self.cluster = False
@@ -130,14 +132,14 @@ class JitSettings:
         if self.cluster:
             self.procs_proxy = int(np.floor(self.procs / 2))
             self.procs_daemon = int(np.floor(self.procs / 2))
-            self.procs_cargo = 1#2 solved with new version
+            self.procs_cargo = 1  # 2 solved with new version
             self.procs_ftio = self.procs
             self.procs_app = int(np.floor(self.procs / 2))
         else:
             self.procs = 10
             self.procs_daemon = 1
             self.procs_proxy = 1
-            self.procs_cargo = 1#2
+            self.procs_cargo = 1  # 2
             self.procs_ftio = 1
             self.procs_app = self.procs
 
@@ -163,14 +165,12 @@ class JitSettings:
             and self.exclude_proxy
         ):
             self.exclude_all = True
-            
 
         if self.exclude_all:
             self.exclude_ftio = True
             self.exclude_cargo = True
             self.exclude_daemon = True
             self.exclude_proxy = True
-            
 
         if not self.cluster:
             if self.nodes > 1:
@@ -182,16 +182,16 @@ class JitSettings:
         self.log_suffix = "DPCF"
         if self.exclude_daemon:
             self.procs_daemon = 0
-            self.log_suffix =  self.log_suffix.replace("D","")
+            self.log_suffix = self.log_suffix.replace("D", "")
         if self.exclude_proxy:
             self.procs_proxy = 0
-            self.log_suffix =  self.log_suffix.replace("P","")
+            self.log_suffix = self.log_suffix.replace("P", "")
         if self.exclude_cargo:
             self.procs_cargo = 0
-            self.log_suffix =  self.log_suffix.replace("C","")
+            self.log_suffix = self.log_suffix.replace("C", "")
         if self.exclude_ftio:
             self.procs_ftio = 0
-            self.log_suffix =  self.log_suffix.replace("F","")
+            self.log_suffix = self.log_suffix.replace("F", "")
 
         if self.set_tasks_affinity:
             self.task_set_0 = f"taskset -c 0-{np.floor(self.procs/2)-1:.0f}"
@@ -247,28 +247,29 @@ class JitSettings:
         self.job_name = "JIT"
         self.alloc_call_flags = f"--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0401"
 
-        
-
         # ? Tools
         # ?##########################
         # ****** ftio variables ******
         self.ftio_bin_location = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin"
 
         # ****** gkfs variables ******
-        self.gkfs_deps      = "/lustre/project/nhr-admire/tarraf/deps"#_gcc12_2" 
-        self.gkfs_daemon    = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
-        self.gkfs_intercept = f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
-        self.gkfs_mntdir    = "/dev/shm/tarraf_gkfs_mountdir"
-        self.gkfs_rootdir   = "/dev/shm/tarraf_gkfs_rootdir"
-        self.gkfs_hostfile  = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
-        self.gkfs_proxy     = "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
+        self.gkfs_deps = "/lustre/project/nhr-admire/tarraf/deps"  # _gcc12_2"
+        self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
+        self.gkfs_intercept = (
+            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
+        )
+        self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
+        self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
+        self.gkfs_hostfile = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
+        self.gkfs_proxy = (
+            "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
+        )
         self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
 
         # ****** cargo variables ******
-        self.cargo_bin    = f"{self.gkfs_deps}/gekkofs_zmq_install/bin"#"/lustre/project/nhr-admire/tarraf/cargo/build/cli"
-        self.cargo        = f"{self.cargo_bin}/cargo"#"/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
+        self.cargo_bin = f"{self.gkfs_deps}/gekkofs_zmq_install/bin"  # "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
+        self.cargo = f"{self.cargo_bin}/cargo"  # "/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
         self.cargo_server = f"{self.gkfs_daemon_protocol}://127.0.0.1:62000"
-
 
         # ? APP settings
         # ?##########################
@@ -276,19 +277,18 @@ class JitSettings:
         ##  ├─ IOR
         # self.app="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
         # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
-        ##  ├─ DLIO --> 
+        ##  ├─ DLIO -->
         self.app_call = "dlio_benchmark"
-        self.app_dir = "/d/github/dlio_benchmark" #TODO: Set to mogon
+        self.app_dir = "/d/github/dlio_benchmark"  # TODO: Set to mogon
         self.app_flags = "workload=unet3d_my_a100"
         ##  ├─ NEK5000 --> change gkfs_daemon_protocol to socket
         # self.app_call = "./nek5000"
         # self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
         # self.app_flags = ""
-        ##  └─ Wacom++ --> change wacom.json if needed 
+        ##  └─ Wacom++ --> change wacom.json if needed
         # self.app_call = "./wacommplusplus"
         # self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"#_gcc12_2"
         # self.app_flags = ""
-        
 
         # ****** pre and post app call ******
         # Application specific calls executed before the actual run. Executed as
@@ -298,18 +298,19 @@ class JitSettings:
         # ├─ dlio
         if "dlio" in self.app_call:
             if self.exclude_all:
-                self.pre_app_call  = "mpirun -np 8 dlio_benchmark workload=unet3d_my_a100 ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                 self.post_app_call = ""
             else:
-                self.pre_app_call  = f"cd {self.gkfs_mntdir} && mpirun -np 8 dlio_benchmark workload=unet3d_my_a100 ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                self.app_flags = "workload=unet3d_my_a100_gekko"
+                self.pre_app_call = f"cd {self.gkfs_mntdir} && mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                 self.post_app_call = ""
         # ├─ Nek5000
         elif "nek" in self.app_call:
             if self.exclude_all:
-                self.pre_app_call  = f"echo -e 'turbPipe\\n{self.app_dir}/input' > {self.app_dir}/SESSION.NAME"
+                self.pre_app_call = f"echo -e 'turbPipe\\n{self.app_dir}/input' > {self.app_dir}/SESSION.NAME"
                 self.post_app_call = f"rm {self.app_dir}/input/*.f* || echo true"
             else:
-                self.pre_app_call  = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > {self.app_dir}/SESSION.NAME"
+                self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > {self.app_dir}/SESSION.NAME"
                 self.post_app_call = ""
         # ├─ Wacom++
         elif "wacom" in self.app_call:
@@ -322,10 +323,10 @@ class JitSettings:
                 self.post_app_call = ""
             else:
                 # modify wacomm.gkfs.json to include gkfs_mntdir
-                self.pre_app_call = (
-                    f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.gkfs.json {self.app_dir}/wacomm.json; "
-                                    )
-                self.post_app_call = f"ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json"
+                self.pre_app_call = f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.gkfs.json {self.app_dir}/wacomm.json; "
+                self.post_app_call = (
+                    f"ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json"
+                )
         # └─ Other
         else:
             self.pre_app_call = ""
@@ -354,13 +355,13 @@ class JitSettings:
             self.regex_match = "^/[a-zA-Z0-9]*turbPipe0\\.f\\d+"
         # ├─ Wacom++
         elif "wacom" in self.app_call:
-            # self.regex_match = "^(\\/(output|results|restart|input|processed)\\/)\\.+$"  # 
+            # self.regex_match = "^(\\/(output|results|restart|input|processed)\\/)\\.+$"  #
             self.regex_match = "\\/processed\\/^ocm3_d03_\\d+Z\d+\\.nc$"
         # └─ Other
         else:
             self.regex_match = ""
 
-        self.env_var={"CARGO_REGEX":self.regex_file}
+        self.env_var = {"CARGO_REGEX": self.regex_file}
 
         # ? local machine settings
         # ?###############################
@@ -372,6 +373,7 @@ class JitSettings:
             self.gkfs_daemon = f"{self.install_location}/iodeps/bin/gkfs_daemon"
             self.gkfs_intercept = (
                 f"{self.install_location}/iodeps/lib/libgkfs_intercept.so"
+                # f"{self.install_location}/iodeps/lib/libgkfs_libc_intercept.so"
             )
             self.gkfs_mntdir = "/tmp/jit/tarraf_gkfs_mountdir"
             self.gkfs_rootdir = "/tmp/jit/tarraf_gkfs_rootdir"
@@ -384,18 +386,23 @@ class JitSettings:
             self.cargo_bin = f"{self.install_location}/cargo/build/cli"
 
             self.regex_file = "/tmp/jit/nek_regex4cargo.txt"
-            self.env_var={"CARGO_REGEX":self.regex_file}
+            self.env_var = {"CARGO_REGEX": self.regex_file}
 
-            if "dlio" in self.app_call: 
+            if "dlio" in self.app_call:
                 self.stage_in_path = "/d/github/dlio_benchmark/data"
                 # generate data with
                 if self.exclude_all:
-                    self.app_dir = "/d/github/dlio_benchmark"
-                    self.pre_app_call  = "mpirun -np 8 dlio_benchmark workload=unet3d_my_a100 ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                    self.app_dir = "" #don't change dir
+                    self.app_flags = "workload=unet3d_my_a100"
+                    self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                     self.post_app_call = ""
                 else:
                     self.app_dir = f"{self.gkfs_mntdir}"
-                    self.pre_app_call  = [f"cd {self.gkfs_mntdir}", "mpirun -np 8 dlio_benchmark workload=unet3d_my_a100 ++workload.workflow.generate_data=True ++workload.workflow.train=False"]
+                    self.app_flags = "workload=unet3d_my_a100_gekko"
+                    self.pre_app_call = [
+                        # f"cd {self.gkfs_mntdir}",
+                        f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False",
+                    ]
                     self.post_app_call = ""
                 # ├─ Nek5000
             elif "nek" in self.app_call:

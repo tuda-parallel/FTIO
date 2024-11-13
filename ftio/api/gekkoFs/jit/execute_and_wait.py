@@ -24,6 +24,7 @@ def execute_block(call: str, raise_exception: bool = True, dry_run=False) -> str
     if dry_run:
         print(call)
         return ""
+
     out = ""
     try:
         # process = subprocess.Popen(call, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -94,7 +95,7 @@ def execute_block_and_log(call: str, log_file: str) -> float:
     return end - start
 
 def execute_block_and_monitor (verbose:bool, call: str, log_file: str = "", log_err_file: str = "", dry_run=False):
-    if not log_err_file:
+    if len(log_err_file) == 0:
         log_err_file = log_file
 
     process = execute_background(call, log_file, log_err_file, dry_run)
@@ -130,6 +131,7 @@ def execute_background(
     if dry_run:
         print(call)
         call = ""
+        return subprocess.Popen(call, shell=True,executable='/bin/bash')
 
     # if log_file and log_err_file:
     #     call = f"{call} >> {log_file} 2>> {log_err_file}"
@@ -173,7 +175,7 @@ def execute_background_and_log(
     """
     process = execute_background(call, log_file, err_file, settings.dry_run)
     get_pid(settings, name, process.pid)
-    # daemon is noisy
+    
     _  = monitor_log_file(log_file, name)
     return process
 
