@@ -245,7 +245,8 @@ class JitSettings:
         # ****** job allocation call ******
         # self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
         self.job_name = "JIT"
-        self.alloc_call_flags = f"--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0401"
+        # self.alloc_call_flags = f"--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0401"
+        self.alloc_call_flags = f"--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0401"
 
         # ? Tools
         # ?##########################
@@ -279,7 +280,7 @@ class JitSettings:
         # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
         ##  ├─ DLIO -->
         self.app_call = "dlio_benchmark"
-        self.app_dir = "/d/github/dlio_benchmark"  # TODO: Set to mogon
+        self.app_dir = "/lustre/project/nhr-admire/tarraf/dlio_benchmark"
         self.app_flags = "workload=unet3d_my_a100"
         ##  ├─ NEK5000 --> change gkfs_daemon_protocol to socket
         # self.app_call = "./nek5000"
