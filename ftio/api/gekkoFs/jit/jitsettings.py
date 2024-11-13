@@ -16,7 +16,7 @@ class JitSettings:
         ##############
         self.set_tasks_affinity = True  # required for ls and cp
         self.gkfs_daemon_protocol = (
-            "ofi+verbs"  # "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
+            "ofi+sockets"  # "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
         )
         self.cargo_mode = "parallel"  # "parallel" or "posix"
         self.debug = True
@@ -132,14 +132,14 @@ class JitSettings:
         if self.cluster:
             self.procs_proxy = int(np.floor(self.procs / 2))
             self.procs_daemon = int(np.floor(self.procs / 2))
-            self.procs_cargo = 1  # 2 solved with new version
+            self.procs_cargo = 2 
             self.procs_ftio = self.procs
             self.procs_app = int(np.floor(self.procs / 2))
         else:
             self.procs = 10
             self.procs_daemon = 1
             self.procs_proxy = 1
-            self.procs_cargo = 1  # 2
+            self.procs_cargo = 2 
             self.procs_ftio = 1
             self.procs_app = self.procs
 
@@ -279,13 +279,13 @@ class JitSettings:
         # self.app="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
         # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
         ##  ├─ DLIO -->
-        self.app_call = "dlio_benchmark"
-        self.app_dir = "/lustre/project/nhr-admire/tarraf/dlio_benchmark"
-        self.app_flags = "workload=unet3d_my_a100"
+        # self.app_call = "dlio_benchmark"
+        # self.app_dir = "/lustre/project/nhr-admire/tarraf/dlio_benchmark"
+        # self.app_flags = "workload=unet3d_my_a100"
         ##  ├─ NEK5000 --> change gkfs_daemon_protocol to socket
-        # self.app_call = "./nek5000"
-        # self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
-        # self.app_flags = ""
+        self.app_call = "./nek5000"
+        self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
+        self.app_flags = ""
         ##  └─ Wacom++ --> change wacom.json if needed
         # self.app_call = "./wacommplusplus"
         # self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"#_gcc12_2"
@@ -357,7 +357,7 @@ class JitSettings:
         # ├─ Wacom++
         elif "wacom" in self.app_call:
             # self.regex_match = "^(\\/(output|results|restart|input|processed)\\/)\\.+$"  #
-            self.regex_match = "\\/processed\\/^ocm3_d03_\\d+Z\d+\\.nc$"
+            self.regex_match = "\\/processed\\/^ocm3_d03_\\d+Z\\d+\\.nc$"
         # └─ Other
         else:
             self.regex_match = ""
