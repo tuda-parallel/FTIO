@@ -1209,7 +1209,7 @@ def elapsed_time(settings: JitSettings, runtime: JitTime, name, elapsed):
 
 
 def check(settings: JitSettings):
-    if settings.dry_run:
+    if settings.dry_run or settings.exclude_daemon:
         return
 
     call = flaged_mpiexec_call(settings, f"ls -lahrt {settings.gkfs_mntdir}")
