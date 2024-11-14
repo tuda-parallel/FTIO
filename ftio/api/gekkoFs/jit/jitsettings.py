@@ -368,8 +368,6 @@ class JitSettings:
         # ?###############################
         if not self.cluster:
             self.install_location = "/d/github/JIT"
-            self.regex_file = f"{self.install_location}/nek_regex4cargo.txt"
-
             self.ftio_bin_location = "/d/github/FTIO/.venv/bin"
             self.gkfs_daemon = f"{self.install_location}/iodeps/bin/gkfs_daemon"
             self.gkfs_intercept = (

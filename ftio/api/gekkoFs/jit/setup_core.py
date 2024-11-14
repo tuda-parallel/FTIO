@@ -11,6 +11,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     check_port,
     elapsed_time,
     flaged_mpiexec_call,
+    get_env,
     handle_sigint,
     jit_print,
     mpiexec_call,
@@ -173,6 +174,7 @@ def start_cargo(settings: JitSettings) -> None:
                 call = (
                     f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LIBGKFS_LOG_OUTPUT={settings.gekko_client_log}_cargo,LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
                     f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
+                    f"{get_env(settings)}"
                     f"--jobid={settings.job_id} "
                     f"{settings.app_nodes_command} --disable-status "
                     f"-N {settings.app_nodes} --ntasks={settings.app_nodes*settings.procs_cargo} "

@@ -668,3 +668,4 @@ def read_last_n_lines(filename, n=3):
                 buffer = b""
 
         return lines[-n:]
+

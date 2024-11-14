@@ -1253,6 +1253,7 @@ def load_flags_mpiexec(settings: JitSettings, ftio_metrics: bool = False) -> str
             f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
             f"-x LD_PRELOAD={settings.gkfs_intercept} "
         )
+    additional_arguments += get_env(settings,"mpi")
     return additional_arguments
 
 
@@ -1343,6 +1344,17 @@ def set_env(settings: JitSettings):
             jit_print(
                 f"[red bold]>> {key} not set, do this manually:\nexport {key}={settings.env_var[key]}[/]"
             )
+
+
+def get_env(settings: JitSettings,mode="mpi") -> str:
+    env = ""
+    if "mpi" in mode:
+        env = " ".join(f"-x {key}={value}" for key, value in settings.env_var.items())
+    else: #srun
+        env = ",".join(f"{key}={value}" for key, value in settings.env_var.items())
+    return env
+
+
 
 
 def save_bandwidth(settings: JitSettings):
