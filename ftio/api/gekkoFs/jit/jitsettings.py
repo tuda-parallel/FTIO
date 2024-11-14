@@ -257,7 +257,8 @@ class JitSettings:
         self.gkfs_deps = "/lustre/project/nhr-admire/tarraf/deps"  # _gcc12_2"
         self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
         self.gkfs_intercept = (
-            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
+            # f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
+            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so"
         )
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
