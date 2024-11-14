@@ -1352,6 +1352,7 @@ def get_env(settings: JitSettings,mode="srun") -> str:
         env = " ".join(f"-x {key}={value}" for key, value in settings.env_var.items())
     elif "srun": #srun
         env = ",".join(f"{key}={value}" for key, value in settings.env_var.items())
+        env = "," + env
     else:
         pass
     return env
