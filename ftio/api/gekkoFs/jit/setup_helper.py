@@ -1346,12 +1346,14 @@ def set_env(settings: JitSettings):
             )
 
 
-def get_env(settings: JitSettings,mode="mpi") -> str:
+def get_env(settings: JitSettings,mode="srun") -> str:
     env = ""
     if "mpi" in mode:
         env = " ".join(f"-x {key}={value}" for key, value in settings.env_var.items())
-    else: #srun
+    elif "srun": #srun
         env = ",".join(f"{key}={value}" for key, value in settings.env_var.items())
+    else:
+        pass
     return env
 
 
