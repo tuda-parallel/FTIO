@@ -279,13 +279,13 @@ class JitSettings:
         # self.app="/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
         # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
         ##  ├─ DLIO -->
-        # self.app_call = "dlio_benchmark"
-        # self.app_dir = "/lustre/project/nhr-admire/tarraf/dlio_benchmark"
-        # self.app_flags = "workload=unet3d_my_a100"
+        self.app_call = "dlio_benchmark"
+        self.app_dir = "/lustre/project/nhr-admire/tarraf/dlio_benchmark"
+        self.app_flags = "workload=unet3d_my_a100"
         ##  ├─ NEK5000 --> change gkfs_daemon_protocol to socket
-        self.app_call = "./nek5000"
-        self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
-        self.app_flags = ""
+        # self.app_call = "./nek5000"
+        # self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
+        # self.app_flags = ""
         ##  └─ Wacom++ --> change wacom.json if needed
         # self.app_call = "./wacommplusplus"
         # self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"#_gcc12_2"
@@ -371,8 +371,8 @@ class JitSettings:
             self.ftio_bin_location = "/d/github/FTIO/.venv/bin"
             self.gkfs_daemon = f"{self.install_location}/iodeps/bin/gkfs_daemon"
             self.gkfs_intercept = (
-                f"{self.install_location}/iodeps/lib/libgkfs_intercept.so"
-                # f"{self.install_location}/iodeps/lib/libgkfs_libc_intercept.so"
+                # f"{self.install_location}/iodeps/lib/libgkfs_intercept.so"
+                f"{self.install_location}/iodeps/lib/libgkfs_libc_intercept.so"
             )
             self.gkfs_mntdir = "/tmp/jit/tarraf_gkfs_mountdir"
             self.gkfs_rootdir = "/tmp/jit/tarraf_gkfs_rootdir"
@@ -400,7 +400,7 @@ class JitSettings:
                     self.app_flags = "workload=unet3d_my_a100_gekko"
                     self.pre_app_call = [
                         # f"cd {self.gkfs_mntdir}",
-                        f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False",
+                        f"mpirun -np 1 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False",
                     ]
                     self.post_app_call = ""
                 # ├─ Nek5000
