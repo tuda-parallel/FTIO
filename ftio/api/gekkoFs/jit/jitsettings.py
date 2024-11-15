@@ -132,14 +132,14 @@ class JitSettings:
         if self.cluster:
             self.procs_proxy = int(np.floor(self.procs / 2))
             self.procs_daemon = int(np.floor(self.procs / 2))
-            self.procs_cargo = 2 
+            self.procs_cargo = 2
             self.procs_ftio = self.procs
             self.procs_app = int(np.floor(self.procs / 2))
         else:
             self.procs = 10
             self.procs_daemon = 1
             self.procs_proxy = 1
-            self.procs_cargo = 2 
+            self.procs_cargo = 2
             self.procs_ftio = 1
             self.procs_app = self.procs
 
@@ -257,8 +257,8 @@ class JitSettings:
         self.gkfs_deps = "/lustre/project/nhr-admire/tarraf/deps"  # _gcc12_2"
         self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
         self.gkfs_intercept = (
-            # f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
-            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so"
+            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
+            # f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so"
         )
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
@@ -304,7 +304,7 @@ class JitSettings:
                 self.post_app_call = ""
             else:
                 self.app_flags = "workload=unet3d_my_a100_gekko"
-                self.pre_app_call = f"cd {self.gkfs_mntdir} && mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                self.pre_app_call = f"mpirun -np 10 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                 self.post_app_call = ""
         # ├─ Nek5000
         elif "nek" in self.app_call:
@@ -392,7 +392,7 @@ class JitSettings:
                 self.stage_in_path = "/d/github/dlio_benchmark/data"
                 # generate data with
                 if self.exclude_all:
-                    self.app_dir = "" #don't change dir
+                    self.app_dir = ""  # don't change dir
                     self.app_flags = "workload=unet3d_my_a100"
                     self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                     self.post_app_call = ""

@@ -417,6 +417,8 @@ def start_application(settings: JitSettings, runtime: JitTime):
         jit_print(f">> Changing directory to  {os.getcwd()}")
     if not settings.dry_run:
         check_setup(settings)
+        # pass
+
 
     # s_call=""
     if settings.cluster:
