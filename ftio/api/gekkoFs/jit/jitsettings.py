@@ -348,7 +348,7 @@ class JitSettings:
             self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
         # └─ Other
         else:
-            self.stage_in_path = f"{self.app_dir}/stage-in"
+            self.stage_in_path =  "/lustre/project/nhr-admire/tarraf/stage-in"
             self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
 
         # ? Regex if needed
