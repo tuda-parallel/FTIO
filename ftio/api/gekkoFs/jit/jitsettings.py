@@ -401,7 +401,8 @@ class JitSettings:
                     self.app_flags = "workload=unet3d_my_a100_gekko"
                     self.pre_app_call = [
                         # f"cd {self.gkfs_mntdir}",
-                        f"mpirun -np 1 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False",
+                        f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False",
+                        # with one proc it works
                     ]
                     self.post_app_call = ""
                 # ├─ Nek5000
