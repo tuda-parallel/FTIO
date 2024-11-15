@@ -283,7 +283,7 @@ class JitSettings:
         # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
         ##  ├─ DLIO -->
         self.app_call = "dlio_benchmark"
-        self.app_dir = "/lustre/project/nhr-admire/tarraf/dlio_benchmark"
+        self.app_dir = ""
         self.app_flags = "workload=unet3d_my_a100"
         ##  ├─ NEK5000 --> change gkfs_daemon_protocol to socket
         # self.app_call = "./nek5000"
