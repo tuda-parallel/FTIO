@@ -9,7 +9,12 @@ from rich.panel import Panel
 from rich.status import Status
 from rich.markup import escape
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
-from ftio.api.gekkoFs.jit.setup_helper import check, flaged_mpiexec_call, jit_print, get_pid
+from ftio.api.gekkoFs.jit.setup_helper import (
+    check,
+    flaged_mpiexec_call,
+    jit_print,
+    get_pid,
+)
 
 console = Console()
 
@@ -94,15 +99,18 @@ def execute_block_and_log(call: str, log_file: str) -> float:
             file.write(log_message)
     return end - start
 
-def execute_block_and_monitor (verbose:bool, call: str, log_file: str = "", log_err_file: str = "", dry_run=False):
+
+def execute_block_and_monitor(
+    verbose: bool, call: str, log_file: str = "", log_err_file: str = "", dry_run=False
+):
     if len(log_err_file) == 0:
         log_err_file = log_file
 
     process = execute_background(call, log_file, log_err_file, dry_run)
     if verbose:
-        out  = monitor_log_file(log_file,"")
+        out = monitor_log_file(log_file, "")
         if log_err_file != log_file:
-            err  = monitor_log_file(log_err_file,"")
+            err = monitor_log_file(log_err_file, "")
 
     _ = process.communicate()
     if verbose:
@@ -131,7 +139,7 @@ def execute_background(
     if dry_run:
         print(call)
         call = ""
-        return subprocess.Popen(call, shell=True,executable='/bin/bash')
+        return subprocess.Popen(call, shell=True, executable="/bin/bash")
 
     # if log_file and log_err_file:
     #     call = f"{call} >> {log_file} 2>> {log_err_file}"
@@ -145,14 +153,25 @@ def execute_background(
         with open(log_file, "a") as log_out:
             with open(log_err_file, "w") as log_err:
                 process = subprocess.Popen(
-                    call, shell=True,executable='/bin/bash', stdout=log_out, stderr=log_err
+                    call,
+                    shell=True,
+                    executable="/bin/bash",
+                    stdout=log_out,
+                    stderr=log_err,
                 )
     elif log_file:
         with open(log_file, "a") as log_out:
-            process = subprocess.Popen(call, shell=True,executable='/bin/bash', stdout=log_out, stderr=log_out)
+            process = subprocess.Popen(
+                call, shell=True, executable="/bin/bash", stdout=log_out, stderr=log_out
+            )
     else:
         process = subprocess.Popen(
-            call, shell=True,executable='/bin/bash', stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            call,
+            shell=True,
+            executable="/bin/bash",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
         )
     return process
 
@@ -175,8 +194,8 @@ def execute_background_and_log(
     """
     process = execute_background(call, log_file, err_file, settings.dry_run)
     get_pid(settings, name, process.pid)
-    
-    _  = monitor_log_file(log_file, name)
+
+    _ = monitor_log_file(log_file, name)
     return process
 
 
@@ -248,7 +267,8 @@ def execute_background_and_wait_line(
             # console.print(stdout, style="bold green")
             pass
 
-def monitor_log_file(file: str, src: str = "")  -> multiprocessing.Process:
+
+def monitor_log_file(file: str, src: str = "") -> multiprocessing.Process:
     """monitors a file and displays its output on the console. A process is
     in charge of monitoring the file.
 
@@ -333,13 +353,15 @@ def end_of_transfer(
                                     if name in content:
                                         monitored_files.remove(name)
                                         jit_print(
-                                            f"[cyan]>> finished moving '{name}'. Remaining files ({len(monitored_files)})",True
+                                            f"[cyan]>> finished moving '{name}'. Remaining files ({len(monitored_files)})",
+                                            True,
                                         )
                                         console.print(
                                             f"Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}"
                                         )
                                         jit_print(
-                                            f"[cyan]>> Files in mount dir {monitored_files}",True
+                                            f"[cyan]>> Files in mount dir {monitored_files}",
+                                            True,
                                         )
                                         status.update(
                                             f"Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}"
@@ -373,13 +395,13 @@ def end_of_transfer(
 
 
 def end_of_transfer_online(
-    settings: JitSettings, log_file: str, call: str, timeout = 180
+    settings: JitSettings, log_file: str, call: str, timeout=180
 ) -> None:
     if settings.dry_run:
         return
-    
+
     repeated_trigger = True
-    copy = False #Trigger cargo again
+    copy = False  # Trigger cargo again
     monitored_files = get_files(settings, True)
     stuck_time = 5
     last_lines = read_last_n_lines(log_file)
@@ -401,8 +423,10 @@ def end_of_transfer_online(
             while len(monitored_files) > 0:
                 time.sleep(0.1)  # Short sleep interval to quickly catch new lines
                 # jit_print(f"[cyan]>> Files in mount dir {monitored_files}",True)
-                status.update(f"Waiting for {len(monitored_files)} files: {monitored_files}")
-                
+                status.update(
+                    f"Waiting for {len(monitored_files)} files: {monitored_files}"
+                )
+
                 passed_time = int(time.time() - start_time)
                 time_since_last_cargo = int(time.time() - last_cargo_time)
 
@@ -413,15 +437,21 @@ def end_of_transfer_online(
                 if repeated_trigger:
                     hit += 1
                     # jit_print(f"{time_since_last_cargo} >= {stuck_time} and {stuck_files} == {len(monitored_files)}")
-                    if time_since_last_cargo >= stuck_time and stuck_files == len(monitored_files):
-                        jit_print(f"[cyan]>> Stucked for {stuck_time} sec. Triggering cargo again\n")
+                    if time_since_last_cargo >= stuck_time and stuck_files == len(
+                        monitored_files
+                    ):
+                        jit_print(
+                            f"[cyan]>> Stucked for {stuck_time} sec. Triggering cargo again\n"
+                        )
                         _ = execute_background(
                             call, settings.cargo_log, settings.cargo_err
-                            )   
+                        )
                         last_cargo_time = time.time()
-                        stuck_time = stuck_time*2
+                        stuck_time = stuck_time * 2
                         jit_print(f"[cyan]>> Stucked increased to {stuck_time}\n")
-                        jit_print(f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}")
+                        jit_print(
+                            f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}"
+                        )
                         hit = 0
                         if "Transfer finished for []" in last_lines:
                             break
@@ -429,14 +459,12 @@ def end_of_transfer_online(
                         stuck_files = len(monitored_files)
                         hit = 0
                 monitored_files = get_files(settings, False)
-            
+
             timestamp = get_time()
             status.update(
                 f"\n[bold green]JIT [cyan]>> finished moving all files at  [{timestamp}]"
             )
-            jit_print(
-                f"\n[cyan]>> finished moving all files at [{timestamp}]", True
-            )
+            jit_print(f"\n[cyan]>> finished moving all files at [{timestamp}]", True)
 
 
 def get_files(settings: JitSettings, verbose=True):
@@ -454,8 +482,7 @@ def get_files(settings: JitSettings, verbose=True):
                 if file.replace(f"{settings.gkfs_mntdir}", "")
             ]
             # remove directories
-            files = [item for item in files if '.' in item]
-
+            files = [item for item in files if "." in item]
 
         monitored_files = files_filtered(files, settings.regex_match, verbose)
         if verbose:
@@ -516,12 +543,14 @@ def print_file(file, src=""):
 
         if color:
             close = "[/]"
-    
+
     while not os.path.exists(file):
         if "error" in src.lower():
             time.sleep(0.1)
         else:
-            with console.status(f"[bold green]Waiting for {file} to appear ...") as status:
+            with console.status(
+                f"[bold green]Waiting for {file} to appear ..."
+            ) as status:
                 time.sleep(0.1)
 
     with open(file, "r") as file:
@@ -591,7 +620,7 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
 
 
 def wait_for_line(
-    filename: str, target_line: str, msg: str = "", timeout: int = 180, dry_run=False
+    filename: str, target_line: str, msg: str = "", timeout: int = 60, dry_run=False
 ) -> bool:
     """
     Waits for a specific line to appear in a log file
@@ -610,7 +639,9 @@ def wait_for_line(
         msg = "Waiting for line to appear..."
 
     while not os.path.exists(filename):
-        with console.status(f"[bold green]Waiting for {filename} to appear ...") as status:
+        with console.status(
+            f"[bold green]Waiting for {filename} to appear ..."
+        ) as status:
             time.sleep(0.1)
 
     with open(filename, "r") as file:
@@ -668,4 +699,3 @@ def read_last_n_lines(filename, n=3):
                 buffer = b""
 
         return lines[-n:]
-

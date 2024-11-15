@@ -745,7 +745,7 @@ def allocate(settings: JitSettings) -> None:
                 nodes_arr = []
 
             # Write to hostfile_mpi
-            with open(f"{settings.app_dir}/hostfile_mpi", "w") as file:
+            with open(f"{settings.dir}/hostfile_mpi", "w") as file:
                 file.write("\n".join(nodes_arr) + "\n")
 
             if nodes_arr:
@@ -763,9 +763,9 @@ def allocate(settings: JitSettings) -> None:
                     # print(f"{','.join(n for n in nodes_arr if n != settings.ftio_node)}\n")
 
                     # Remove FTIO node from hostfile_mpi
-                    with open(f"{settings.app_dir}/hostfile_mpi", "r") as file:
+                    with open(f"{settings.dir}/hostfile_mpi", "r") as file:
                         lines = file.readlines()
-                    with open(f"{settings.app_dir}/hostfile_mpi", "w") as file:
+                    with open(f"{settings.dir}/hostfile_mpi", "w") as file:
                         file.writelines(
                             line for line in lines if line.strip() != settings.ftio_node
                         )
@@ -781,10 +781,10 @@ def allocate(settings: JitSettings) -> None:
                 )
 
                 # Print contents of hostfile_mpi
-                with open(f"{settings.app_dir}/hostfile_mpi", "r") as file:
+                with open(f"{settings.dir}/hostfile_mpi", "r") as file:
                     hostfile_content = file.read()
                 jit_print(
-                    f"[cyan]>> content of {settings.app_dir}/hostfile_mpi: \n{hostfile_content} [/]"
+                    f"[cyan]>> content of {settings.dir}/hostfile_mpi: \n{hostfile_content} [/]"
                 )
             settings.update_geko_files()
         else:
@@ -935,6 +935,7 @@ def log_dir(settings: JitSettings):
 
     counter = 0
     while os.path.exists(settings.log_dir):
+        counter += 1
         settings.log_dir = f"{settings.log_dir}_{counter}"
 
     # Resolve and return the absolute path of LOG_DIR
@@ -1090,7 +1091,7 @@ def print_settings(settings) -> None:
 ##################[/]
 [bold green]setup[/]
 ├─ logs dir       : {settings.log_dir}
-├─ pwd            : {os.getcwd()}
+├─ pwd            : {settings.dir}
 ├─ ftio           : {ftio_status}
 ├─ gkfs daemon    : {gkfs_daemon_status}
 ├─ gkfs proxy     : {gkfs_proxy_status}
@@ -1278,7 +1279,7 @@ def mpiexec_call(
 ) -> str:
     call = (
         f" mpiexec -np {procs} --oversubscribe "
-        f"--hostfile {settings.app_dir}/hostfile_mpi -map-by node "
+        f"--hostfile {settings.dir}/hostfile_mpi -map-by node "
         f"{additional_arguments} "
         f"{settings.task_set_0} {command}"
     )
@@ -1310,7 +1311,7 @@ def update_hostfile_mpi(settings: JitSettings) -> None:
     )
 
     # Write the hostnames to the file, excluding the Ftio node
-    with open(f"{settings.app_dir}/hostfile_mpi", "w") as hostfile:
+    with open(f"{settings.dir}/hostfile_mpi", "w") as hostfile:
         for hostname in hostnames:
             if hostname.strip() != settings.ftio_node:
                 hostfile.write(hostname + "\n")

@@ -29,6 +29,7 @@ class JitSettings:
         self.dry_run = False
         self.log_suffix = "DPCF"
         self.app_dir = ""
+        self.dir = ""
         self.cluster = False
         self.job_id = 0
         self.static_allocation = False
@@ -125,6 +126,7 @@ class JitSettings:
 
     def set_absolute_path(self) -> None:
         self.app_dir = os.path.expanduser(self.app_dir)
+        self.dir = os.path.expanduser(os.getcwd())
         self.ftio_bin_location = os.path.expanduser(self.ftio_bin_location)
 
     def set_default_procs(self) -> None:

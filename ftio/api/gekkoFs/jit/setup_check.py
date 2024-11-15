@@ -13,7 +13,7 @@ def check_setup(settings:JitSettings):
 
         # Display MPI hostfile
         if settings.cluster:
-            mpi_hostfile_path = os.path.expanduser(f"{settings.app_dir}/hostfile_mpi")
+            mpi_hostfile_path = os.path.expanduser(f"{settings.dir}/hostfile_mpi")
             with open(mpi_hostfile_path, "r") as file:
                 mpi_hostfile_content = file.read()
             console.print(f"[cyan]>> MPI hostfile:\n{mpi_hostfile_content}[/]")
@@ -63,7 +63,7 @@ def check_setup(settings:JitSettings):
                 file = create_test_file("test.sh"+timestamp, settings)
                 call = (
                         f" mpiexec -np {settings.app_nodes} --oversubscribe "
-                        f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
+                        f"--hostfile {settings.dir}/hostfile_mpi --map-by node "
                         f"{additional_arguments} "
                         
                         f"{file}"

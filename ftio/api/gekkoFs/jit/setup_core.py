@@ -410,7 +410,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
         f"[green bold]####### Executing Application [/][black][{get_time()}][/]"
     )
     # set up dir
-    original_dir = os.getcwd()
+    original_dir = settings.dir
     jit_print(f">> Current directory {original_dir}")
     if settings.app_dir:
         os.chdir(settings.app_dir)
@@ -446,7 +446,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
 
         call = (
             f" time -p mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
-            f"--hostfile {settings.app_dir}/hostfile_mpi --map-by node "
+            f"--hostfile {settings.dir}/hostfile_mpi --map-by node "
             f"{additional_arguments} "
             f"{settings.task_set_1} {settings.app_call} {settings.app_flags}"
         )
