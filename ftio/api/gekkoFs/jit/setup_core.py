@@ -412,9 +412,6 @@ def start_application(settings: JitSettings, runtime: JitTime):
     # set up dir
     original_dir = settings.dir
     jit_print(f">> Current directory {original_dir}")
-    if settings.app_dir:
-        os.chdir(settings.app_dir)
-        jit_print(f">> Changing directory to  {os.getcwd()}")
     if not settings.dry_run:
         # check_setup(settings)
         pass
@@ -445,7 +442,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
             )
 
         call = (
-            f" time -p mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+            f" cd {settings.run_dir} && time -p mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
             f"--hostfile {settings.dir}/hostfile_mpi --map-by node "
             f"{additional_arguments} "
             f"{settings.task_set_1} {settings.app_call} {settings.app_flags}"
@@ -466,9 +463,13 @@ def start_application(settings: JitSettings, runtime: JitTime):
         #     f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
         #     f"--ntasks={settings.app_nodes*settings.procs_app} --cpus-per-task={settings.procs_app} --ntasks-per-node={settings.procs_app} "
         #     f"--overcommit --overlap --oversubscribe --mem=0 "
-        #     f"{settings.app_dir}/{settings.app_call} {settings.app_flags}")
+        #     f"{settings.run_dir}/{settings.app_call} {settings.app_flags}")
     else:
         # Define the call for non-cluster environment
+        if settings.run_dir:
+            os.chdir(settings.run_dir)
+            jit_print(f">> Changing directory to  {os.getcwd()}")
+        
         if settings.exclude_all:
             call = f" time -p mpiexec -np {settings.procs_app} --oversubscribe {settings.app_call} {settings.app_flags}"
         elif settings.exclude_ftio:

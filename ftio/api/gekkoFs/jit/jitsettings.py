@@ -28,7 +28,7 @@ class JitSettings:
         ################
         self.dry_run = False
         self.log_suffix = "DPCF"
-        self.app_dir = ""
+        self.run_dir = ""
         self.dir = ""
         self.cluster = False
         self.job_id = 0
@@ -125,7 +125,7 @@ class JitSettings:
             self.job_name = new_name
 
     def set_absolute_path(self) -> None:
-        self.app_dir = os.path.expanduser(self.app_dir)
+        self.run_dir = os.path.expanduser(self.run_dir)
         self.dir = os.path.expanduser(os.getcwd())
         self.ftio_bin_location = os.path.expanduser(self.ftio_bin_location)
 
@@ -229,7 +229,7 @@ class JitSettings:
             "task_set_1": self.task_set_1,
             "OpenMP threads": self.omp_threads,
             "protocol": self.gkfs_daemon_protocol,
-            "app dir": self.app_dir,
+            "app dir": self.run_dir,
             "app call": self.app_call,
             "id": self.job_id,
             "mode": self.log_suffix,
@@ -283,58 +283,69 @@ class JitSettings:
         # self.app="/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
         ##  ├─ DLIO -->
         self.app_call = "dlio_benchmark"
-        self.app_dir = ""
-        self.app_flags = "workload=unet3d_my_a100"
+        self.run_dir = "."
+        self.app_flags = (
+            f"workload=unet3d_my_a100"
+            f"++workload.workflow.generate_data=True ++workload.workflow.train=True"
+            f"++workload.dataset.data_folder=${self.run_dir}/data/unet3d ++workload.checkpoint.checkpoint_folder=${self.run_dir}/checkpoints/unet3d ++workload.dataset.num_files_train=16"
+        )
         ##  ├─ LAMMPS -->
-        # # Todo: Fix app dir 
         # self.app_call = "/lustre/project/nhr-admire/shared/mylammps/build/lmp"
-        # self.app_dir = ""
-        # self.app_flags = f"-in {self.gkfs_mntdir}/in.spce.hex"
+        # self.run_dir = f"{self.gkfs_mntdir}"
+        # self.app_flags = "-in in.spce.hex"
         # ##  ├─ NEK5000 --> change gkfs_daemon_protocol to socket
         # self.app_call = "./nek5000"
-        # self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
+        # self.run_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
         # self.app_flags = ""
         ##  └─ Wacom++ --> change wacom.json if needed
         # self.app_call = "./wacommplusplus"
-        # self.app_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"#_gcc12_2"
+        # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"#_gcc12_2"
         # self.app_flags = ""
 
         # ****** pre and post app call ******
         # Application specific calls executed before the actual run. Executed as
         # > ${PRE_APP_CALL}
-        # > cd self.app_dir && mpiexec ${some flags} ..${APP_CALL}
+        # > cd self.run_dir && mpiexec ${some flags} ..${APP_CALL}
         # > ${POST_APP_CALL}
         # ├─ dlio
         if "dlio" in self.app_call:
             if self.exclude_all:
-                self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                # self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                self.pre_app_call  = ""
                 self.post_app_call = ""
             else:
-                self.app_flags = "workload=unet3d_my_a100_gekko"
-                self.pre_app_call = f"mpirun -np 10 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                self.run_dir = self.gkfs_mntdir
+                self.app_flags = (
+                    f"workload=workload=unet3d_my_a100_gekko"
+                    f"++workload.workflow.generate_data=True ++workload.workflow.train=True"
+                    f"++workload.dataset.data_folder=${self.run_dir}/data/unet3d ++workload.checkpoint.checkpoint_folder=${self.run_dir}/checkpoints/unet3d ++workload.dataset.num_files_train=16"
+                )
+                # self.app_flags = "workload=unet3d_my_a100_gekko"
+                # self.pre_app_call = f"mpirun -np 10 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                self.pre_app_call  = ""
                 self.post_app_call = ""
         # ├─ Nek5000
         elif "nek" in self.app_call:
             if self.exclude_all:
-                self.pre_app_call = f"echo -e 'turbPipe\\n{self.app_dir}/input' > {self.app_dir}/SESSION.NAME"
-                self.post_app_call = f"rm {self.app_dir}/input/*.f* || echo true"
+                self.pre_app_call = f"echo -e 'turbPipe\\n{self.run_dir}/input' > {self.run_dir}/SESSION.NAME"
+                self.post_app_call = f"rm {self.run_dir}/input/*.f* || echo true"
             else:
-                self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > {self.app_dir}/SESSION.NAME"
+                self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > {self.run_dir}/SESSION.NAME"
                 self.post_app_call = ""
         # ├─ Wacom++
         elif "wacom" in self.app_call:
             if self.exclude_all:
                 # in case a previous simulation fails
                 self.pre_app_call = (
-                    f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json; "
-                    f"cd {self.app_dir} && rm -rf input restart results processed output; cp -r stage-in/* . "
+                    f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.run_dir}/wacomm.pfs.json {self.run_dir}/wacomm.json; "
+                    f"cd {self.run_dir} && rm -rf input restart results processed output; cp -r stage-in/* . "
                 )
                 self.post_app_call = ""
             else:
                 # modify wacomm.gkfs.json to include gkfs_mntdir
-                self.pre_app_call = f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.app_dir}/wacomm.gkfs.json {self.app_dir}/wacomm.json; "
+                self.pre_app_call = f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.run_dir}/wacomm.gkfs.json {self.run_dir}/wacomm.json; "
                 self.post_app_call = (
-                    f"ln -sf {self.app_dir}/wacomm.pfs.json {self.app_dir}/wacomm.json"
+                    f"ln -sf {self.run_dir}/wacomm.pfs.json {self.run_dir}/wacomm.json"
                 )
         # └─ Other
         else:
@@ -345,11 +356,11 @@ class JitSettings:
         # ?##########################
         # ├─ Nek5000
         if "nek" in self.app_call:
-            self.stage_in_path = f"{self.app_dir}/input"
+            self.stage_in_path = f"{self.run_dir}/input"
             self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
         # ├─ Wacom++
         elif "wacom" in self.app_call:
-            self.stage_in_path = f"{self.app_dir}/stage-in"
+            self.stage_in_path = f"{self.run_dir}/stage-in"
             self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
         # ├─ Wacom++
         elif "lmp" in self.app_call:
@@ -406,12 +417,12 @@ class JitSettings:
                 self.stage_in_path = "/d/github/dlio_benchmark/data"
                 # generate data with
                 if self.exclude_all:
-                    self.app_dir = ""  # don't change dir
+                    self.run_dir = ""  # don't change dir
                     self.app_flags = "workload=unet3d_my_a100"
                     self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                     self.post_app_call = ""
                 else:
-                    self.app_dir = f"{self.gkfs_mntdir}"
+                    self.run_dir = f"{self.gkfs_mntdir}"
                     self.app_flags = "workload=unet3d_my_a100_gekko"
                     self.pre_app_call = [
                         # f"cd {self.gkfs_mntdir}",
@@ -421,7 +432,7 @@ class JitSettings:
                     self.post_app_call = ""
                 # ├─ Nek5000
             elif "nek" in self.app_call:
-                self.app_dir = "/d/benchmark/Nek5000/turbPipe/run"
+                self.run_dir = "/d/benchmark/Nek5000/turbPipe/run"
                 self.stage_in_path = "/d/benchmark/Nek5000/turbPipe/run/input"
                 if self.exclude_all:
                     self.pre_app_call = "echo -e 'turbPipe\\n/d/benchmark/Nek5000/turbPipe/run/input' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
