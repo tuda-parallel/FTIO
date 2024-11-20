@@ -416,8 +416,8 @@ def start_application(settings: JitSettings, runtime: JitTime):
         os.chdir(settings.app_dir)
         jit_print(f">> Changing directory to  {os.getcwd()}")
     if not settings.dry_run:
-        check_setup(settings)
-        # pass
+        # check_setup(settings)
+        pass
 
 
     # s_call=""

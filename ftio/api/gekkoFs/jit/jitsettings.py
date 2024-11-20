@@ -259,8 +259,8 @@ class JitSettings:
         self.gkfs_deps = "/lustre/project/nhr-admire/tarraf/deps"  # _gcc12_2"
         self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
         self.gkfs_intercept = (
-            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
-            # f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so"
+            # f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
+            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so"
         )
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
@@ -285,7 +285,12 @@ class JitSettings:
         self.app_call = "dlio_benchmark"
         self.app_dir = ""
         self.app_flags = "workload=unet3d_my_a100"
-        ##  ├─ NEK5000 --> change gkfs_daemon_protocol to socket
+        ##  ├─ LAMMPS -->
+        # # Todo: Fix app dir 
+        # self.app_call = "/lustre/project/nhr-admire/shared/mylammps/build/lmp"
+        # self.app_dir = ""
+        # self.app_flags = f"-in {self.gkfs_mntdir}/in.spce.hex"
+        # ##  ├─ NEK5000 --> change gkfs_daemon_protocol to socket
         # self.app_call = "./nek5000"
         # self.app_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
         # self.app_flags = ""
@@ -346,6 +351,10 @@ class JitSettings:
         elif "wacom" in self.app_call:
             self.stage_in_path = f"{self.app_dir}/stage-in"
             self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
+        # ├─ Wacom++
+        elif "lmp" in self.app_call:
+            self.stage_in_path = "/lustre/project/nhr-admire/shared/mylammps/examples/HEAT"
+            self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
         # └─ Other
         else:
             self.stage_in_path =  "/lustre/project/nhr-admire/tarraf/stage-in"
@@ -361,6 +370,9 @@ class JitSettings:
         elif "wacom" in self.app_call:
             # self.regex_match = "^(\\/(output|results|restart|input|processed)\\/)\\.+$"  #
             self.regex_match = "\\/processed\\/^ocm3_d03_\\d+Z\\d+\\.nc$"
+        # ├─ LAMMPS
+        elif "lmp" in self.app_call:
+            self.regex_match = ""
         # └─ Other
         else:
             self.regex_match = ""
