@@ -532,7 +532,7 @@ def print_file(file, src=""):
         elif "proxy" in src.lower():
             color = "[deep_pink1]"
             wait_time = 0.1
-        elif "special" in src.lower():
+        elif any(keyword in src.lower() for keyword in ["dlio","lammp"]):
             color = "[gold3]"
             wait_time = 0.1
         elif "ftio" in src.lower():

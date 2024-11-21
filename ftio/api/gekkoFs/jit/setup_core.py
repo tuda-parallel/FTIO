@@ -406,8 +406,9 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
 #! App call
 #!################
 def start_application(settings: JitSettings, runtime: JitTime):
+    name = settings.app_call.split("/", 1)[1] if "/" in settings.app_call else settings.app_call
     console.print(
-        f"[green bold]####### Executing Application [/][black][{get_time()}][/]"
+        f"[green bold]####### Executing Application {name} [/][black][{get_time()}][/]"
     )
     # set up dir
     original_dir = settings.dir
@@ -501,10 +502,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
     )
     if settings.verbose:
         _ = monitor_log_file(settings.app_log, "")
-        if "dlio" in settings.app_call:
-            _ = monitor_log_file(settings.app_err, "special")
-        else:
-            _ = monitor_log_file(settings.app_err, "error")
+        _ = monitor_log_file(settings.app_err, f"{name} error")
     _, stderr = process.communicate()
 
     # get the real time

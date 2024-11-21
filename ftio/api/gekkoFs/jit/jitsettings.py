@@ -317,8 +317,8 @@ class JitSettings:
                 self.run_dir = self.gkfs_mntdir
                 self.app_flags = (
                     f"workload=unet3d_my_a100_gekko "
-                    f"++workload.workflow.generate_data=True ++workload.workflow.train=True "
-                    f"++workload.dataset.data_folder={self.run_dir}/data/unet3d ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/unet3d "# ++workload.dataset.num_files_train=16"
+                    f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
+                    f"++workload.dataset.data_folder={self.run_dir}/data/unet3d ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/unet3d" # ++workload.output.log_file={self.run_dir}/hydra_log/unet3d"# ++workload.dataset.num_files_train=16"
                 )
                 # self.app_flags = "workload=unet3d_my_a100_gekko"
                 # self.pre_app_call = f"mpirun -np 10 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
