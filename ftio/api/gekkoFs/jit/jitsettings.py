@@ -287,7 +287,7 @@ class JitSettings:
         self.app_flags = (
             f"workload=unet3d_my_a100 "
             f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
-            f"++workload.dataset.data_folder={self.run_dir}/data/unet3d ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/unet3d ++workload.output.log_file={self.run_dir}/hydra_log/unet3d"# ++workload.dataset.num_files_train=16"
+            f"++workload.dataset.data_folder={self.run_dir}/data/unet3d ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/unet3d" # ++workload.output.log_file={self.run_dir}/hydra_log/unet3d"# ++workload.dataset.num_files_train=16"
         )
         ##  ├─ LAMMPS -->
         # self.app_call = "/lustre/project/nhr-admire/shared/mylammps/build/lmp"
