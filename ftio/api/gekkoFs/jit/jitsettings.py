@@ -229,7 +229,7 @@ class JitSettings:
             "task_set_1": self.task_set_1,
             "OpenMP threads": self.omp_threads,
             "protocol": self.gkfs_daemon_protocol,
-            "app dir": self.run_dir,
+            "run dir": self.run_dir,
             "app call": self.app_call,
             "id": self.job_id,
             "mode": self.log_suffix,
@@ -259,8 +259,8 @@ class JitSettings:
         self.gkfs_deps = "/lustre/project/nhr-admire/tarraf/deps"  # _gcc12_2"
         self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
         self.gkfs_intercept = (
-            # f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
-            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so"
+            # f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so" 
+            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so" #from rnoun branch, doesn't work with nek
         )
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
@@ -286,8 +286,8 @@ class JitSettings:
         self.run_dir = "."
         self.app_flags = (
             f"workload=unet3d_my_a100 "
-            f"++workload.workflow.generate_data=True ++workload.workflow.train=True "
-            f"++workload.dataset.data_folder={self.run_dir}/data/unet3d ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/unet3d"# ++workload.dataset.num_files_train=16"
+            f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
+            f"++workload.dataset.data_folder={self.run_dir}/data/unet3d ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/unet3d ++workload.output.log_file={self.run_dir}/hydra_log/unet3d"# ++workload.dataset.num_files_train=16"
         )
         ##  ├─ LAMMPS -->
         # self.app_call = "/lustre/project/nhr-admire/shared/mylammps/build/lmp"

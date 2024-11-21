@@ -471,17 +471,17 @@ def start_application(settings: JitSettings, runtime: JitTime):
             jit_print(f">> Changing directory to  {os.getcwd()}")
         
         if settings.exclude_all:
-            call = f" time -p mpiexec -np {settings.procs_app} --oversubscribe {settings.app_call} {settings.app_flags}"
+            call = f" time mpiexec -np {settings.procs_app} --oversubscribe {settings.app_call} {settings.app_flags}"
         elif settings.exclude_ftio:
             call = (
-                f" time -p mpiexec -np {settings.procs_app} --oversubscribe "
+                f" time mpiexec -np {settings.procs_app} --oversubscribe "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LIBGKFS_LOG=info,warnings,errors -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} {settings.app_call} {settings.app_flags}"
             )
         else:
             call = (
-                f" time -p mpiexec -np {settings.procs_app} --oversubscribe "
+                f" time mpiexec -np {settings.procs_app} --oversubscribe "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LIBGKFS_LOG=none -x LIBGKFS_ENABLE_METRICS=on "
                 f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
@@ -501,7 +501,10 @@ def start_application(settings: JitSettings, runtime: JitTime):
     )
     if settings.verbose:
         _ = monitor_log_file(settings.app_log, "")
-        _ = monitor_log_file(settings.app_err, "error")
+        if "dlio" in settings.app_call:
+            _ = monitor_log_file(settings.app_err, "special")
+        else:
+            _ = monitor_log_file(settings.app_err, "error")
     _, stderr = process.communicate()
 
     # get the real time

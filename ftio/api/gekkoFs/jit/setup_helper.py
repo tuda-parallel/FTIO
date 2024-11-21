@@ -1123,7 +1123,7 @@ def print_settings(settings) -> None:
 [bold green] cargo[/]{cargo_text}
 
 [bold green]app[/]
-├─ app dir        : {settings.run_dir}
+├─ run dir        : {settings.run_dir}
 ├─ app call       : {settings.app_call}
 ├─ # nodes        : {settings.app_nodes}
 └─ app nodes      : {settings.app_nodes_command.replace('--nodelist=', '')}

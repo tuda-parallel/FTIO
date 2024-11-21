@@ -471,6 +471,7 @@ def get_files(settings: JitSettings, verbose=True):
     monitored_files = []
     files = ""
     try:
+        # TODO: fix find for gekko 
         command_ls = flaged_mpiexec_call(settings, f" find {settings.gkfs_mntdir}")
         files = subprocess.check_output(command_ls, shell=True).decode()
         if files:
@@ -531,7 +532,7 @@ def print_file(file, src=""):
         elif "proxy" in src.lower():
             color = "[deep_pink1]"
             wait_time = 0.1
-        elif "client" in src.lower():
+        elif "special" in src.lower():
             color = "[gold3]"
             wait_time = 0.1
         elif "ftio" in src.lower():
