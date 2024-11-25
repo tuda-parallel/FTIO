@@ -443,7 +443,11 @@ def start_application(settings: JitSettings, runtime: JitTime):
             )
 
         call = (
-            f" cd {settings.run_dir} && time -p mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+            
+            # f" cd {settings.run_dir} && "
+            # f"strace -f -e trace=read,write,open,close,stat,fstat,lseek,access -o /gpfs/fs1/home/tarrafah/strace_n{settings.app_nodes}_p{settings.procs_app}.txt mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+            f" cd {settings.run_dir} && time mpiexec --mca errhandler ftmpi --mca mpi_abort_print_stack 1  -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+            # f" cd {settings.run_dir} && time mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
             f"--hostfile {settings.dir}/hostfile_mpi --map-by node "
             f"{additional_arguments} "
             f"{settings.task_set_1} {settings.app_call} {settings.app_flags}"

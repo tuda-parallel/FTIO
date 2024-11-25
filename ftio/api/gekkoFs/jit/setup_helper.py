@@ -992,15 +992,22 @@ def get_address_cargo(settings: JitSettings) -> None:
 def set_dir_gekko(settings: JitSettings) -> None:
     if settings.node_local and settings.cluster:
         jit_print(">> Setting Gekko root dir to node local")
+        # old_gkfs_rootdir = settings.gkfs_rootdir
+        old_gkfs_mntdir  = settings.gkfs_mntdir
+        
         settings.gkfs_rootdir = (
             f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_rootdir)}"
         )
         settings.gkfs_mntdir = (
             f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_mntdir)}"
         )
-        jit_print(
-            f">> Gekko root dir set to: {settings.gkfs_rootdir}\n>> Gekko mnt dir set to: {settings.gkfs_mntdir}",
-            True,
+        jit_print(f">> Gekko root dir set to: {settings.gkfs_rootdir}")
+        jit_print(f">> Gekko mnt dir set to: {settings.gkfs_mntdir}")
+        
+        if old_gkfs_mntdir in settings.run_dir:
+            settings.run_dir = settings.run_dir.replace(old_gkfs_mntdir, settings.gkfs_mntdir)
+            jit_print(
+            f">> Run dir set to: {settings.gkfs_rootdir}",
         )
 
 
