@@ -12,6 +12,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     elapsed_time,
     flaged_mpiexec_call,
     get_env,
+    get_executable_realpath,
     handle_sigint,
     jit_print,
     mpiexec_call,
@@ -350,7 +351,8 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             # additional_arguments = load_flags(settings)
             # call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
             call = flaged_mpiexec_call(
-                settings, f"cp -r  {settings.gkfs_mntdir} {settings.stage_out_path} || echo 'nothing to stage in'"
+                settings,
+                f"cp -r  {settings.gkfs_mntdir} {settings.stage_out_path} || echo 'nothing to stage in'",
             )
             start = time.time()
             _ = execute_block(call, dry_run=settings.dry_run)
@@ -364,7 +366,9 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
 
             if not settings.dry_run:
                 try:
-                    call = flaged_mpiexec_call(settings, f"ls -R {settings.gkfs_mntdir}")
+                    call = flaged_mpiexec_call(
+                        settings, f"ls -R {settings.gkfs_mntdir}"
+                    )
                     files = subprocess.check_output(call, shell=True).decode()
                     console.print(
                         f"[cyan]>> gekko_ls {settings.gkfs_mntdir}: \n{files}[/]"
@@ -406,7 +410,11 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
 #! App call
 #!################
 def start_application(settings: JitSettings, runtime: JitTime):
-    name = settings.app_call.split("/", 1)[1] if "/" in settings.app_call else settings.app_call
+    name = (
+        settings.app_call.split("/", 1)[1]
+        if "/" in settings.app_call
+        else settings.app_call
+    )
     console.print(
         f"[green bold]####### Executing Application {name} [/][black][{get_time()}][/]"
     )
@@ -414,67 +422,66 @@ def start_application(settings: JitSettings, runtime: JitTime):
     original_dir = settings.dir
     jit_print(f">> Current directory {original_dir}")
     if not settings.dry_run:
-        # check_setup(settings)
-        pass
+        check_setup(settings)
+        # pass
 
-
-    # s_call=""
     if settings.cluster:
-        # without FTIO
-        # ? [--stag in (si)--]               [--stag out (so)--]
-        # ?              [---APP---]
-        # with FTIO
-        # ? [--stag in--]   [so]  [so] ... [so]
-        # ?              [---APP---]
-
         additional_arguments = ""
-        if not settings.exclude_ftio:
-            additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
-        if not settings.exclude_proxy:
-            additional_arguments += (
-                f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-            )
-        if not settings.exclude_daemon:
-            additional_arguments += (
-                f"-x LIBGKFS_LOG=info,warnings,errors "
-                f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
-                f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                f"-x LD_PRELOAD={settings.gkfs_intercept} "
-            )
+        if settings.use_mpirun:
+            if not settings.exclude_ftio:
+                additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
+            if not settings.exclude_proxy:
+                additional_arguments += (
+                    f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+                )
+            if not settings.exclude_daemon:
+                additional_arguments += (
+                    f"-x LIBGKFS_LOG=info,warnings,errors "
+                    f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
+                    f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                    f"-x LD_PRELOAD={settings.gkfs_intercept} "
+                )
 
-        call = (
-            
-            # f" cd {settings.run_dir} && "
-            # f"strace -f -e trace=read,write,open,close,stat,fstat,lseek,access -o /gpfs/fs1/home/tarrafah/strace_n{settings.app_nodes}_p{settings.procs_app}.txt mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
-            # f" cd {settings.run_dir} && time -p mpiexec --mca errhandler ftmpi --mca mpi_abort_print_stack 1  -np {settings.app_nodes*settings.procs_app} --oversubscribe "
-            f" cd {settings.run_dir} && time -p mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
-            f"--hostfile {settings.dir}/hostfile_mpi --map-by node "
-            f"{additional_arguments} "
-            f"{settings.task_set_1} {settings.app_call} {settings.app_flags}"
-        )
+            call = (
+                # f" cd {settings.run_dir} && "
+                # f"strace -f -e trace=read,write,open,close,stat,fstat,lseek,access -o /gpfs/fs1/home/tarrafah/strace_n{settings.app_nodes}_p{settings.procs_app}.txt mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+                # f" cd {settings.run_dir} && time -p mpiexec --mca errhandler ftmpi --mca mpi_abort_print_stack 1  -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+                f" cd {settings.run_dir} && time -p mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+                f"--hostfile {settings.dir}/hostfile_mpi --map-by node "
+                f"{additional_arguments} "
+                f"{settings.task_set_1} {settings.app_call} {settings.app_flags}"
+            )
+        else:
+            if not settings.exclude_ftio:
+                additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port},"
+            if not settings.exclude_proxy:
+                additional_arguments += (
+                    f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
+                )
+            if not settings.exclude_daemon:
+                additional_arguments += (
+                    f"LIBGKFS_LOG=info,warnings,errors,"
+                    f"LIBGKFS_LOG_OUTPUT={settings.gekko_client_log},"
+                    f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
+                    f"LD_PRELOAD={settings.gkfs_intercept},"
+                )
 
-        # s_call =(
-        #     f" srun "
-        #     f"--export="
-        #     f"LIBGKFS_LOG=info,warnings,errors,"
-        #     f"LIBGKFS_ENABLE_METRICS=on,"
-        #     f"LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port},"
-        #     f"LD_PRELOAD={settings.gkfs_intercept},"
-        #     f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
-        #     f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
-        #     f"LIBGKFS_LOG_OUTPUT={settings.gekko_client_log},"
-        #     f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
-        #     f"--jobid={settings.job_id} "
-        #     f"{settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-        #     f"--ntasks={settings.app_nodes*settings.procs_app} --cpus-per-task={settings.procs_app} --ntasks-per-node={settings.procs_app} "
-        #     f"--overcommit --overlap --oversubscribe --mem=0 "
-        #     f"{settings.run_dir}/{settings.app_call} {settings.app_flags}")
+            app_call = get_executable_realpath(settings.app_call,settings.run_dir)
+            call = (
+                f" cd {settings.run_dir} && time -p srun "
+                f"--export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
+                f"--jobid={settings.job_id} {settings.app_nodes_command} --disable-status "
+                f"-N {settings.app_nodes} --ntasks={settings.app_nodes*settings.procs_app} "
+                f"--cpus-per-task={settings.procs_app} --ntasks-per-node={settings.procs_app} "
+                f"--overcommit --overlap --oversubscribe --mem=0 "
+                f"{app_call} {settings.app_flags}"
+            )
     else:
         # Define the call for non-cluster environment
         if settings.run_dir:
             os.chdir(settings.run_dir)
             jit_print(f">> Changing directory to  {os.getcwd()}")
-        
+
         if settings.exclude_all:
             call = f" time mpiexec -np {settings.procs_app} --oversubscribe {settings.app_call} {settings.app_flags}"
         elif settings.exclude_ftio:
@@ -549,14 +556,26 @@ def pre_call(settings: JitSettings) -> None:
         # additional_arguments = load_flags(settings)
         if isinstance(settings.pre_app_call, str):
             call = settings.pre_app_call
-            if any(x in call for x in ['mpiex','mpirun']):
-                call = flaged_mpiexec_call(settings,call) 
-            execute_block_and_monitor(settings.verbose, call, settings.app_log, settings.app_err,settings.dry_run)
+            if any(x in call for x in ["mpiex", "mpirun"]):
+                call = flaged_mpiexec_call(settings, call)
+            execute_block_and_monitor(
+                settings.verbose,
+                call,
+                settings.app_log,
+                settings.app_err,
+                settings.dry_run,
+            )
         elif isinstance(settings.pre_app_call, list):
             for call in settings.pre_app_call:
-                if any(x in call for x in ['mpiex','mpirun']):
-                    call = flaged_mpiexec_call(settings,call) 
-                execute_block_and_monitor(settings.verbose, call, settings.app_log, settings.app_err,settings.dry_run)
+                if any(x in call for x in ["mpiex", "mpirun"]):
+                    call = flaged_mpiexec_call(settings, call)
+                execute_block_and_monitor(
+                    settings.verbose,
+                    call,
+                    settings.app_log,
+                    settings.app_err,
+                    settings.dry_run,
+                )
         # _ = execute_block_and_log(
         #     settings.pre_app_call, settings.app_log
         # )
@@ -572,9 +591,21 @@ def post_call(settings: JitSettings) -> None:
         additional_arguments = ""  # load_flags(settings)
         if isinstance(settings.post_app_call, str):
             call = f"{additional_arguments} {settings.post_app_call}"
-            execute_block_and_monitor(settings.verbose, call, settings.app_log, settings.app_err,settings.dry_run)
+            execute_block_and_monitor(
+                settings.verbose,
+                call,
+                settings.app_log,
+                settings.app_err,
+                settings.dry_run,
+            )
         elif isinstance(settings.post_app_call, list):
             call = ""
             for s in settings.post_app_call:
                 call = f"{additional_arguments} {s}"
-                execute_block_and_monitor(settings.verbose, call, settings.app_log, settings.app_err,settings.dry_run)
+                execute_block_and_monitor(
+                    settings.verbose,
+                    call,
+                    settings.app_log,
+                    settings.app_err,
+                    settings.dry_run,
+                )

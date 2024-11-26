@@ -3,6 +3,7 @@ import subprocess
 import getopt
 import os
 import signal
+import shutil
 from rich.console import Console
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.jittime import JitTime
@@ -1313,6 +1314,36 @@ def clean_call(call:str,procs:int):
 
     return call, procs
 
+
+def get_executable_realpath(executable_name, search_location=None):
+    """
+    Try to find the real path of an executable.     
+    Parameters:
+    - executable_name (str): The name of the executable.
+    
+    Returns:
+    - str: Real path of the executable or its name if not found.
+    """
+    if search_location:
+        potential_path = os.path.join(search_location, executable_name)
+        if os.path.isfile(potential_path) and os.access(potential_path, os.X_OK):
+            try:
+                return os.path.realpath(potential_path)
+            except Exception as e:
+                print(f"Warning: Could not resolve real path for {potential_path}: {e}")
+                return executable_name
+    
+    # Fall back to searching in the system PATH
+    executable_path = shutil.which(executable_name)
+    if executable_path:
+        try:
+            return os.path.realpath(executable_path)
+        except Exception as e:
+            print(f"Warning: Could not resolve real path for {executable_name}: {e}")
+    
+    # Fallback: return the name if not found
+    jit_print(f">> Application: {executable_name}")
+    return executable_name
 
 def update_hostfile_mpi(settings: JitSettings) -> None:
     # Command to get the list of hostnames for the job
