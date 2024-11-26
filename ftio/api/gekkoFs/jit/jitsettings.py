@@ -286,9 +286,10 @@ class JitSettings:
         self.run_dir = "."
         self.app_flags = (
             f"workload=unet3d_my_a100 "
+            # f"workload=bert_v100 "
             f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
-            f"++workload.dataset.data_folder={self.run_dir}/data/unet3d ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/unet3d "  
-            f"++workload.output.output_folder={self.run_dir}/hydra_log/unet3d "
+            f"++workload.dataset.data_folder={self.run_dir}/data/jit ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/jit "  
+            f"++workload.output.output_folder={self.run_dir}/hydra_log/jit "
         )
         ##  ├─ LAMMPS -->
         # self.app_call = "/lustre/project/nhr-admire/shared/mylammps/build/lmp"
@@ -315,13 +316,14 @@ class JitSettings:
                 self.pre_app_call  = ""
                 self.post_app_call = ""
             else:
-                self.run_dir = self.gkfs_mntdir
+                # self.run_dir = self.gkfs_mntdir #? don't enable this flag, as the executing node doesn't have this folder
                 self.app_flags = (
                     f"workload=unet3d_my_a100_gekko "
+                    # f"workload=bert_v100 "
                     f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
-                    f"++workload.dataset.data_folder={self.run_dir}/data/unet3d ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/unet3d " 
-                    f"++workload.output.output_folder={self.run_dir}/hydra_log/unet3d "
-                    # ++workload.output.log_file={self.run_dir}/hydra_log/unet3d"# ++workload.dataset.num_files_train=16"
+                    f"++workload.dataset.data_folder={self.gkfs_mntdir}/data/jit ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints/jit " 
+                    f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log/jit "
+                    # ++workload.output.log_file={self.gkfs_mntdir}/hydra_log/unet3d"# ++workload.dataset.num_files_train=16"
                 )
                 # self.app_flags = "workload=unet3d_my_a100_gekko"
                 # self.pre_app_call = f"mpirun -np 10 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"

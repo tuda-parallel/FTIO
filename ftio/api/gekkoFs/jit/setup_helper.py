@@ -934,9 +934,10 @@ def log_dir(settings: JitSettings):
             settings.log_dir += f"_{settings.log_suffix}"
 
     counter = 0
+    name = settings.log_dir
     while os.path.exists(settings.log_dir):
         counter += 1
-        settings.log_dir = f"{settings.log_dir}_{counter}"
+        settings.log_dir = f"{name}_{counter}"
 
     # Resolve and return the absolute path of LOG_DIR
     settings.log_dir = os.path.abspath(settings.log_dir)
@@ -986,12 +987,12 @@ def get_address_cargo(settings: JitSettings) -> None:
         settings.cargo_server = f"ofi+tcp://{settings.address_cargo}:62000"
 
     jit_print(f">> Address CARGO: {settings.address_cargo}")
-    jit_print(f">> CARGO server:  {settings.cargo_server} ", True)
+    jit_print(f">> CARGO server:  {settings.cargo_server} \n")
 
 
 def set_dir_gekko(settings: JitSettings) -> None:
     if settings.node_local and settings.cluster:
-        jit_print(">> Setting Gekko root dir to node local")
+        jit_print(">> Node local flag set")
         # old_gkfs_rootdir = settings.gkfs_rootdir
         old_gkfs_mntdir  = settings.gkfs_mntdir
         
@@ -1001,14 +1002,20 @@ def set_dir_gekko(settings: JitSettings) -> None:
         settings.gkfs_mntdir = (
             f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_mntdir)}"
         )
-        jit_print(f">> Gekko root dir set to: {settings.gkfs_rootdir}")
-        jit_print(f">> Gekko mnt dir set to: {settings.gkfs_mntdir}")
+        jit_print(f">> |-> Gekko root dir updated to: {settings.gkfs_rootdir}")
+        jit_print(f">> |-> Gekko mnt dir updated to: {settings.gkfs_mntdir}")
         
         if old_gkfs_mntdir in settings.run_dir:
             settings.run_dir = settings.run_dir.replace(old_gkfs_mntdir, settings.gkfs_mntdir)
             jit_print(
-            f">> Run dir set to: {settings.gkfs_rootdir}",
+            f">> |-> Run dir updated to: {settings.run_dir}",
         )
+        if old_gkfs_mntdir in settings.app_flags:
+            settings.app_flags = settings.app_flags.replace(old_gkfs_mntdir, settings.gkfs_mntdir)
+            jit_print(
+            f">> |-> App flags updated to: {settings.app_flags}",
+        )
+            
 
 
 def print_settings(settings) -> None:

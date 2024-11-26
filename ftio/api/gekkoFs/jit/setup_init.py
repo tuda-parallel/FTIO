@@ -10,24 +10,26 @@ def init_gekko(settings: JitSettings) -> None:
     """
     if not settings.exclude_daemon:
         create_hostfile(settings)
+        calls =[]
         # set debug flag
         if settings.cluster:
             # Create directories
-            # call_0 = f"srun --jobid={settings.job_id} {settings.single_node_command} -N 1 --ntasks=1 mkdir -p {settings.gkfs_mntdir}"
-            call_0 =(
+            # calls_0 = f"srun --jobid={settings.job_id} {settings.single_node_command} -N 1 --ntasks=1 mkdir -p {settings.gkfs_mntdir}"
+            calls.append(
                 f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                 f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                 f"--oversubscribe --mem=0 mkdir -p {settings.gkfs_mntdir}"
                     )
-            call_1 =(
+            calls.append(
                 f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                 f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                 f"--oversubscribe --mem=0 mkdir -p {settings.gkfs_rootdir}"
                     )
         else:
-            call_0 = f"mkdir -p {settings.gkfs_mntdir}"
-            call_1 = f"mkdir -p {settings.gkfs_rootdir}"
+            calls.append(f"mkdir -p {settings.gkfs_mntdir}")
+            calls.append(f"mkdir -p {settings.gkfs_rootdir}")
 
         jit_print("[cyan]>> Creating directories[/]")
-        _ = execute_block(call_0)
-        _ = execute_block(call_1)
+        for call in calls:
+            _ = execute_block(call)
+

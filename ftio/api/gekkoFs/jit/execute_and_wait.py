@@ -470,10 +470,12 @@ def end_of_transfer_online(
 def get_files(settings: JitSettings, verbose=True):
     monitored_files = []
     files = ""
+    # TODO: fix find for gekko 
+    command_ls = flaged_mpiexec_call(settings, f" ls -l {settings.gkfs_mntdir}")
+    # command_ls = flaged_mpiexec_call(settings, f" find {settings.gkfs_mntdir}")
     try:
-        # TODO: fix find for gekko 
-        command_ls = flaged_mpiexec_call(settings, f" find {settings.gkfs_mntdir}")
-        files = subprocess.check_output(command_ls, shell=True).decode()
+        # files = subprocess.check_output(command_ls, shell=True).decode()
+        files = subprocess.check_output(command_ls, shell=True, text=True)
         if files:
             files = files.splitlines()
             files = [f for f in files if "LIBGKFS" not in f]
@@ -492,7 +494,7 @@ def get_files(settings: JitSettings, verbose=True):
             for f in monitored_files:
                 console.print(f"[cyan]{f}[/]")
     except Exception as e:
-        jit_print(f"[red] >> Error running test script:\n{e}")
+        jit_print(f"[red] >> Error listing files script:\n{e}")
 
     return monitored_files
 
