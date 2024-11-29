@@ -16,7 +16,7 @@ class JitSettings:
         ##############
         self.set_tasks_affinity = True  # required for ls and cp
         self.gkfs_daemon_protocol = (
-            "ofi+sockets"  # "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
+            "ofi+verbs"  # "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
         )
         self.cargo_mode = "parallel"  # "parallel" or "posix"
         self.debug = True
@@ -233,6 +233,9 @@ class JitSettings:
             "app call": self.app_call,
             "id": self.job_id,
             "mode": self.log_suffix,
+            "node local": self.node_local,
+            "gkfs_mntdir": self.gkfs_mntdir if not self.exclude_daemon else "",
+            "gkfs_rootdir": self.gkfs_rootdir if not self.exclude_daemon else "",
         }
 
     #!##########################
@@ -318,7 +321,8 @@ class JitSettings:
             else:
                 # self.run_dir = self.gkfs_mntdir #? don't enable this flag, as the executing node doesn't have this folder
                 self.app_flags = (
-                    f"workload=unet3d_my_a100_gekko "
+                    # f"workload=unet3d_my_a100_gekko "
+                    f"workload=unet3d_my_a100 " #no need to select a specific one, the folder assignment makes it use geko
                     # f"workload=bert_v100 "
                     f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
                     f"++workload.dataset.data_folder={self.gkfs_mntdir}/data/jit ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints/jit " 
