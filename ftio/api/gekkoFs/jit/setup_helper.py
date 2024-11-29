@@ -1048,6 +1048,7 @@ def print_settings(settings) -> None:
 ├─ gkfs intercept : {settings.gkfs_intercept}
 ├─ gkfs mntdir    : {settings.gkfs_mntdir}
 ├─ gkfs rootdir   : {settings.gkfs_rootdir}
+├─ gkfs protocol  : {settings.gkfs_daemon_protocol}
 ├─ gkfs hostfile  : {settings.gkfs_hostfile}"""
 
     gkfs_proxy_text = f"""
@@ -1057,6 +1058,7 @@ def print_settings(settings) -> None:
     cargo_text = f"""
 ├─ cargo          : {settings.cargo}
 ├─ cargo cli      : {settings.cargo_bin}
+├─ cargo mode     : {settings.cargo_mode}
 ├─ stage in path  : {settings.stage_in_path}
 └─ address cargo  : {settings.address_cargo}"""
 
@@ -1077,6 +1079,7 @@ def print_settings(settings) -> None:
 ├─ gkfs intercept : [yellow]none[/]
 ├─ gkfs mntdir    : [yellow]none[/]
 ├─ gkfs rootdir   : [yellow]none[/]
+├─ gkfs protocol  : [yellow]none[/]
 ├─ gkfs hostfile  : [yellow]none[/]"""
         gkfs_daemon_status = "[bold yellow]off[/]"
         task_daemon = "[bold yellow]-[/]"
@@ -1094,6 +1097,7 @@ def print_settings(settings) -> None:
         cargo_text = """
 ├─ cargo location : [yellow]none[/]
 ├─ cargo cli      : [yellow]none[/]
+├─ cargo mode     : [yellow]none[/]
 ├─ stage in path  : [yellow]none[/]
 └─ address cargo  : [yellow]none[/]"""
         cargo_status = "[bold yellow]off[/]"
@@ -1129,6 +1133,10 @@ def print_settings(settings) -> None:
 |   └─ ftio       : {cpu_ftio}
 ├─ OMP threads    : {settings.omp_threads}
 ├─ max time       : {settings.max_time}
+├─ tasks affinity : {settings.set_tasks_affinity}
+├─ tasks set 0    : {settings.task_set_0 if settings.set_tasks_affinity else "[yellow]none[/]"}
+├─ tasks set 1    : {settings.task_set_1 if settings.set_tasks_affinity else "[yellow]none[/]"}
+├─ use mpirun     : {settings.use_mpirun}
 └─ job id         : {settings.job_id}
 
 [bold green]ftio[/]{ftio_text}
@@ -1140,8 +1148,8 @@ def print_settings(settings) -> None:
 [bold green]app[/]
 ├─ run dir        : {settings.run_dir}
 ├─ app call       : {settings.app_call}
-├─ # nodes        : {settings.app_nodes}
-└─ app nodes      : {settings.app_nodes_command.replace('--nodelist=', '')}
+├─ app nodes      : {settings.app_nodes}
+└─ app nodes list : {settings.app_nodes_command.replace('--nodelist=', '')}
 [bold green]##################[/]
 """
     console.print(text)
@@ -1228,7 +1236,7 @@ def check(settings: JitSettings):
     if settings.dry_run or settings.exclude_daemon:
         return
 
-    call = flaged_mpiexec_call(settings, f"ls -lahrt {settings.gkfs_mntdir}")
+    call = flaged_call(settings, f"ls -lahrt {settings.gkfs_mntdir}")
     try:
 
         files = subprocess.check_output(
@@ -1241,6 +1249,16 @@ def check(settings: JitSettings):
         jit_print(f"[red]>> Failed to list files in {settings.gkfs_mntdir}: {e}[/]")
 
 
+
+def flaged_call(settings: JitSettings, call: str, nodes: int = 1, procs_per_node: int = 1) -> str:
+    if settings.use_mpirun:
+        call = flaged_mpiexec_call(settings, call, nodes*procs_per_node)
+    else:
+        call = flaged_srun_call(settings, call, nodes, procs_per_node)
+
+    return call
+
+
 def flaged_mpiexec_call(settings: JitSettings, call: str, procs: int = 1) -> str:
     additional_arguments = load_flags_mpiexec(settings)
     call, procs = clean_call(call,procs)
@@ -1250,6 +1268,19 @@ def flaged_mpiexec_call(settings: JitSettings, call: str, procs: int = 1) -> str
         call = (
             f"mpiexec -np {procs} --oversubscribe "
             # f"-x LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
+            f"{additional_arguments} {call}"
+        )
+
+    return call
+
+
+def flaged_srun_call(settings: JitSettings, call: str, nodes: int = 1, procs: int = 1) -> str:
+    additional_arguments = load_flags_srun(settings)
+    if settings.cluster:
+        call = srun_call(settings, call, nodes,procs, additional_arguments)
+    else:
+        call = (
+            f"mpiexec -np {procs} --oversubscribe "
             f"{additional_arguments} {call}"
         )
 
@@ -1270,8 +1301,27 @@ def load_flags_mpiexec(settings: JitSettings, ftio_metrics: bool = False) -> str
             f"-x LD_PRELOAD={settings.gkfs_intercept} "
         )
     additional_arguments += get_env(settings,"mpi")
+
     return additional_arguments
 
+
+def load_flags_srun(settings:JitSettings) -> str:
+    additional_arguments = ""
+    if not settings.exclude_ftio:
+        additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port},"
+    if not settings.exclude_proxy:
+        additional_arguments += (
+            f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
+        )
+    if not settings.exclude_daemon:
+        additional_arguments += (
+            f"LIBGKFS_LOG=info,warnings,errors,"
+            f"LIBGKFS_LOG_OUTPUT={settings.gekko_client_log},"
+            f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
+            f"LD_PRELOAD={settings.gkfs_intercept},"
+        )
+    additional_arguments += get_env(settings,"srun")
+    return additional_arguments
 
 def load_flags(settings: JitSettings, ftio_metrics: bool = False) -> str:
     additional_arguments = ""
@@ -1299,6 +1349,22 @@ def mpiexec_call(
         f"{settings.task_set_0} {command}"
     )
     return call
+
+def srun_call(
+    settings: JitSettings, command: str, nodes:int = 1,procs: int = 1, additional_arguments=""
+) -> str:
+    nodelist =  settings.single_node_command if nodes == 1 else settings.app_nodes_command
+    call = (
+            f"srun "
+            f"--export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
+            f"--jobid={settings.job_id} {nodelist} --disable-status "
+            f"-N {nodes} --ntasks={nodes*procs} "
+            f"--cpus-per-task={procs} --ntasks-per-node={procs} "
+            f"--overcommit --overlap --oversubscribe --mem=0 "
+            f"{settings.task_set_0} {command}"
+        )
+    return call
+
 
 
 def clean_call(call:str,procs:int):

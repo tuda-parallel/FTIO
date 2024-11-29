@@ -11,7 +11,7 @@ from rich.markup import escape
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.setup_helper import (
     check,
-    flaged_mpiexec_call,
+    flaged_call,
     jit_print,
     get_pid,
 )
@@ -422,10 +422,15 @@ def end_of_transfer_online(
             hit = 0
             while len(monitored_files) > 0:
                 time.sleep(0.1)  # Short sleep interval to quickly catch new lines
-                # jit_print(f"[cyan]>> Files in mount dir {monitored_files}",True)
-                status.update(
-                    f"Waiting for {len(monitored_files)} files: {monitored_files}"
-                )
+
+                if n < 10:
+                    status.update(
+                        f"Waiting for {len(monitored_files)} files: {monitored_files}"
+                    )
+                else:
+                    status.update(
+                        f"Waiting for {len(monitored_files)} files"
+                    )
 
                 passed_time = int(time.time() - start_time)
                 time_since_last_cargo = int(time.time() - last_cargo_time)
@@ -449,9 +454,14 @@ def end_of_transfer_online(
                         last_cargo_time = time.time()
                         stuck_time = stuck_time * 2
                         jit_print(f"[cyan]>> Stucked increased to {stuck_time}\n")
-                        jit_print(
-                            f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}"
-                        )
+                        if n < 10:
+                            status.update(
+                                f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}"
+                            )
+                        else: 
+                            status.update(
+                                    f">> Waiting for {len(monitored_files)} more files to be deleted"
+                                )
                         hit = 0
                         if "Transfer finished for []" in last_lines:
                             break
@@ -471,7 +481,7 @@ def get_files(settings: JitSettings, verbose=True):
     monitored_files = []
     files = ""
     # TODO: fix find for gekko 
-    command_ls = flaged_mpiexec_call(settings, f" ls -l {settings.gkfs_mntdir}")
+    command_ls = flaged_call(settings, f" ls -l {settings.gkfs_mntdir}")
     # command_ls = flaged_mpiexec_call(settings, f" find {settings.gkfs_mntdir}")
     try:
         # files = subprocess.check_output(command_ls, shell=True).decode()

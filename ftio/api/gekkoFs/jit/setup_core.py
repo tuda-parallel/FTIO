@@ -10,7 +10,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     check,
     check_port,
     elapsed_time,
-    flaged_mpiexec_call,
+    flaged_call,
     get_env,
     get_executable_realpath,
     handle_sigint,
@@ -161,31 +161,15 @@ def start_cargo(settings: JitSettings) -> None:
         console.print(f"[bold green]####### Starting Cargo [/][black][{get_time()}][/]")
 
         if settings.cluster:
-            if settings.use_mpirun:
-                # mpiexec
-                call = (
-                    f"{settings.cargo} "
-                    f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
-                )
-                call = flaged_mpiexec_call(
-                    settings, call, settings.app_nodes * settings.procs_cargo
-                )
-            else:
-                # srun
-                call = (
-                    f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LIBGKFS_LOG_OUTPUT={settings.gekko_client_log}_cargo,LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
-                    f"LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')}{get_env(settings)} "
-                    f"--jobid={settings.job_id} "
-                    f"{settings.app_nodes_command} --disable-status "
-                    f"-N {settings.app_nodes} --ntasks={settings.app_nodes*settings.procs_cargo} "
-                    f"--cpus-per-task={settings.procs_cargo} --ntasks-per-node={settings.procs_cargo} "
-                    f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo} "
-                    f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
-                )
+            call = (
+                f"{settings.cargo} "
+                f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
+            )
+            call = flaged_call(settings, call, settings.app_nodes,  settings.procs_cargo)
         else:
             # Command for non-cluster
             call = f"{settings.cargo} --listen ofi+tcp://127.0.0.1:62000 -b 65536"
-            call = flaged_mpiexec_call(settings, call, settings.procs_cargo)
+            call = flaged_call(settings, call, 1, settings.procs_cargo)
 
         jit_print("[cyan]>> Starting Cargo[/]")
 
@@ -315,7 +299,7 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
 
         if settings.exclude_cargo:
             # call = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}"
-            call = flaged_mpiexec_call(
+            call = flaged_call(
                 settings, f"cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}"
             )
             start = time.time()
@@ -350,7 +334,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
         if settings.exclude_cargo:
             # additional_arguments = load_flags(settings)
             # call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
-            call = flaged_mpiexec_call(
+            call = flaged_call(
                 settings,
                 f"cp -r  {settings.gkfs_mntdir} {settings.stage_out_path} || echo 'nothing to stage in'",
             )
@@ -366,7 +350,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
 
             if not settings.dry_run:
                 try:
-                    call = flaged_mpiexec_call(
+                    call = flaged_call(
                         settings, f"ls -R {settings.gkfs_mntdir}"
                     )
                     files = subprocess.check_output(call, shell=True).decode()
@@ -474,7 +458,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f"-N {settings.app_nodes} --ntasks={settings.app_nodes*settings.procs_app} "
                 f"--cpus-per-task={settings.procs_app} --ntasks-per-node={settings.procs_app} "
                 f"--overcommit --overlap --oversubscribe --mem=0 "
-                f"{app_call} {settings.app_flags}"
+                f"{settings.task_set_1} {app_call} {settings.app_flags}"
             )
     else:
         # Define the call for non-cluster environment
@@ -557,7 +541,7 @@ def pre_call(settings: JitSettings) -> None:
         if isinstance(settings.pre_app_call, str):
             call = settings.pre_app_call
             if any(x in call for x in ["mpiex", "mpirun"]):
-                call = flaged_mpiexec_call(settings, call)
+                call = flaged_call(settings, call)
             execute_block_and_monitor(
                 settings.verbose,
                 call,
@@ -568,7 +552,7 @@ def pre_call(settings: JitSettings) -> None:
         elif isinstance(settings.pre_app_call, list):
             for call in settings.pre_app_call:
                 if any(x in call for x in ["mpiex", "mpirun"]):
-                    call = flaged_mpiexec_call(settings, call)
+                    call = flaged_call(settings, call)
                 execute_block_and_monitor(
                     settings.verbose,
                     call,

@@ -21,7 +21,7 @@ class JitSettings:
         self.cargo_mode = "parallel"  # "parallel" or "posix"
         self.debug = True
         self.verbose = True
-        self.node_local = False  # execute in node local space
+        self.node_local = True  # execute in node local space
         self.env_var = {}
 
         # Variable initialization (don't change)

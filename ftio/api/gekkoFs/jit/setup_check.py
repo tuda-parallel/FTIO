@@ -30,44 +30,54 @@ def check_setup(settings:JitSettings):
         # console.print(f"[cyan]>> geko_ls {gkfs_mntdir}: \n{files}[/]")
 
         if settings.cluster and settings.debug and not settings.exclude_daemon:
-            #srun dies not work with gekko
-            # call = (
-            #     f"srun --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} --ntasks={settings.app_nodes} "
-            #     f"--cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-            #     f"--export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')},LD_PRELOAD={settings.gkfs_intercept} "
-            #     f"/usr/bin/ls {settings.gkfs_mntdir} "
-            # )
-            # jit_print("[cyan]>> Checking srun with Gekko")
-            # out = execute_block(call, False)
-            # console.print(f"srun check: {out}\n")
-
 
             additional_arguments = ""
-            if not settings.exclude_ftio:
-                additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
-            if not settings.exclude_proxy:
-                additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-            if not settings.exclude_daemon:
-                additional_arguments += (
-                    f"-x LIBGKFS_LOG=info,warnings,errors "
-                    f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
-                    f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                    f"-x LD_PRELOAD={settings.gkfs_intercept} "
-                    )
+            timestamp = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+            file = create_test_file("test.sh"+timestamp, settings)
+            if settings.use_mpirun:
+                if not settings.exclude_ftio:
+                    additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
+                if not settings.exclude_proxy:
+                    additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+                if not settings.exclude_daemon:
+                    additional_arguments += (
+                        f"-x LIBGKFS_LOG=info,warnings,errors "
+                        f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
+                        f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                        f"-x LD_PRELOAD={settings.gkfs_intercept} "
+                        )
 
-
-            #test script
-            jit_print("[cyan] >> Checking test file")
-            try:
-                timestamp = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-                file = create_test_file("test.sh"+timestamp, settings)
                 call = (
                         f" mpiexec -np {settings.app_nodes} --oversubscribe "
                         f"--hostfile {settings.dir}/hostfile_mpi --map-by node "
                         f"{additional_arguments} "
-                        
                         f"{file}"
                     )
+            else:
+                if not settings.exclude_ftio:
+                    additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port},"
+                if not settings.exclude_proxy:
+                    additional_arguments += (
+                        f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
+                    )
+                if not settings.exclude_daemon:
+                    additional_arguments += (
+                        f"LIBGKFS_LOG=info,warnings,errors,"
+                        f"LIBGKFS_LOG_OUTPUT={settings.gekko_client_log},"
+                        f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
+                        f"LD_PRELOAD={settings.gkfs_intercept},"
+                    )
+                call = (
+                    f" srun --export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
+                    f"--jobid={settings.job_id} {settings.app_nodes_command} --disable-status "
+                    f"-N {settings.app_nodes} --ntasks={settings.app_nodes} "
+                    f"--cpus-per-task=1 --ntasks-per-node=1 "
+                    f"--overcommit --overlap --oversubscribe --mem=0 "
+                    f"{file} "
+                )
+            #test script
+            jit_print("[cyan] >> Checking test file")
+            try:
                 out = execute_block(call, False)
                 console.print(f"{out}")
                 # remove the created file
@@ -77,27 +87,6 @@ def check_setup(settings:JitSettings):
                 jit_print(f"[red] >> Error running test script:\n{e}")
         else:
             jit_print("[cyan]>> Skipping setup check")
-        # # Run MPI exec test script
-        # procs = settings.procs
-        # if settings.cluster:
-        #     test_script_command = (f"mpiexec -np {procs} --oversubscribe --hostfile {mpi_hostfile_path} "
-        #                         f"--map-by node -x LIBGKFS_LOG=errors -x LD_PRELOAD={settings.gkfs_intercept} "
-        #                         f"-x LIBGKFS_HOSTS_FILE={gekkofs_hostfile} -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-        #                         f"/home/tarrafah/nhr-admire/tarraf/FTIO/ftio/api/gekkoFs/scripts/test.sh")
-        #     console.print(f"[cyan]>> statx:[/]")
-        #      subprocess.run(test_script_command, shell=True, text=True, capture_output=True, check=True, executable="/bin/bash"        )
-
-                    
-        #     srun_command = (f"srun --export=LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')},"
-        #                     f"LD_PRELOAD={settings.gkfs_intercept} --jobid={settings.job_id} {settings.app_nodes_command} --disable-status "
-        #                     f"-N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-        #                     f"/usr/bin/ls {settings.gkfs_mntdir}")
-        #     files2 = subprocess.check_output(srun_command, shell=True).decode()
-        #     console.print(f"[cyan]>> srun ls {settings.gkfs_mntdir}: \n{files2}[/]")
-
-        # Note: The commented out command for `mpirun` is not included in this translation.
-
-    # Pause for 1 second
     time.sleep(1)
 
 
