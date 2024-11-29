@@ -33,16 +33,21 @@ Remove `-e no` if you want to obtain figures (Fig 12 and 14 from the paper).
 
 ## FTIO: Online Evaluation
 - [Install TMIO](https://github.com/tuda-parallel/TMIO#installation) 
-- If you didn't install `ftio`, first check out version 0.0.1 as described [here](/artifacts/ipdps24/README.md#ftio-version), then install it as described [here](https://github.com/tuda-parallel/FTIO#installation).
+- If you didn't install `ftio`, first check out version 0.0.1 as described [here](/artifacts/ipdps24/README.md#ftio-version), then install it as described [here](https://github.com/tuda-parallel/FTIO#installation). If you don't want to reproduce the experiment from the paper but rather just try FTIO online, then you can skip checking out to a particular version. 
 
-In case you are interested in the original, it is [here](https://github.com/glennklockwood/hacc-io). For our experiments, we modified the code such that it is executed in a loop.
-Navigate to the folder where the source code of the _modified_ version of HACC-IO is presented in `data/application_traces/HACC-IO/src`. Modify the provided Makefile to point to your TMIO git repository:
+In case you are interested in the original version of the benchmark, it is [here](https://github.com/glennklockwood/hacc-io). For our experiments, we modified the code such that it is executed in a loop.
+Navigate to the folder where the source code of the _modified_ version of HACC-IO is presented in `data/application_traces/HACC-IO/src` or clone it from here:
+
+```bash
+git clone https://github.com/A-Tarraf/hacc-io.git
+```
+
+Modify the provided Makefile to point to your TMIO git repository:
 
 ```bash
 ⋮
 TMIO_REPO= /d/github/TMIO #modify this line
 ⋮
-
 ```
 
 A provided Makefile takes care of including TMIO into the HACC-IO source code. For that, execute:

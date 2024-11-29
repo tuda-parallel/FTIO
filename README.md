@@ -73,27 +73,22 @@ Join the [Slack channel](https://join.slack.com/t/ftioworkspace/shared_invite/zt
 
 ## Installation
 
-FTIO is available on PYPI and can be easily installed via pip:
-
-```sh
-pip install ftio-hpc
-```
-
-For the latest GitHub version, FTIO can be installed either [automatically](#automated-installation) or [manually](#manual-installation). As a prerequisite,
+FTIO is available on PYPI and can be easily installed via [pip](#automated-installation-from-pypi). For the latest GitHub version, FTIO can be installed either [automatically](#automated-installation) or [manually](#manual-installation). As a prerequisite,
 for the virtual environment, `python3.11-venv` is needed, which can be installed on Ubuntu, for example, with:
 
 ```sh
 apt install python3.11-venv
 ```
 
-> [!note]
-> Note there are currently issues with pyDarshan on Mac, that can be solved as mentioned [here](https://github.com/darshan-hpc/darshan/issues/930)
-
-### Automated installation
+If you want to contribute to the code, we advise that you install FTIO as mentioned under [contributing](#contributing).
+### Automated installation from GitHub
 
 FTIO is installed by default in a virtual environment. For the automated installation, simply execute the command:
 
 ```sh
+# clone FTIO
+git clone https://github.com/tuda-parallel/FTIO.git
+cd  FTIO
 # uses by default python3 
 make install
 
@@ -111,11 +106,13 @@ If you don't need a dedicated environment, just call:
 make ftio PYTHON=python3
 ```
 
-### Manual installation
+### Manual installation from GitHub
 
 Create a virtual environment if needed and activate it:
 
 ```sh
+git clone https://github.com/tuda-parallel/FTIO.git
+cd  FTIO
 python3 -m venv .venv
 source .venv/bin/activate
 ```
@@ -133,7 +130,21 @@ pip install .
 > source path/to/venv/bin/activate
 > ```
 
+> [!note]
+> Note there are currently issues with pyDarshan on Mac and windows, that can be solved as mentioned [here](https://github.com/darshan-hpc/darshan/issues/930)
+
 <p align="right"><a href="#ftio">⬆</a></p>
+
+### Automated installation from PYPI
+FTIO is available on PYPI and can be easily installed via pip:
+
+```sh
+pip install ftio-hpc
+```
+
+> [!note]
+> Note there are currently issues with pyDarshan on Mac and windows, that can be solved as mentioned [here](https://github.com/darshan-hpc/darshan/issues/930)
+
 
 ## Usage
 
@@ -204,24 +215,102 @@ Several flags can be specified. The most relevant settings are:
 
 ## Testing
 
-There is a `8.jsonl` file provided for testing under [examples](https://github.com/tuda-parallel/FTIO/tree/main/examples). On your system, navigate to the folder [examples/tmio/JSONL](https://github.com/tuda-parallel/FTIO/tree/main/examples/tmio/JSONL) and call:
+There is a `8.jsonl` file provided for testing under [examples](https://github.com/tuda-parallel/FTIO/tree/main/examples). 
+On your system, navigate to the folder [examples/tmio/JSONL](https://github.com/tuda-parallel/FTIO/tree/main/examples/tmio/JSONL) and call:
 
 ```sh
 ftio 8.jsonl
 ```
+
+## Examples
+Several examples are provided under [examples](https://github.com/tuda-parallel/FTIO/tree/main/examples). 
 See also the examples provided [here](/docs/file_formats.md#file-formats-and-tools) for the different file formats.
+
+Alternatively, the [artifact folder](https://github.com/tuda-parallel/FTIO/tree/main/artifacts/ipdps24) contains several instructions and examples traces 
+from the [FTIO paper](#citation) that can be simply downloaded as described [here](https://github.com/tuda-parallel/FTIO/tree/main/artifacts/ipdps24#extracting-the-data-set). 
+
+As `ftio` supports Darshan traces, you could download also traces from [https://hpcioanalysis.zdv.uni-mainz.de/](https://hpcioanalysis.zdv.uni-mainz.de/) and execute FTIO on them as described [here](https://github.com/tuda-parallel/FTIO/blob/main/docs/file_formats.md#darshan).
+
+For an online example with `predictor`, you can follow the instructions here for [HACC-IO](https://github.com/tuda-parallel/FTIO/tree/main/artifacts/ipdps24/HACC-IO#ftio-online-evaluation). 
+
 <p align="right"><a href="#ftio">⬆</a></p>
 
 <!-- CONTRIBUTING -->
 ## Contributing
 
-If you have a suggestion that would make this better, please fork the repository and create a pull request.
 
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a pull request
+### Step 1: Fork the Repository
+1. Visit the [FTIO GitHub repository](https://github.com/tuda-parallel/FTIO).
+2. Click the **Fork** button in the top-right corner to create a copy of the repository under your GitHub account.
+
+### Step 2: Clone Your Fork
+Clone the forked repository to your local machine:
+```bash
+git clone https://github.com/<your-username>/FTIO.git
+```
+
+Replace `<your-username>` with your GitHub username.
+
+### Step 3: Navigate to the Project Directory
+```bash
+cd FTIO
+```
+
+### Step 4: Build the Project in Debug Mode
+Compile the project using the `make debug` command:
+```bash
+# allows to directly test the changes made
+make debug 
+```
+
+This will generate a debug build of the project, useful for development and troubleshooting.
+
+### Step 5: Sync with the Original Repository (Optional)
+To stay up-to-date with the latest changes from the main repository:
+```bash
+git remote add upstream https://github.com/tuda-parallel/FTIO.git
+git fetch upstream
+git merge upstream/main
+```
+
+### Step 6: Create an Issue for Your Contribution
+Before starting your work, create an issue on the repository to describe the feature, bug fix, or enhancement you plan to implement. This helps us track contributions and avoids duplicate work.
+
+1. Go to the **Issues** tab in the [FTIO repository](https://github.com/tuda-parallel/FTIO).
+2. Click **New Issue** and provide a clear title and description.
+3. Label the issue appropriately (e.g., `enhancement`, `bug`, or `question`).
+
+### Step 7: Make Your Changes
+1. Create a new branch for your changes:
+   ```bash
+   git checkout -b <your-feature-branch>
+   ```
+   Replace `<your-feature-branch>` with a descriptive name for your branch.
+   
+2. Make your desired changes and commit them:
+   ```bash
+   git add .
+   git commit -m "Description of your changes"
+   ```
+
+### Step 8: Push Your Changes
+Push your changes to your forked repository:
+```bash
+git push origin <your-feature-branch>
+```
+
+
+## Step 9: Create a Pull Request to the `development` Branch
+1. Navigate to the original FTIO repository on GitHub.
+2. Click the **Pull Requests** tab, then click **New Pull Request**.
+3. Set the target branch to `development`:
+   - **Base Repository:** `tuda-parallel/FTIO`
+   - **Base Branch:** `development`
+   - **Compare Branch:** `<your-feature-branch>`
+4. Provide a detailed description of your changes, referencing the issue you created earlier (e.g., `Fixes #123`).
+5. Submit your pull request and wait for feedback from the maintainers.
+
+We look forward to your contributions! 🎉
 
 <p align="right"><a href="#ftio">⬆</a></p>
 
