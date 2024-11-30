@@ -4,6 +4,7 @@ import getopt
 import os
 import signal
 import shutil
+import re
 from rich.console import Console
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.jittime import JitTime
@@ -1016,7 +1017,27 @@ def set_dir_gekko(settings: JitSettings) -> None:
             jit_print(
             f">> |-> App flags updated to: {settings.app_flags}",
         )
-            
+
+    if settings.update_files_with_gkfs_mntdir:
+        for file_path in settings.update_files_with_gkfs_mntdir:
+            with open(file_path, 'r') as file:
+                content = file.read()
+
+                    # Single regex to replace both key-value pair and standalone path
+            updated_content = re.sub(
+            r'(/[^"]*tarraf_gkfs_mountdir)(/[^"]*)',  # Match '/tarraf_gkfs_mountdir' and the following part of the path
+            lambda match: f'{settings.gkfs_mntdir}{match.group(2)}',  # Replace with 'settings.gkfs_mntdir' and preserve the rest
+            content
+            )
+            # print(updated_content)
+
+            with open(file_path, 'w') as file:
+                file.write(updated_content)
+
+                jit_print(
+                f">> |-> File updated: {file_path}",
+            )
+
 
 
 def print_settings(settings) -> None:
@@ -1464,7 +1485,7 @@ def get_env(settings: JitSettings,mode="srun") -> str:
         env = " ".join(f"-x {key}={value}" for key, value in settings.env_var.items())
     elif "srun": #srun
         env = ",".join(f"{key}={value}" for key, value in settings.env_var.items())
-        env = "," + env
+        env = env + "," 
     else:
         pass
     return env
@@ -1481,3 +1502,5 @@ def save_bandwidth(settings: JitSettings):
             )
         except Exception as e:
             jit_print(f"[red] >> Error saving bandwidth:\n{e}")
+
+

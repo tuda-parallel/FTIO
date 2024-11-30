@@ -272,6 +272,7 @@ class JitSettings:
             "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
         )
         self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
+        self.update_files_with_gkfs_mntdir =[]
 
         # ****** cargo variables ******
         self.cargo_bin = f"{self.gkfs_deps}/gekkofs_zmq_install/bin"  # "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
@@ -302,7 +303,7 @@ class JitSettings:
         # self.app_call = "./nek5000"
         # self.run_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
         # self.app_flags = ""
-        ##  └─ Wacom++ --> change wacom.json if needed
+        #  └─ Wacom++ --> change wacom.json if needed
         # self.app_call = "./wacommplusplus"
         # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"#_gcc12_2"
         # self.app_flags = ""
@@ -352,7 +353,10 @@ class JitSettings:
                 self.post_app_call = ""
             else:
                 # modify wacomm.gkfs.json to include gkfs_mntdir
-                self.pre_app_call = f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.run_dir}/wacomm.gkfs.json {self.run_dir}/wacomm.json; "
+                self.update_files_with_gkfs_mntdir = [f"{self.run_dir}/wacomm.gkfs.json"]
+                self.pre_app_call = (
+                    f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.run_dir}/wacomm.gkfs.json {self.run_dir}/wacomm.json; "
+                    )
                 self.post_app_call = (
                     f"ln -sf {self.run_dir}/wacomm.pfs.json {self.run_dir}/wacomm.json"
                 )
