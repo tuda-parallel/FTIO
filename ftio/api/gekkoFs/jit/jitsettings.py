@@ -262,8 +262,8 @@ class JitSettings:
         self.gkfs_deps = "/lustre/project/nhr-admire/tarraf/deps"  # _gcc12_2"
         self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
         self.gkfs_intercept = (
-            # f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so" 
-            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so" #from rnoun branch, doesn't work with nek
+            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so" 
+            # f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so" #from rnoun branch, doesn't work with nek
         )
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
@@ -348,7 +348,7 @@ class JitSettings:
                 # in case a previous simulation fails
                 self.pre_app_call = (
                     f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.run_dir}/wacomm.pfs.json {self.run_dir}/wacomm.json; "
-                    f"cd {self.run_dir} && rm -rf input restart results processed output; cp -r stage-in/* . "
+                    f"cd {self.run_dir} && rm -rf input restart results processed output;  mkdir /lustre/project/nhr-admire/tarraf/wacom_run; cp -r stage-in/*  /lustre/project/nhr-admire/tarraf/wacom_run "
                 )
                 self.post_app_call = ""
             else:
