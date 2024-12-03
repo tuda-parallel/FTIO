@@ -304,9 +304,9 @@ class JitSettings:
         # self.run_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
         # self.app_flags = ""
         #  └─ Wacom++ --> change wacom.json if needed
-        # self.app_call = "./wacommplusplus"
-        # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"#_gcc12_2"
-        # self.app_flags = ""
+        self.app_call = "./wacommplusplus"
+        self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"#_gcc12_2"
+        self.app_flags = ""
 
         # ****** pre and post app call ******
         # Application specific calls executed before the actual run. Executed as

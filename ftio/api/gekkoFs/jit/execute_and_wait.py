@@ -41,6 +41,7 @@ def execute_block(call: str, raise_exception: bool = True, dry_run=False) -> str
             capture_output=True,
             check=True,
             executable="/bin/bash",
+            env=os.environ,
         )
         out = out.stdout
     except subprocess.CalledProcessError as e:
@@ -80,6 +81,7 @@ def execute_block_and_log(call: str, log_file: str) -> float:
             text=True,
             check=True,
             executable="/bin/bash",
+            env=os.environ,
         )
         end = time.time()
         log_message += f"Output:\n{out.stdout}\n"
@@ -172,6 +174,7 @@ def execute_background(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            env=os.environ,
         )
     return process
 
