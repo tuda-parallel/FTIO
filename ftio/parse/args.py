@@ -110,12 +110,20 @@ Full documentation:
         parser.add_argument('--zmq_port', '--zmq_port', dest='zmq_port', type = str, help = 'zmq port for communication')
         parser.set_defaults(zmq_port = '5555')
         # cargo flags
+        parser.add_argument('--cargo', '--cargo', dest='cargo', action = 'store_true', help = 'Uses Cargo if provided to move data')
+        parser.set_defaults(cargo =  False)
         parser.add_argument('--cargo_bin', '--cargo_bin', dest='cargo_bin', type = str, help = 'Location of Cargo cli')
         parser.set_defaults(cargo_bin = '/lustre/project/nhr-admire/vef/cargo/build/cli')
         parser.add_argument('--cargo_server', '--cargo_server', dest='cargo_server', type = str, help = 'Address and port where cargo is running')
         parser.set_defaults(cargo_server = 'ofi+sockets://127.0.0.1:62000')
-        parser.add_argument('--cargo_out', '--cargo_out', dest='cargo_out', type = str, help = 'Cargo stage out path')
-        parser.set_defaults(carge_out = '/lustre/project/nhr-admire/tarraf/stage-out')
+        parser.add_argument('--stage_out_path', '--stage_out_path', dest='stage_out_path', type = str, help = 'Cargo stage out path')
+        parser.set_defaults(stage_out_path = '/lustre/project/nhr-admire/tarraf/stage-out')
+        # JIT flags without cargo
+        parser.add_argument('--stage_in_path', '--stage_in_path', dest='stage_in_path', type = str, help = 'Cargo stage int path')
+        parser.set_defaults(stage_in_path = '/lustre/project/nhr-admire/tarraf/stage-in')
+        parser.add_argument('--regex', '--regex', dest='regex', type = str, help = 'Files that match the regex expression are ignored during stage out')
+        parser.set_defaults(regex = '')
+        
 
     #! IOPLOT Settings
     if 'plot' in name.lower():

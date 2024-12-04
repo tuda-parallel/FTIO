@@ -1,10 +1,10 @@
 import sys
 import time
-import os
 from multiprocessing import Manager
 from rich.console import Console
-import numpy as np
+# import numpy as np
 import zmq
+from ftio.api.gekkoFs.stage_data import setup_cargo, trigger_cargo
 from ftio.prediction.helper import print_data#, export_extrap
 from ftio.prediction.async_process import handle_in_process
 from ftio.prediction.probability_analysis import find_probability
@@ -17,10 +17,9 @@ from ftio.parse.args import parse_args
 from ftio.prediction.processes_zmq import bind_socket, receive_messages
 
 
-T_S = time.time()
+# T_S = time.time()
 CONSOLE = MyConsole()
 CONSOLE.set(True)
-CARGO = True
 
 def main(args: list[str] = sys.argv[1:]) -> None:
     
@@ -139,7 +138,6 @@ def prediction_zmq_process(
     # Modify the arguments
     args.extend(["-e", "no"])
     args.extend(["-ts", f"{start_time.value:.2f}"])
-    
 
     # Perform prediction
     prediction, args, t_flush = run(msg, args, b_app, t_app)
@@ -185,79 +183,6 @@ def prediction_zmq_process(
         })
 
     console.print(f"[purple][PREDICTOR] (#{count.value}):[/]  Ended")
-
-
-
-def trigger_cargo(sync_trigger,args):
-    """sends cargo calls. For that in extracts the predictions from `sync_trigger` and examines it. 
-
-    Args:
-        sync_trigger (_type_): _description_
-    """
-    while True:
-        try:
-            if not sync_trigger.empty():
-                skip_flag = False 
-                prediction = sync_trigger.get()
-                t = time.time() - prediction['t_wait']  # time waiting so far
-                # CONSOLE.print(f"[bold green][Trigger] queue wait time = {t:.3f} s[/]\n")
-                if not np.isnan(prediction['freq']):
-                    #? 1) Find estimated number of phases and skip in case less than 1
-                    # n_phases = (prediction['t_end']- prediction['t_start'])*prediction['freq']
-                    # if n_phases <= 1:
-                    #     CONSOLE.print(f"[bold green][Trigger] Skipping this prediction[/]\n")
-                    #     continue
-                    
-                    #? 2) Time analysis to find the right instance when to send the data
-                    target_time = prediction['t_end'] + 1/prediction['freq']
-                    geko_elapsed_time = prediction['t_flush'] + t  # t  is the waiting time in this function. t_flush contains the overhead of ftio + when the data was flushed from gekko
-                    remaining_time = (target_time - geko_elapsed_time ) 
-                    CONSOLE.print(f"[bold green][Trigger {prediction['source']}][/][green] Target time = {target_time:.3f} -- Gekko time = {geko_elapsed_time:.3f} -> sending cmd in {remaining_time:.3f} s[/]\n")
-                    if remaining_time > 0:
-                        countdown = time.time() + remaining_time
-                        # wait till the time elapses:
-                        while time.time() < countdown:
-                            pass
-                            #? 3) Skip in case new prediction is available  
-                            # if not sync_trigger.empty():
-                            #     skip_flag = True
-
-                        if not skip_flag:
-                            if CARGO:
-                                # call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']}"
-                                call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
-                                os.system(call)
-
-                            # to use maybe later
-                            period = 1/prediction['freq'] if prediction['freq'] > 0 else 0
-                            text = f"frequency: {prediction['freq']}\nperiod: {period} \nconfidence: {prediction['conf']}\nprobability: {prediction['probability']}\n"
-                            CONSOLE.print("[bold green][Trigger][/][green]" + call +"\n"+text)
-                        else:
-                            CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, new prediction is ready[/]\n")
-
-                    else:
-                        CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, not in time[/]\n")
-
-            time.sleep(0.01)
-        except KeyboardInterrupt:
-            exit()
-
-
-def setup_cargo(tmp_args):
-    if CARGO:
-        #1. Perform stage in outside FTIO with cpp
-        #2. Setup für Cargo Stage-out für cargo_ftio
-        call = f"{tmp_args.cargo_bin}/cargo_ftio --server {tmp_args.cargo_server} --run"
-        CONSOLE.print("\n[bold green][Init][/][green]" + call +"\n")
-        os.system(call)
-
-        # 3. tells cargo that for all next cargo_ftio calls use the cpp
-        # input is relative from GekokFS
-        call = f"{tmp_args.cargo_bin}/ccp --server {tmp_args.cargo_server} --input / --output {tmp_args.cargo_out} --if gekkofs --of parallel"
-        CONSOLE.print("\n[bold green][Init][/][green]" + call + "\n")
-        os.system(call)
-        # 4. trigger with the thread
-        # 5. Do a stage out outside FTIO with cargo_ftio --run
 
 
 if __name__ == "__main__":

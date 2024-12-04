@@ -235,21 +235,27 @@ def start_ftio(settings: JitSettings) -> None:
             jit_print(
                 f"[cyan]>> FTIO is listening node is {settings.address_ftio}:{settings.port} [/]"
             )
-
             call = (
-                f"srun --jobid={settings.job_id} {settings.ftio_node_command} "
-                f"--disable-status -N 1 --ntasks=1 --cpus-per-task={settings.procs_ftio} "
-                f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-                f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} "
-                f"--cargo_bin {settings.cargo_bin} --cargo_server {settings.cargo_server} "
-                f"--cargo_out {settings.stage_out_path}"
+                    f"srun --jobid={settings.job_id} {settings.ftio_node_command} "
+                    f"--disable-status -N 1 --ntasks=1 --cpus-per-task={settings.procs_ftio} "
+                    f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
+                    f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} "
             )
+            if settings.exclude_cargo:
+                call +=(
+                    f" --stage_out_path {settings.stage_out_path} --stage_in_path {settings.stage_in_path} --regex {settings.regex_match}"
+                )
+            else:
+                call +=(
+                    f"--cargo --cargo_bin {settings.cargo_bin} "
+                    f"--cargo_server {settings.cargo_server} --stage_out_path {settings.stage_out_path}"
+                )
         else:
             check_port(settings)
             call = (
                 f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} "
-                f"--cargo_bin {settings.cargo_bin} --cargo_server {settings.cargo_server} "
-                f"--cargo_out {settings.stage_out_path}"
+                f"--cargo --cargo_bin {settings.cargo_bin} --cargo_server {settings.cargo_server} "
+                f"--stage_out_path {settings.stage_out_path}"
             )
 
         jit_print("[cyan]>> Starting FTIO[/]")

@@ -98,7 +98,7 @@ def z_score(
     z_k = abs(amp_tmp - mean) / std if std > 0 else np.zeros(len(amp_tmp))
     conf = np.zeros(len(z_k))
     # find outliers
-    index = np.where((z_k/np.max(z_k) > tol) & (z_k > 3)) if np.max(z_k) > 0 else  (np.array([], dtype=np.int64),)
+    index = np.where((z_k/np.max(z_k) > tol) & (z_k > 3)) if len(z_k) > 0 and np.max(z_k) > 0 else  (np.array([], dtype=np.int64),)
     text += f"[green]mean[/]: {mean/np.sum(amp_tmp) if np.sum(amp_tmp) else 0:.3e}\n[green]std[/]: {std:.3e}\n"
     text += f"Frequencies with Z-score > 3 -> [green]{len(z_k[z_k>3])}[/] candidates\n"
     text += f"         + Z > Z_max*{tol*100}% > 3 -> [green]{len(index[0])}[/] candidates\n"
