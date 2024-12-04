@@ -147,6 +147,8 @@ def parse_options(settings: JitSettings, args: list) -> None:
                 settings.procs_proxy = int(procs_list[2])
             if len(procs_list) > 3:
                 settings.procs_cargo = int(procs_list[3])
+                if settings.procs_cargo < 2:
+                    jit_print("[bold yellow]>> Warning: Not recommended to set Cargo < 2[/]")
             if len(procs_list) > 4:
                 settings.procs_ftio = int(procs_list[4])
 

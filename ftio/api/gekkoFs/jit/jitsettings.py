@@ -251,7 +251,7 @@ class JitSettings:
         # self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
         self.job_name = "JIT"
         # self.alloc_call_flags = f"--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0401"
-        self.alloc_call_flags = f"--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0401"
+        self.alloc_call_flags = f"--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0085,cpu0086,cpu0087,cpu0088,cpu0401"
 
         # ? Tools
         # ?##########################
@@ -262,8 +262,8 @@ class JitSettings:
         self.gkfs_deps = "/lustre/project/nhr-admire/tarraf/deps"  # _gcc12_2"
         self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
         self.gkfs_intercept = (
-            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so" 
-            # f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so" #from rnoun branch, doesn't work with nek
+            # f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so" 
+            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so" 
         )
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
@@ -348,7 +348,7 @@ class JitSettings:
                 # in case a previous simulation fails
                 self.pre_app_call = (
                     f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.run_dir}/wacomm.pfs.json {self.run_dir}/wacomm.json; "
-                    f"cd {self.run_dir} && rm -rf input restart results processed output;  mkdir /lustre/project/nhr-admire/tarraf/wacom_run; cp -r stage-in/*  /lustre/project/nhr-admire/tarraf/wacom_run "
+                    f"cd {self.run_dir} && rm -rf input restart results processed output;  mkdir -p /lustre/project/nhr-admire/tarraf/wacom_run; cp -r stage-in/*  /lustre/project/nhr-admire/tarraf/wacom_run "
                 )
                 self.post_app_call = ""
             else:
