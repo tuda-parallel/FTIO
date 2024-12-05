@@ -115,6 +115,7 @@ def move_files(src_dir, dest_dir, ignore_pattern=None):
         try:
             # Move file or directory
             # shutil.move(src_item, dest_item)
+            CONSOLE.print("[bold green][Trigger][/][yellow] -- Moving files is currently only simulated --[/]\n")
             print(f"Moved: {src_item} -> {dest_item}")
         except Exception as e:
             print(f"Error moving '{src_item}': {e}")

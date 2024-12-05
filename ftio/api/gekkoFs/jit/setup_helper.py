@@ -1298,14 +1298,11 @@ def flaged_mpiexec_call(settings: JitSettings, call: str, procs: int = 1) -> str
 
 
 def flaged_srun_call(settings: JitSettings, call: str, nodes: int = 1, procs: int = 1) -> str:
-    additional_arguments = load_flags_srun(settings)
     if settings.cluster:
+        additional_arguments = load_flags_srun(settings)
         call = srun_call(settings, call, nodes,procs, additional_arguments)
     else:
-        call = (
-            f"mpiexec -np {procs} --oversubscribe "
-            f"{additional_arguments} {call}"
-        )
+        call = flaged_mpiexec_call(settings, call, procs)
 
     return call
 

@@ -80,11 +80,11 @@ def start_gekko_daemon(settings: JitSettings) -> None:
         else:  # no cluster mode
             call = (
                 f"GKFS_DAEMON_LOG_LEVEL=info GKFS_DAEMON_LOG_PATH={settings.gekko_daemon_log} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l lo -P ofi+tcp"
+                f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l lo -P {settings.gkfs_daemon_protocol}"
             )
             if not settings.exclude_proxy:
                 # Demon call with proxy
-                call += " --proxy-listen lo --proxy-protocol ofi+tcp"
+                call += " --proxy-listen lo --proxy-protocol {settings.gkfs_daemon_protocol}"
 
         jit_print("[cyan]>> Starting Demons[/]", True)
         # p = multiprocessing.Process(target=execute_background, args= (call, settings.gekko_daemon_log, settings.gekko_daemon_err, settings.dry_run))
@@ -131,7 +131,7 @@ def start_gekko_proxy(settings: JitSettings) -> None:
             # Proxy call for non-cluster
             call = (
                 f"{settings.gkfs_proxy} -H {settings.gkfs_hostfile} "
-                f"-p ofi+tcp -P {settings.gkfs_proxyfile}"
+                f"-p {settings.gkfs_daemon_protocol} -P {settings.gkfs_proxyfile}"
             )
         jit_print("[cyan]>> Starting Proxy[/]")
 
@@ -168,7 +168,7 @@ def start_cargo(settings: JitSettings) -> None:
             call = flaged_call(settings, call, settings.app_nodes,  settings.procs_cargo)
         else:
             # Command for non-cluster
-            call = f"{settings.cargo} --listen ofi+tcp://127.0.0.1:62000 -b 65536"
+            call = f"{settings.cargo} --listen {settings.gkfs_daemon_protocol}://127.0.0.1:62000 -b 65536"
             call = flaged_call(settings, call, 1, settings.procs_cargo)
 
         jit_print("[cyan]>> Starting Cargo[/]")
@@ -241,23 +241,21 @@ def start_ftio(settings: JitSettings) -> None:
                     f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
                     f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} "
             )
-            if settings.exclude_cargo:
-                call +=(
-                    f" --stage_out_path {settings.stage_out_path} --stage_in_path {settings.stage_in_path} --regex {settings.regex_match}"
-                )
-            else:
-                call +=(
-                    f"--cargo --cargo_bin {settings.cargo_bin} "
-                    f"--cargo_server {settings.cargo_server} --stage_out_path {settings.stage_out_path}"
-                )
         else:
             check_port(settings)
             call = (
-                f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} "
-                f"--cargo --cargo_bin {settings.cargo_bin} --cargo_server {settings.cargo_server} "
-                f"--stage_out_path {settings.stage_out_path}"
+                f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port}"
+                )
+        
+        if settings.exclude_cargo:
+            call += f" --stage_out_path {settings.stage_out_path} --stage_in_path {settings.stage_in_path} "
+            if settings.regex_match:
+                call += f" --regex {settings.regex_match} "
+        else:
+            call +=(
+                f"--cargo --cargo_bin {settings.cargo_bin} "
+                f"--cargo_server {settings.cargo_server} --stage_out_path {settings.stage_out_path}"
             )
-
         jit_print("[cyan]>> Starting FTIO[/]")
 
         process = execute_background_and_log(
@@ -304,10 +302,12 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
         jit_print(f"[cyan]>> Staging in to {settings.stage_in_path}", True)
 
         if settings.exclude_cargo:
-            # call = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}"
-            call = flaged_call(
-                settings, f"cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}"
-            )
+            # check that there are actually files
+            call = ""
+            if len(subprocess.check_output(f"ls -R {settings.stage_in_path}/", shell=True).decode()) > 0:
+                call = flaged_call(
+                    settings, f"cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}"
+                )
             start = time.time()
             _ = execute_block(call, dry_run=settings.dry_run)
         else:

@@ -138,7 +138,7 @@ class JitSettings:
             self.procs_ftio = self.procs
             self.procs_app = int(np.floor(self.procs / 2))
         else:
-            self.procs = 10
+            self.procs = os.cpu_count()/2 if os.cpu_count() else 4
             self.procs_daemon = 1
             self.procs_proxy = 1
             self.procs_cargo = 2
@@ -288,9 +288,9 @@ class JitSettings:
         ##  ├─ DLIO -->
         self.app_call = "dlio_benchmark"
         self.run_dir = "."
+        workload = " workload=unet3d_my_a100 "
         self.app_flags = (
-            f"workload=unet3d_my_a100 "
-            # f"workload=bert_v100 "
+            f"{workload} "
             f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
             f"++workload.dataset.data_folder={self.run_dir}/data/jit ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/jit "  
             f"++workload.output.output_folder={self.run_dir}/hydra_log/jit "
@@ -304,9 +304,9 @@ class JitSettings:
         # self.run_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
         # self.app_flags = ""
         #  └─ Wacom++ --> change wacom.json if needed
-        self.app_call = "./wacommplusplus"
-        self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"#_gcc12_2"
-        self.app_flags = ""
+        # self.app_call = "./wacommplusplus"
+        # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
+        # self.app_flags = ""
 
         # ****** pre and post app call ******
         # Application specific calls executed before the actual run. Executed as
@@ -322,9 +322,7 @@ class JitSettings:
             else:
                 # self.run_dir = self.gkfs_mntdir #? don't enable this flag, as the executing node doesn't have this folder
                 self.app_flags = (
-                    # f"workload=unet3d_my_a100_gekko "
-                    f"workload=unet3d_my_a100 " #no need to select a specific one, the folder assignment makes it use geko
-                    # f"workload=bert_v100 "
+                    f"{workload} "
                     f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
                     f"++workload.dataset.data_folder={self.gkfs_mntdir}/data/jit ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints/jit " 
                     f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log/jit "
@@ -406,6 +404,7 @@ class JitSettings:
         # ? local machine settings
         # ?###############################
         if not self.cluster:
+            self.gkfs_daemon_protocol ="ofi+sockets" #"ofi+tcp"
             self.install_location = "/d/github/JIT"
             self.ftio_bin_location = "/d/github/FTIO/.venv/bin"
             self.gkfs_daemon = f"{self.install_location}/iodeps/bin/gkfs_daemon"
@@ -430,17 +429,36 @@ class JitSettings:
                 self.stage_in_path = "/d/github/dlio_benchmark/data"
                 # generate data with
                 if self.exclude_all:
-                    self.run_dir = ""  # don't change dir
-                    self.app_flags = "workload=unet3d_my_a100"
-                    self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                    self.app_flags = (
+                    f"{workload} "
+                    f"++workload.workflow.generate_data=False ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
+                    f"++workload.dataset.data_folder={self.run_dir}/data/jit ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/jit " 
+                    f"++workload.output.output_folder={self.run_dir}/hydra_log/jit "
+                    )
+                    self.pre_app_call = (
+                            f"mpirun -np 8 dlio_benchmark "
+                            f"{workload} "
+                            f"++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
+                            f"++workload.dataset.data_folder={self.run_dir}/data/jit ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/jit " 
+                            f"++workload.output.output_folder={self.run_dir}/hydra_log/jit "
+                    )
                     self.post_app_call = ""
                 else:
-                    self.run_dir = f"{self.gkfs_mntdir}"
-                    self.app_flags = "workload=unet3d_my_a100_gekko"
+                    self.app_flags = (
+                    f"{workload} "
+                    f"++workload.workflow.generate_data=False ++workload.workflow.train=True ++workload.workflow.checkpoint=False " #++workload.workflow.evaluation=True "
+                    f"++workload.dataset.data_folder={self.gkfs_mntdir}/data/jit ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints/jit " 
+                    f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log/jit "
+                    )
                     self.pre_app_call = [
                         # f"cd {self.gkfs_mntdir}",
-                        f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False",
-                        # with one proc it works
+                        (
+                            f"mpirun -np 8 dlio_benchmark "
+                            f"{workload} "
+                            f"++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
+                            f"++workload.dataset.data_folder={self.gkfs_mntdir}/data/jit ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints/jit " 
+                            f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log/jit "
+                    )
                     ]
                     self.post_app_call = ""
                 # ├─ Nek5000
