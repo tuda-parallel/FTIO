@@ -29,7 +29,7 @@ def parse(file_path_or_msg, data, io_type = "w") -> tuple[dict, str]:
         # else:
         unpacker = msgpack.Unpacker()
         unpacker.feed(file_path_or_msg)
-        data = assign(data, unpacker)
+        data = assign(data, unpacker, io_type)
 
     # MsgPack
     elif "MSG" in extension.upper():

@@ -60,17 +60,17 @@ def trigger_cargo(sync_trigger,args):
                             #     skip_flag = True
 
                         if not skip_flag:
-                            if args.cargo:
-                                # call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']}"
-                                call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
-                                os.system(call)
-                            else: #standard move
-                                move_files(args.stage_in_path,args.stage_out_path,args.regex)
-
                             # to use maybe later
                             period = 1/prediction['freq'] if prediction['freq'] > 0 else 0
                             text = f"frequency: {prediction['freq']}\nperiod: {period} \nconfidence: {prediction['conf']}\nprobability: {prediction['probability']}\n"
-                            CONSOLE.print("[bold green][Trigger][/][green]" + call +"\n"+text)
+                            if args.cargo:
+                                # call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']}"
+                                call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
+                                CONSOLE.print("[bold green][Trigger][/][green]" + call +"\n"+text)
+                                os.system(call)
+                            else: #standard move
+                                move_files(args.stage_in_path,args.stage_out_path,args.regex)
+                                CONSOLE.print("[bold green][Trigger][/][green]" + "Moving files" +"\n"+text)
                         else:
                             CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, new prediction is ready[/]\n")
 

@@ -50,10 +50,12 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
     for file_or_msg in files_or_msgs:
         # print(files_or_msgs.index(file_or_msg))
         data_rank, ext = parse(file_or_msg, data_rank, io_type = args.mode[0])
+        # print(data_rank)
 
     # 2) exit if no new data
     if not data_rank["avg_thruput_mib"]:
         data_rank, ext = parse(file_or_msg, data_rank, io_type = "read")
+        # print(data_rank)
         if not data_rank["avg_thruput_mib"]:
             CONSOLE.print("[red]Terminating prediction (no data passed) [/]")
         else: 
@@ -82,11 +84,11 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
         # extend data
         b_app.extend(b)
         t_app.extend(t)
-        t = np.array(t_app[:])
         b = np.array(b_app[:])
+        t = np.array(t_app[:])
     else:
-        t = np.array(list(t))
         b = np.array(list(b))
+        t = np.array(list(t))
 
     process = handle_in_process(dump_json, args=(b,t),)
 

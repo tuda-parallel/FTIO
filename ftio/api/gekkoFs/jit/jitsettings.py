@@ -75,6 +75,7 @@ class JitSettings:
         self.port = "5555"
         self.nodes = 1
         self.max_time = 30
+        self.frequency = 10.0
         self.skip_confirm = False
         self.use_mpirun = False
         self.trap_exit = True
@@ -304,9 +305,9 @@ class JitSettings:
         # self.run_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
         # self.app_flags = ""
         #  └─ Wacom++ --> change wacom.json if needed
-        # self.app_call = "./wacommplusplus"
-        # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
-        # self.app_flags = ""
+        self.app_call = "./wacommplusplus"
+        self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
+        self.app_flags = ""
 
         # ****** pre and post app call ******
         # Application specific calls executed before the actual run. Executed as
@@ -391,7 +392,7 @@ class JitSettings:
         # ├─ Wacom++
         elif "wacom" in self.app_call:
             # self.regex_match = "^(\\/(output|results|restart|input|processed)\\/)\\.+$"  #
-            self.regex_match = "\\/processed\\/^ocm3_d03_\\d+Z\\d+\\.nc$"
+            self.regex_match = "\\/processed\\/"#^ocm3_d03_\\d+Z\\d+\\.nc$"
         # ├─ LAMMPS
         elif "lmp" in self.app_call:
             self.regex_match = ""

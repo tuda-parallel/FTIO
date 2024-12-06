@@ -239,12 +239,12 @@ def start_ftio(settings: JitSettings) -> None:
                     f"srun --jobid={settings.job_id} {settings.ftio_node_command} "
                     f"--disable-status -N 1 --ntasks=1 --cpus-per-task={settings.procs_ftio} "
                     f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-                    f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} "
+                    f"{settings.ftio_bin_location}/predictor_jit --freq {settings.frequency} --zmq_address {settings.address_ftio} --zmq_port {settings.port} "
             )
         else:
             check_port(settings)
             call = (
-                f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port}"
+                f"{settings.ftio_bin_location}/predictor_jit --freq {settings.frequency} --zmq_address {settings.address_ftio} --zmq_port {settings.port}"
                 )
         
         if settings.exclude_cargo:
@@ -258,7 +258,7 @@ def start_ftio(settings: JitSettings) -> None:
             )
         jit_print("[cyan]>> Starting FTIO[/]")
 
-        process = execute_background_and_log(
+        _ = execute_background_and_log(
             settings, call, settings.ftio_log, "ftio", settings.ftio_err
         )
         if settings.verbose:
@@ -301,20 +301,22 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
 
         jit_print(f"[cyan]>> Staging in to {settings.stage_in_path}", True)
 
-        if settings.exclude_cargo:
+        if True: #settings.exclude_cargo:
             # check that there are actually files
             call = ""
             if len(subprocess.check_output(f"ls -R {settings.stage_in_path}/", shell=True).decode()) > 0:
                 call = flaged_call(
-                    settings, f"cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}"
+                    settings, f"cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}", exclude = ["ftio"]
                 )
             start = time.time()
             _ = execute_block(call, dry_run=settings.dry_run)
+        #TODO: fix cpp cargo
         else:
             if settings.cluster:
-                call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
+                call = flaged_call(settings, f"{settings.cargo_bin}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}",exclude = ["ftio"])
+                # call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
             else:
-                call = f"mpiexec -np 1 --oversubscribe {settings.cargo_bin}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
+                call = f"mpiexec -x LIBGKFS_ENABLE_METRICS=off -np 1 --oversubscribe {settings.cargo_bin}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
 
             start = time.time()
 
@@ -357,7 +359,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             if not settings.dry_run:
                 try:
                     call = flaged_call(
-                        settings, f"ls -R {settings.gkfs_mntdir}"
+                        settings, f"ls -R {settings.gkfs_mntdir}", exclude=["ftio"]
                     )
                     files = subprocess.check_output(call, shell=True).decode()
                     console.print(

@@ -78,7 +78,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
     try:
         opts, args = getopt.getopt(
             args,
-            "a:r:n:p:c:o:t:j:l:i:e:xdvyuh",
+            "a:r:n:p:c:o:t:j:l:i:e:f:xdvyuh",
             [
                 "address=",
                 "port=",
@@ -91,6 +91,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
                 "log-name=",
                 "install_location=",
                 "exclude=",
+                "frequency=",
                 "exclude-all",
                 "dry_run",
                 "verbose",
@@ -152,6 +153,8 @@ def parse_options(settings: JitSettings, args: list) -> None:
             if len(procs_list) > 4:
                 settings.procs_ftio = int(procs_list[4])
 
+        elif opt in ("-f", "--frequency"):
+            settings.frequency = float(arg)
         elif opt in ("-e", "--exclude"):
             jit_print("[bold yellow]>> Excluding: [/]")
             if not arg or arg.startswith("-"):
@@ -254,6 +257,10 @@ def error_usage(settings: JitSettings):
         default: Auto set to number of nodes and job ID
         if provided, sets the name of the directory where the logs are stored.
 
+    -f | --frequency: float
+        default: [bold yellow]{settings.frequency}[/]
+        sampling frequency for FTIO
+
     -e | --exclude: <str>,<str>,...,<str>
         default: ftio
         If this flag is provided, the setup is executed without the tool(s).
@@ -264,7 +271,6 @@ def error_usage(settings: JitSettings):
         default: [bold yellow]{settings.exclude_all}[/]
         If this flag is provided, the setup is executed without FTIO, 
         GekkoFs, and Cargo.
-
 
     -d | --dry_run 
         default: [bold yellow]{settings.dry_run}[/]
@@ -1259,7 +1265,7 @@ def check(settings: JitSettings):
     if settings.dry_run or settings.exclude_daemon:
         return
 
-    call = flaged_call(settings, f"ls -lahrt {settings.gkfs_mntdir}")
+    call = flaged_call(settings, f"ls -lahrt {settings.gkfs_mntdir}",exclude=["ftio"])
     try:
 
         files = subprocess.check_output(
@@ -1273,17 +1279,17 @@ def check(settings: JitSettings):
 
 
 
-def flaged_call(settings: JitSettings, call: str, nodes: int = 1, procs_per_node: int = 1) -> str:
+def flaged_call(settings: JitSettings, call: str, nodes: int = 1, procs_per_node: int = 1, exclude = [], special_flags:dict = {}) -> str:
     if settings.use_mpirun:
-        call = flaged_mpiexec_call(settings, call, nodes*procs_per_node)
+        call = flaged_mpiexec_call(settings, call, nodes*procs_per_node, exclude, special_flags)
     else:
-        call = flaged_srun_call(settings, call, nodes, procs_per_node)
+        call = flaged_srun_call(settings, call, nodes, procs_per_node, exclude, special_flags)
 
     return call
 
 
-def flaged_mpiexec_call(settings: JitSettings, call: str, procs: int = 1) -> str:
-    additional_arguments = load_flags_mpiexec(settings)
+def flaged_mpiexec_call(settings: JitSettings, call: str, procs: int = 1, exclude = [], special_flags:dict = {}) -> str:
+    additional_arguments = load_flags_mpiexec(settings, exclude = exclude, special_flags=special_flags)
     call, procs = clean_call(call,procs)
     if settings.cluster:
         call = mpiexec_call(settings, call, procs, additional_arguments)
@@ -1297,9 +1303,9 @@ def flaged_mpiexec_call(settings: JitSettings, call: str, procs: int = 1) -> str
     return call
 
 
-def flaged_srun_call(settings: JitSettings, call: str, nodes: int = 1, procs: int = 1) -> str:
+def flaged_srun_call(settings: JitSettings, call: str, nodes: int = 1, procs: int = 1, exclude = [], special_flags = {}) -> str:
     if settings.cluster:
-        additional_arguments = load_flags_srun(settings)
+        additional_arguments = load_flags_srun(settings, exclude = exclude, special_flags=special_flags)
         call = srun_call(settings, call, nodes,procs, additional_arguments)
     else:
         call = flaged_mpiexec_call(settings, call, procs)
@@ -1307,56 +1313,91 @@ def flaged_srun_call(settings: JitSettings, call: str, nodes: int = 1, procs: in
     return call
 
 
-def load_flags_mpiexec(settings: JitSettings, ftio_metrics: bool = False) -> str:
+def load_flags_mpiexec(settings: JitSettings,  exclude:list = [], special_flags:dict = {}) -> str:
+    default = load_defauts(settings,special_flags)
     additional_arguments = ""
-    if not settings.exclude_ftio and ftio_metrics:
-        additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
-    if not settings.exclude_proxy:
-        additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-    if not settings.exclude_daemon:
+    if not settings.exclude_ftio and "ftio" not in exclude:
         additional_arguments += (
-            f"-x LIBGKFS_LOG=info,warnings,errors "
-            f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
-            f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-            f"-x LD_PRELOAD={settings.gkfs_intercept} "
+            f"-x LIBGKFS_METRICS_IP_PORT={default['LIBGKFS_METRICS_IP_PORT']} "
+            f"-x LIBGKFS_ENABLE_METRICS={default['LIBGKFS_ENABLE_METRICS']} "
         )
+    if not settings.exclude_proxy and "proxy" not in exclude:
+        additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={default['LIBGKFS_PROXY_PID_FILE']} "
+    if not settings.exclude_daemon and "demon" not in exclude:
+        additional_arguments += (
+            f"-x LIBGKFS_LOG={default['LIBGKFS_LOG']} "
+            f"-x LIBGKFS_LOG_OUTPUT={default['LIBGKFS_LOG_OUTPUT']} "
+            f"-x LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']} "
+            f"-x LD_PRELOAD={default['LD_PRELOAD']} "
+        )
+    
     additional_arguments += get_env(settings,"mpi")
-
     return additional_arguments
 
 
-def load_flags_srun(settings:JitSettings) -> str:
+def load_flags_srun(settings:JitSettings, exclude:list = [], special_flags:dict = {} ) -> str:
+    default = load_defauts(settings,special_flags)
     additional_arguments = ""
-    if not settings.exclude_ftio:
-        additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port},"
-    if not settings.exclude_proxy:
+    if not settings.exclude_ftio and "ftio" not in exclude:
         additional_arguments += (
-            f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
-        )
-    if not settings.exclude_daemon:
+            f"LIBGKFS_ENABLE_METRICS={default['LIBGKFS_ENABLE_METRICS']},"
+            f"LIBGKFS_METRICS_IP_PORT={default['LIBGKFS_METRICS_IP_PORT']},"
+            )
+    if not settings.exclude_proxy and "proxy" not in exclude:
         additional_arguments += (
-            f"LIBGKFS_LOG=info,warnings,errors,"
-            f"LIBGKFS_LOG_OUTPUT={settings.gekko_client_log},"
-            f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
-            f"LD_PRELOAD={settings.gkfs_intercept},"
+            f"LIBGKFS_PROXY_PID_FILE={default['LIBGKFS_PROXY_PID_FILE']},"
         )
-    additional_arguments += get_env(settings,"srun")
+    if not settings.exclude_daemon and "demon" not in exclude:
+        additional_arguments += (
+            f"LIBGKFS_LOG={default['LIBGKFS_LOG']},"
+            f"LIBGKFS_LOG_OUTPUT={default['LIBGKFS_LOG_OUTPUT']},"
+            f"LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']},"
+            f"LD_PRELOAD={default['LD_PRELOAD']},"
+        )
+        additional_arguments += get_env(settings,"srun")
+
     return additional_arguments
 
-def load_flags(settings: JitSettings, ftio_metrics: bool = False) -> str:
+
+def load_flags(settings: JitSettings, ftio_metrics: bool = False, special_flags={}) -> str:
+    default = load_defauts(settings,special_flags)
     additional_arguments = ""
     if not settings.exclude_ftio and ftio_metrics:
-        additional_arguments += f" LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port}  LIBGKFS_ENABLE_METRICS=on "
+        additional_arguments += (
+            f" LIBGKFS_METRICS_IP_PORT={default['LIBGKFS_METRICS_IP_PORT']} " 
+            f" LIBGKFS_ENABLE_METRICS={default['LIBGKFS_ENABLE_METRICS']} "
+            )
     if not settings.exclude_proxy:
-        additional_arguments += f" LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+        additional_arguments += f" LIBGKFS_PROXY_PID_FILE={default['LIBGKFS_PROXY_PID_FILE']} "
     if not settings.exclude_daemon:
         additional_arguments += (
-            f" LIBGKFS_LOG=info,warnings,errors "
-            f" LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
-            f" LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-            f" LD_PRELOAD={settings.gkfs_intercept} "
+            f" LIBGKFS_LOG={default['LIBGKFS_LOG']} "
+            f" LIBGKFS_LOG_OUTPUT={default['LIBGKFS_LOG_OUTPUT']} "
+            f" LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']} "
+            f" LD_PRELOAD={default['LD_PRELOAD']} "
         )
     return additional_arguments
+
+
+
+def load_defauts(settings: JitSettings, special_flags:dict = {}):
+    default = {
+        "LIBGKFS_METRICS_IP_PORT":f"{settings.address_ftio}:{settings.port}",
+        "LIBGKFS_ENABLE_METRICS":"on",
+        "LIBGKFS_PROXY_PID_FILE" : f"{settings.gkfs_proxyfile}",
+        "LIBGKFS_LOG" : "info,warnings,errors",
+        "LIBGKFS_LOG_OUTPUT" : f"{settings.gekko_client_log}",
+        "LIBGKFS_HOSTS_FILE" : f"{settings.gkfs_hostfile}",
+        "LD_PRELOAD" : f"{settings.gkfs_intercept}",
+    }
+    if  special_flags:
+        for key, value in special_flags.items():
+            if key in default:
+                if value:
+                    default[key] = value
+                else:
+                    default.pop(key)
+    return default
 
 
 def mpiexec_call(
@@ -1384,7 +1425,6 @@ def srun_call(
             f"{settings.task_set_0} {command}"
         )
     return call
-
 
 
 def clean_call(call:str,procs:int):

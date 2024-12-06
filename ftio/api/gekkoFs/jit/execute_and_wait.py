@@ -17,7 +17,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
 )
 
 console = Console()
-
+TERMINAL_WIDTH = console.size.width 
 
 def execute_block(call: str, raise_exception: bool = True, dry_run=False) -> str:
     """Executes a call and blocks till it is finished
@@ -160,21 +160,27 @@ def execute_background(
                     executable="/bin/bash",
                     stdout=log_out,
                     stderr=log_err,
+                    env=os.environ,
                 )
     elif log_file:
         with open(log_file, "a") as log_out:
             process = subprocess.Popen(
-                call, shell=True, executable="/bin/bash", stdout=log_out, stderr=log_out
+                call,
+                shell=True,
+                executable="/bin/bash",
+                env=os.environ,
+                stdout=log_out,
+                stderr=log_out,
             )
     else:
         process = subprocess.Popen(
             call,
             shell=True,
             executable="/bin/bash",
+            env=os.environ,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            env=os.environ,
         )
     return process
 
@@ -431,9 +437,7 @@ def end_of_transfer_online(
                         f"Waiting for {len(monitored_files)} files: {monitored_files}"
                     )
                 else:
-                    status.update(
-                        f"Waiting for {len(monitored_files)} files"
-                    )
+                    status.update(f"Waiting for {len(monitored_files)} files")
 
                 passed_time = int(time.time() - start_time)
                 time_since_last_cargo = int(time.time() - last_cargo_time)
@@ -461,10 +465,10 @@ def end_of_transfer_online(
                             status.update(
                                 f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}"
                             )
-                        else: 
+                        else:
                             status.update(
-                                    f">> Waiting for {len(monitored_files)} more files to be deleted"
-                                )
+                                f">> Waiting for {len(monitored_files)} more files to be deleted"
+                            )
                         hit = 0
                         if "Transfer finished for []" in last_lines:
                             break
@@ -483,7 +487,7 @@ def end_of_transfer_online(
 def get_files(settings: JitSettings, verbose=True):
     monitored_files = []
     files = ""
-    # TODO: fix find for gekko 
+    # TODO: fix find for gekko
     command_ls = flaged_call(settings, f" ls -l {settings.gkfs_mntdir}")
     # command_ls = flaged_mpiexec_call(settings, f" find {settings.gkfs_mntdir}")
     try:
@@ -547,7 +551,7 @@ def print_file(file, src=""):
         elif "proxy" in src.lower():
             color = "[deep_pink1]"
             wait_time = 0.1
-        elif any(keyword in src.lower() for keyword in ["dlio","lammp"]):
+        elif any(keyword in src.lower() for keyword in ["dlio", "lammp"]):
             color = "[gold3]"
             wait_time = 0.1
         elif "ftio" in src.lower():
@@ -594,15 +598,26 @@ def print_file(file, src=""):
                 if not src or "cargo" in src:
                     print(content)
                 else:
+                    
                     console.print(
-                        Panel.fit(
+                        Panel(
                             color + escape(content) + close,
                             title=src.capitalize(),
                             style="white",
                             border_style="white",
                             title_align="left",
+                            width=TERMINAL_WIDTH
                         )
                     )
+                    # console.print(
+                    #     Panel.fit(
+                    #         color + escape(content) + close,
+                    #         title=src.capitalize(),
+                    #         style="white",
+                    #         border_style="white",
+                    #         title_align="left",
+                    #     )
+                    # )
 
 
 def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
