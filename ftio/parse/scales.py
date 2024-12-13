@@ -24,7 +24,8 @@ class Scales:
     """load the data. Supports single files (json, jsonl, darshan) or folders (+ recorder)"""
 
     def __init__(self, argv, msg=None):
-        self.Print_info(argv[0])
+        self.prog_name = argv[0][argv[0].rfind("/") + 1 :].capitalize()
+        self.Print_info()
         self.render = ""
         self.plot_mode = ""
         self.mode = ""
@@ -146,7 +147,7 @@ class Scales:
         Args:
             file_path (str): filename + absolute path
         """
-        check_open(file_path)
+        check_open(file_path, self.prog_name)
         if self.args.custom_file:
             run = ParseCustom(file_path).to_simrun(self.args, file_index)
         elif ".json" in file_path[-5:]:
@@ -175,11 +176,10 @@ class Scales:
         )
         f.close()
 
-    def Print_info(self, text: str) -> None:
-        name = text[text.rfind("/") + 1 :].capitalize()
+    def Print_info(self) -> None:
         console = Console()
         title = Panel(
-            Text(name, justify="center"),
+            Text(self.prog_name, justify="center"),
             style="bold white on cyan",
             border_style="white",
             title_align="left",
@@ -309,7 +309,7 @@ class Scales:
         return df0
 
 
-def check_open(file: str) -> None:
+def check_open(file:str, name: str = "") -> None:
     """Checks that the file is accessible
 
     Args:
@@ -319,11 +319,16 @@ def check_open(file: str) -> None:
         pass
     else:
         console = Console()
-        console.print(
-            f"[red]--- Error  --- [/]\n"
+        if "predictor" in name.lower():
+            console.print(
+                f"[yellow]Waiting for [b]{file}[/b] to appear in [b]{os.getcwd()}[/b]. \n\n[/]"
+                )
+        else:
+            console.print(
+            f"[red]--- Error --- [/]\n"
             f"[red]-> Could not open file [b]{file}[/b]. \n[/]"
             f"[yellow]Make sure [b]{file}[/b] exists in [b]{os.getcwd()}[/b]. \n\n[/]"
-        )
+            )
         exit()
 
 

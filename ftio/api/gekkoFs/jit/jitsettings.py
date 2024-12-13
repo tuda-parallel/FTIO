@@ -78,6 +78,7 @@ class JitSettings:
         self.frequency = 10.0
         self.skip_confirm = False
         self.use_mpirun = False
+        self.gkfs_use_syscall = False
         self.trap_exit = True
         self.soft_kill = True
         self.hard_kill = True
@@ -118,12 +119,19 @@ class JitSettings:
         self.update_settings()
 
     def update_settings(self):
+        # Dry run settings
         if self.dry_run:
             new_name = "Dry_" + self.job_name
             self.alloc_call_flags = self.alloc_call_flags.replace(
                 self.job_name, new_name
             )
             self.job_name = new_name
+
+        # Gekko settings
+        if self.gkfs_use_syscall:
+            self.gkfs_intercept = self.gkfs_syscall_intercept
+        else:
+            self.gkfs_intercept = self.gkfs_libc_intercept
 
     def set_absolute_path(self) -> None:
         self.run_dir = os.path.expanduser(self.run_dir)
@@ -262,16 +270,12 @@ class JitSettings:
         # ****** gkfs variables ******
         self.gkfs_deps = "/lustre/project/nhr-admire/tarraf/deps"  # _gcc12_2"
         self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
-        self.gkfs_intercept = (
-            # f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so" 
-            f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so" 
-        )
+        self.gkfs_syscall_intercept =  f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so" 
+        self.gkfs_libc_intercept = f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so" 
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
         self.gkfs_hostfile = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
-        self.gkfs_proxy = (
-            "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
-        )
+        self.gkfs_proxy =  "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
         self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
         self.update_files_with_gkfs_mntdir =[]
 
@@ -409,16 +413,12 @@ class JitSettings:
             self.install_location = "/d/github/JIT"
             self.ftio_bin_location = "/d/github/FTIO/.venv/bin"
             self.gkfs_daemon = f"{self.install_location}/iodeps/bin/gkfs_daemon"
-            self.gkfs_intercept = (
-                # f"{self.install_location}/iodeps/lib/libgkfs_intercept.so"
-                f"{self.install_location}/iodeps/lib/libgkfs_libc_intercept.so"
-            )
+            self.gkfs_syscall_intercept = f"{self.install_location}/iodeps/lib/libgkfs_intercept.so"
+            self.gkfs_libc_intercept = f"{self.install_location}/iodeps/lib/libgkfs_libc_intercept.so"
             self.gkfs_mntdir = "/tmp/jit/tarraf_gkfs_mountdir"
             self.gkfs_rootdir = "/tmp/jit/tarraf_gkfs_rootdir"
             self.gkfs_hostfile = f"{os.getcwd()}/gkfs_hosts.txt"
-            self.gkfs_proxy = (
-                f"{self.install_location}/gekkofs/build/src/proxy/gkfs_proxy"
-            )
+            self.gkfs_proxy = f"{self.install_location}/gekkofs/build/src/proxy/gkfs_proxy"
             self.gkfs_proxyfile = f"{self.install_location}/tarraf_gkfs_proxy.pid"
             self.cargo = f"{self.install_location}/cargo/build/src/cargo"
             self.cargo_bin = f"{self.install_location}/cargo/build/cli"

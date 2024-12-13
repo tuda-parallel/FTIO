@@ -14,18 +14,12 @@ CONSOLE = MyConsole()
 CONSOLE.set(True)
 
 def predictor_with_processes_zmq(
-    data, queue, count, hits, start_time, aggregated_bytes, args, b_app, t_app
+    shard_resources, args, 
 )-> None:
     """performs prediction in ProcessPoolExecuter. FTIO is a submitted future and probability is calculated as a callback
 
     Args:   
-        filename (str): name of file
-        data (Manager().list): List of dicts with all predictions so far
-        queue (Manager().Queue): queue for FTIO data
-        count (Manager().Value): number of prediction
-        hits (Manager().Value): hits indicating how often a dominant frequency was found
-        start_time (Manager().Value): start time window for ftio
-        aggregated_bytes (Manager().Value): total bytes transferred so far
+        shared_resources (SharedResources): shared resources among processes
         args (list[str]): additional arguments passed to ftio
     """
     procs = []
@@ -60,18 +54,17 @@ def predictor_with_processes_zmq(
                 CONSOLE.print(f"[cyan]Got message from {ranks}:[/]")
                 status.update("")
 
-                # launch prediction_process
-                # TODO: append b_app and t_app like predictor_gekko_zmq use the flag --zmq to indicate this
-                # put all in msgs and call it zmq_data
+                # launch prediction 
+                # TODO: append b_app and t_app 
                 procs.append(
                     handle_in_process(
                         prediction_process,
-                        args=(data, queue, count, hits, start_time, aggregated_bytes, args, msgs)
+                        args=(shard_resources, args, msgs)
                     )
                 )
     except KeyboardInterrupt:
-        print_data(data)
-        export_extrap(data)
+        print_data(shard_resources.data)
+        export_extrap(shard_resources.data)
         print('-- done -- ')
 
 

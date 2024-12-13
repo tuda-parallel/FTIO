@@ -5,9 +5,10 @@ import ftio.prediction.monitor as pm
 from ftio.prediction.helper import print_data, export_extrap
 from ftio.prediction.async_process import handle_in_process
 from ftio.prediction.probability_analysis import find_probability
-from ftio.prediction.helper import get_dominant, get_hits
+from ftio.prediction.helper import get_dominant, set_hits
 from ftio.api.gekkoFs.ftio_gekko import run
-from ftio.prediction.analysis import display_result, save_data, data_analysis
+from ftio.prediction.analysis import display_result, save_data, window_adaptation
+from ftio.prediction.shared_resources import SharedResources
 
 
 def main(args: list[str] = []) -> None:
@@ -20,13 +21,7 @@ def main(args: list[str] = []) -> None:
     matched_files = glob.glob(path)
 
     # Init
-    manager = Manager()
-    queue = manager.Queue()
-    data = manager.list()  # stores prediction
-    aggregated_bytes = manager.Value("d", 0.0)
-    hits = manager.Value("d", 0.0)
-    start_time = manager.Value("d", 0.0)
-    count = manager.Value("i", 0)
+    shared_resources = SharedResources()
     procs = []
 
     # Init: Monitor a file
@@ -43,12 +38,7 @@ def main(args: list[str] = []) -> None:
                 handle_in_process(
                     prediction_process,
                     args=(
-                        data,
-                        queue,
-                        count,
-                        hits,
-                        start_time,
-                        aggregated_bytes,
+                        shared_resources,
                         args,
                         matched_files,
                         n_buffers,
@@ -56,51 +46,46 @@ def main(args: list[str] = []) -> None:
                 )
             )
     except KeyboardInterrupt:
-        print_data(data)
-        export_extrap(data=data)
+        print_data(shared_resources.data)
+        export_extrap(shared_resources.data)
         print("-- done -- ")
 
 
 def prediction_process(
-    data,
-    queue,
-    count,
-    hits:int,
-    start_time,
-    aggregated_bytes:int,
+    shared_resources: SharedResources,
     args: list[str],
-    matched_files:list[str],
-    n_buffers:int,
+    matched_files: list[str],
+    n_buffers: int,
 ) -> None:
     console = Console()
-    console.print(f"[purple][PREDICTOR] (#{count.value}):[/]  Started")
+    console.print(f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/]  Started")
     # Modify the arguments
     args.extend(["-e", "no"])
-    args.extend(["-ts", f"{start_time.value:.2f}"])
+    args.extend(["-ts", f"{shared_resources.start_time.value:.2f}"])
 
     # set up data
     if len(matched_files) != n_buffers:
         raise RuntimeError("Error, number of buffers does not match number of files")
 
     # Perform prediction
-    prediction, args = run(matched_files, args)
+    prediction, parsed_args, _ = run(matched_files, args)
 
     # get data
     freq = get_dominant(prediction)  # just get a single dominant value
-    hits = get_hits(prediction, count.value, hits)
+    set_hits(prediction, shared_resources)
 
     # save prediction results
-    save_data(queue, prediction, aggregated_bytes, count, hits)
+    save_data(prediction, shared_resources)
     # display results
-    text = display_result(freq, prediction, count, aggregated_bytes)
+    text = display_result(freq, prediction, shared_resources=shared_resources)
     # data analysis to decrease window
-    text, start_time.value = data_analysis(args, prediction, freq, count, hits, text)
+    text = window_adaptation(parsed_args, prediction, freq, shared_resources, text)
     console.print(text)
-    count.value += 1
-    while not queue.empty():
-        data.append(queue.get())
+    shared_resources.count.value += 1
+    while not shared_resources.queue.empty():
+        shared_resources.data.append(shared_resources.queue.get())
 
-    _ = find_probability(data)
+    _ = find_probability(shared_resources.data)
 
 
 if __name__ == "__main__":

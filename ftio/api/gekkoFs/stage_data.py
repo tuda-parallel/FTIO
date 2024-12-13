@@ -99,23 +99,32 @@ def move_files(src_dir, dest_dir, ignore_pattern=None):
     if not os.path.exists(dest_dir):
         os.makedirs(dest_dir)
 
+    regex = None
     # Compile the regex pattern if provided
-    regex = re.compile(ignore_pattern) if ignore_pattern else None
+    if ignore_pattern:
+        CONSOLE.print(f"[bold green][Trigger][/][green] Using pattern: {ignore_pattern}[/]\n")
+        regex = re.compile(ignore_pattern)
 
     # Iterate over all items in the source directory
-    for item in os.listdir(src_dir):
-        # Check if item matches the ignore pattern
-        if regex and regex.match(item):
-            print(f"Ignored: {item}")
-            continue
+    for root, _, files in os.walk(src_dir):  # Use os.walk for traversing directories
+        # Determine the relative path from the source directory
+        relative_path = os.path.relpath(root, src_dir)
+        target_dir = os.path.join(dest_dir, relative_path)
 
-        src_item = os.path.join(src_dir, item)
-        dest_item = os.path.join(dest_dir, item)
+        # Ensure the target directory exists
+        os.makedirs(target_dir, exist_ok=True)
 
-        try:
-            # Move file or directory
-            # shutil.move(src_item, dest_item)
-            CONSOLE.print("[bold green][Trigger][/][yellow] -- Moving files is currently only simulated --[/]\n")
-            print(f"Moved: {src_item} -> {dest_item}")
-        except Exception as e:
-            print(f"Error moving '{src_item}': {e}")
+        for file_name in files:
+            # Check if the file matches the ignore pattern
+            if regex and regex.match(file_name):
+                print(f"Ignored: {file_name}")
+            else:
+                src_file = os.path.join(root, file_name)
+                dest_file = os.path.join(target_dir, file_name)
+                try:
+                    # Move file or directory
+                    # shutil.move(src_file, dest_file)
+                    CONSOLE.print("[bold green][Trigger][/][yellow] -- Moving files is currently only simulated --[/]\n")
+                    print(f"Moved: {src_file} -> {dest_file}")
+                except Exception as e:
+                    print(f"Error moving '{src_file}': {e}")

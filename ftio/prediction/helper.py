@@ -65,35 +65,30 @@ def print_data(data: list[dict]) -> None:
         print("{" + string[:-2] + "}")
 
 
-def get_hits(prediction: dict, count: int, hits):
-    """Manges the hit variable. In case a dominant frequency is found, hits is increased. 
+def set_hits(prediction: dict, shared_resources):
+    """Manges the shared hits variable. In case a dominant frequency is found, hits is increased. 
 
     Args:
         prediction (dict): prediction up till now
-        count (int): number of the prediction
-        hits (Value): how often a dominant frequency was found
-
-    Returns:
-        hits: increased value if a dominant frequency was found, otherwise it is reset to 0
+        count (Manager().Value): number of the prediction
+        hits (Manager().Value): hits indicating how often a dominant frequency was found
     """
     console = Console()
     text = ''
-    text += f'[purple][PREDICTOR] (#{count}):[/] Freq candidates: \n'
+    text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Freq candidates: \n'
     for i in range(0,len(prediction['dominant_freq'])):
         text += (
-            f'[purple][PREDICTOR] (#{count}):[/]    {i}) '
+            f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/]    {i}) '
             f'{prediction["dominant_freq"][i]:.2f} Hz -- conf {prediction["conf"][i]:.2f}\n'
         )
     if  len(prediction["dominant_freq"]) == 1:
-        hits.value += 1
-        text += f'[purple][PREDICTOR] (#{count}):[/] Current hits {hits.value}\n'
+        shared_resources.hits.value += 1
+        text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Current hits {shared_resources.hits.value}\n'
     else:
-        hits.value = 0
-        text += f'[purple][PREDICTOR] (#{count}):[/][red bold] Resetting hits {hits.value}[/]\n'
+        shared_resources.hits.value = 0
+        text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/][red bold] Resetting hits {shared_resources.hits.value}[/]\n'
 
     console.print(text[:-1])
-
-    return hits
 
 
 def export_extrap(data: list[dict], name:str="./freq.jsonl"):

@@ -54,7 +54,7 @@ def monitor_stat(name: str, _cached_stamp: str, procs: list) -> tuple[str, list]
             stamp = stream.read()
             if stamp != _cached_stamp:
                 CONSOLE.print(
-                    f"\n[purple][PREDICTOR]:[/][red bold]Stamp changed[/] to {stamp}"
+                    f"[purple][PREDICTOR]:[/][red bold]Stamp changed[/] to {stamp}"
                 )
                 sleep(0.2)
                 return stamp, procs
@@ -155,5 +155,5 @@ class watcher:
         if self.stamp != stamp:
             self.flag = False
             CONSOLE.print(
-                f"\n[purple][PREDICTOR]:[/] [red bold]Stamp changed[/] to {stamp}"
+                f"[purple][PREDICTOR]:[/] [red bold]Stamp changed[/] to {stamp}"
             )

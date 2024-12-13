@@ -78,7 +78,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
     try:
         opts, args = getopt.getopt(
             args,
-            "a:r:n:p:c:o:t:j:l:i:e:f:xdvyuh",
+            "a:r:n:p:c:o:t:j:l:i:e:f:xdvyush",
             [
                 "address=",
                 "port=",
@@ -97,6 +97,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
                 "verbose",
                 "skip_confirm",
                 "use-mpirun",
+                "use-syscall"
                 "help",
             ],
         )
@@ -196,6 +197,8 @@ def parse_options(settings: JitSettings, args: list) -> None:
             settings.skip_confirm = True
         elif opt in ("-u", "--use-mpirun"):
             settings.use_mpirun = True
+        elif opt in ("-s", "use-syscall"):
+            settings.gkfs_use_syscall = True
         elif opt in ("-h", "--help"):
             error_usage(settings)
             sys.exit(1)
@@ -291,6 +294,12 @@ def error_usage(settings: JitSettings):
         uses mpirun. Use -j JobID in combination with this flag, as 
         all calls are executed with the assumption you already 
         ssh to the host
+
+    -s | --use-syscall
+        default: [bold yellow]{settings.gkfs_use_syscall}[/]
+        If this flag is provided, gkfs uses syscall instead of libc
+        for intercepting
+
 
     -i | --install_location: full_path <str>
         default: [bold yellow]{settings.install_location}[/]
