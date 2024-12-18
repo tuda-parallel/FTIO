@@ -35,7 +35,8 @@ def main(args: list[str] = sys.argv[1:]) -> None:
     port = tmp_args.zmq_port
     ranks = 0
     procs = []
-    args.extend(["-e", "no", "-f", "10", "-m", "write","-v"])
+    args.extend(["-e", "no"])
+    # args.extend(["-e", "no", "-f", "10", "-m", "write","-v"])
     
     #start cargo
     setup_cargo(tmp_args)

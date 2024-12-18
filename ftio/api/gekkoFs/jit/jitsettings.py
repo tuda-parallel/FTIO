@@ -75,7 +75,7 @@ class JitSettings:
         self.port = "5555"
         self.nodes = 1
         self.max_time = 30
-        self.ftio_args = "--freq -1 -v"#10 -w 'data' -v "
+        self.ftio_args = "-m write -v --freq -1" #10 -w data -v "
         self.skip_confirm = False
         self.use_mpirun = False
         self.gkfs_use_syscall = False
