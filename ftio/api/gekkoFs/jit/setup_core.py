@@ -239,22 +239,22 @@ def start_ftio(settings: JitSettings) -> None:
                     f"srun --jobid={settings.job_id} {settings.ftio_node_command} "
                     f"--disable-status -N 1 --ntasks=1 --cpus-per-task={settings.procs_ftio} "
                     f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-                    f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} {settings.ftio_args}"
+                    f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} {settings.ftio_args} "
             )
         else:
             check_port(settings)
             call = (
-                f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} {settings.ftio_args}"
+                f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} {settings.ftio_args} "
                 )
         
         if settings.exclude_cargo:
-            call += f" --stage_out_path {settings.stage_out_path} --stage_in_path {settings.stage_in_path} "
+            call += f"--stage_out_path {settings.stage_out_path} --stage_in_path {settings.stage_in_path} "
             if settings.regex_match:
-                call += f" --regex {settings.regex_match} "
+                call += f"--regex {settings.regex_match} "
         else:
             call +=(
                 f"--cargo --cargo_bin {settings.cargo_bin} "
-                f"--cargo_server {settings.cargo_server} --stage_out_path {settings.stage_out_path}"
+                f"--cargo_server {settings.cargo_server} --stage_out_path {settings.stage_out_path} "
             )
         jit_print("[cyan]>> Starting FTIO[/]")
 
