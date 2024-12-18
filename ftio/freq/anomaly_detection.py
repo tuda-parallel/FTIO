@@ -102,7 +102,12 @@ def z_score(
     text += f"[green]mean[/]: {mean/np.sum(amp_tmp) if np.sum(amp_tmp) else 0:.3e}\n[green]std[/]: {std:.3e}\n"
     text += f"Frequencies with Z-score > 3 -> [green]{len(z_k[z_k>3])}[/] candidates\n"
     text += f"         + Z > Z_max*{tol*100}% > 3 -> [green]{len(index[0])}[/] candidates\n"
-    # text += f"         + Z > Z_max*{tol*100}% > 3 -> [green]{len(z_k[(z_k>np.max(z_k)*tol) & (z_k>3)])}[/] candidates\n"
+    if len(index[0]) > 3:
+        counter = 0
+        for i in index[0]:
+            counter += 1
+            text += f"           {counter}) {1/freq_arr[i+1]:.3f} s: z_k = {z_k[i]/np.max(z_k):.2f}\n"
+    
     index, removed_index, msg = remove_harmonics(freq_arr, amp_tmp,  indices[index[0]])
     text+= msg
     

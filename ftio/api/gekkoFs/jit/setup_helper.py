@@ -154,8 +154,8 @@ def parse_options(settings: JitSettings, args: list) -> None:
             if len(procs_list) > 4:
                 settings.procs_ftio = int(procs_list[4])
 
-        elif opt in ("-f", "--frequency"):
-            settings.frequency = float(arg)
+        elif opt in ("-f", "--ftio_args"):
+            settings.ftio_args = str(arg).strip()
         elif opt in ("-e", "--exclude"):
             jit_print("[bold yellow]>> Excluding: [/]")
             if not arg or arg.startswith("-"):
@@ -260,9 +260,9 @@ def error_usage(settings: JitSettings):
         default: Auto set to number of nodes and job ID
         if provided, sets the name of the directory where the logs are stored.
 
-    -f | --frequency: float
-        default: [bold yellow]{settings.frequency}[/]
-        sampling frequency for FTIO
+    -f | --ftio_args: str
+        default: [bold yellow]{settings.ftio_args}[/]
+        ftio args passed as as string (e.g., "--freq 10 -v -e no"). See "ftio -h" for all available options 
 
     -e | --exclude: <str>,<str>,...,<str>
         default: ftio
@@ -1076,6 +1076,7 @@ def print_settings(settings) -> None:
     # Default settings text
     ftio_text = f"""
 ├─ ftio location  : {settings.ftio_bin_location}
+├─ ftio args      : {settings.ftio_args}
 ├─ address ftio   : {settings.address_ftio}
 ├─ port           : {settings.port}
 ├─ # nodes        : 1

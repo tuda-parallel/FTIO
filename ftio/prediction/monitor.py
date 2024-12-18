@@ -10,7 +10,7 @@ from time import sleep
 CONSOLE = Console()
 
 
-def monitor(name: str, _cached_stamp: str, procs: list = []) ->  tuple[str, list]:
+def monitor(name: str, _cached_stamp: str, procs: list = []) -> tuple[str, list]:
     """Monitors a file for change and can optionally join processes in the mean time
 
     Args:
@@ -43,8 +43,8 @@ def monitor_stat(name: str, _cached_stamp: str, procs: list) -> tuple[str, list]
     if _cached_stamp == "":
         stream = os.popen(f"stat -c %z {name} 2>&1")
         stamp = stream.read()
-        CONSOLE.print(f"[purple][PREDICTOR]:[/] Monitoring file {name}")
-        CONSOLE.print(f"[purple][PREDICTOR]:[/] Stamp is {stamp}")
+        CONSOLE.print(f"[purple][PREDICTOR][/] Monitoring file {name}")
+        CONSOLE.print(f"[purple][PREDICTOR][/] Stamp is {stamp}")
         return stamp, procs
     else:
         sleep(1)
@@ -54,12 +54,15 @@ def monitor_stat(name: str, _cached_stamp: str, procs: list) -> tuple[str, list]
             stamp = stream.read()
             if stamp != _cached_stamp:
                 CONSOLE.print(
-                    f"[purple][PREDICTOR]:[/][red bold]Stamp changed[/] to {stamp}"
+                    f"[purple][PREDICTOR][/][red bold] Stamp changed[/] to {stamp}"
                 )
                 sleep(0.2)
                 return stamp, procs
 
-def monitor_list(name: list, n_buffers, _cached_stamp: dict={}, procs: list = []) -> tuple[dict, list]:
+
+def monitor_list(
+    name: list, n_buffers, _cached_stamp: dict = {}, procs: list = []
+) -> tuple[dict, list]:
     """Monitors a file for changes
 
     Args:
@@ -77,9 +80,9 @@ def monitor_list(name: list, n_buffers, _cached_stamp: dict={}, procs: list = []
             file_stamp = stream.read()
             stamp[i] = file_stamp
             CONSOLE.print(
-                f"[purple][PREDICTOR]:[/] Monitoring file {name.index(i)}/{n_buffers} {i}"
-                f"[purple][PREDICTOR]:[/] Stamp is {stamp[i]}"
-                )
+                f"[purple][PREDICTOR][/] Monitoring file {name.index(i)}/{n_buffers} {i}"
+                f"[purple][PREDICTOR][/] Stamp is {stamp[i]}"
+            )
         return stamp, procs
     else:
         sleep(1)
@@ -87,16 +90,16 @@ def monitor_list(name: list, n_buffers, _cached_stamp: dict={}, procs: list = []
         counter = n_buffers
         while True:
             procs = join_procs(procs)
-            for _,i in enumerate(_cached_stamp):
+            for _, i in enumerate(_cached_stamp):
                 stream = os.popen(f"stat -c %z {i} 2>&1")
                 file_stamp = stream.read()
-                if file_stamp != _cached_stamp[i] and  _cached_stamp[i] not in seen:
+                if file_stamp != _cached_stamp[i] and _cached_stamp[i] not in seen:
                     counter = counter - 1
                     seen.append(_cached_stamp[i])
                     CONSOLE.print(
-                        f"[purple][PREDICTOR]:[/][red bold]Stamp changed[/] to {file_stamp}"
-                        f"[purple][PREDICTOR]:[/] {n_buffers - counter}/{n_buffers} files changed"
-                        )
+                        f"[purple][PREDICTOR][/][red bold] Stamp changed[/] to {file_stamp}"
+                        f"[purple][PREDICTOR][/] {n_buffers - counter}/{n_buffers} files changed"
+                    )
 
             if counter == 0:
                 for i in name:
@@ -104,11 +107,12 @@ def monitor_list(name: list, n_buffers, _cached_stamp: dict={}, procs: list = []
                     file_stamp = stream.read()
                     _cached_stamp[i] = file_stamp
                 return _cached_stamp, procs
-            
+
             sleep(0.2)
 
+
 #! Method 2
-def monitor_fcntl(name: str, _cached_stamp: str, procs: list) ->  tuple[str, list]:
+def monitor_fcntl(name: str, _cached_stamp: str, procs: list) -> tuple[str, list]:
     if _cached_stamp == 0:
         return "", procs
 
@@ -131,7 +135,7 @@ def monitor_fcntl(name: str, _cached_stamp: str, procs: list) ->  tuple[str, lis
         sleep(0.1)
         procs = join_procs(procs)
 
-    return str(w.stamp),procs
+    return str(w.stamp), procs
 
 
 class watcher:
@@ -147,13 +151,13 @@ class watcher:
         self.absolute_name = f"{self.path}/{self.name}"
         print(f"Monitoring file {self.absolute_name} in path:{self.path}")
         self.stamp = os.stat(self.absolute_name).st_mtime
-        CONSOLE.print(f"[purple][PREDICTOR]:[/] Stamp is {self.stamp}")
+        CONSOLE.print(f"[purple][PREDICTOR][/] Stamp is {self.stamp}")
 
     def handler(self, signum, path):
-        CONSOLE.print(f"[purple][PREDICTOR]:[/] Folder {path} modified ")
+        CONSOLE.print(f"[purple][PREDICTOR][/] Folder {path} modified ")
         stamp = os.stat(self.absolute_name).st_mtime
         if self.stamp != stamp:
             self.flag = False
             CONSOLE.print(
-                f"[purple][PREDICTOR]:[/] [red bold]Stamp changed[/] to {stamp}"
+                f"[purple][PREDICTOR][/][red bold] Stamp changed[/] to {stamp}"
             )

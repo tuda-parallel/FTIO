@@ -35,11 +35,11 @@ class Probability():
         self.p_freq_given_periodic = p_freq_given_periodic if not np.isnan(p_freq_given_periodic) else self.p_freq_given_periodic
         self.p_periodic_given_freq = p_periodic_given_freq if not np.isnan(p_periodic_given_freq) else self.p_periodic_given_freq
 
-    def display(self):
+    def display(self, prefix = ""):
         CONSOLE.print(
-                    f"[purple][PREDICTOR]:[/] P([{self.freq_min:.3f},{self.freq_max:.3f}] Hz) = {self.p_periodic*100:.2f}%\n"
-                    f"[purple][PREDICTOR]:[/] |-> [{self.freq_min:.3f},{self.freq_max:.3f}] Hz = [{1/self.freq_max if self.freq_max != 0 else np.nan:.3f},{1/self.freq_min if self.freq_min != 0 else np.nan:.3f}] sec\n"
-                    f"[purple][PREDICTOR]:[/] '-> P([{self.freq_min:.3f},{self.freq_max:.3f}] Hz | periodic) = {self.p_freq_given_periodic*100:.2f}%\n"
+                    f"{prefix} P([{self.freq_min:.3f},{self.freq_max:.3f}] Hz) = {self.p_periodic*100:.2f}%\n"
+                    f"{prefix} |-> [{self.freq_min:.3f},{self.freq_max:.3f}] Hz = [{1/self.freq_max if self.freq_max != 0 else np.nan:.3f},{1/self.freq_min if self.freq_min != 0 else np.nan:.3f}] sec\n"
+                    f"{prefix} '-> P([{self.freq_min:.3f},{self.freq_max:.3f}] Hz | periodic) = {self.p_freq_given_periodic*100:.2f}%\n"
                 )
 
     def get_freq_prob(self, freq):

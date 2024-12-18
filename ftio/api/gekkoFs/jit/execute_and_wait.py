@@ -488,11 +488,14 @@ def get_files(settings: JitSettings, verbose=True):
     monitored_files = []
     files = ""
     # TODO: fix find for gekko
-    command_ls = flaged_call(settings, f" ls -l {settings.gkfs_mntdir}")
-    # command_ls = flaged_mpiexec_call(settings, f" find {settings.gkfs_mntdir}")
     try:
-        # files = subprocess.check_output(command_ls, shell=True).decode()
-        files = subprocess.check_output(command_ls, shell=True, text=True)
+        try:
+            command_ls = flaged_call(settings, f" find {settings.gkfs_mntdir}")
+            files = subprocess.check_output(command_ls, shell=True, text=True)
+        except subprocess.CalledProcessError as e:
+            jit_print(f"[red] >> Error using find, trying ls:\n{e}")
+            command_ls = flaged_call(settings, f" ls -l {settings.gkfs_mntdir}")
+            files = subprocess.check_output(command_ls, shell=True, text=True)
         if files:
             files = files.splitlines()
             files = [f for f in files if "LIBGKFS" not in f]
@@ -543,6 +546,7 @@ def print_file(file, src=""):
     """Continuously monitor the log file for new lines and print them."""
     color = ""
     close = ""
+    newline =True
     wait_time = 0.05
     if src:
         if "daemon" in src.lower():
@@ -563,6 +567,7 @@ def print_file(file, src=""):
 
         if color:
             close = "[/]"
+            newline = "\n" 
 
     while not os.path.exists(file):
         if "error" in src.lower():
@@ -598,26 +603,27 @@ def print_file(file, src=""):
                 if not src or "cargo" in src:
                     print(content)
                 else:
-                    
-                    console.print(
-                        Panel(
-                            color + escape(content) + close,
-                            title=src.capitalize(),
-                            style="white",
-                            border_style="white",
-                            title_align="left",
-                            width=TERMINAL_WIDTH
-                        )
-                    )
-                    # console.print(
-                    #     Panel.fit(
-                    #         color + escape(content) + close,
-                    #         title=src.capitalize(),
+                    if newline:
+                        console.print("\n",end="")
+                    # console.print( 
+                    #     Panel(
+                    #         color  + escape(content) + close,
+                    #         title= color + src.capitalize() + close,
                     #         style="white",
                     #         border_style="white",
                     #         title_align="left",
+                    #         width=TERMINAL_WIDTH
                     #     )
                     # )
+                    console.print(
+                        Panel.fit(
+                        color  + escape(content) + close,
+                            title= color + src.upper() + close,
+                            style="white",
+                            border_style="white",
+                            title_align="left",
+                        )
+                    )
 
 
 def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:

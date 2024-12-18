@@ -239,12 +239,12 @@ def start_ftio(settings: JitSettings) -> None:
                     f"srun --jobid={settings.job_id} {settings.ftio_node_command} "
                     f"--disable-status -N 1 --ntasks=1 --cpus-per-task={settings.procs_ftio} "
                     f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-                    f"{settings.ftio_bin_location}/predictor_jit --freq {settings.frequency} --zmq_address {settings.address_ftio} --zmq_port {settings.port} "
+                    f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} {settings.ftio_args}"
             )
         else:
             check_port(settings)
             call = (
-                f"{settings.ftio_bin_location}/predictor_jit --freq {settings.frequency} --zmq_address {settings.address_ftio} --zmq_port {settings.port}"
+                f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} {settings.ftio_args}"
                 )
         
         if settings.exclude_cargo:
@@ -345,6 +345,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             call = flaged_call(
                 settings,
                 f"cp -r  {settings.gkfs_mntdir} {settings.stage_out_path} || echo 'nothing to stage in'",
+                exclude = ["ftio"]
             )
             start = time.time()
             _ = execute_block(call, dry_run=settings.dry_run)
@@ -354,12 +355,13 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
                 f"[bold green]####### Staging out [/][black][{get_time()}][/]"
             )
             reset_relevant_files(settings)
-            # time.sleep(8)
+            time.sleep(2)
 
             if not settings.dry_run:
                 try:
                     call = flaged_call(
-                        settings, f"ls -R {settings.gkfs_mntdir}", exclude=["ftio"]
+                        settings, f"ls -R {settings.gkfs_mntdir}", 
+                        exclude=["ftio"]
                     )
                     files = subprocess.check_output(call, shell=True).decode()
                     console.print(
@@ -549,7 +551,7 @@ def pre_call(settings: JitSettings) -> None:
         if isinstance(settings.pre_app_call, str):
             call = settings.pre_app_call
             if any(x in call for x in ["mpiex", "mpirun"]):
-                call = flaged_call(settings, call)
+                call = flaged_call(settings, call, exclude = ["ftio"])
             execute_block_and_monitor(
                 settings.verbose,
                 call,
@@ -560,7 +562,7 @@ def pre_call(settings: JitSettings) -> None:
         elif isinstance(settings.pre_app_call, list):
             for call in settings.pre_app_call:
                 if any(x in call for x in ["mpiex", "mpirun"]):
-                    call = flaged_call(settings, call)
+                    call = flaged_call(settings, call, exclude = ["ftio"])
                 execute_block_and_monitor(
                     settings.verbose,
                     call,

@@ -90,7 +90,9 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
         b = np.array(list(b))
         t = np.array(list(t))
 
+    # save the bandwidth
     process = handle_in_process(dump_json, args=(b,t),)
+    
 
     # 6) plot to check:
     if any(x in args.engine for x in ["mat", "plot"]):

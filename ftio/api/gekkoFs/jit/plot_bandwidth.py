@@ -79,7 +79,7 @@ def plot_bar_with_rich(x, y, max_height=10, terminal_width=None, width_percentag
     """
     
     console = Console()
-    terminal_width = terminal_width or console.size.width  # Detect terminal width if not provided
+    terminal_width = terminal_width or int(0.95*console.size.width)  # Detect terminal width if not provided
     plot_width = int(terminal_width * (width_percentage-0.05))  # Width for the plot area
 
     x = np.array(x[:])

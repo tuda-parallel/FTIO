@@ -10,8 +10,6 @@ class SharedResources:
         '''Initialize the shared resources.'''
         # Queue for FTIO data
         self.queue = self.manager.Queue()
-        # For triggering cargo
-        self.sync_trigger = self.manager.Queue()
         # list of dicts with all predictions so far
         self.data = self.manager.list()
         # Total bytes transferred so far
@@ -22,9 +20,13 @@ class SharedResources:
         self.start_time = self.manager.Value("d", 0.0)
         # Number of prediction
         self.count = self.manager.Value("i", 0)
-        # bandwidth and time appended between predictions
+        # Bandwidth and time appended between predictions
         self.b_app = self.manager.list()
         self.t_app = self.manager.list()
+        # For triggering cargo
+        self.sync_trigger = self.manager.Queue()
+        # saves when the dada ti received from gkfs
+        self.t_flush = self.manager.list()
 
     def restart(self):
         '''Restart the manager and reinitialize shared resources.'''

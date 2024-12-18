@@ -5,7 +5,7 @@ from ftio.prediction.helper import get_dominant
 from ftio.prediction.probability import Probability
 
 
-def find_probability(data: list[dict], method:str = "db") -> list:
+def find_probability(data: list[dict], method: str = "db", counter:int = -1) -> list:
     """Calculates the conditional probability that expresses
     how probable the frequency (event A) is given that the signal
     is periodic occurred (probability B).
@@ -16,23 +16,30 @@ def find_probability(data: list[dict], method:str = "db") -> list:
 
     Args:
         data (dict): contacting predictions
+        method (str): method to group the predictions (step or db)
+        counter (int): number of predictions already executed
 
     Returns:
-        None
+        out (dict): probability of predictions in ranges
     """
     p_b = 0
     p_a = []
     p_a_given_b = 0
     p_b_given_a = 1
     grouped_prediction = []
-    counter = 0
+    number_groups = 0
     out = []
+
+    if counter > 0:
+        prefix = f"[purple][PREDICTOR] (#{counter-1}):[/]"
+    else:
+        prefix = "[purple][PREDICTOR][/]"
 
     if data:
         if "step" in method:
-            grouped_prediction, counter = gp.group_step(data)
+            grouped_prediction, number_groups = gp.group_step(data)
         elif "db" in method:
-            grouped_prediction, counter = gp.group_dbscan(data)
+            grouped_prediction, number_groups = gp.group_dbscan(data)
 
         for prediction in data:
             if len(prediction["dominant_freq"]) >= 1:
@@ -40,10 +47,10 @@ def find_probability(data: list[dict], method:str = "db") -> list:
 
         p_b = p_b / len(data) 
         CONSOLE = Console()
-        CONSOLE.print(f"[purple][PREDICTOR]:[/] P(periodic) = {p_b*100:.3f}%")
+        CONSOLE.print(f"{prefix} P(periodic) = {p_b*100:.3f}%")
 
         if len(grouped_prediction) > 0:
-            for group in range(0, counter + 1):
+            for group in range(0, number_groups + 1):
                 p_a = 0
                 f_min = np.inf
                 f_max = 0
@@ -61,7 +68,7 @@ def find_probability(data: list[dict], method:str = "db") -> list:
 
                 prob = Probability(f_min, f_max)
                 prob.set(p_b, p_a, p_a_given_b, p_b_given_a)
-                prob.display()
+                prob.display(prefix)
                 out.append(prob)
 
     return out

@@ -65,32 +65,6 @@ def print_data(data: list[dict]) -> None:
         print("{" + string[:-2] + "}")
 
 
-def set_hits(prediction: dict, shared_resources):
-    """Manges the shared hits variable. In case a dominant frequency is found, hits is increased. 
-
-    Args:
-        prediction (dict): prediction up till now
-        count (Manager().Value): number of the prediction
-        hits (Manager().Value): hits indicating how often a dominant frequency was found
-    """
-    console = Console()
-    text = ''
-    text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Freq candidates: \n'
-    for i in range(0,len(prediction['dominant_freq'])):
-        text += (
-            f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/]    {i}) '
-            f'{prediction["dominant_freq"][i]:.2f} Hz -- conf {prediction["conf"][i]:.2f}\n'
-        )
-    if  len(prediction["dominant_freq"]) == 1:
-        shared_resources.hits.value += 1
-        text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Current hits {shared_resources.hits.value}\n'
-    else:
-        shared_resources.hits.value = 0
-        text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/][red bold] Resetting hits {shared_resources.hits.value}[/]\n'
-
-    console.print(text[:-1])
-
-
 def export_extrap(data: list[dict], name:str="./freq.jsonl"):
     """Generates measurement points for Extra-p out of the frequency 
     collected at different phases

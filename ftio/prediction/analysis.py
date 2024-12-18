@@ -5,7 +5,7 @@ from rich.console import Console
 from ftio.api.gekkoFs.jit.plot_bandwidth import plot_bar_with_rich
 from ftio.prediction.shared_resources import SharedResources
 from ftio.cli import ftio_core
-from ftio.prediction.helper import get_dominant, set_hits
+from ftio.prediction.helper import get_dominant
 from ftio.plot.units import set_unit
 
 
@@ -32,19 +32,18 @@ def ftio_process(shared_resources: SharedResources, args: list[str], msgs = None
     # plot_bar_with_rich(shared_resources.t_app,shared_resources.b_app, width_percentage=0.9)
     # get data
     freq = get_dominant(prediction) #just get a single dominant value
-    set_hits(prediction, shared_resources)
     # save prediction results
     save_data( prediction, shared_resources)
     # display results
     text = display_result(freq ,prediction ,shared_resources)
     # data analysis to decrease window thus change start_time
-    text = window_adaptation(parsed_args, prediction, freq, shared_resources, text)
+    text += window_adaptation(parsed_args, prediction, freq, shared_resources)
     # print text
     console.print(text)
     shared_resources.count.value += 1
 
 
-def window_adaptation(args, prediction:dict, freq:float, shared_resources: SharedResources, text:str) -> str:
+def window_adaptation(args, prediction:dict, freq:float, shared_resources: SharedResources) -> str:
     '''modifies the start time if conditions are true 
 
     Args:
@@ -58,9 +57,15 @@ def window_adaptation(args, prediction:dict, freq:float, shared_resources: Share
         str: _description_
     '''
     # average data/data processing
+    text = ''
     t_s = prediction['t_start']
     t_e = prediction['t_end']
     total_bytes = prediction['total_bytes']
+
+    # Hits
+    text += hits(args, prediction, shared_resources)
+
+    # time window adaptation
     if not np.isnan(freq):
         n_phases = (t_e-t_s)*freq
         avr_bytes = int(total_bytes/float(n_phases))
@@ -75,17 +80,27 @@ def window_adaptation(args, prediction:dict, freq:float, shared_resources: Share
             )
         
         # adaptive time window
-        if args.window_adaptation:
-            if shared_resources.hits.value > args.frequency_hits: 
+        if "frequency_hits" in args.window_adaptation:
+            if shared_resources.hits.value > args.hits: 
                 if True: #np.abs(avr_bytes - (total_bytes-aggregated_bytes.value)) < 100:
                     tmp = t_e - 3*1/freq
                     t_s = tmp if tmp > 0 else 0
-                    text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] Adjusting start time to {t_s} sec\n[/]'
+                    text += f'[bold purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] Adjusting start time to {t_s} sec\n[/]'
             else:
                 t_s = 0
                 if shared_resources.hits.value == 0:
                     text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/][red bold] Resetting start time to {t_s} sec\n[/]'
-                
+        elif "data" in args.window_adaptation and len(shared_resources.data)>0:
+            text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] Trying time window adaptation: {shared_resources.count.value:.0f} =? { args.hits * shared_resources.hits.value:.0f}\n[/]'
+            if shared_resources.count.value == args.hits * shared_resources.hits.value:
+                # t_s = shared_resources.data[-shared_resources.count.value]['t_start']
+                # text += f'[bold purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] Adjusting start time to t_start {t_s} sec\n[/]'
+                if len(shared_resources.t_flush) > 0:
+                    print(shared_resources.t_flush)
+                    index = int(args.hits * shared_resources.hits.value -1)
+                    t_s = shared_resources.t_flush[index]
+                    text += f'[bold purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] Adjusting start time to t_flush[{index}] {t_s} sec\n[/]'
+
     # TODO 1: Make sanity check -- see if the same number of bytes was transferred
     # TODO 2: Train a model to validate the predictions?
     text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Ended'
@@ -116,7 +131,7 @@ def save_data(prediction, shared_resources) -> None:
             'total_bytes': prediction['total_bytes'],
             'ranks': prediction['ranks'],
             'freq': prediction['freq'],
-            'hits': shared_resources.hits.value,
+            # 'hits': shared_resources.hits.value,
         }
     )
 
@@ -133,9 +148,18 @@ def display_result(freq: float ,prediction: dict, shared_resources: SharedResour
         str: text to print to console
     '''
     text = ''
+    # Dominant frequency
     if not np.isnan(freq):
-        text = f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Dominant freq {freq:.3f} \n'
+        text = f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Dominant freq {freq:.3f} Hz ({1/freq if freq != 0 else 0:.2f} sec)\n'
 
+    # Candidates
+    text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Freq candidates: \n'
+    for i in range(0,len(prediction['dominant_freq'])):
+        text += (
+            f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/]    {i}) '
+            f'{prediction["dominant_freq"][i]:.2f} Hz -- conf {prediction["conf"][i]:.2f}\n'
+        )
+        
     # time window
     text += (
         f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Time window {prediction["t_end"]-prediction["t_start"]:.3f} sec ([{prediction["t_start"]:.3f},{prediction["t_end"]:.3f}] sec)\n')
@@ -157,5 +181,22 @@ def display_result(freq: float ,prediction: dict, shared_resources: SharedResour
         f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Bytes transferred since last '
         f'time {tmp:.0f} {unit}\n'
         )
+        
+    return text
+
+
+def hits(args, prediction, shared_resources):
+    text = ""
+    if "frequency_hits" in args.window_adaptation:
+        if  len(prediction["dominant_freq"]) == 1:
+            shared_resources.hits.value += 1
+            text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Current hits {shared_resources.hits.value}\n'
+        else:
+            shared_resources.hits.value = 0
+            text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/][red bold] Resetting hits {shared_resources.hits.value}[/]\n'
+    elif "data" in args.window_adaptation:
+        shared_resources.hits.value = shared_resources.count.value // args.hits
+        text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Current hits {shared_resources.hits.value}\n'
+
 
     return text

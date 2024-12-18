@@ -14,13 +14,13 @@ def group_step(data: list[dict]) -> tuple[list[dict], int]:
 
     Returns:
         out (dict): data appended with a group field
-        counter (int): Maximal number of groups
+        groups (int): Maximal number of groups
     """
     freq_new = 0
     freq_old = 0
     old_window = 0
     time_window = 0
-    counter = 0
+    groups = 0
     out = []
 
     
@@ -35,12 +35,12 @@ def group_step(data: list[dict]) -> tuple[list[dict], int]:
                 ):  # Same Frequency!
                     pass
                 else:  # Different Frequency!
-                    counter += 1
-                out.append({**prediction, "group": counter})
+                    groups += 1
+                out.append({**prediction, "group": groups})
             freq_old = freq_new
             old_window = time_window
 
-    return out, counter
+    return out, groups
 
 
 def group_dbscan(data: list[dict]) -> tuple[list[dict], int]:
@@ -51,7 +51,7 @@ def group_dbscan(data: list[dict]) -> tuple[list[dict], int]:
 
     Returns:
         out (dict): data appended with a group field
-        counter (int): Maximal number of groups
+        groups (int): Maximal number of groups
     """
     freq = []
     window = []
@@ -59,7 +59,7 @@ def group_dbscan(data: list[dict]) -> tuple[list[dict], int]:
     tol_min = np.inf
     old_window = 0
     time_window = 0
-    counter = 0
+    groups = 0
     out = []
 
     for prediction in data:
@@ -80,17 +80,17 @@ def group_dbscan(data: list[dict]) -> tuple[list[dict], int]:
 
     if out:
         if len(out) == 1:
-            counter = 0
-            out[0]["group"] = counter
+            groups = 0
+            out[0]["group"] = groups
         else:
             X = np.column_stack((freq, freq))
             model = DBSCAN(eps=tol, min_samples=2).fit(X)
-            counter = max(model.labels_)
+            groups = max(model.labels_)
             # print(f"X is {X}\n model.labels_ is {model.labels_}\nout is {out}")
             # for i,f in enumerate(freq):
             #     print(f"freq {f}\nmodel.labels_ is {model.labels_[i]}\ntol is {tol}")
             for i in range(0, len(out)):
                 out[i]["group"] = model.labels_[i]
 
-    return out, counter
+    return out, groups
 

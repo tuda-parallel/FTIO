@@ -69,6 +69,7 @@ def trigger_cargo(sync_trigger,args):
                                 CONSOLE.print("[bold green][Trigger][/][green]" + call +"\n"+text)
                                 os.system(call)
                             else: #standard move
+                                # TODO: needs gekko flags to move files
                                 move_files(args.stage_in_path,args.stage_out_path,args.regex)
                                 CONSOLE.print("[bold green][Trigger][/][green]" + "Moving files" +"\n"+text)
                         else:
@@ -122,7 +123,7 @@ def move_files(src_dir, dest_dir, ignore_pattern=None):
                 src_file = os.path.join(root, file_name)
                 dest_file = os.path.join(target_dir, file_name)
                 try:
-                    # Move file or directory
+                    # Move file or directory using geko flags
                     # shutil.move(src_file, dest_file)
                     CONSOLE.print("[bold green][Trigger][/][yellow] -- Moving files is currently only simulated --[/]\n")
                     print(f"Moved: {src_file} -> {dest_file}")

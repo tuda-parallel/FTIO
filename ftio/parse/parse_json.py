@@ -31,6 +31,7 @@ class ParseJson:
 
 
     def adjust(self, data:dict, args):
+        console = MyConsole()
         # check for mode
         fields = list(data.keys())
         if any( x in fields for x in ['read_sync', 'read_async', 'write_sync', 'write_async']):
@@ -38,50 +39,74 @@ class ParseJson:
             if args.mode and match_mode(args.mode) in data:
                 self.add_missing_fields(data,match_mode(args.mode))
             else:
-                CONSOLE = MyConsole()
-                CONSOLE.info(f"[yellow]Warning: [/] Mode [yellow]{args.mode}[/] does not exist in trace")
+                console.info(f"[yellow]Warning: [/] Mode [yellow]{args.mode}[/] does not exist in trace")
                 for x in ['read_sync', 'read_async', 'read_async', 'write_async']:
                     if x in fields:
                         args.mode = x
-                        CONSOLE.info(f"[yellow]Warning: [/] Adjusting mode to [yellow]{args.mode}[/]")
+                        console.info(f"[yellow]Warning: [/] Adjusting mode to [yellow]{args.mode}[/]")
                         self.add_missing_fields(data,match_mode(args.mode))
                         break
-
-        elif  'bandwidth' in data:
-            data = {"read_sync":{
-                    "total_bytes": 0,
-                    "number_of_ranks": 0 ,
-                    "bandwidth": data['bandwidth']
-                    }}
-            args.mode = "read_sync"
-            args.source = 'custom'
-        elif "b_rank" in data:
-            data = {"read_sync":{
-                    "total_bytes": 0,
-                    "number_of_ranks": 0 ,
-                    "bandwidth": 
-                        {
-                        "b_rank_avr": data["b_rank_avr"],
-                        "t_rank_s":  data["t_rank_s"],
-                        "t_rank_e": data["t_rank_e"]
-                    }
-                    }}
-            args.mode = "read_sync"
-            args.source = 'custom'
-        elif "b_overlap" in data:
-            data = {"read_sync":{
-                    "total_bytes": 0,
-                    "number_of_ranks": 0 ,
-                    "bandwidth": 
-                        {
-                        "b_overlap_avr": data["b_overlap"],
-                        "t_overlap":  data["t_overlap"],
-                    }
-                    }}
-            args.mode = "read_sync"
-            args.source = 'custom'
         else:
-            raise ValueError("Mode not found")
+            args.mode = "read_sync"
+            args.source = "custom"
+            
+            if "bandwidth" in data:
+                data = {"read_sync":{
+                        "total_bytes": 0,
+                        "number_of_ranks": 0 ,
+                        "bandwidth": data['bandwidth']
+                        }}
+                
+            elif "b_rank" in data:
+                data = {"read_sync":{
+                        "total_bytes": 0,
+                        "number_of_ranks": 0 ,
+                        "bandwidth": 
+                            {
+                            "b_rank_avr": data["b_rank_avr"],
+                            "t_rank_s":  data["t_rank_s"],
+                            "t_rank_e": data["t_rank_e"]
+                        }
+                        }}
+            elif "b_overlap" in data:
+                data = {"read_sync":{
+                        "total_bytes": 0,
+                        "number_of_ranks": 0 ,
+                        "bandwidth": 
+                            {
+                            "b_overlap_avr": data["b_overlap"],
+                            "t_overlap":  data["t_overlap"],
+                        }
+                        }}
+            else:
+                # try to get the data out
+                t_fields = [k for k in data if k.startswith("t")]
+                b_fields = [k for k in data if k.startswith("b")]
+                if len(b_fields) == 1:
+                    if len(t_fields) == 1:
+                        bandwidth = {
+                            "b_overlap_avr": data[b_fields[0]],
+                            "t_overlap":  data[t_fields[0]],
+                        }
+                        console.info(f"[yellow]Treating Json data as application-level metrics[/]")
+
+                    elif len(t_fields) == 2:
+                        t_s =  [k for k in t_fields if k.endswith("s")]
+                        t_e =  [k for k in t_fields if k.endswith("e")]
+                        bandwidth = {
+                            "b_rank_avr": data[b_fields[0]],
+                            "t_rank_s":   data[t_s[0]],
+                            "t_rank_e":  data[t_e[0]]
+                        }
+                        console.info(f"[yellow]Treating Json data as rank-level metrics[/]")
+
+                    data = {"read_sync":{
+                        "total_bytes": 0,
+                        "number_of_ranks": 0 ,
+                        "bandwidth": bandwidth
+                        }}
+                else:
+                    raise ValueError("Unable to parse JSON data")
 
         return data, args
 

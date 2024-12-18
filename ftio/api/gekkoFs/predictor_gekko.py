@@ -5,7 +5,7 @@ import ftio.prediction.monitor as pm
 from ftio.prediction.helper import print_data, export_extrap
 from ftio.prediction.async_process import handle_in_process
 from ftio.prediction.probability_analysis import find_probability
-from ftio.prediction.helper import get_dominant, set_hits
+from ftio.prediction.helper import get_dominant
 from ftio.api.gekkoFs.ftio_gekko import run
 from ftio.prediction.analysis import display_result, save_data, window_adaptation
 from ftio.prediction.shared_resources import SharedResources
@@ -72,20 +72,19 @@ def prediction_process(
 
     # get data
     freq = get_dominant(prediction)  # just get a single dominant value
-    set_hits(prediction, shared_resources)
-
     # save prediction results
     save_data(prediction, shared_resources)
     # display results
     text = display_result(freq, prediction, shared_resources=shared_resources)
     # data analysis to decrease window
-    text = window_adaptation(parsed_args, prediction, freq, shared_resources, text)
+    text += window_adaptation(parsed_args, prediction, freq, shared_resources)
     console.print(text)
     shared_resources.count.value += 1
     while not shared_resources.queue.empty():
         shared_resources.data.append(shared_resources.queue.get())
 
-    _ = find_probability(shared_resources.data)
+    _ = find_probability(shared_resources.data, counter = shared_resources.count.value)
+
 
 
 if __name__ == "__main__":

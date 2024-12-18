@@ -9,7 +9,7 @@ from ftio.prediction.shared_resources import SharedResources
 from ftio.prediction.helper import print_data#, export_extrap
 from ftio.prediction.async_process import handle_in_process
 from ftio.prediction.probability_analysis import find_probability
-from ftio.prediction.helper import get_dominant_and_conf, set_hits
+from ftio.prediction.helper import get_dominant_and_conf
 from ftio.prediction.analysis import display_result, save_data, window_adaptation
 from ftio.prediction.async_process import join_procs
 from ftio.prediction.processes_zmq import bind_socket, receive_messages
@@ -106,20 +106,19 @@ def prediction_zmq_process(
 
     # Perform prediction
     prediction, parsed_args, t_flush = run(msg, args, shared_resources.b_app,shared_resources.t_app)
+    shared_resources.t_flush.append(t_flush)
 
     # plot
-    plot_bar_with_rich(shared_resources.t_app,shared_resources.b_app, width_percentage=0.9)
+    plot_bar_with_rich(shared_resources.t_app,shared_resources.b_app, width_percentage=0.8)
 
     # get data
     freq, conf = get_dominant_and_conf(prediction)  # just get a single dominant value
-    set_hits(prediction,shared_resources)
-
     # save prediction results
     save_data( prediction, shared_resources)
     # display results
-    text = display_result(freq ,prediction ,shared_resources=shared_resources)
+    text = display_result(freq ,prediction ,shared_resources)
     # data analysis to decrease window thus change start_time
-    text = window_adaptation(parsed_args, prediction, freq, shared_resources, text)
+    text += window_adaptation(parsed_args, prediction, freq, shared_resources)
     # print text
     console.print(text)
     shared_resources.count.value += 1
@@ -129,7 +128,7 @@ def prediction_zmq_process(
         shared_resources.data.append(shared_resources.queue.get())
 
     #calculate probability
-    prob = find_probability(shared_resources.data)
+    prob = find_probability(shared_resources.data, counter = shared_resources.count.value)
 
     probability = -1
     for p in prob:
