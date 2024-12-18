@@ -5,10 +5,7 @@ import os
 import datetime
 import pandas as pd
 import numpy as np
-from rich.panel import Panel
 from rich.console import Console
-from rich.text import Text
-from ftio import __version__
 from ftio.parse.parse_json import ParseJson
 from ftio.parse.parse_jsonl import ParseJsonl
 from ftio.parse.parse_recorder import ParseRecorder
@@ -18,6 +15,7 @@ from ftio.parse.parse_txt import ParseTxt
 from ftio.parse.parse_custom import ParseCustom
 from ftio.parse.parse_zmq import ParseZmq
 from ftio.parse.args import parse_args
+from ftio.parse.helper import print_info
 
 
 class Scales:
@@ -25,7 +23,7 @@ class Scales:
 
     def __init__(self, argv, msg=None):
         self.prog_name = argv[0][argv[0].rfind("/") + 1 :].capitalize()
-        self.Print_info()
+        print_info(self.prog_name)
         self.render = ""
         self.plot_mode = ""
         self.mode = ""
@@ -129,7 +127,8 @@ class Scales:
             # Single file
             else:
                 self.names.append(get_filename(path))
-                console.print(f"[cyan]Current file:[/] {path}\n")
+                if not "predictor" in self.prog_name.lower():
+                    console.print(f"[cyan]Current file:[/] {path}\n")
                 self.load_file(path)
 
         # print("--------------------------------------------\n")
@@ -175,22 +174,6 @@ class Scales:
             + "\n\n"
         )
         f.close()
-
-    def Print_info(self) -> None:
-        console = Console()
-        title = Panel(
-            Text(self.prog_name, justify="center"),
-            style="bold white on cyan",
-            border_style="white",
-            title_align="left",
-        )
-        text = "\n[cyan]Author:[/]  Ahmad Tarraf\n"
-        text += f"[cyan]Date:[/]    {str(datetime.date.today())}\n"
-        text += f"[cyan]Version:[/]  {__version__}\n"
-        text += "[cyan]License:[/]  BSD\n"
-        # console.print(Panel(Group(title,text), style="white", border_style='blue'))
-        console.print(title)
-        console.print(text)
 
     def Check_Same_Path(self):
         if len(self.paths) > 1:

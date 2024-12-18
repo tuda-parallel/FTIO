@@ -40,7 +40,6 @@ def ftio_process(shared_resources: SharedResources, args: list[str], msgs = None
     text += window_adaptation(parsed_args, prediction, freq, shared_resources)
     # print text
     console.print(text)
-    shared_resources.count.value += 1
 
 
 def window_adaptation(args, prediction:dict, freq:float, shared_resources: SharedResources) -> str:

@@ -31,7 +31,7 @@ def find_probability(data: list[dict], method: str = "db", counter:int = -1) -> 
     out = []
 
     if counter > 0:
-        prefix = f"[purple][PREDICTOR] (#{counter-1}):[/]"
+        prefix = f"[purple][PREDICTOR] (#{counter}):[/]"
     else:
         prefix = "[purple][PREDICTOR][/]"
 

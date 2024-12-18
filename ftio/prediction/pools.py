@@ -28,6 +28,7 @@ def predictor_with_pools(shared_resources, args):
                 stamp, _ = pm.monitor(filename, stamp)
                 future = executor.submit(ftio_future, shared_resources, args)
                 future.add_done_callback(probability_callback)
+                shared_resources.count.value += 1
     except KeyboardInterrupt:
         print_data(shared_resources.data)
         print("-- done -- ")

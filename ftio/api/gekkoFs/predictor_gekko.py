@@ -79,11 +79,12 @@ def prediction_process(
     # data analysis to decrease window
     text += window_adaptation(parsed_args, prediction, freq, shared_resources)
     console.print(text)
-    shared_resources.count.value += 1
     while not shared_resources.queue.empty():
         shared_resources.data.append(shared_resources.queue.get())
 
     _ = find_probability(shared_resources.data, counter = shared_resources.count.value)
+    shared_resources.count.value += 1
+
 
 
 

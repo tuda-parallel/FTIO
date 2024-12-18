@@ -1,4 +1,9 @@
+import datetime
 import numpy as np
+from rich.panel import Panel
+from rich.console import Console
+from rich.text import Text
+from ftio import __version__
 
 def scale_metric(metric:str,number:float) -> tuple[str, float]:
     """set unit for the plots
@@ -90,3 +95,35 @@ def detect_source(data:dict, args) -> str:
             return 'tmio'
         else:
             return 'unspecified'
+
+
+def print_info(prog_name:str, flag = True) -> None:
+    console = Console()
+    if "ftio" in prog_name.lower():
+        color  = "cyan"
+    elif "plot" in prog_name.lower():
+        color  = "yellow"
+    elif "parse" in prog_name.lower():
+        color  = "green"
+    elif "predictor" in prog_name.lower():
+        if flag:
+            return
+        else:
+            color  = "dark_violet"
+    else:
+        color  = "black"
+
+    title = Panel(
+        Text(prog_name, justify="center"),
+        style=f"bold white on {color}",
+        border_style="white",
+        title_align="left",
+    )
+
+    # color = cyan
+    text = f"\n[{color}]Author:[/]  Ahmad Tarraf\n"
+    text += f"[{color}]Date:[/]    {str(datetime.date.today())}\n"
+    text += f"[{color}]Version:[/]  {__version__}\n"
+    text += f"[{color}]License:[/]  BSD\n"
+    console.print(title)
+    console.print(text)

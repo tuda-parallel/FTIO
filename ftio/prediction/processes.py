@@ -50,3 +50,5 @@ def prediction_process(shared_resources, args: list[str], msgs = None) -> None:
         shared_resources.data.append(shared_resources.queue.get())
 
     _ = find_probability(shared_resources.data, counter = shared_resources.count.value)
+    shared_resources.count.value += 1
+

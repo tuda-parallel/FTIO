@@ -121,7 +121,6 @@ def prediction_zmq_process(
     text += window_adaptation(parsed_args, prediction, freq, shared_resources)
     # print text
     console.print(text)
-    shared_resources.count.value += 1
     
     # save data to queue
     while not shared_resources.queue.empty():
@@ -149,7 +148,8 @@ def prediction_zmq_process(
     'source': f'#{shared_resources.count.value}'
         })
 
-    console.print(f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/]  Ended")
+    console.print(f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Ended")
+    shared_resources.count.value += 1
 
 
 
