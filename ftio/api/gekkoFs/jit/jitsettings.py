@@ -387,7 +387,7 @@ class JitSettings:
             self.stage_in_path =  "/lustre/project/nhr-admire/tarraf/stage-in"
             self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
 
-        # ? Regex if needed
+        # ? Regex relevant files (move matches out and in)
         # ?##########################
         self.regex_file = "/lustre/project/nhr-admire/shared/nek_regex4cargo.txt"
         # ├─ Nek5000
@@ -395,8 +395,7 @@ class JitSettings:
             self.regex_match = "^/[a-zA-Z0-9]*turbPipe0\\.f\\d+"
         # ├─ Wacom++
         elif "wacom" in self.app_call:
-            # self.regex_match = "^(\\/(output|results|restart|input|processed)\\/)\\.+$"  #
-            self.regex_match = "\\/processed\\/"#^ocm3_d03_\\d+Z\\d+\\.nc$"
+            self.regex_match = ".*/(restart|output)/.*\\.nc$"
         # ├─ LAMMPS
         elif "lmp" in self.app_call:
             self.regex_match = ""

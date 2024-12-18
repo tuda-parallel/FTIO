@@ -84,7 +84,7 @@ def trigger_cargo(sync_trigger,args):
 
 
 
-def move_files(src_dir, dest_dir, ignore_pattern=None):
+def move_files(src_dir, dest_dir, relevant_pattern=None):
     """
     Move all files and directories from src_dir to dest_dir, ignoring items matching the regex pattern.
 
@@ -102,9 +102,9 @@ def move_files(src_dir, dest_dir, ignore_pattern=None):
 
     regex = None
     # Compile the regex pattern if provided
-    if ignore_pattern:
-        CONSOLE.print(f"[bold green][Trigger][/][green] Using pattern: {ignore_pattern}[/]\n")
-        regex = re.compile(ignore_pattern)
+    if relevant_pattern:
+        CONSOLE.print(f"[bold green][Trigger][/][green] Using pattern: {relevant_pattern}[/]\n")
+        regex = re.compile(relevant_pattern)
 
     # Iterate over all items in the source directory
     for root, _, files in os.walk(src_dir):  # Use os.walk for traversing directories
