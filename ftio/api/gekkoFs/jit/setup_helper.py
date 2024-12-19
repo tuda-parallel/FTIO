@@ -826,10 +826,10 @@ def get_pid(settings: JitSettings, name: str, pid: int):
         settings.cargo_pid = pid
         jit_print(f">> Cargo startup successful. PID is {pid}")
     elif name.lower() in "gkfs_daemon":
-        settings.gekko_daemon_pid = pid
+        settings.gkfs_daemon_pid = pid
         jit_print(f">> Gekko daemon startup successful. PID is {pid}")
     elif name.lower() in "gkfs_proxy":
-        settings.gekko_proxy_pid = pid
+        settings.gkfs_proxy_pid = pid
         jit_print(f">> Gekko proxy startup successful. PID is {pid}")
     elif name.lower() in "ftio" or name.lower() in "predictor_jit":
         settings.ftio_pid = pid
@@ -864,14 +864,14 @@ def soft_kill(settings: JitSettings) -> None:
 
     if not settings.exclude_daemon:
         try:
-            shut_down(settings, "GEKKO", settings.gekko_daemon_pid)
+            shut_down(settings, "GEKKO", settings.gkfs_daemon_pid)
             jit_print("[bold cyan] >> killed GEKKO DEMON [/]")
         except:
             jit_print("[bold cyan] >> Unable to soft kill GEKKO DEMON [/]")
 
     if not settings.exclude_proxy:
         try:
-            shut_down(settings, "GEKKO", settings.gekko_proxy_pid)
+            shut_down(settings, "GEKKO", settings.gkfs_proxy_pid)
             jit_print("[bold cyan] >> killed GEKKO PROXY [/]")
         except:
             jit_print("[bold cyan] >> Unable to soft  kill GEKKO PROXY [/]")
@@ -1396,7 +1396,7 @@ def load_defauts(settings: JitSettings, special_flags:dict = {}):
         "LIBGKFS_ENABLE_METRICS":"on",
         "LIBGKFS_PROXY_PID_FILE" : f"{settings.gkfs_proxyfile}",
         "LIBGKFS_LOG" : "info,warnings,errors",
-        "LIBGKFS_LOG_OUTPUT" : f"{settings.gekko_client_log}",
+        "LIBGKFS_LOG_OUTPUT" : f"{settings.gkfs_client_log}",
         "LIBGKFS_HOSTS_FILE" : f"{settings.gkfs_hostfile}",
         "LD_PRELOAD" : f"{settings.gkfs_intercept}",
     }

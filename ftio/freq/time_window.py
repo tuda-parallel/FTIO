@@ -50,6 +50,8 @@ def data_in_time_window(
 
     # ignored bytes
     ignored_bytes = ignored_bytes - total_bytes
+    if ignored_bytes < 0:
+        ignored_bytes = 0
     text += f"Total bytes: [cyan]{total_bytes:.2e} bytes[/]\n"
     text += f"Ignored bytes: [cyan]{ignored_bytes:.2e} bytes[/]\n"
 

@@ -45,9 +45,9 @@ def find_probability(data: list[dict], method: str = "db", counter:int = -1) -> 
             if len(prediction["dominant_freq"]) >= 1:
                 p_b += 1
 
-        p_b = p_b / len(data) 
-        CONSOLE = Console()
-        CONSOLE.print(f"{prefix} P(periodic) = {p_b*100:.3f}%")
+        p_b = p_b / len(data)
+        console = Console()
+        console.print(f"{prefix} P(periodic) = {p_b*100:.3f}%")
 
         if len(grouped_prediction) > 0:
             for group in range(0, number_groups + 1):

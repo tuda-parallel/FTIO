@@ -42,7 +42,7 @@ def check_setup(settings:JitSettings):
                 if not settings.exclude_daemon:
                     additional_arguments += (
                         f"-x LIBGKFS_LOG=info,warnings,errors "
-                        f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
+                        f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
                         f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                         f"-x LD_PRELOAD={settings.gkfs_intercept} "
                         )
@@ -63,7 +63,7 @@ def check_setup(settings:JitSettings):
                 if not settings.exclude_daemon:
                     additional_arguments += (
                         f"LIBGKFS_LOG=info,warnings,errors,"
-                        f"LIBGKFS_LOG_OUTPUT={settings.gekko_client_log},"
+                        f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
                         f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
                         f"LD_PRELOAD={settings.gkfs_intercept},"
                     )

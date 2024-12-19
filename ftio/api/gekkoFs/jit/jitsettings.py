@@ -42,11 +42,11 @@ class JitSettings:
         self.single_node_command = ""
 
         self.log_dir = ""
-        self.gekko_daemon_log = ""
-        self.gekko_daemon_err = ""
-        self.gekko_proxy_log = ""
-        self.gekko_proxy_err = ""
-        self.gekko_client_log = ""
+        self.gkfs_daemon_log = ""
+        self.gkfs_daemon_err = ""
+        self.gkfs_proxy_log = ""
+        self.gkfs_proxy_err = ""
+        self.gkfs_client_log = ""
         self.cargo_log = ""
         self.cargo_err = ""
         self.ftio_log = ""
@@ -63,8 +63,8 @@ class JitSettings:
 
         # pid of processes
         self.ftio_pid = 0
-        self.gekko_daemon_pid = 0
-        self.gekko_proxy_pid = 0
+        self.gkfs_daemon_pid = 0
+        self.gkfs_proxy_pid = 0
         self.cargo_pid = 0
         self.log_speed = 0.1
 
@@ -119,6 +119,8 @@ class JitSettings:
         self.update_settings()
 
     def update_settings(self):
+        """updates settings after command line arguments gave been parsed
+        """
         # Dry run settings
         if self.dry_run:
             new_name = "Dry_" + self.job_name
@@ -212,11 +214,11 @@ class JitSettings:
                 )
 
     def set_log_dirs(self):
-        self.gekko_daemon_log = os.path.join(self.log_dir, "gekko_daemon.log")
-        self.gekko_daemon_err = os.path.join(self.log_dir, "gekko_daemon.err")
-        self.gekko_proxy_log = os.path.join(self.log_dir, "gekko_proxy.log")
-        self.gekko_proxy_err = os.path.join(self.log_dir, "gekko_proxy.err")
-        self.gekko_client_log = os.path.join(self.log_dir, "gekko_client.log")
+        self.gkfs_daemon_log = os.path.join(self.log_dir, "gekko_daemon.log")
+        self.gkfs_daemon_err = os.path.join(self.log_dir, "gekko_daemon.err")
+        self.gkfs_proxy_log = os.path.join(self.log_dir, "gekko_proxy.log")
+        self.gkfs_proxy_err = os.path.join(self.log_dir, "gekko_proxy.err")
+        self.gkfs_client_log = os.path.join(self.log_dir, "gekko_client.log")
         self.cargo_log = os.path.join(self.log_dir, "cargo.log")
         self.cargo_err = os.path.join(self.log_dir, "cargo.err")
         self.ftio_log = os.path.join(self.log_dir, "ftio.log")

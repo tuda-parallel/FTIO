@@ -79,7 +79,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
                 call += " -p ofi+verbs -L ib0"
         else:  # no cluster mode
             call = (
-                f"GKFS_DAEMON_LOG_LEVEL=info GKFS_DAEMON_LOG_PATH={settings.gekko_daemon_log} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+                f"GKFS_DAEMON_LOG_LEVEL=info GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
                 f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l lo -P {settings.gkfs_daemon_protocol}"
             )
             if not settings.exclude_proxy:
@@ -87,20 +87,20 @@ def start_gekko_daemon(settings: JitSettings) -> None:
                 call += " --proxy-listen lo --proxy-protocol {settings.gkfs_daemon_protocol}"
 
         jit_print("[cyan]>> Starting Demons[/]", True)
-        # p = multiprocessing.Process(target=execute_background, args= (call, settings.gekko_daemon_log, settings.gekko_daemon_err, settings.dry_run))
+        # p = multiprocessing.Process(target=execute_background, args= (call, settings.gkfs_daemon_log, settings.gkfs_daemon_err, settings.dry_run))
         # p.start()
         # if settings.verbose:
-        #     _ = monitor_log_file(settings.gekko_daemon_err,"Error Demon")
-        #     _ = monitor_log_file(settings.gekko_daemon_log,"Demon")
+        #     _ = monitor_log_file(settings.gkfs_daemon_err,"Error Demon")
+        #     _ = monitor_log_file(settings.gkfs_daemon_log,"Demon")
         _ = execute_background_and_log(
             settings,
             call,
-            settings.gekko_daemon_log,
+            settings.gkfs_daemon_log,
             "daemon",
-            settings.gekko_daemon_err,
+            settings.gkfs_daemon_err,
         )
         if settings.verbose:
-            _ = monitor_log_file(settings.gekko_daemon_err, "Error Demon")
+            _ = monitor_log_file(settings.gkfs_daemon_err, "Error Demon")
 
         wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run)
         console.print("\n")
@@ -135,17 +135,17 @@ def start_gekko_proxy(settings: JitSettings) -> None:
             )
         jit_print("[cyan]>> Starting Proxy[/]")
 
-        # p = multiprocessing.Process(target=execute_background, args= (call, settings.gekko_proxy_log, settings.gekko_proxy_err, settings.dry_run))
+        # p = multiprocessing.Process(target=execute_background, args= (call, settings.gkfs_proxy_log, settings.gkfs_proxy_err, settings.dry_run))
         # p.start()
         # if settings.verbose:
-        #     _ = monitor_log_file(settings.gekko_proxy_log,"Proxy")
-        #     _ = monitor_log_file(settings.gekko_proxy_err,"Error Proxy")
+        #     _ = monitor_log_file(settings.gkfs_proxy_log,"Proxy")
+        #     _ = monitor_log_file(settings.gkfs_proxy_err,"Error Proxy")
 
         _ = execute_background_and_log(
-            settings, call, settings.gekko_proxy_log, "proxy", settings.gekko_proxy_err
+            settings, call, settings.gkfs_proxy_log, "proxy", settings.gkfs_proxy_err
         )
         if settings.verbose:
-            _ = monitor_log_file(settings.gekko_proxy_err, "Error Proxy")
+            _ = monitor_log_file(settings.gkfs_proxy_err, "Error Proxy")
 
         console.print("\n")
 
@@ -431,7 +431,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
             if not settings.exclude_daemon:
                 additional_arguments += (
                     f"-x LIBGKFS_LOG=info,warnings,errors "
-                    f"-x LIBGKFS_LOG_OUTPUT={settings.gekko_client_log} "
+                    f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
                     f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                     f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 )
@@ -455,7 +455,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
             if not settings.exclude_daemon:
                 additional_arguments += (
                     f"LIBGKFS_LOG=info,warnings,errors,"
-                    f"LIBGKFS_LOG_OUTPUT={settings.gekko_client_log},"
+                    f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
                     f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
                     f"LD_PRELOAD={settings.gkfs_intercept},"
                 )

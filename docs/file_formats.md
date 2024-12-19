@@ -1,5 +1,5 @@
 # File Formats and Tools
-Below, we describe the supported file formats. Aside from these formats, `ftio` and `predictor` support ZMQ as described [here](/docs/zmq.md), which avoids creating intermediate files. Furthermore, `ftio` also provides an API to different Tools (e.g., [GekkoFS](/docs/api.md#gekkofs-with-zmq)) and allows easy and direct use of the Python functions as described and daemonstrated [here](/docs/api.md#general).
+Below, we describe the supported file formats. Aside from these formats, `ftio` and `predictor` support ZMQ as described [here](/docs/zmq.md), which avoids creating intermediate files. Furthermore, `ftio` also provides an API to different Tools (e.g., [GekkoFS](/docs/api.md#gekkofs-with-zmq)) and allows easy and direct use of the Python functions as described and demonstrated [here](/docs/api.md#general).
 
 The currently supported file Formats are:
 - [File Formats and Tools](#file-formats-and-tools)
@@ -22,7 +22,7 @@ All units in the files are by default SI units.
 `ftio` supports JSON files. These files can be either from [TMIO](https://github.com/tuda-parallel/TMIO), or custom-generated. Below, we explain both and provide links to some examples. 
 
 ### Custom JSON Files
-This is one of the easiest ways to provide data into `ftio`. The JSON file provided to `ftio` should have the following structure:
+The JSON file provided to `ftio` should have the following structure:
 
 ```python
 {
@@ -62,14 +62,16 @@ This is one of the easiest ways to provide data into `ftio`. The JSON file provi
 
 }
 ```
-The associated example is provided [here](https://github.com/tuda-parallel/FTIO/tree/main/examples/custom/JSON/custom.json), which can be simply executed using:
+The associated example is provided [here](https://github.com/tuda-parallel/FTIO/tree/main/examples/custom/JSON/custom.json), which can be simply provided to `ftio` using:
 ```bash
 ftio custom.json 
-# or explicit specify the mode
-ftio custom.json -m write_sync
 ```
 
-The `-m`flags allows to pick the desired mode from the trace. In case the JSON file only contains a single mode (as in this example), the `-m` flag is not strictly needed.  
+The `-m`flags allows to pick the desired mode from the trace. In case the JSON file only contains a single mode (as in this example), the `-m` flag is not strictly needed:
+```bash
+# Explicitly specify the mode
+ftio custom.json -m write_sync
+```
 
 `ftio` automatically detects the source of the JSON file. To skip this test, the source can be specified with the `-s|--source` flag, that is, for tmio `-s "tmio"` or custom `-s "custom"`. 
 
@@ -88,11 +90,12 @@ application level, these metrics are internally overlapped. The application-leve
 	}
 }
 ```
+
 With:
 - `b_overlap_avr` represents the bandwidth at the application-level
 - `t_overlap` represents the time when new values for the application-level bandwidth are attained. This means for the above example, that the bandwidth at time 1 s was 1 GB, at 2 s this changed to 2 GB, and so on.
 
-Several fields shown here are optional. In its simplest form, a custom JSON file only needs the field `bandwidth`, and thus has the following form:
+Several fields shown here are optional. In a simpler form, a custom JSON file only needs the field `bandwidth`, and thus has the following form:
 ```python
 {
 	"bandwidth": {
@@ -126,6 +129,16 @@ Several fields shown here are optional. In its simplest form, a custom JSON file
 		}
 }
 ```
+
+In case the bandwidth filed is omitted, and only two vectors are provided, `ftio` assumes these metrics are at the application level. Furthermore, it searches for the first match of `b*` and `t*` to map `b_overlap_avr` and `t_overlap`, respectively. Hence, this form also works with `ftio`:
+```python
+{
+	"b": [1000000000,2000000000,5000000000,2000000000,1000000000,0],
+	"t": [1, 2, 4, 6, 7, 8]
+}
+```
+
+Alternatively, the JSON files can be loaded into `ftio`manually, and the required fields can be passed through the [API](/docs/api.md#general).
 
 ### TMIO JSON Files
 In the offline mode of TMIO, a JSON file is generated that contains 7 fields. Besides the standard fields: *read sync*, *write sync*, _read async_, and _write async_*, TMIO also generated fields for the required bandwidth in case of asynchronous I/O. Furthermore, the I/O time is also captured. Consequently, a JSON file has the following structure:
