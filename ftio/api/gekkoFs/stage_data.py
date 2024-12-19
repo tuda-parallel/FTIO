@@ -31,6 +31,7 @@ def trigger_cargo(sync_trigger,args):
     Args:
         sync_trigger (_type_): _description_
     """
+    not_in_time = 0
     while True:
         try:
             if not sync_trigger.empty():
@@ -47,9 +48,9 @@ def trigger_cargo(sync_trigger,args):
                     
                     #? 2) Time analysis to find the right instance when to send the data
                     target_time = prediction['t_end'] + 1/prediction['freq']
-                    geko_elapsed_time = prediction['t_flush'] + t  # t  is the waiting time in this function. t_flush contains the overhead of ftio + when the data was flushed from gekko
-                    remaining_time = (target_time - geko_elapsed_time ) 
-                    CONSOLE.print(f"[bold green][Trigger {prediction['source']}][/][green] Target time = {target_time:.3f} -- Gekko time = {geko_elapsed_time:.3f} -> sending cmd in {remaining_time:.3f} s[/]\n")
+                    gkfs_elapsed_time = prediction['t_flush'] + t  # t  is the waiting time in this function. t_flush contains the overhead of ftio + when the data was flushed from gekko
+                    remaining_time = (target_time - gkfs_elapsed_time ) 
+                    CONSOLE.print(f"[bold green][Trigger {prediction['source']}][/][green] Target time = {target_time:.3f} -- Gekko time = {gkfs_elapsed_time:.3f} -> sending cmd in {remaining_time:.3f} s[/]\n")
                     if remaining_time > 0:
                         countdown = time.time() + remaining_time
                         # wait till the time elapses:
@@ -61,22 +62,18 @@ def trigger_cargo(sync_trigger,args):
 
                         if not skip_flag:
                             # to use maybe later
-                            period = 1/prediction['freq'] if prediction['freq'] > 0 else 0
-                            text = f"frequency: {prediction['freq']}\nperiod: {period} \nconfidence: {prediction['conf']}\nprobability: {prediction['probability']}\n"
-                            if args.cargo:
-                                # call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']}"
-                                call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
-                                CONSOLE.print("[bold green][Trigger][/][green]" + call +"\n"+text)
-                                os.system(call)
-                            else: #standard move
-                                # TODO: needs gekko flags to move files
-                                move_files(args.stage_in_path,args.stage_out_path,args.regex)
-                                CONSOLE.print("[bold green][Trigger][/][green]" + "Moving files" +"\n"+text)
+                            stage_files(args,prediction)
                         else:
                             CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, new prediction is ready[/]\n")
 
                     else:
-                        CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, not in time[/]\n")
+                        not_in_time += 1
+                        if not_in_time == 3:
+                            CONSOLE.print("[bold green][Trigger][/][yellow] Not in time 3 times, triggering flush[/]\n")
+                            stage_files(args,prediction)
+                            not_in_time = 0
+                        else:
+                            CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, not in time[/]\n")
 
             time.sleep(0.01)
         except KeyboardInterrupt:
@@ -84,7 +81,32 @@ def trigger_cargo(sync_trigger,args):
 
 
 
-def move_files(src_dir, dest_dir, relevant_pattern=None):
+def stage_files(args, prediction):
+    """stages the files 
+
+    Args:
+        args (argParse): Parsed command line arguments
+        prediction (dict): Result from FTIO
+    """
+    period = 1/prediction['freq'] if prediction['freq'] > 0 else 0
+    text = f"frequency: {prediction['freq']}\nperiod: {period} \nconfidence: {prediction['conf']}\nprobability: {prediction['probability']}\n"
+    CONSOLE.print(f"[bold green][Trigger][/][green] {text}\n")
+    if args.cargo:
+        move_files_cargo(args)
+    else: #standard move
+        # TODO: needs gkfs flags to move files
+        move_files_os(args.stage_in_path,args.stage_out_path,args.regex)
+
+
+
+def move_files_cargo(args):
+    # call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} -c {prediction['conf']} -p {prediction['probability']} -t {1/prediction['freq']}"
+    call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
+    CONSOLE.print(f"[bold green][Trigger][/][green] {call}")
+    os.system(call)
+
+
+def move_files_os(src_dir, dest_dir, relevant_pattern=None):
     """
     Move all files and directories from src_dir to dest_dir, ignoring items matching the regex pattern.
 
@@ -93,6 +115,7 @@ def move_files(src_dir, dest_dir, relevant_pattern=None):
         dest_dir (str): Path to the destination directory.
         ignore_pattern (str): Regex pattern to ignore files/directories (optional).
     """
+    CONSOLE.print("[bold green][Trigger][/][green] Moving files\n")
     # Ensure both source and destination directories exist
     if not os.path.exists(src_dir):
         print(f"Source directory '{src_dir}' does not exist.")
@@ -118,8 +141,6 @@ def move_files(src_dir, dest_dir, relevant_pattern=None):
         for file_name in files:
             # Check if the file matches the ignore pattern
             if regex and regex.match(file_name):
-                print(f"Ignored: {file_name}")
-            else:
                 src_file = os.path.join(root, file_name)
                 dest_file = os.path.join(target_dir, file_name)
                 try:
@@ -129,3 +150,5 @@ def move_files(src_dir, dest_dir, relevant_pattern=None):
                     print(f"Moved: {src_file} -> {dest_file}")
                 except Exception as e:
                     print(f"Error moving '{src_file}': {e}")
+            else:
+                print(f"Ignored: {file_name}")
