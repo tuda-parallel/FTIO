@@ -35,6 +35,8 @@ def load_json_and_plot(filenames):
         
         if filenames.index(filename) == 0:
             unit, order = set_unit(b)
+
+        plot_bar_with_rich(t,b)
         
         # Create a scatter plot trace of b against t
         trace = go.Scatter(
@@ -66,7 +68,11 @@ def load_json_and_plot(filenames):
 
 
 
-def plot_bar_with_rich(x, y, max_height=10, terminal_width=None, width_percentage=0.95):
+def non_zero_mean(arr: np.ndarray):
+    return  np.mean(arr[np.nonzero(arr)]) if len(arr[np.nonzero(arr)]) > 0 else 0
+
+
+def plot_bar_with_rich(x, y, max_height=10, terminal_width=None, width_percentage=0.95,func=non_zero_mean):
     """
     Plots a bar chart using Rich library with dynamic width and properly scaled axis labels.
 
@@ -76,6 +82,8 @@ def plot_bar_with_rich(x, y, max_height=10, terminal_width=None, width_percentag
         max_height (int): Maximum height of the plot in characters.
         terminal_width (int, optional): Width of the terminal. If None, it will be auto-detected.
         width_percentage (float): Percentage of terminal width to use for the plot.
+        func (function): for interpolating y in the interpolated x ranges (i.e., how to calculate a single
+        representative y inside a x range)
     """
     
     console = Console()
@@ -93,7 +101,7 @@ def plot_bar_with_rich(x, y, max_height=10, terminal_width=None, width_percentag
     y_scaled = np.interp(y, (y_min, y_max), (0, max_height)).astype(int)
     # Offset adjustment for the axis label indentation
     label_offset = len(f"{y_max:.2f}") + 1
-    # console.print(f"y:{y}\n\nx:{x}\n\ny_scaled:{y_scaled}")
+    # print(f"y:{y}\n\nx:{x}\n\ny_scaled:{y_scaled}")
 
     # Normalize x to fit within the plot width
     x_min = min(x)
@@ -107,7 +115,9 @@ def plot_bar_with_rich(x, y, max_height=10, terminal_width=None, width_percentag
     for level in range(max_height, -1, -1):
         row = []
         for i in range(plot_width-label_offset):
-            if i in x_scaled and y_scaled[np.where(x_scaled == i)[0][0]] >= level:
+            idx = np.where(x_scaled == i)[0] 
+            # if i in x_scaled and y_scaled[idx[0]] >= level:
+            if i in x_scaled and func(y_scaled[idx]) >= level:
                 row.append("█")  # Bar character
             else:
                 row.append(" ")
@@ -160,6 +170,7 @@ if __name__ == "__main__":
         'filenames',
         type=str,
         nargs='+',
+        # nargs='?',
         default=["bandwidth.json"],
         help="The paths to the JSON files to plot. Multiple files can be provided."
     )

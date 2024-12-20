@@ -295,7 +295,8 @@ class JitSettings:
         ##  ├─ DLIO -->
         self.app_call = "dlio_benchmark"
         self.run_dir = "."
-        workload = " workload=unet3d_my_a100 "
+        workload = " workload=bert " 
+        # workload = " workload=unet3d_my_a100 "
         self.app_flags = (
             f"{workload} "
             f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
@@ -311,9 +312,9 @@ class JitSettings:
         # self.run_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
         # self.app_flags = ""
         #  └─ Wacom++ --> change wacom.json if needed
-        self.app_call = "./wacommplusplus"
-        self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
-        self.app_flags = ""
+        # self.app_call = "./wacommplusplus"
+        # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
+        # self.app_flags = ""
 
         # ****** pre and post app call ******
         # Application specific calls executed before the actual run. Executed as
