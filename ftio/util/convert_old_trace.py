@@ -4,10 +4,9 @@ import json
 import numpy as np
 
 
-
 def parse_options():
     parser = argparse.ArgumentParser(
-    description="Converts old traces by scaling them 10^6."
+        description="Converts old traces by scaling them 10^6."
     )
     parser.add_argument(
         "filename", type=str, help="The paths and name to the JSON file to convert"
@@ -25,7 +24,7 @@ def parse_options():
     return args
 
 
-def main(args = parse_options()):
+def main(args=parse_options()):
     """converts a old trace to a new one by scaling
 
     Args:
@@ -56,30 +55,29 @@ def main(args = parse_options()):
                 if data[mode]:
                     for metric in fields_metrics:
                         if metric in data[mode]:
-                            data[mode][metric] = scale(data[mode], metric)
+                            scale(data[mode], metric)
                     for metric in fields_bandwidth:
                         if (
                             "bandwidth" in data[mode]
                             and metric in data[mode]["bandwidth"]
                         ):
-                            data[mode][metric] = scale(data[mode]["bandwidth"], metric)
+                            scale(data[mode]["bandwidth"], metric)
 
     # json.dump(data,out_file)
     with open(args.outfile, "w") as out_file:
-            out_file.write("{" + ",\n".join(f'"{i}":' + json.dumps(data[i]) for i in data) + "}\n")
+        out_file.write(
+            "{" + ",\n".join(f'"{i}":' + json.dumps(data[i]) for i in data) + "}\n"
+        )
 
 
 def scale(data_dict: dict, field: str, value: int = 1000000):
     if isinstance(data_dict[field], float) or isinstance(data_dict[field], int):
-        return data_dict[field] * value
+        data_dict[field] * value
     elif isinstance(data_dict[field], list):
         data_dict[field] = list(np.array(data_dict[field]) * value)
     else:
         raise TypeError("unsupported type passed")
 
 
-
 if __name__ == "__main__":
     main(parse_options())
-
-
