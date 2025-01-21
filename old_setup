@@ -24,6 +24,8 @@ setup(
             "predictor = ftio.cli.predictor:main",
             # plot
             "ioplot = ftio.util.ioplot:main",
+            # convert old TMIO traces
+            "convert_trace = ftio.util.convert_old_trace:main",
             # for extrap
             "ioparse = ftio.util.ioparse:main",
             # jit

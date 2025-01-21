@@ -36,28 +36,28 @@ def main(args:argparse.Namespace) -> None:
     # ---------------------------------
     # Modification area
     # ---------------------------------
-    argv.extend(["-e","no"])
-    # argv = ["-e", "mat"]  # ["-e", "plotly"]
+    argv.extend(['-e','no'])
+    # argv = ['-e', 'mat']  # ['-e', 'plotly']
     # # finds up to n frequencies. Comment this out to go back to the default version
-    # argv.extend(["-n", "10"])
+    # argv.extend(['-n', '10'])
     # ---------------------------------
 
     if args.proxy:
         mp = MetricProxy()
         jobs = mp.jobs()
-        job_id = jobs[0]["jobid"]
+        job_id = jobs[0]['jobid']
         jsonl = mp.trace(job_id)
         metrics = filter_metrics(jsonl,filter_deriv=True)
 
         # Workaround: proxy needs to be running
         # metrics = get_all_metrics('4195024897')
     else:
-        metrics = parse_all(args.file , filter_deriv=True,exclude=["size","hits","proxy"], scale_t=1e-3) # "mpi"
+        metrics = parse_all(args.file , filter_deriv=True,exclude=['size','hits','proxy'], scale_t=1e-3) # 'mpi'
 
-    CONSOLE.print("[blue]\nSettings:\n---------[/]")
-    CONSOLE.print(f"[blue] - parallel: {not args.disable_parallel}[/]")
-    CONSOLE.print(f"[blue] - future: {not pools}[/]")
-    CONSOLE.print(f"[blue] - proxy: {args.proxy}[/]\n")
+    CONSOLE.print('[blue]\nSettings:\n---------[/]')
+    CONSOLE.print(f'[blue] - parallel: {not args.disable_parallel}[/]')
+    CONSOLE.print(f'[blue] - future: {not pools}[/]')
+    CONSOLE.print(f'[blue] - proxy: {args.proxy}[/]\n')
     ranks = 32
 
     # plot the metrics if needed
@@ -80,12 +80,12 @@ def execute_parallel(
     counter = 0
     total_metrics = len(metrics)
     progress = create_process_bar(total_metrics)
-    task = progress.add_task("[green]Processing metrics", total=total_metrics)
+    task = progress.add_task('[green]Processing metrics', total=total_metrics)
     with progress:
         try:
             if pools:
                 # with Progress() as progress:
-                #     task = progress.add_task("[cyan]Metrics handled", total=len(metrics.keys()))
+                #     task = progress.add_task('[cyan]Metrics handled', total=len(metrics.keys()))
                 for metric, arrays in metrics.items():
                     # with ProcessPoolExecutor(max_workers=80) as executor:
                     with ProcessPoolExecutor() as executor:
@@ -107,7 +107,7 @@ def execute_parallel(
                         progress.update(task, completed=counter)
         except KeyboardInterrupt:
             print_data(data)
-            print("-- done -- ")
+            print('-- done -- ')
             exit()
 
     return data
@@ -123,16 +123,16 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
     progress = create_process_bar(total_files)
     
     with progress:
-        task = progress.add_task("[green]Processing metrics", total=total_files)
+        task = progress.add_task('[green]Processing metrics', total=total_files)
         for metric, arrays in metrics.items():
             if check:
                 decreasing_order = np.all(arrays[1][-1] >= arrays[1][1])
                 # negative = np.all(arrays[0] <= 0)
                 if not decreasing_order: #or not  negative:
                     error_counter += 1
-                    # err = "[bold red] Negative metric" if not negative else "[bold yellow] time not decreasing"
-                    err = "[bold yellow] time not decreasing"
-                    CONSOLE.print(f"[bold red]- {error_counter}. Error in {metric}:{err}[/]")
+                    # err = '[bold red] Negative metric' if not negative else '[bold yellow] time not decreasing'
+                    err = '[bold yellow] time not decreasing'
+                    CONSOLE.print(f'[bold red]- {error_counter}. Error in {metric}:{err}[/]')
                     continue
             if save:
                 # save stuff in queue, data is non empty
@@ -154,37 +154,37 @@ def post(data, metrics, argv):
         heatmap(data)
         scatter2D(df)
         scatter(
-            df, x="Phi", y="Dominant Frequency", color="Confidence", symbol="Metric"
+            df, x='Phi', y='Dominant Frequency', color='Confidence', symbol='Metric'
         )
-        _ = optics(df,"Phi","Dominant Frequency")
-        _ = dbscan(df,"Phi","Dominant Frequency",0.1)
+        _ = optics(df,'Phi','Dominant Frequency')
+        _ = dbscan(df,'Phi','Dominant Frequency',0.1)
         density_heatmap(data)
         heatmap_2(data)
     else:
-        CONSOLE.print("[bold red] No data[/]")
+        CONSOLE.print('[bold red] No data[/]')
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     
-    # file = "/d/github/FTIO/ftio/api/metric_proxy/traces/alberto_unito/bench_8x144.json"
-    # file = "/d/github/FTIO/ftio/api/metric_proxy/traces/jb_traces/WACOM_PROCESS_BASED_json/wacommplusplus.36procs.trace.json"
-    # file = "/d/sim/metric_proxy/traces/Mixed_1x8_5.json"file = /d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json"
-    # file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json"
-    # file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/wacom.json"
-    file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/wacoml.json"
-    # file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/lulesh_8_procs.json"
-    # file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/lulesh_27_procs.json"
+    # file = '/d/github/FTIO/ftio/api/metric_proxy/traces/alberto_unito/bench_8x144.json'
+    # file = '/d/github/FTIO/ftio/api/metric_proxy/traces/jb_traces/WACOM_PROCESS_BASED_json/wacommplusplus.36procs.trace.json'
+    # file = '/d/sim/metric_proxy/traces/Mixed_1x8_5.json'file = /d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json'
+    # file = '/d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json'
+    # file = '/d/github/FTIO/ftio/api/metric_proxy/new_traces/wacom.json'
+    file = '/d/github/FTIO/ftio/api/metric_proxy/new_traces/wacoml.json'
+    # file = '/d/github/FTIO/ftio/api/metric_proxy/new_traces/lulesh_8_procs.json'
+    # file = '/d/github/FTIO/ftio/api/metric_proxy/new_traces/lulesh_27_procs.json'
     
 
-    parser = argparse.ArgumentParser(description="Executes FTIO in parallel on a JSON file from the proxy or by directly communicating with the proxy")
+    parser = argparse.ArgumentParser(description='Executes FTIO in parallel on a JSON file from the proxy or by directly communicating with the proxy')
     parser.add_argument(
         '--file',
         type=str,
-        nargs="?",  # '*' allows zero or more filenames
+        nargs='?',  # '*' allows zero or more filenames
         default=file,
-        help="The paths to the JSON file from the proxy"
+        help='The paths to the JSON file from the proxy'
     )
-    parser.add_argument('--proxy', action = 'store_true', default=False, help="parallel or not")
-    parser.add_argument('--disable_parallel', action = 'store_true', default=False, help="parallel or not")
+    parser.add_argument('--proxy', action = 'store_true', default=False, help='parallel or not')
+    parser.add_argument('--disable_parallel', action = 'store_true', default=False, help='parallel or not')
     args, unknown = parser.parse_known_args()
     args.argv = unknown
     main(args)

@@ -65,7 +65,7 @@ Full documentation:
     #! PLAY Settings
     if 'play' in name.lower():
         parser.add_argument('-f', '--freq', dest='freq', type = float, help ='specifies the sampling rate with which the continuous signal is discretized (default=10Hz). This directly affects the highest captured frequency (Nyquist). The value is specified in Hz. In case this value is set to -1, the auto mode is launched which sets the sampling frequency automatically to the smallest change in the bandwidth detected. Note that the lowest allowed frequency in the auto mode is 2000 Hz')
-        parser.add_argument('-e', '--engine',         type = str, help = 'plot engine. Either plotly (default) or mathplotlib. Specifies the engine used to display the figures. Plotly is used to generate HTML files')
+        parser.add_argument('-e', '--engine',         type = str, help = 'plot engine. Either plotly (default) or matplotlib. Specifies the engine used to display the figures. Plotly is used to generate HTML files')
         parser.set_defaults(engine = 'plotly')
 
     #! FTIO and Predictor Settings
@@ -77,7 +77,7 @@ Full documentation:
         parser.add_argument('-te', '--te',         type = float, help = 'modifies the end time of the examined time window')
         parser.add_argument('-tr', '--transformation', dest='transformation',  type = str, help = 'Specifies the frequency technique to use. Supported modes are: dft (default), wave_disc, and wave_cont')
         parser.set_defaults(transformation='dft')
-        parser.add_argument('-e', '--engine',         type = str, help = 'specifies the engine used to display the figures. Either plotly (default) or mathplotlib can be used.  Plotly is used to generate interactive plots as HTML files. Set this value to no if you do not want to generate plots')
+        parser.add_argument('-e', '--engine',         type = str, help = 'specifies the engine used to display the figures. Either plotly (default) or matplotlib can be used.  Plotly is used to generate interactive plots as HTML files. Set this value to no if you do not want to generate plots')
         parser.set_defaults(engine = 'plotly')
         parser.add_argument('-o', '--outlier',         type = str, help = 'outlier detection method: Z-score (default), DB-Scan, Isolation_forest, or LOF')
         parser.set_defaults(outlier = 'Z-score')
@@ -95,7 +95,7 @@ Full documentation:
         parser.set_defaults(n_freq =  0)
         parser.add_argument('-c', '--autocorrelation', dest='autocorrelation', action='store_true', help ='if set, autocorrelation is calculated in addition to DFT. The results are merged to a single prediction at the end')
         parser.set_defaults(autocorrelation=False)
-        parser.add_argument('-w', '--window_adaptation', dest='window_adaptation',type = str , help ='online time window adaptation. If set to frequency_hits, the time window is shifted on X frequency hits (a dominant frequency was found) to X times the last found period from the current instance. ')
+        parser.add_argument('-w', '--window_adaptation', dest='window_adaptation',type = str , help ='online time window adaptation. If set to frequency_hits, the time window is shifted on X frequency hits (a dominant frequency was found) to X times the last found period from the current instance. Alternatively it can be set to data to move the window to X times after data has been received')
         parser.set_defaults(window_adaptation="")
         parser.add_argument('-hi', '--hits', dest= 'hits',   type = float, help ='specifies the number of hits needed to adapt the time window. A hit occurs once a dominant frequency is found')
         parser.set_defaults(hits =  3)
