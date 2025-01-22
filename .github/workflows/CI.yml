@@ -10,7 +10,7 @@ on:
       - 'main'  # Run tests on pull requests targeting the main branch
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,18 +20,49 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'  # Adjust the Python version as needed
+          python-version: '3.11'
 
-      - name: Install FTIO
+      - name: Cache Python virtual environment
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: ${{ runner.os }}-python-3.11  # Cache based on OS and Python version
+          restore-keys: |
+            ${{ runner.os }}-python-
+
+      - name: Install FTIO and dependencies
         run: |
-          python -m venv .venv
+          if [ ! -d ".venv" ]; then
+            python -m venv .venv
+          fi
           source .venv/bin/activate
           pip install --upgrade pip
-          pip install .
+          pip install .  # Ensure FTIO is installed and dependencies are up to date
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build  # This job depends on the build job and will run after it
+
+    steps:
+      - name: Checkout latest FTIO code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache Python virtual environment
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: ${{ runner.os }}-python-3.11  
+          restore-keys: |
+            ${{ runner.os }}-python-
 
       - name: Run tests
         run: |
+          source .venv/bin/activate  # Just activate the existing .venv
           cd test
-          source .venv/bin/activate
           python3 -m pytest
           make clean
