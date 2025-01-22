@@ -1,0 +1,36 @@
+name: CI (Test FTIO)
+
+on:
+  push:
+    branches:
+      - '*'  # Trigger on push to any branch
+      #- '!main'  # Exclude the main branch (optional, adjust as needed)
+  pull_request:
+    branches:
+      - 'main'  # Run tests on pull requests targeting the main branch
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout latest FTIO code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'  # Adjust the Python version as needed
+
+      - name: Install FTIO
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install .
+
+      - name: Run tests
+        run: |
+          cd test
+          python3 -m pytest
+          make clean
