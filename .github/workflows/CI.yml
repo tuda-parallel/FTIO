@@ -32,5 +32,6 @@ jobs:
       - name: Run tests
         run: |
           cd test
+          source .venv/bin/activate
           python3 -m pytest
           make clean
