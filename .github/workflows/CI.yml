@@ -1,10 +1,10 @@
-name: CI (Test FTIO)
+name: CI 
 
 on:
   push:
     branches:
       - '*'  # Trigger on push to any branch
-      #- '!main'  # Exclude the main branch (optional, adjust as needed)
+      - '!development'  # Exclude the branch
   pull_request:
     branches:
       - 'main'  # Run tests on pull requests targeting the main branch
@@ -22,47 +22,17 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Cache Python virtual environment
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: ${{ runner.os }}-python-3.11  # Cache based on OS and Python version
-          restore-keys: |
-            ${{ runner.os }}-python-
-
       - name: Install FTIO and dependencies
         run: |
-          if [ ! -d ".venv" ]; then
-            python -m venv .venv
-          fi
+          python -m venv .venv
           source .venv/bin/activate
           pip install --upgrade pip
           pip install .  # Ensure FTIO is installed and dependencies are up to date
 
-  test:
-    runs-on: ubuntu-latest
-    needs: build  # This job depends on the build job and will run after it
 
-    steps:
-      - name: Checkout latest FTIO code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Cache Python virtual environment
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: ${{ runner.os }}-python-3.11  
-          restore-keys: |
-            ${{ runner.os }}-python-
-
-      - name: Run tests
+      - name: Test FTIO
         run: |
           source .venv/bin/activate  # Just activate the existing .venv
           cd test
           python3 -m pytest
-          make clean
+          rm -rf io_results __pycache__ *.json*
