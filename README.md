@@ -7,9 +7,11 @@
 ![](https://img.shields.io/github/languages/code-size/tuda-parallel/FTIO)
 ![](https://img.shields.io/github/languages/top/tuda-parallel/FTIO)
 ![license][license.bedge]
-[![Upload Python Package](https://img.shields.io/github/actions/workflow/status/tuda-parallel/FTIO/python-publish.yml)](https://github.com/tuda-parallel/FTIO/actions/workflows/python-publish.yml)
-[![Python Package](https://img.shields.io/pypi/status/ftio-hpc)](https://pypi.org/project/ftio-hpc/)
+[![CI](https://github.com/tuda-parallel/FTIO/actions/workflows/CI.yml/badge.svg)](https://github.com/tuda-parallel/FTIO/actions/workflows/CI.yml)
+[![CD](https://github.com/tuda-parallel/FTIO/actions/workflows/python-publish.yml/badge.svg)](https://github.com/tuda-parallel/FTIO/actions/workflows/python-publish.yml)
+[![pypi](https://img.shields.io/pypi/status/ftio-hpc)](https://pypi.org/project/ftio-hpc/)
 
+<!-- [![Upload Python Package](https://img.shields.io/github/actions/workflow/status/tuda-parallel/FTIO/python-publish.yml)](https://github.com/tuda-parallel/FTIO/actions/workflows/python-publish.yml) -->
 
 
 <br />
