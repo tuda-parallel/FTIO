@@ -69,18 +69,30 @@ Repository = "https://github.com/tuda-parallel/FTIO"
 "Bug Tracker" = "https://github.com/tuda-parallel/FTIO/issues"
 Changelog = "https://github.com/tuda-parallel/FTIO/blob/master/CHANGELOG.md"
 
+
 [project.scripts]
+# Standard Scripts (always available)
 ftio = "ftio.cli.ftio_core:run"
 predictor = "ftio.cli.predictor:main"
 ioplot = "ftio.util.ioplot:main"
-ioparse = "ftio.util.ioparse:main"
-convert_trace = "ftio.util.convert_old_trace:main"
+ioparse = "ftio.util.ioparse:main" # parse several JSON files from TMIO to a single profile for Extra-P
 predictor_jit = "ftio.api.gekkoFs.predictor_gekko_zmq:main"
 jit = "ftio.api.gekkoFs.jit.jit:main"
-trace_ftio = "ftio.api.trace_analysis.trace_ftio_v2:main"
-trace_analysis = "ftio.api.trace_analysis.trace_analysis:main"
+parallel_trace_analysis = "ftio.api.trace_analysis.parallel_trace_analysis:main" # analyses several traces (JSON or CSV) in parallel
 proxy_ftio = "ftio.api.metric_proxy.parallel_proxy:main"
+
+# Debug-Specific Scripts
+plot_bandwdith="ftio.util.plot_bandwidth:main" 
+convert_trace = "ftio.util.convert_old_trace:main" 
+trace_ftio = "ftio.api.trace_analysis.trace_ftio_v2:main" 
+trace_analysis = "ftio.api.trace_analysis.trace_analysis:main" 
 admire_proxy_invoke_ftio = "ftio.api.metric_proxy.proxy_invoke_ftio:main"
+
+
+
+[project.optional-dependencies]
+debug = []  # Optional, if there are no additional dependencies for debug mode
+
 
 [project.gui-scripts]
 

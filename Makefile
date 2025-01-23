@@ -39,7 +39,7 @@ ftio_debug_venv: override PYTHON = .venv/bin/python3
 ftio_debug_venv: ftio_debug
 
 ftio_debug: 
-	$(PYTHON) -m pip install -e .
+	$(PYTHON) -m pip install -e .[debug]
 	# mv old_setup setup.py
 	# mv pyproject.toml old_pyproject
 	# $(PYTHON) -m pip install -e . || (mv old_pyproject pyproject.toml && mv setup.py old_setup)

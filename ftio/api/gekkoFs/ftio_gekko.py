@@ -1,6 +1,7 @@
-import os
-import numpy as np
+# import os
 import glob
+import argparse
+import numpy as np
 from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
 from ftio.freq._dft import display_prediction
@@ -11,7 +12,6 @@ import plotly.graph_objects as go
 from ftio.plot.helper import format_plot
 from ftio.plot.units import set_unit
 from ftio.freq.helper import MyConsole
-import argparse
 
 from ftio.prediction.async_process import handle_in_process
 from ftio.prediction.helper import dump_json

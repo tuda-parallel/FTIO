@@ -3,8 +3,7 @@ import time
 from rich.console import Console
 # import numpy as np
 import zmq
-
-from ftio.api.gekkoFs.jit.plot_bandwidth import plot_bar_with_rich
+from ftio.plot.plot_bandwidth import plot_bar_with_rich
 from ftio.prediction.shared_resources import SharedResources
 from ftio.prediction.helper import print_data#, export_extrap
 from ftio.prediction.async_process import handle_in_process
