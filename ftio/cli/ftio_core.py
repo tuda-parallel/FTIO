@@ -17,12 +17,8 @@ from ftio.freq.helper import get_mode, MyConsole, merge_results
 from ftio.freq.autocorrelation import find_autocorrelation
 from ftio.freq.anomaly_detection import outlier_detection
 from ftio.freq.discretize import sample_data
-from ftio.freq._wavelet import (
-    wavelet_disc,
-    plot_wave_disc,
-    wavelet_cont,
-    plot_wave_cont,
-)  # , welch
+from ftio.freq._wavelet import wavelet_disc,wavelet_cont#,welch
+from ftio.plot.plot_wavelet import plot_wave_disc,plot_wave_cont
 from ftio.freq._dft import dft, prepare_plot_dfs, display_prediction, precision_dft
 from ftio.prediction.unify_predictions import merge_predictions
 from ftio.freq.time_window import data_in_time_window
@@ -137,7 +133,7 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
     total_bytes = data["total_bytes"] if "total_bytes" in data else 0
     ranks = data["ranks"] if "ranks" in data else 0
 
-    #! extract relevant data
+    #! Extract relevant data
     bandwidth, time_b, text = data_in_time_window(
         args, bandwidth, time_b, total_bytes, ranks
     )
@@ -158,35 +154,31 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
     CONSOLE.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
     #! Perform transformation
-    CONSOLE.print(
-        f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
-    )
+    CONSOLE.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
     tik = time.time()
-
-    ##! Choose Method
     if "dft" in args.transformation:
         ##? calculate DFT
         X = dft(b_sampled)
-        N = len(X)
+        n = len(X)
         amp = abs(X)
-        freq_arr = freq * np.arange(0, N) / N
+        freq_arr = freq * np.arange(0, n)/n
         phi = np.arctan2(X.imag, X.real)
         conf = np.zeros(len(amp))
         # welch(bandwidth,freq)
 
-        ##? Find dominant frequency
+        ##? Find the dominant frequency
         (
             dominant_index,
-            conf[1 : int(len(amp) / 2) + 1],
+            conf[1 : int(n/2) + 1],
             outlier_text,
         ) = outlier_detection(amp, freq_arr, args)
 
         ##? ignore DC offset
         conf[0] = np.inf
-        if len(amp) % 2 == 0:
-            conf[int(len(amp) / 2) + 1 :] = np.flip(conf[1 : int(len(amp) / 2)])
+        if n % 2 == 0:
+            conf[int(n/2) + 1 :] = np.flip(conf[1 : int(n/2)])
         else:
-            conf[int(len(amp) / 2) + 1 :] = np.flip(conf[1 : int(len(amp) / 2) + 1])
+            conf[int(n/2) + 1 :] = np.flip(conf[1 : int(n/2) + 1])
 
         ##? Assign data
         prediction["dominant_freq"] = freq_arr[dominant_index]
@@ -201,7 +193,7 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
 
         #? save up to n_freq from the top candidates
         if args.n_freq > 0:
-            arr = amp[0:int(np.ceil(len(amp)/2))]
+            arr = amp[0:int(np.ceil(n/2))]
             top_candidates = np.argsort(-arr) # from max to min
             n_freq = int(min(len(arr),args.n_freq))
             prediction["top_freq"] = {
@@ -220,7 +212,7 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
 
         precision_text = ""
         # precision_text = precision_dft(
-        #     amp, phi, dominant_index, b_sampled, time_b[0] + np.arange(0, N) * 1 / freq, freq_arr, args.engine
+        #     amp, phi, dominant_index, b_sampled, time_b[0] + np.arange(0, N) * 1/freq, freq_arr, args.engine
         # )
 
         text = Group(text, outlier_text, precision_text[:-1])
@@ -260,7 +252,7 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
             args.transformation = "dft"
             n = len(b_sampled)
             tmp = {
-                "time": time_b[0] + 1 / freq * np.arange(0, n),
+                "time": time_b[0] + 1/freq * np.arange(0, n),
                 "bandwidth": cc[0],
                 "total_bytes": total_bytes,
                 "ranks": ranks,
@@ -285,6 +277,7 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
 
     else:
         raise Exception("Unsupported decomposition specified")
+
     CONSOLE.print(
         Panel.fit(
             text,
