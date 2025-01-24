@@ -65,7 +65,11 @@
   git checkout development
   git pull origin development
   git checkout your-branch
+  
+  # Either merge or rebase with development
   git merge development
+  # Or rebase for a linear history
+  git rebase development
   ```
 
 - Resolve any merge conflicts promptly and test your work.
@@ -85,6 +89,9 @@
   # You are on your-branch (check using git branch -a)
   git push
   ```
+  
+  > [!note]
+  > Avoid using to short or undescriptive commit messages like 'update' or 'code cleaned'. 
 
 ### 3. Submitting Your Work
 
