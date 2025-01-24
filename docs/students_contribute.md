@@ -18,7 +18,6 @@
 
 ## Workflow Overview
 
-
 1. **GitHub Username**:  
    - Before starting your work, please create a GitHub account if you don’t have one already and send me your GitHub username. This will be necessary for setting up your branch and reflect your contributions to the code.
 
@@ -26,8 +25,11 @@
    - Once your thesis starts, I will create a branch for your work. This branch will be linked to an issue that allows you to track your progress. Our meetings are reserved for content discussion. The discussions in the issue are only related to code errors.  
    - You **do not** create branches yourself.
 
-3. **Creating Issues**:  
-   - Once your thesis starts, you should create an issue to track your progress, calling it `feature ...`. The type of the issue is also 'feature'. Also keep it short and use checkboxes, subissues if needed, etc.
+3. **Creating Issues**:
+   - Once your thesis starts, create an issue to describe the feature, bug fix, or enhancement you plan to implement. This helps us track contributions and avoids duplicate work. Keep the description abstract and add a few checkboxes listing what you want to add. You do not need to explicitly mention the methods. Keep it abstract mentioning the purpose or gained benefits.
+   - Go to the **Issues** tab in the [FTIO repository](https://github.com/tuda-parallel/FTIO).
+   - Click **New Issue** and provide a clear title and description.
+   - Label the issue appropriately as  `feature` and include call it `feature...`.
    - Once you push commits, some of them should address the issue.
    - You should regularly update the issue (every few weeks at least).
 
@@ -47,8 +49,9 @@
    - You are **not allowed** to merge into the `development` or `main` branches.
 
 6. **Final Submission**:  
-   - When your thesis is complete, create a **pull request (PR)** to merge your branch into the `development` branch.  
-   - Include a summary of your work and link the pull request to your issue for reference.
+
+- When your thesis is complete, create a **pull request (PR)** to merge your branch into the `development` branch.  
+- Include a summary of your work and link the pull request to your issue for reference.
 
 ---
 
@@ -174,6 +177,5 @@ To ensure proper documentation for your work, follow these steps:
 4. if you made changes to the command line arguments, please update the usage section in the [readme](/README.md#usage).
 
 ---
-
 
 Thanks a lot for your contribution! I look forward to seeing the progress we will make together. Let's make this a great experience! 🚀🚀
