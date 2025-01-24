@@ -239,7 +239,7 @@ For an online example with `predictor`, you can follow the instructions here for
 
 <!-- CONTRIBUTING -->
 ## Contributing
-
+> [!note] If you are a student from TU Darmstadt, kindly see these [instructions](/docs/students_contribute.md).
 
 ### Step 1: Fork the Repository
 1. Visit the [FTIO GitHub repository](https://github.com/tuda-parallel/FTIO).
