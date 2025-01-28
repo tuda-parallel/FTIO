@@ -92,8 +92,7 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
                 CONSOLE.print(f"[purple]End time: {time_b[-1]:.2f}")
 
             # sample the bandwidth bandwidth
-            b_sampled, freq, text = dis.sample_data(bandwidth, time_b, args.freq) 
-            CONSOLE.print(Panel.fit(text, style="white", border_style='yellow', title="Discretization", title_align='left'))
+            b_sampled, freq = dis.sample_data(bandwidth, time_b, args.freq, args.verbose) 
 
         # Scipy autocorrelation
         # lags = range(int(freq*len(b_sampled)))

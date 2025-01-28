@@ -1,23 +1,26 @@
 """Contains DFT methods and accuracy calculation 
 """
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from ftio.prediction.unify_predictions import  color_pred
+from ftio.prediction.unify_predictions import color_pred
 from ftio.prediction.helper import get_dominant_and_conf
 from ftio.freq.helper import MyConsole
 
 CONSOLE = MyConsole()
+
+
 #!################
 #! DFT flavors
 #!################
 # Wrapper
-def dft(b:np.ndarray):
+def dft(b: np.ndarray):
     return numpy_dft(b)
 
 
-#1) Custome implementation
-def dft_fast(b:np.ndarray):
+# 1) Custom implementation
+def dft_fast(b: np.ndarray):
     N = len(b)
     X = np.repeat(complex(0, 0), N)  # np.zeros(N)
     for k in range(0, N):
@@ -26,13 +29,14 @@ def dft_fast(b:np.ndarray):
 
     return X
 
-#2) numpy DFT
-def numpy_dft(b:np.ndarray):
+
+# 2) numpy DFT
+def numpy_dft(b: np.ndarray):
     return np.fft.fft(b)
 
 
-#3) DFT with complex
-def dft_slow(b:np.ndarray):
+# 3) DFT with complex
+def dft_slow(b: np.ndarray):
     N = len(b)
     n = np.arange(N)
     k = n.reshape((N, 1))
@@ -46,23 +50,29 @@ def dft_slow(b:np.ndarray):
 #! DFT Precision
 #!################
 def precision_dft(
-    amp: np.ndarray, phi:np.ndarray, dominant_index:np.ndarray, b_sampled:np.ndarray, t_disc:np.ndarray, freq_arr:np.ndarray, plt_engine:str
+    amp: np.ndarray,
+    phi: np.ndarray,
+    dominant_index: np.ndarray,
+    b_sampled: np.ndarray,
+    t_disc: np.ndarray,
+    freq_arr: np.ndarray,
+    plt_engine: str,
 ) -> str:
     """calculates the precision of the dft
 
     Args:
         amp (np.ndarray): amplitude array from DFT
         phi (np.ndarray): phase array from DFT
-        dominant_index (np.ndarray): index/indecies of dominant frequency/frequencies
-        b_sampled (np.ndarray): discretized bandwdith
+        dominant_index (np.ndarray): index/indices of dominant frequency/frequencies
+        b_sampled (np.ndarray): discretized bandwidth
         t_disc (np.ndarray): discretized time (constant step size). Start at t_0
-        freq_arr (np.ndarray): frequency array 
-        plt_engine (str): comand line specific plot engine
+        freq_arr (np.ndarray): frequency array
+        plt_engine (str): command line specific plot engine
 
     Returns:
-        str: precision 
+        str: precision
     """
-    # 
+    #
     showplot = False
     text = ""
     if showplot and ("mat" in plt_engine or "plotly" in plt_engine):
@@ -102,43 +112,44 @@ def precision_dft(
     return text
 
 
-def prepare_plot_dfs(
-    k,
-    freq,
-    freq_arr,
-    conf,
-    dominant_index,
-    amp,
-    phi,
-    b_sampled,
-    time_b,
-    ranks,
-    bandwidth,
-) -> tuple[list, list, list, list]:
+def prepare_plot_dft(
+    freq_arr:np.ndarray,
+    conf:np.ndarray,
+    dominant_index:list[float],
+    amp:np.ndarray,
+    phi:np.ndarray,
+    b_sampled:np.ndarray,
+    ranks:int,
+) ->  tuple[list[pd.DataFrame], list[pd.DataFrame]]:
+    """
+    Prepares data for plotting the Discrete Fourier Transform (DFT) by creating two DataFrames.
+
+    Args:
+        freq_arr: An array of frequency values.
+        conf: An array of confidence values corresponding to the frequencies.
+        dominant_index: The index (or indices) of the dominant frequency component.
+        amp: An array of amplitudes corresponding to the frequencies.
+        phi: An array of phase values corresponding to the frequencies.
+        b_sampled: An array of sampled bandwidth values.
+        ranks: The number of ranks.
+
+    Returns:
+        tuple[list[pd.DataFrame], list[pd.DataFrame]]: A tuple containing two lists of DataFrames:
+            - The first list contains a DataFrame with amplitude (A), phase (phi), sampled bandwidth (b_sampled), ranks, frequency (freq), 
+            period (T), and confidence (conf) values.
+            - The second list contains a DataFrame with the dominant frequency, its index (k), its confidence, and the ranks.
+    """
     df0 = []
     df1 = []
-    df2 = []
-    df3 = []
-    N = len(b_sampled)
 
-    df3.append(
-        pd.DataFrame(
-            {
-                "dominant": freq_arr[dominant_index],
-                "k": dominant_index,
-                "conf": conf[dominant_index],
-                "ranks": np.repeat(ranks, len(dominant_index)),
-            }
-        )
-    )
     df0.append(
         pd.DataFrame(
             {
                 "A": amp,
                 "phi": phi,
                 "b_sampled": b_sampled,
-                "ranks": np.repeat(ranks, N),
-                "k": np.arange(0, N),
+                "ranks": np.repeat(ranks, len(b_sampled)),
+                "k": np.arange(0, len(b_sampled)),
                 "freq": freq_arr,
                 "T": np.concatenate([np.array([0]), 1 / freq_arr[1:]]),
                 "conf": conf,
@@ -148,21 +159,14 @@ def prepare_plot_dfs(
     df1.append(
         pd.DataFrame(
             {
-                "t_start": time_b[0],
-                "t_end": time_b[-1],
-                "T_s": 1 / freq,
-                "N": N,
-                "ranks": ranks,
-            },
-            index=[k],
+                "dominant": freq_arr[dominant_index],
+                "k": dominant_index,
+                "conf": conf[dominant_index],
+                "ranks": np.repeat(ranks, len(dominant_index)),
+            }
         )
     )
-    df2.append(
-        pd.DataFrame(
-            {"b": bandwidth, "t": time_b, "ranks": np.repeat(ranks, len(time_b))}
-        )
-    )
-    return df0, df1, df2, df3
+    return df0, df1
 
 
 def display_prediction(argv: list[str], prediction: dict) -> None:
@@ -173,8 +177,8 @@ def display_prediction(argv: list[str], prediction: dict) -> None:
         prediction (dict): the result from ftio
     """
 
-    if isinstance(argv,list):
-        func_name = argv[0][argv[0].rfind("/") + 1:]
+    if isinstance(argv, list):
+        func_name = argv[0][argv[0].rfind("/") + 1 :]
     else:
         func_name = argv
 
@@ -190,6 +194,6 @@ def display_prediction(argv: list[str], prediction: dict) -> None:
                 )
             else:
                 CONSOLE.info(
-                        "[cyan underline]Prediction results:[/]\n"
-                        "[red]No dominant frequency found[/]\n"
-                    )
+                    "[cyan underline]Prediction results:[/]\n"
+                    "[red]No dominant frequency found[/]\n"
+                )

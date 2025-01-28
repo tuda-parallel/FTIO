@@ -1,8 +1,8 @@
-from ftio.cli.ftio_core import main
+"""Tests wavelet functionality
+"""
+
 from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
-from ftio.freq._dft import display_prediction
-from ftio.post.processing import label_phases
 
 
 def test_wavelet_cont():

@@ -32,6 +32,7 @@ class FreqPlot:
     def __init__(self, argv):
         self.render = "dynamic"
         self.plot_engine = "plotly"
+        self.transform = "dft"
         self.dtw = True
         self.dominant = []
         self.recon = False
@@ -62,7 +63,7 @@ class FreqPlot:
 
             print(
                 "\033[1;32m--------------------------------------------\n\033[1;32m")
-            self.Print_info(argv[0])
+            self.print_info(argv[0])
             print("\n\033[1;35mPlot mode is %s\033[1;0m\n" % (mode))
             for path in self.paths:
                 print(
@@ -81,7 +82,7 @@ class FreqPlot:
                                 print(" '-> Current file: " + file)
                                 f = open(file)
                                 data = json.load(f)
-                                mode = self.Check_Mode(data, mode)
+                                mode = self.check_mode(data, mode)
                                 D1.append(pd.DataFrame(
                                     data=data.get(mode).get("data")))
                                 D2.append(
@@ -145,7 +146,7 @@ class FreqPlot:
                     print("| -> Current file: " + file)
                     f = open(file)
                     data = json.load(f)
-                    mode = self.Check_Mode(data, mode)
+                    mode = self.check_mode(data, mode)
                     D1.append(pd.DataFrame(data=data.get(mode).get("data")))
                     D2.append(
                         pd.DataFrame(data=data.get(
@@ -220,22 +221,24 @@ class FreqPlot:
                 self.recon = value
             elif prop in "psd":
                 self.psd = value
+            elif prop in "transform":
+                self.transform = value
 
-    def Check_Mode(self, data, mode):
+    def check_mode(self, data, mode):
         if self.check == 0:
             if not self.modes:
                 print("no valid mode")
                 exit(0)
             if not data.get(mode)["data"]:
                 self.modes.remove(mode)
-                mode = self.Check_Mode(data, self.modes[0])
+                mode = self.check_mode(data, self.modes[0])
             else:
                 self.check = 1
                 if len(self.modes) < 4:
                     print("\033[1;35mMode adjusted %s\033[1;0m" % (mode))
         return mode
 
-    def Print_info(self, text: str) -> None:
+    def print_info(self, text: str) -> None:
         name = text[text.rfind("/") + 1: -3].capitalize()
         console = Console()
         title = Panel(
@@ -252,17 +255,13 @@ class FreqPlot:
         console.print(title)
         console.print(text)
 
-    def Plot(self):
+    def plot(self):
         if "mat" not in self.plot_engine and "plotly" not in self.plot_engine:
             return
 
         # Settings
-        console = Console()
-        all_or_10 = False
-        # template = "plotly_dark"
         # conf = {"toImageButtonOptions": {"format": "svg", "scale": 1}}
         conf = {"toImageButtonOptions": {"format": "png", "scale": 4}}
-        template = "plotly"
         width = 1100
         height = 500  # 600
         font_settings = {
@@ -272,12 +271,38 @@ class FreqPlot:
         }
         colors = px.colors.qualitative.Plotly
         colors.pop(1)
+        f = []
+        
 
+        ranks = np.sort(pd.unique(self.D.settings_df["ranks"]))
+        if self.transform == "dft":
+            f = self.plot_dft(f, ranks, width,height, font_settings, conf,colors)
+        else:
+            pass
+
+        if "plotly" == self.plot_engine:
+            create_html(f, self.render, conf, "freq")
+        else:
+            input()
+
+
+    def plot_dft(self,f,ranks,width, height, font_settings, conf, colors):
+        # settings
         # Init
         top = []
+        console = Console()
         f = []
         bar_plot = go.Figure()
         color_counter = 0
+        template = "plotly"
+        # template = "plotly_dark"
+        
+        # For faster scatteer plot
+        def Scatter(**kwargs):
+            if self.render == "dynamic":
+                return go.Scatter(kwargs)
+            else:
+                return go.Scattergl(kwargs)
 
         if "dark" in template:
             color_bar = "white"
@@ -298,14 +323,8 @@ class FreqPlot:
             f"[cyan]Plot engine:[/] {self.plot_engine}\n"
             f"[cyan]DTW calculation:[/] {self.dtw}\n"
         )
-
-        def Scatter(**kwargs):
-            if self.render == "dynamic":
-                return go.Scatter(kwargs)
-            else:
-                return go.Scattergl(kwargs)
-
-        ranks = np.sort(pd.unique(self.D.settings_df["ranks"]))
+        all_or_10 = False
+        
         for r in ranks:
             index_set = self.D.settings_df["ranks"].isin([r])
             index_data = self.D.data_df["ranks"].isin([r])
@@ -854,33 +873,28 @@ class FreqPlot:
             # f[-1].add_trace(go.Bar(x=samples,y=amp,marker_color='rgb(26, 118, 255)',marker_line=dict(width=1, color=color_bar), hovertemplate ='<br><b>k</b>: %{x}<br>' + '<b>Amplitude</b>: %{y:.2e}' +'<br><b>Frequency</b>: %{text} Hz<br>',text = ['%.2f'%i for i in freq]))
             # rangeslider(f[-1],samples,int(len(samples)/5),len(samples) > 1e3 and True)
             # f[-1].update_layout(xaxis_title='Frequency bins', yaxis_title='Amplitude',font=font_settings, width=width, height=height, title = 'Frequency Plot (Ranks %i)'%r, coloraxis_colorbar=dict(yanchor="top", y=1, x=0,ticks="outside"), template = template)
-
             if "plotly" == self.plot_engine:
-                fig_tmp = plot_one_spectrum(self.psd, freq, amp, True)
-                fig_tmp.update_traces(
-                    marker_line=dict(width=0.1, color=color_bar))
-                fig_tmp.update_layout(
-                    font=font_settings,
-                    width=width,
-                    height=height / 1.3,
-                    # title="Full Spectrum (Ranks %i)" % r,
-                    coloraxis_colorbar=dict(
-                        yanchor="top", y=1, x=1, ticks="outside", title=""
-                    ),
-                    template=template,
-                )
-                f.append(fig_tmp)
-                rangeslider(
-                    f[-1],
-                    freq,
-                    freq[int(len(freq) / 5)],
-                    len(samples) > 1e3 and slider_cond,
-                )
-
-        if "plotly" == self.plot_engine:
-            create_html(f, self.render, conf, "freq")
-        else:
-            input()
+                    fig_tmp = plot_one_spectrum(self.psd, freq, amp, True)
+                    fig_tmp.update_traces(
+                        marker_line=dict(width=0.1, color=color_bar))
+                    fig_tmp.update_layout(
+                        font=font_settings,
+                        width=width,
+                        height=height / 1.3,
+                        # title="Full Spectrum (Ranks %i)" % r,
+                        coloraxis_colorbar=dict(
+                            yanchor="top", y=1, x=1, ticks="outside", title=""
+                        ),
+                        template=template,
+                    )
+                    f.append(fig_tmp)
+                    rangeslider(
+                        f[-1],
+                        freq,
+                        freq[int(len(freq) / 5)],
+                        len(samples) > 1e3 and slider_cond,
+                    )
+        return f
 
 
 def rangeslider(f, arr, limit, cond="", point_limit=2.5e3):
@@ -958,6 +972,7 @@ def convert_and_plot(data, dfs: list, args) -> None:
             "dtw": args.dtw,
             "recon": args.reconstruction,
             "psd": args.psd,
+            "transform": args.transformation,
         }
     )
-    freq_plot.Plot()
+    freq_plot.plot()

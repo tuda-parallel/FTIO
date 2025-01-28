@@ -5,31 +5,44 @@ call ftio -h to see list of supported arguments.
 """
 
 from __future__ import annotations
+from argparse import Namespace
 import time
 import sys
 import numpy as np
-from rich.console import Group
-from rich.panel import Panel
 from ftio.parse.scales import Scales
 from ftio.parse.extract import get_time_behavior
 from ftio.plot.freq_plot import convert_and_plot
 from ftio.freq.helper import get_mode, MyConsole, merge_results
 from ftio.freq.autocorrelation import find_autocorrelation
-from ftio.freq.anomaly_detection import outlier_detection
-from ftio.freq.discretize import sample_data
-from ftio.freq._wavelet import decomposition_level, wavelet_disc,wavelet_cont#,welch
-from ftio.plot.plot_wavelet import plot_wave_disc,plot_wave_cont
-from ftio.freq._dft import dft, prepare_plot_dfs, display_prediction, precision_dft
+
+from ftio.freq._wavelet import decomposition_level, wavelet_disc#,welch
+from ftio.plot.plot_wavelet import plot_wave_disc
+from ftio.freq._dft import  display_prediction
 from ftio.prediction.unify_predictions import merge_predictions
 from ftio.freq.time_window import data_in_time_window
-
-
-CONSOLE = MyConsole()
+from ftio.freq._wavelet_workflow import ftio_wavelet_cont, ftio_wavelet_disc
+from ftio.freq._dft_workflow import ftio_dft
 
 
 def main(cmd_input: list[str], msgs = None):  # -> dict[Any, Any]:
-    """Pass variables and call main_core. The extraction of the traces
-    and the parsing of the arguments is done in this function.
+    """
+    Main entry point to process input data, perform frequency analysis, and generate predictions.
+
+    This function handles the following:
+    - Parsing input arguments and reading trace data.
+    - Performing frequency analysis based on the chosen transformation and mode.
+    - Extracting time behavior and performing further analysis.
+    - Generating predictions using the core processing logic.
+    - Plotting and displaying results.
+
+    Args:
+        cmd_input (list[str]): A list of input strings containing the command-line arguments or data.
+        msgs (optional): ZMQ message, in case the input is not provided via a file
+
+    Returns:
+        tuple[dict, Namespace]: 
+            - A dictionary containing the prediction results.
+            - A Namespace object with the parsed arguments used in the analysis.
     """
     # prepare data
     start = time.time()
@@ -38,10 +51,10 @@ def main(cmd_input: list[str], msgs = None):  # -> dict[Any, Any]:
     args = data.args
     df = get_mode(data, args.mode)
     data = get_time_behavior(df)
-    CONSOLE.set(args.verbose)
-    CONSOLE.print(f"\n[cyan]Data imported in:[/] {time.time() - start:.2f} s")
-    CONSOLE.print(f"[cyan]Frequency Analysis:[/] {args.transformation.upper()}")
-    CONSOLE.print(f"[cyan]Mode:[/] {args.mode}")
+    console = MyConsole(args.verbose)
+    console.print(f"\n[cyan]Data imported in:[/] {time.time() - start:.2f} s")
+    console.print(f"[cyan]Frequency Analysis:[/] {args.transformation.upper()}")
+    console.print(f"[cyan]Mode:[/] {args.mode}")
 
     # get prediction
     prediction, dfs = core(data, args)
@@ -49,28 +62,32 @@ def main(cmd_input: list[str], msgs = None):  # -> dict[Any, Any]:
     # plot and print info
     convert_and_plot(data, dfs, args)
     display_prediction(cmd_input, prediction)
-    CONSOLE.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
+    console.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
 
     return prediction, args
 
 
-def core(data: list[dict], args) -> tuple[dict, list]:
-    """ftio core function
+def core(data: list[dict], args:Namespace) -> tuple[dict, list]:
+    """
+    FTIO core function that processes data and arguments to generate predictions and results.
+
+    This function processes input data containing time, bandwidth, among others and 
+    performs operations based on the parsed arguments.
 
     Args:
-        data: {
-            "time": time (np.ndarray),
-            "bandwidth": bandwidth (np.ndarray),
-            "total_bytes": total_bytes (int),
-            "ranks": i (int)
-            }
-        args (_type_): argparse
+        data (list[dict]): A list of dictionaries where each dictionary contains:
+            - "time" (np.ndarray): Array of time points.
+            - "bandwidth" (np.ndarray): Array of bandwidth values.
+            - "total_bytes" (int): Total number of bytes.
+            - "ranks" (int): Number of ranks in the system.
+        args (Namespace): Parsed arguments to customize the FTIO's behavior.
 
     Returns:
-        tuple[dict,list[list[float]]]: _description_
+        tuple[dict, list]: A tuple where:
+            - The first element is a dictionary with the obtained predictions (key-value pairs).
+            - The second is element is used for storing dataframes for plotting.
     """
     # init
-    CONSOLE.set(args.verbose)
     prediction = {}
     share = {}
     dfs_out = [[],[],[],[]]
@@ -84,50 +101,51 @@ def core(data: list[dict], args) -> tuple[dict, list]:
         # Merge results
         prediction = merge_predictions(args, prediction_dft, prediction_auto)
         # merge plots
-        dfs_out = merge_results(dfs_out, dfs)
+        dfs_out = merge_results(dfs_out, df1=dfs)
 
     return prediction, dfs_out
 
 
-def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list], dict]:
-    """Description:
-    performs sampling and that frequency technique (dft, wave_cont, or wave_disc),
-    followed by creating
-    a dataframe with the information for plotting
+def freq_analysis(args:Namespace, data: dict) -> tuple[dict, tuple[list, list, list, list], dict]:
+    """
+    Performs frequency analysis (DFT, continuous wavelet, or discrete wavelet) and prepares data for plotting.
+
+    This function analyzes the provided data using the specified frequency technique 
+    (DFT, continuous wavelet, or discrete wavelet) and then creates a dataframe 
+    with relevant information for visualization and further analysis.
 
     Args:
-        args (argparse): see io_args.py
-        data (dict[str,np.ndarray]): containing 4 fields:
-            1. bandwidth (np.array): bandwidth array
-            2. time (np.array): time array indicating when bandwidth time points changed
-            3. total_bytes (int): total transferred bytes
-            4. ranks: number of ranks that did I/O
+        args (Namespace): Parsed arguments to customize the FTIO's behavior (see io_args.py).
+        data (dict[str, np.ndarray]): A dictionary containing the following fields:
+            - "bandwidth" (np.ndarray): An array representing the bandwidth values.
+            - "time" (np.ndarray): An array representing the time points when the bandwidth changed.
+            - "total_bytes" (int): The total number of transferred bytes.
+            - "ranks" (int): The number of ranks involved in the I/O operation.
 
     Raises:
-        Exception: _description_
+        Exception: If an unsupported method is passed in the `args.transformation`.
 
     Returns:
-        dict: Containing the prediction with the following fields:
-            1. dict:  Containing result of prediction including:
-                "dominant_freq" (list), "conf" (np.array), "t_start" (int), "t_end" (int), "total_bytes" (int).
-            2. tuple[list, list, list, list]: for plot
-            3. dict: Containing sampled data including:
-                b_sampled, "freq", "t_start", "t_end", "total_bytes"
+        tuple: A tuple containing:
+            - dict: Contains the prediction results, including:
+                - "dominant_freq" (list): The identified dominant frequencies.
+                - "conf" (np.ndarray): Confidence values corresponding to the dominant frequencies.
+                - "t_start" (int): Start time of the analysis.
+                - "t_end" (int): End time of the analysis.
+                - "total_bytes" (int): Total bytes involved in the analysis.
+            - tuple[list, list, list, list]: Four lists containing data for plotting:
+            - dict: Contains sampled data used for sharing (e.g., autocorrelation) containing
+            the following fields:
+                - "b_sampled" (np.ndarray): The sampled bandwidth data.
+                - "freq" (np.ndarray): Frequencies corresponding to the sampled data.
+                - "t_start" (int): Start time of the sampled data.
+                - "t_end" (int): End time of the sampled data.
+                - "total_bytes" (int): Total bytes from the sampled data.
     """
+
+    
     #! Init
-    k = 0
-    share = {}
     df_out = [[], [], [], []]
-    prediction = {
-        "source": {args.transformation},
-        "dominant_freq": [],
-        "conf": [],
-        "t_start": 0,
-        "t_end": 0,
-        "total_bytes": 0,
-        "freq": 0,
-        "ranks": 0,
-    }
     bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
     time_b = data["time"] if "time" in data else np.array([])
     total_bytes = data["total_bytes"] if "total_bytes" in data else 0
@@ -138,166 +156,20 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
         args, bandwidth, time_b, total_bytes, ranks
     )
 
-    #! Discretize signal: sample the bandwidth
-    tik = time.time()
-    CONSOLE.print("[cyan]Executing:[/] Discretization\n")
-    b_sampled, freq, text_disc = sample_data(bandwidth, time_b, args.freq)
-    CONSOLE.print(
-        Panel.fit(
-            text_disc,
-            style="white",
-            border_style="yellow",
-            title="Discretization",
-            title_align="left",
-        )
-    )
-    CONSOLE.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
-
     #! Perform transformation
-    CONSOLE.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
-    tik = time.time()
     if "dft" in args.transformation:
-        ##? calculate DFT
-        X = dft(b_sampled)
-        n = len(X)
-        amp = abs(X)
-        freq_arr = freq * np.arange(0, n)/n
-        phi = np.arctan2(X.imag, X.real)
-        conf = np.zeros(len(amp))
-        # welch(bandwidth,freq)
-
-        ##? Find the dominant frequency
-        (
-            dominant_index,
-            conf[1 : int(n/2) + 1],
-            outlier_text,
-        ) = outlier_detection(amp, freq_arr, args)
-
-        ##? ignore DC offset
-        conf[0] = np.inf
-        if n % 2 == 0:
-            conf[int(n/2) + 1 :] = np.flip(conf[1 : int(n/2)])
-        else:
-            conf[int(n/2) + 1 :] = np.flip(conf[1 : int(n/2) + 1])
-
-        ##? Assign data
-        prediction["dominant_freq"] = freq_arr[dominant_index]
-        prediction["conf"]          = conf[dominant_index]
-        prediction["amp"]           = amp[dominant_index]
-        prediction["phi"]           = phi[dominant_index]
-        prediction["t_start"]       = time_b[0]
-        prediction["t_end"]         = time_b[-1]
-        prediction["freq"]          = freq
-        prediction["ranks"]         = ranks
-        prediction["total_bytes"]   = total_bytes
-
-        #? save up to n_freq from the top candidates
-        if args.n_freq > 0:
-            arr = amp[0:int(np.ceil(n/2))]
-            top_candidates = np.argsort(-arr) # from max to min
-            n_freq = int(min(len(arr),args.n_freq))
-            prediction["top_freq"] = {
-                "freq": freq_arr[top_candidates[0:n_freq]],
-                "conf": conf[top_candidates[0:n_freq]],
-                "amp":  amp[top_candidates[0:n_freq]],
-                "phi":  phi[top_candidates[0:n_freq]]
-            }
-            
-        if args.autocorrelation:
-            share["b_sampled"]   = b_sampled
-            share["freq"]        = freq
-            share["t_start"]     = prediction["t_start"]
-            share["t_end"]       = prediction["t_end"]
-            share["total_bytes"] = prediction["total_bytes"]
-
-        precision_text = ""
-        # precision_text = precision_dft(
-        #     amp, phi, dominant_index, b_sampled, time_b[0] + np.arange(0, N) * 1/freq, freq_arr, args.engine
-        # )
-
-        text = Group(text, outlier_text, precision_text[:-1])
-
-        if any(x in args.engine for x in ["mat", "plot"]):
-            df_out = prepare_plot_dfs(
-                k,
-                freq,
-                freq_arr,
-                conf,
-                dominant_index,
-                amp,
-                phi,
-                b_sampled,
-                time_b,
-                ranks,
-                bandwidth,
-            )
-        k += 1
+        prediction, df_out, share = ftio_dft(args, bandwidth,time_b, total_bytes, ranks, text)
 
     elif "wave_disc" in args.transformation:
-        # discrete wavelet decomposition:
-        # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1-Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20-%202010%20-%20Rede_AIASYB2.pdf
-        # https://www.youtube.com/watch?v=hAQQwvKsWCY&ab_channel=NathanKutz
-        CONSOLE.print("[green]Performing discrete wavelet decomposition[/]")
-        wavelet = "db1"  # dmey might be better https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html
-        if args.level == 0:
-            args.level = decomposition_level(args,len(b_sampled), wavelet)  
-
-        coffs = wavelet_disc(b_sampled, wavelet, args.level)
-        cc, f = plot_wave_disc(
-            b_sampled, coffs, time_b, args.freq, args.level, wavelet, bandwidth
-        )
-        for fig in f:
-            fig.show()
-
-        cont = input("\nContinue with the DFT? [y/n]")
-
-        if len(cont) == 0 or "y" in cont.lower():
-            args.transformation = "dft"
-            n = len(b_sampled)
-            tmp = {
-                "time": time_b[0] + 1/freq * np.arange(0, n),
-                "bandwidth": cc[0],
-                "total_bytes": total_bytes,
-                "ranks": ranks,
-            }
-
-        # Option 1: Filter using wavelet and call DFT on lowest last coefficient
-        prediction, df_out, share = freq_analysis(args, tmp)
-        # TODO: Option 2: Find intersection between DWT and DFT
+        prediction, df_out, share  = ftio_wavelet_disc(args,bandwidth, time_b, ranks, total_bytes)
+       
 
     elif "wave_cont" in args.transformation:
-        # Continuous wavelets
-        CONSOLE.print("[green]Performing discrete wavelet decomposition[/]")
-        wavelet = "morl"
-        # wavelet = 'cmor'
-        # wavelet = 'mexh'
-        if args.level == 0:
-            args.level = decomposition_level(args,len(b_sampled), wavelet) 
-            
-        [coefficients, frequencies] = wavelet_cont(
-            b_sampled, wavelet, args.level, args.freq
-        )
-        fig = plot_wave_cont(
-            b_sampled, frequencies, args.freq, time_b, coefficients
-        )
-        # TODO: Find a way to process this info
-        sys.exit()
+        prediction, df_out, share  = ftio_wavelet_cont(args,bandwidth, time_b, ranks)
 
     else:
         raise Exception("Unsupported decomposition specified")
 
-    CONSOLE.print(
-        Panel.fit(
-            text,
-            style="white",
-            border_style="cyan",
-            title=args.transformation.upper(),
-            title_align="left",
-        )
-    )
-    CONSOLE.print(
-        f"\n[cyan]{args.transformation.upper()} + {args.outlier} finished:[/] {time.time() - tik:.3f} s"
-    )
     return prediction, df_out, share
 
 
