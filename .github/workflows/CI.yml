@@ -4,10 +4,13 @@ on:
   push:
     branches:
       - '*'  # Trigger on push to any branch
-      - '!development'  # Exclude the branch
+		#   - 'development'  # Trigger on push to any branch
+    #   - 'main'  # Trigger on push to any branch
+    #   - '!development'  # Exclude the branch
   pull_request:
     branches:
       - 'main'  # Run tests on pull requests targeting the main branch
+  workflow_dispatch:
 
 jobs:
   build:
