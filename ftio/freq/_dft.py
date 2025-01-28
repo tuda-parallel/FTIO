@@ -7,38 +7,38 @@ from ftio.prediction.unify_predictions import  color_pred
 from ftio.prediction.helper import get_dominant_and_conf
 from ftio.freq.helper import MyConsole
 
-
 CONSOLE = MyConsole()
-
-
 #!################
 #! DFT flavors
 #!################
 # Wrapper
-def dft(b):
+def dft(b:np.ndarray):
     return numpy_dft(b)
 
 
 #1) Custome implementation
-def dft_fast(b):
+def dft_fast(b:np.ndarray):
     N = len(b)
     X = np.repeat(complex(0, 0), N)  # np.zeros(N)
     for k in range(0, N):
         for n in range(0, N):
             X[k] = X[k] + b[n] * np.exp((-2 * np.pi * n * k / N) * 1j)
+
     return X
 
 #2) numpy DFT
-def numpy_dft(b):
+def numpy_dft(b:np.ndarray):
     return np.fft.fft(b)
 
+
 #3) DFT with complex
-def dft_slow(b):
+def dft_slow(b:np.ndarray):
     N = len(b)
     n = np.arange(N)
     k = n.reshape((N, 1))
     e = np.exp(-2j * np.pi * k * n / N)
     X = np.dot(e, b)
+
     return X
 
 

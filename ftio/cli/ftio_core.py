@@ -17,7 +17,7 @@ from ftio.freq.helper import get_mode, MyConsole, merge_results
 from ftio.freq.autocorrelation import find_autocorrelation
 from ftio.freq.anomaly_detection import outlier_detection
 from ftio.freq.discretize import sample_data
-from ftio.freq._wavelet import wavelet_disc,wavelet_cont#,welch
+from ftio.freq._wavelet import decomposition_level, wavelet_disc,wavelet_cont#,welch
 from ftio.plot.plot_wavelet import plot_wave_disc,plot_wave_cont
 from ftio.freq._dft import dft, prepare_plot_dfs, display_prediction, precision_dft
 from ftio.prediction.unify_predictions import merge_predictions
@@ -237,15 +237,18 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
         # discrete wavelet decomposition:
         # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1-Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20-%202010%20-%20Rede_AIASYB2.pdf
         # https://www.youtube.com/watch?v=hAQQwvKsWCY&ab_channel=NathanKutz
-        print("    '-> \033[1;32mPerforming discrete wavelet decomposition\033[1;0m")
+        CONSOLE.print("[green]Performing discrete wavelet decomposition[/]")
         wavelet = "db1"  # dmey might be better https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html
-        # wavelet = 'haar' # dmey might be better https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html
+        if args.level == 0:
+            args.level = decomposition_level(args,len(b_sampled), wavelet)  
+
         coffs = wavelet_disc(b_sampled, wavelet, args.level)
         cc, f = plot_wave_disc(
             b_sampled, coffs, time_b, args.freq, args.level, wavelet, bandwidth
         )
         for fig in f:
             fig.show()
+
         cont = input("\nContinue with the DFT? [y/n]")
 
         if len(cont) == 0 or "y" in cont.lower():
@@ -257,22 +260,27 @@ def freq_analysis(args, data: dict) -> tuple[dict, tuple[list, list, list, list]
                 "total_bytes": total_bytes,
                 "ranks": ranks,
             }
-            freq_analysis(args, tmp)
 
-        sys.exit()
+        # Option 1: Filter using wavelet and call DFT on lowest last coefficient
+        prediction, df_out, share = freq_analysis(args, tmp)
+        # TODO: Option 2: Find intersection between DWT and DFT
 
     elif "wave_cont" in args.transformation:
         # Continuous wavelets
-        print("    '-> \033[1;32mPerforming discrete wavelet decomposition\033[1;0m")
+        CONSOLE.print("[green]Performing discrete wavelet decomposition[/]")
         wavelet = "morl"
         # wavelet = 'cmor'
         # wavelet = 'mexh'
-        [coefficients, frequencies, scale] = wavelet_cont(
+        if args.level == 0:
+            args.level = decomposition_level(args,len(b_sampled), wavelet) 
+            
+        [coefficients, frequencies] = wavelet_cont(
             b_sampled, wavelet, args.level, args.freq
         )
         fig = plot_wave_cont(
-            b_sampled, frequencies, args.freq, scale, time_b, coefficients
+            b_sampled, frequencies, args.freq, time_b, coefficients
         )
+        # TODO: Find a way to process this info
         sys.exit()
 
     else:

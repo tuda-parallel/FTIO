@@ -23,13 +23,13 @@
 
 2. **Branch Creation**:  
    - Once your thesis starts, I will create a branch for your work. This branch will be linked to an issue that allows you to track your progress. Our meetings are reserved for content discussion. The discussions in the issue are only related to code errors.  
-   - You **do not** create branches yourself.
+   - You **do not** create branches yourself. Also, **do not** work on other student branches.
 
 3. **Creating Issues**:
    - Once your thesis starts, create an issue to describe the feature, bug fix, or enhancement you plan to implement. This helps us track contributions and avoids duplicate work. Keep the description abstract and add a few checkboxes listing what you want to add. You do not need to explicitly mention the methods. Keep it abstract mentioning the purpose or gained benefits.
    - Go to the **Issues** tab in the [FTIO repository](https://github.com/tuda-parallel/FTIO).
    - Click **New Issue** and provide a clear title and description.
-   - Label the issue appropriately as  `feature` and include call it `feature...`.
+   - Label the issue appropriately as `feature` and include call it `feature...`.
    - Once you push commits, some of them should address the issue.
    - You should regularly update the issue (every few weeks at least).
 

@@ -6,13 +6,13 @@ import pywt
 import matplotlib.pyplot as plt
 
 
-def plot_wave_cont(b_sampled, frequencies, freq, scale, t, coefficients):
+def plot_wave_cont(b_sampled:np.ndarray, frequencies:np.ndarray, freq:float, t, coefficients):
     time_disc = t[0] + 1 / freq * np.arange(0, len(b_sampled))
     power = (
         abs(coefficients)
     ) ** 2  # probably error on https://ataspinar.com/2018/12/21/a-guide-for-using-the-wavelet-transform-in-machine-learning/
     counter = 0
-    for i in scale:  # see Continuous wavelet transform properties @ https://en.wikipedia.org/wiki/Continuous_wavelet_transform
+    for i in range(1,len(coefficients)):  # see Continuous wavelet transform properties @ https://en.wikipedia.org/wiki/Continuous_wavelet_transform
         power[counter] = 1 / i * power[counter]
         counter = counter + 1
     fig, ax = plt.subplots(figsize=(12, 4))

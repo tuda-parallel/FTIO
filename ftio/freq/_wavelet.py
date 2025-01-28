@@ -1,58 +1,59 @@
 """ Wavelet functions (continuous and discrete) 
 """
 
+from argparse import Namespace
 import numpy as np
 import pywt
 from scipy import signal
 import matplotlib.pyplot as plt
+from typing import List
+
+from ftio.freq.helper import MyConsole
 
 
-def wavelet_cont(b_sampled, wavelet, level, freq):
-    """Continuous wavelet transformation
+def wavelet_cont(b_sampled: np.ndarray, wavelet: str, level: int, freq: float) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Perform continuous wavelet transformation on a given signal.
 
     Args:
-        b_sampled (_type_): _description_
-        wavelet (_type_): _description_
-        level (_type_): _description_
-        freq (_type_): _description_
+        b_sampled (np.ndarray): The input signal to be transformed.
+        wavelet (str): The type of wavelet to use. E.g., 'morlet', 'cmor', etc.
+        level (int or str): The decomposition level. If 'auto', the level is automatically determined based on the input signal length.
+        freq (float): The sampling frequency of the input signal in Hz.
 
     Returns:
-        _type_: _description_
+        tuple[np.ndarray, np.ndarray]: A tuple containing:
+            - Coefficients (np.ndarray): The wavelet coefficients obtained after the transformation.
+            - Frequencies (np.ndarray): The corresponding frequencies for each scale used in the transformation.
     """
-    # Continues wavelet:
-    n = len(b_sampled)
-    if isinstance(level, str) and "auto" in level:
-        level = pywt.dwt_max_level(n, wavelet)  # pywt.dwt_max_level(n,wavelet)
-    else:
-        level = int(level)
-
-    print("    '-> \033[1;32mDecomposition level is %d\033[1;0m" % level)
-    # [coefficients, frequencies] = pywt.cwt(b_sampled, np.arange(1,5), 'morl')
-    # scale = pywt.frequency2scale('morl', np.array([1,10,100])/freq)
-    # scale = pywt.frequency2scale('morl', np.arange(freq/100,freq)/freq)
-    # scale = 2**np.arange(0,level) #2** mimcs the DWT
+    
+    sampling_period = 1 / freq
     scale = np.arange(1, level)  # 2** mimcs the DWT
-    check_wavelet(wavelet, "continuous")
-    print(pywt.scale2frequency(wavelet, scale) / (1 / freq))
-
-    [coefficients, frequencies] = pywt.cwt(
-        b_sampled, scale, wavelet, sampling_period=1 / freq
+    console = MyConsole(True)
+    console.print(pywt.scale2frequency(wavelet, scale) / sampling_period)
+    coefficients, frequencies = pywt.cwt(
+        b_sampled, scale, wavelet,sampling_period
     )
-    return coefficients, frequencies, scale
+
+    return coefficients, frequencies
 
 
-def wavelet_disc(b_sampled, wavelet, level):
-    # Discrete Wavelet:
-    check_wavelet(wavelet, "discrete")
-    if isinstance(level, str) and "auto" in level:
-        level = pywt.dwt_max_level(
-            len(b_sampled), wavelet
-        )  # pywt.dwt_max_level(n,wavelet)
-    else:
-        level = int(level)
-    print("    '-> \033[1;32mDecomposition level is %d\033[1;0m" % level)
-    coffs = pywt.wavedec(b_sampled, wavelet, level=level)
-    return coffs
+def wavelet_disc(b_sampled: np.ndarray, wavelet: str, level: int) -> List[np.ndarray]:
+    """
+    Perform a discrete wavelet transformation (DWT) on the input signal.
+
+    Args:
+        b_sampled (np.ndarray): The input signal to be transformed as a 1D NumPy array.
+        wavelet (str): The type of wavelet to use for the transformation.
+        level (int): The decomposition level for the wavelet transformation.
+
+    Returns:
+        List[np.ndarray]: A list of NumPy arrays, where each array contains the wavelet coefficients 
+        for a specific level of decomposition.
+    """
+    # Perform Discrete Wavelet Transformation
+    coefficients = pywt.wavedec(b_sampled, wavelet, level=level)
+    return coefficients
 
 
 def check_wavelet(wavelet, mode="discrete"):
@@ -95,3 +96,39 @@ def welch(b, freq):
     # plt.ylabel('PSD [V**2/Hz]')
     plt.ylabel("Linear spectrum [V RMS]")
     plt.show()
+
+
+def decomposition_level(args: Namespace, n: int, wavelet: str) -> int:
+    """
+    Determine the decomposition level for wavelet transformation.
+
+    Args:
+        args (Namespace): Parsed arguments containing `level` and `transformation` attributes.
+            - `args.level` (int): Specifies the decomposition level. If set to 0, the level is determined automatically.
+            - `args.transformation` (str): Specifies the type of transformation ('wave_cont' for continuous or 'wave_disc' for discrete).
+        n (int): The length of the input signal.
+        wavelet (str): The wavelet type used for the transformation.
+
+    Returns:
+        int: The decomposition level to be used for the wavelet transformation.
+    """
+    level = args.level
+    console = MyConsole(True)
+    console.print(f"[green]Decomposition level is {level}[/]")
+    
+    if args.level == 0:
+        if "wave_cont" in args.transformation:
+            level = 10
+            console.print(f"[green]Decomposition level set to {level}[/]")
+        else:
+            level = pywt.dwt_max_level(n, wavelet)  
+            console.print(f"[green]Decomposition level optimally adjusted to {level}[/]")
+
+    if "wave_cont" in args.transformation:
+        check_wavelet(wavelet, "continuous")
+    elif "wave_disc" in args.transformation:
+        check_wavelet(wavelet, "discrete")
+    else:
+        pass
+
+    return level
