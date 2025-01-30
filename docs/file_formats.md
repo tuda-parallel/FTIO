@@ -1,10 +1,13 @@
 # File Formats and Tools
-Below, we describe the supported file formats. Aside from these formats, `ftio` and `predictor` support ZMQ as described [here](/docs/zmq.md), which avoids creating intermediate files. Furthermore, `ftio` also provides an API to different Tools (e.g., [GekkoFS](/docs/api.md#gekkofs-with-zmq)) and allows easy and direct use of the Python functions as described and demonstrated [here](/docs/api.md#general).
+Below, we describe the supported file formats. Aside from these formats, `ftio` and `predictor` support ZMQ as described [here](/docs/zmq.md), which avoids creating intermediate files. Furthermore, `ftio` also provides an API to different tools (e.g., [GekkoFS](/docs/api.md#gekkofs-with-zmq)) and allows easy and direct use of the Python functions as described and demonstrated [here](/docs/api.md#general).
 
 The currently supported file Formats are:
 - [File Formats and Tools](#file-formats-and-tools)
 	- [JSON](#json)
 		- [Custom JSON Files](#custom-json-files)
+			- [JSON File With Rank-Level Metrics](#json-file-with-rank-level-metrics)
+			- [JSON File With Application-Level Metrics](#json-file-with-application-level-metrics)
+			- [Minimal JSON File](#minimal-json-file)
 		- [TMIO JSON Files](#tmio-json-files)
 	- [JSONL](#jsonl)
 		- [TMIO JSONL Files](#tmio-jsonl-files)
@@ -19,9 +22,17 @@ The currently supported file Formats are:
 All units in the files are by default SI units. 
 
 ## JSON
-`ftio` supports JSON files. These files can be either from [TMIO](https://github.com/tuda-parallel/TMIO), or custom-generated. Below, we explain both and provide links to some examples. 
+`ftio` supports JSON files as an input. These files can be either [custom-generated](/docs/file_formats.md#custom-json-files) or from [TMIO](https://github.com/tuda-parallel/TMIO). Below, we explain both and provide links to some examples. 
 
 ### Custom JSON Files
+
+`ftio` supports custom JSON files that can be either at the rank, node, or application level. Bellow we present JSON Files with [rank-](/docs/file_formats.md#json-file-with-rank-level-metrics) or [application-](/docs/file_formats.md#json-file-with-application-level-metrics)-level metrics.
+
+> [!note]
+> `ftio` work on the application level as mentioned [here](/docs/approach.md#offline-detection). Internally the tool overlaps 
+> rank-level metrics to obtain application-level metrics. If the metrics are not at the application-level (i.e., if the timestamps are not sorted in an  increasing order), the syntax for rank-level metrics should be used.
+
+#### JSON File With Rank-Level Metrics
 The JSON file provided to `ftio` should have the following structure:
 
 ```python
@@ -75,9 +86,12 @@ ftio custom.json -m write_sync
 
 `ftio` automatically detects the source of the JSON file. To skip this test, the source can be specified with the `-s|--source` flag, that is, for tmio `-s "tmio"` or custom `-s "custom"`. 
 
-Several fields in the above example are self-explanatory. The metrics with `_rank_`in their names represent the rank-level metrics. As FTIO operates on the 
-application level, these metrics are internally overlapped. The application-level metrics can also be provided directly. As example 
-[custom_app.json](https://github.com/tuda-parallel/FTIO/tree/main/examples/custom/JSON/custom_app.json) shows, the three rank level metrics for the bandwidth, are simply replaced by two metrics `b_overlap_avr` and `t_overlap`:
+Several fields in the above example are self-explanatory. The metrics with `_rank_`in their names represent the rank-level metrics. As FTIO operates on the application level, these metrics are internally overlapped. 
+
+#### JSON File With Application-Level Metrics
+
+The application-level metrics can also be provided directly. As example 
+[custom_app.json](https://github.com/tuda-parallel/FTIO/tree/main/examples/custom/JSON/custom_app.json) shows, the previous three rank-level metrics for the bandwidth (i.e., `*_rank_*`), are simply replaced by two metrics `b_overlap_avr` and `t_overlap`:
 ```python
 {
 	"write_sync":{
@@ -92,10 +106,12 @@ application level, these metrics are internally overlapped. The application-leve
 ```
 
 With:
-- `b_overlap_avr` represents the bandwidth at the application-level
-- `t_overlap` represents the time when new values for the application-level bandwidth are attained. This means for the above example, that the bandwidth at time 1 s was 1 GB, at 2 s this changed to 2 GB, and so on.
+- `b_overlap_avr` representing the bandwidth at the application-level
+- `t_overlap` representing the time when new values for the application-level bandwidth are attained. This means for the above example, that the bandwidth at time 1 s was 1 GB, at 2 s changed to 2 GB, and so on.
 
-Several fields shown here are optional. In a simpler form, a custom JSON file only needs the field `bandwidth`, and thus has the following form:
+#### Minimal JSON File 
+
+Several fields shown in the JSON Files with [rank-](/docs/file_formats.md#json-file-with-rank-level-metrics) or [application-](/docs/file_formats.md#json-file-with-application-level-metrics)-level metrics are optional. In a simpler form, a JSON file only needs the field `bandwidth`, and thus can have the following form:
 ```python
 {
 	"bandwidth": {
@@ -130,7 +146,7 @@ Several fields shown here are optional. In a simpler form, a custom JSON file on
 }
 ```
 
-In case the bandwidth filed is omitted, and only two vectors are provided, `ftio` assumes these metrics are at the application level. Furthermore, it searches for the first match of `b*` and `t*` to map `b_overlap_avr` and `t_overlap`, respectively. Hence, this form also works with `ftio`:
+In case the bandwidth filed is omitted, and only two vectors are provided, `ftio` assumes these metrics are at the *application level*. Furthermore, it searches for the first match of `b*` and `t*` to map `b_overlap_avr` and `t_overlap`, respectively. Hence, this form also works with `ftio`:
 ```python
 {
 	"b": [1000000000,2000000000,5000000000,2000000000,1000000000,0],
@@ -233,7 +249,7 @@ ftio folder
 ## Parsing Custom File Formats
 `ftio` supports parsing custom file formats using regex. These values can be scaled in case they are not in SI units. 
 The file must currently have the `txt`extension. 
-For that, `ftio` provides two dictionaries that must be provided (pattern and translate) in a custom file similar to the [convert](/ftio/parse/custom_patterns.py)](/ftio/parse/custom_patterns.py) function. 
+For that, `ftio` provides two dictionaries that must be provided (pattern and translate) in a custom file similar to the [convert](/ftio/parse/custom_patterns.py) function. 
 
 1. _**pattern** (dict[str, str])_: dictionary containing the name and a regex expression to find the custom pattern.
 2. _**translate** (dict[str, tuple[str, (optional)float]])_: dictionary containing matching filed from [sample.py](/ftio/parse/sample.py) and the matching name from the pattern. The unit can be optionally specified

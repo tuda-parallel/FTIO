@@ -90,8 +90,8 @@
   git push
   ```
   
-  > [!note]
-  > Avoid using to short or undescriptive commit messages like 'update' or 'code cleaned'. 
+> [!note]
+> Avoid using to short or undescriptive commit messages like 'update' or 'code cleaned'. 
 
 ### 3. Submitting Your Work
 
