@@ -20,6 +20,7 @@ from ftio.freq.time_window import data_in_time_window
 from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
 from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
 from ftio.freq._dft_workflow import ftio_dft
+from ftio.freq._astft_workflow import ftio_astft
 
 
 def main(cmd_input: list[str], msgs = None):  # -> dict[Any, Any]:
@@ -55,8 +56,8 @@ def main(cmd_input: list[str], msgs = None):  # -> dict[Any, Any]:
     prediction, dfs = core(data, args)
 
     # plot and print info
-    convert_and_plot(args, dfs, len(data))
-    display_prediction(cmd_input, prediction)
+    # convert_and_plot(args, dfs, len(data))
+    # display_prediction(cmd_input, prediction)
     console.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
 
     return prediction, args
@@ -160,6 +161,9 @@ def freq_analysis(args:Namespace, data: dict) -> tuple[dict, tuple[list, list, l
 
     elif "wave_cont" in args.transformation:
         prediction, df_out, share  = ftio_wavelet_cont(args,bandwidth, time_b, ranks)
+
+    elif "astft" in args.transformation:
+        prediction, df_out, share  = ftio_astft(args, bandwidth, time_b, total_bytes, ranks, text)
 
     else:
         raise Exception("Unsupported decomposition specified")
