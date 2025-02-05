@@ -9,6 +9,7 @@ import math
 import numpy as np
 from scipy.fft import fft
 from scipy import signal
+from ftio.freq.if_comp_separation import binary_image
 
 def astft(b_sampled, freq, bandwidth, time_b):
     oastft(b_sampled)
@@ -24,6 +25,8 @@ def oastft(x):
     x_ptfr = ptfr(x)
 
     # 2: IFR estimation
+    # a: create binary image
+    image = binary_image(x_ptfr)
 
     # 3: multivariate window STFT
 
