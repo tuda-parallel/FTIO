@@ -11,14 +11,14 @@ from typing import List
 from ftio.freq.helper import MyConsole
 
 
-def wavelet_cont(b_sampled: np.ndarray, wavelet: str, level: int, freq: float) -> tuple[np.ndarray, np.ndarray]:
+def wavelet_cont(b_sampled: np.ndarray, wavelet: str, scale:np.ndarray, freq: float) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform continuous wavelet transformation on a given signal.
 
     Args:
         b_sampled (np.ndarray): The input signal to be transformed.
         wavelet (str): The type of wavelet to use. E.g., 'morlet', 'cmor', etc.
-        level (int or str): The decomposition level. If 'auto', the level is automatically determined based on the input signal length.
+        level (np.ndarray): array of scales
         freq (float): The sampling frequency of the input signal in Hz.
 
     Returns:
@@ -28,7 +28,6 @@ def wavelet_cont(b_sampled: np.ndarray, wavelet: str, level: int, freq: float) -
     """
     
     sampling_period = 1 / freq
-    scale = np.arange(1, level)  # 2** mimcs the DWT
     console = MyConsole(True)
     console.print(pywt.scale2frequency(wavelet, scale) / sampling_period)
     coefficients, frequencies = pywt.cwt(

@@ -1,5 +1,5 @@
 """This functions calculates the frequency based on the input data provided. 
-Currently Darshan, recorder, and traces generated with our internal tool are supported. 
+Currently Darshan, recorder, and traces generated with our internal tool TMIO are supported. 
 
 call ftio -h to see list of supported arguments. 
 """
@@ -14,9 +14,6 @@ from ftio.parse.extract import get_time_behavior
 from ftio.plot.freq_plot import convert_and_plot
 from ftio.freq.helper import get_mode, MyConsole, merge_results
 from ftio.freq.autocorrelation import find_autocorrelation
-
-from ftio.freq._wavelet import decomposition_level, wavelet_disc#,welch
-from ftio.plot.plot_wavelet import plot_wave_disc
 from ftio.freq._dft import  display_prediction
 from ftio.prediction.unify_predictions import merge_predictions
 from ftio.freq.time_window import data_in_time_window
@@ -162,7 +159,6 @@ def freq_analysis(args:Namespace, data: dict) -> tuple[dict, tuple[list, list, l
 
     elif "wave_disc" in args.transformation:
         prediction, df_out, share  = ftio_wavelet_disc(args,bandwidth, time_b, ranks, total_bytes)
-       
 
     elif "wave_cont" in args.transformation:
         prediction, df_out, share  = ftio_wavelet_cont(args,bandwidth, time_b, ranks)

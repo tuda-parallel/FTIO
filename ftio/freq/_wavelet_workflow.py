@@ -2,7 +2,6 @@
 """
 import time
 from argparse import Namespace
-import sys
 import pandas as pd
 import numpy as np
 from ftio.freq._wavelet import decomposition_level, wavelet_cont, wavelet_disc
@@ -22,7 +21,7 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
         time_b (np.ndarray): The corresponding time points for the bandwidth data.
         ranks (int): The rank value (default is 0).
     """
-    # Default values for variables
+    #! Default values for variables
     share = {}
     df_out = [[], [], [], []]
     prediction = {
@@ -37,10 +36,10 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
     }
     console = MyConsole(verbose=args.verbose)
 
-    # Sample the bandwidth evenly spaced in time
+    #! Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
-    b_sampled, freq, [df_out[1], df_out[2]] = sample_data_and_prepare_plots(args, bandwidth, time_b, ranks
+    b_sampled, sampling_frequency, [df_out[1], df_out[2]] = sample_data_and_prepare_plots(args, bandwidth, time_b, ranks
     )   
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
@@ -48,15 +47,17 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
     console.print(
         f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
     )
-    # Continuous wavelets
-    console = MyConsole(args.verbose)
+    
+    #! Continuous Wavelet transform
     wavelet = "morl"
     # wavelet = 'cmor'
     # wavelet = 'mexh'
     if args.level == 0:
         args.level = decomposition_level(args, len(b_sampled), wavelet)
 
-    coefficients, frequencies = wavelet_cont(b_sampled, wavelet, args.level, args.freq)
+    # TODO: use DFT to select the scales (see tmp/test.py)
+    scale = np.arange(1, args.level)  # 2** mimcs the DWT
+    coefficients, frequencies = wavelet_cont(b_sampled, wavelet, scale, args.freq)
     _ = plot_wave_cont(b_sampled, frequencies, args.freq, time_b, coefficients)
     # TODO: Find a way to process this info
     dominant_index = []
@@ -65,7 +66,7 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
         df_out[0], df_out[3] = prepare_plot_wavelet_cont(
             frequencies, np.zeros(len(frequencies)), dominant_index, coefficients, b_sampled, ranks
         )
-        
+
     console.print(
         f"\n[cyan]{args.transformation.upper()} + {args.outlier} finished:[/] {time.time() - tik:.3f} s"
     )
