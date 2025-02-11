@@ -1,15 +1,16 @@
 """
 TODO:
 OASTFT
-- add overlap in PTFR
-- use scipy STFT
+- use correct fs in stft
+- upgrade to ShortTimeFFT
 """
 
 import math
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fft import fft
-from scipy import signal
+from scipy.signal import stft
+from scipy.signal.windows import gaussian
 from ftio.freq.if_comp_separation import binary_image
 
 def astft(b_sampled, freq, bandwidth, time_b):
@@ -44,22 +45,12 @@ def ptfr(x):
     # FWHM: 2*sqrt(2*ln(2))*sigma = 2.35482*sigma
     win_len = int(2.35482 * sigma * len(x))
 
-    # zeropad
-    rem = len(x) % win_len
-    if (rem != 0):
-        x = np.pad(x, (0, win_len-rem), 'constant')
+    win = gaussian(win_len, sigma * win_len)
+    f, t, Zxx = stft(x, fs=1, window=win, nperseg=win_len, noverlap=(win_len-1))
 
-    rows = int(len(x)/win_len)
-    output = np.empty(shape=(rows, win_len), dtype=np.complex128)
+    Zxx = Zxx.transpose()
 
-    # gaussian window
-    gauss = signal.windows.gaussian(win_len, sigma*len(x))
-
-    for i in range(0, rows):
-        windowed = x[win_len*i:win_len*(i+1)] * gauss
-        output[i:] = fft(windowed)
-
-    return output
+    return Zxx
 
 """
 Abdoush, Y., Pojani, G., & Corazza, G. E. (2019).
