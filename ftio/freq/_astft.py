@@ -11,13 +11,11 @@ import numpy as np
 from scipy.fft import fft
 from scipy.signal import stft
 from scipy.signal.windows import gaussian
-from ftio.freq.if_comp_separation import binary_image
+from ftio.freq.if_comp_separation import binary_image, component_linking
 
 def astft(b_sampled, freq, bandwidth, time_b):
     test = test_signal()
     oastft(test)
-
-
 
 """
 Abdoush, Y., Pojani, G., & Corazza, G. E. (2019).
@@ -32,6 +30,8 @@ def oastft(x):
     # 2: IFR estimation
     # a: create binary image
     image = binary_image(x_ptfr)
+    # b: component linking
+    component_linking(image)
 
     # 3: multivariate window STFT
 
