@@ -6,13 +6,17 @@ OASTFT
 """
 
 import math
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fft import fft
 from scipy import signal
 from ftio.freq.if_comp_separation import binary_image
 
 def astft(b_sampled, freq, bandwidth, time_b):
-    oastft(b_sampled)
+    test = test_signal()
+    oastft(test)
+
+
 
 """
 Abdoush, Y., Pojani, G., & Corazza, G. E. (2019).
@@ -101,3 +105,26 @@ def regular_rate(x):
     v_0 = b_eff / t_eff
 
     return v_0
+
+def test_signal():
+    len = 1024
+    x = np.zeros((len,), dtype=np.float32)
+
+    T = len
+    fs = 4/T
+    t = np.arange(1,T+1)/T
+    freqs = 2*np.pi*(t-0.5-fs)/(fs)
+
+    f_1 = 20
+    f_2 = 50
+
+    x1 = 1.3*(np.cos(2*np.pi*f_1*t[33:450]))
+    x[33:450] = x1
+    x2 = 1.1*(np.cos(2*np.pi*f_2*t[650:797]))
+    x[650:797] = x2
+
+    fig, ax = plt.subplots()
+    ax.plot(t,x)
+    plt.show()
+
+    return x
