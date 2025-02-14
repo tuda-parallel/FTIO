@@ -1,3 +1,7 @@
+"""
+Functions for testing the API functionalities of the ftio package.
+"""
+
 import numpy as np
 from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
@@ -7,6 +11,7 @@ from ftio.parse.bandwidth import overlap
 
 
 def test_api():
+    """Test the API functionality of ftio."""
     ranks = 10
     total_bytes = 100
     b_rank = [

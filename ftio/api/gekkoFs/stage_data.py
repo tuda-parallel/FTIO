@@ -1,6 +1,6 @@
 import os 
 import re
-import shutil
+# import shutil
 import time
 import numpy as np
 from ftio.freq.helper import MyConsole
@@ -61,9 +61,9 @@ def trigger_cargo(sync_trigger,args):
                             #     skip_flag = True
 
                         if not skip_flag:
-                            # to use maybe later
                             stage_files(args,prediction)
                         else:
+                            # TODO: skipp only oif the predictions overlap 
                             CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, new prediction is ready[/]\n")
 
                     else:
