@@ -63,7 +63,7 @@ def trigger_cargo(sync_trigger,args):
                         if not skip_flag:
                             stage_files(args,prediction)
                         else:
-                            # TODO: skipp only oif the predictions overlap 
+                            # TODO: skipp only of the predictions overlap 
                             CONSOLE.print("[bold green][Trigger][/][yellow] Skipping, new prediction is ready[/]\n")
 
                     else:

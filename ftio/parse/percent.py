@@ -14,7 +14,7 @@ class Percent:
         compute = io_time.delta_t_com     
         # [ ] fix this
 # TODO: add flag to control granualaierty of sampling. Individual I/O operation can be discarded if focus is on phase (remove vectors)
-# FIX: this is a todo
+# HACK: this is a todo
 
         # Async Write
         self.TAWB = self.percent(time, io_time.delta_t_awr)

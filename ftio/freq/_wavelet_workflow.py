@@ -4,12 +4,14 @@ import time
 from argparse import Namespace
 import pandas as pd
 import numpy as np
+from scipy.signal import find_peaks
+
 from ftio.freq._wavelet import decomposition_level, wavelet_cont, wavelet_disc
 from ftio.freq.discretize import sample_data_and_prepare_plots
 from ftio.freq.helper import MyConsole
-from ftio.plot.plot_wavelet import plot_wave_cont, plot_wave_disc
+from ftio.plot.plot_wavelet import plot_wave_cont, plot_wave_disc, plot_spectrum, plot_wave_cont_and_spectrum, plot_scales
 from ftio.freq._dft_workflow import ftio_dft
-
+# from ftio.freq._logicize import logicize
 
 def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray, ranks: int = 0):
     """
@@ -39,6 +41,7 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
     #! Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
+    # bandwidth = logicize(bandwidth)
     b_sampled, sampling_frequency, [df_out[1], df_out[2]] = sample_data_and_prepare_plots(args, bandwidth, time_b, ranks
     )   
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
@@ -56,10 +59,43 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
         args.level = decomposition_level(args, len(b_sampled), wavelet)
 
     # TODO: use DFT to select the scales (see tmp/test.py)
-    scale = np.arange(1, args.level)  # 2** mimcs the DWT
-    coefficients, frequencies = wavelet_cont(b_sampled, wavelet, scale, args.freq)
+    # FIXME: determine how to specify the step of the scales
+    scales = np.arange(1, args.level)  # 2** mimcs the DWT
+    # scales = np.arange(1, args.level,0.1)  # 2** mimcs the DWT
+    coefficients, frequencies = wavelet_cont(b_sampled, wavelet, scales, args.freq)
+    power_spectrum = np.abs(coefficients)**2  # Power of the wavelet transform
+    
+    # FIXME: Rather than averaging the power, find the dominant frequency by examining the power spectrum
+    # NOTE: The power spectrum specifies how much a examined frequency is presented in a signal contributes to the signal
+    # NOTE: Don't rely on the hight of the power spectrum to find the dominant frequency
+    # Find the dominant scale by averaging the power across all time points
+    average_power_per_scale = power_spectrum.mean(axis=1)
+    dominant_scale_idx = np.argmax(average_power_per_scale)
+    dominant_scale = scales[dominant_scale_idx]
+    dominant_frequency = frequencies[dominant_scale_idx]
+    
+    # Extract the power at the dominant scale
+    power_at_scale = power_spectrum[dominant_scale_idx, :]
+    print(frequencies)
+    console.info(f"dominant_scale: {dominant_scale}, dominant_frequency: {dominant_frequency}")
+
+    # Find local peaks in the power spectrum (use a sliding window approach)
+    peaks, _ = find_peaks(power_at_scale, height=0.5)  # 'distance' avoids detecting too close peaks
+    t = time_b[0] + np.arange(0, len(b_sampled)) * 1/sampling_frequency
+    peak_times = t[peaks]
+
+    # plot functions
+    plot_spectrum(args, t, power_at_scale, dominant_scale, peaks)
     _ = plot_wave_cont(b_sampled, frequencies, args.freq, time_b, coefficients)
-    # TODO: Find a way to process this info
+    plot_wave_cont_and_spectrum(args, t, frequencies,power_spectrum, power_at_scale, dominant_scale, peaks)
+    plot_scales(t, b_sampled, power_spectrum, frequencies, scales)
+    
+    # Calculate the period (time difference between consecutive peaks)
+    if len(peak_times) > 1:
+        periods = np.diff(peak_times)  # Differences between consecutive peak times (periods)
+    else:
+        periods = []
+        
     dominant_index = []
 
     if any(x in args.engine for x in ["mat", "plot"]):
