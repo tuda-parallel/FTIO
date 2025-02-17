@@ -43,7 +43,7 @@ def ptfr(x):
     sigma = 0.8091067 / (math.sqrt(2 * math.pi * v_0))
 
     # FWHM: 2*sqrt(2*ln(2))*sigma = 2.35482*sigma
-    win_len = int(2.35482 * sigma * len(x))
+    win_len = int(2.35482 * sigma)
 
     win = gaussian(win_len, sigma * win_len)
     f, t, Zxx = stft(x, fs=1, window=win, nperseg=win_len, noverlap=(win_len-1))
@@ -62,21 +62,21 @@ def regular_rate(x):
     N = np.shape(x)[0]
     yf = fft(x)
     i_0 = int(- N/2)
-    i_max = int(N/2 - 1)
+    i_max = int(N/2)
 
     # k_0
     k_0_num = 0
-    for i in range(i_0, i_max):
-        k_0_num = k_0_num + i * (abs(yf[i]) ** 2)
+    for k in range(i_0, i_max):
+        k_0_num = k_0_num + k * (abs(yf[k]) ** 2)
     k_0_den = 0
-    for i in range(0, N-1):
-        k_0_den = k_0_den + abs(yf[i]) ** 2
+    for k in range(i_0, i_max):
+        k_0_den = k_0_den + abs(yf[k]) ** 2
     k_0 = k_0_num / k_0_den
 
     # n_0
     n_0_num = 0
     n_0_den = 0
-    for n in range(0, N-1):
+    for n in range(0, N):
         n_0_num = n_0_num + n * (abs(x[n]) ** 2)
         n_0_den = n_0_den + (abs(x[n]) ** 2)
     n_0 = n_0_num / n_0_den
@@ -89,11 +89,11 @@ def regular_rate(x):
 
     # t_eff
     t_eff = 0
-    for n in range(0, N-1):
+    for n in range(0, N):
         t_eff = t_eff + (n - n_0) ** 2 * (abs(x[n]) ** 2)
 
     # v_0
-    v_0 = b_eff / t_eff
+    v_0 = (b_eff / (t_eff * N)) ** 0.5
 
     return v_0
 
