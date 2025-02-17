@@ -15,7 +15,7 @@ from ftio.parse.parse_txt import ParseTxt
 from ftio.parse.parse_custom import ParseCustom
 from ftio.parse.parse_zmq import ParseZmq
 from ftio.parse.args import parse_args
-from ftio.parse.helper import print_info
+from ftio.parse.helper import match_mode, print_info
 
 
 class Scales:
@@ -58,7 +58,7 @@ class Scales:
         else:
             self.paths = [self.args.files]
 
-        self.Check_Same_Path()
+        self.check_same_path()
         console = Console()
         for path in self.paths:
             #! load folders
@@ -177,7 +177,7 @@ class Scales:
         )
         f.close()
 
-    def Check_Same_Path(self):
+    def check_same_path(self):
         if len(self.paths) > 1:
             self.same_path = True
             same_path = ''
@@ -192,24 +192,76 @@ class Scales:
             self.same_path = True
 
     #! ----------------------- Pandas dataset functions ------------------------------
+
     # **********************************************************************
-    # *                       1. get_data
+    # *                       1. get_mode
     # **********************************************************************
-    def get_data(self):
-        self.df_rst = self.get_data_io('read_sync')
-        self.df_wst = self.get_data_io('write_sync')
-        self.df_rat = self.get_data_io('read_async_t')
-        self.df_rab = self.get_data_io('read_async_b')
-        self.df_wat = self.get_data_io('write_async_t')
-        self.df_wab = self.get_data_io('write_async_b')
-        self.df_time = self.get_data_time('io_time')
+    def get_io_mode(self, mode:str):
+        """
+        Determines the appropriate data I/O method based on the provided mode.
+
+        Args:
+            mode (str): A string indicating the mode of operation. It should contain 
+                        keywords such as "read" or "write" and "async" or "sync".
+
+        Returns:
+            function: The corresponding data I/O method based on the mode.
+        """
+        mode = match_mode(mode)
+        if "read" in mode:
+            if "async" in mode:
+                return self.assign_data_io('read_async_t')
+            elif "sync" in mode:
+                return self.assign_data_io('read_sync')
+        if "write" in mode:
+            if "async" in mode:
+                return self.assign_data_io('write_async_t')
+            elif "sync" in mode:
+                return self.assign_data_io('write_sync')
+
+        raise ValueError("Specified mode not found.")
+
+
+    # **********************************************************************
+    # *                       2. assign_mode
+    # **********************************************************************
+    def assign_mode(self, mode: str):
+        """
+        Assigns the appropriate data I/O method based on the provided mode.
+        Parameters:
+        mode (str): A string indicating the mode of operation. It can include 
+            'read|write_async|sync' to specify the type 
+        """
+        mode = match_mode(mode)
+        if "read" in mode:
+            if "async" in mode:
+                self.df_rat = self.assign_data_io('read_async_t')
+            elif "sync" in mode:
+                self.df_rst = self.assign_data_io('read_sync')
+        if "write" in mode:
+            if "async" in mode:
+                self.df_wat = self.assign_data_io('write_async_t')
+            elif "sync" in mode:
+                self.df_wst = self.assign_data_io('write_sync')
+
+    # **********************************************************************
+    # *                       3. assign_data
+    # **********************************************************************
+    def assign_data(self):
+        self.df_rst = self.assign_data_io('read_sync')
+        self.df_wst = self.assign_data_io('write_sync')
+        self.df_rat = self.assign_data_io('read_async_t')
+        self.df_rab = self.assign_data_io('read_async_b')
+        self.df_wat = self.assign_data_io('write_async_t')
+        self.df_wab = self.assign_data_io('write_async_b')
+        self.df_time = self.assign_data_time('io_time')
 
         # df = pd.concat([df,self.get_data_core('write_async_b')])
 
     # **********************************************************************
-    # *                       2. get_data_io
+    # *                       4. assign_data_io
     # **********************************************************************
-    def get_data_io(self, io_mode='read_sync'):
+    def assign_data_io(self, io_mode='read_sync'):
         '''Extract data from the file(s) and gathers in dataframes.
         The fields name are store in 'name_[level]' and their values are stored
         in 'data_[level]'. There are 4 levels provided:
@@ -276,9 +328,9 @@ class Scales:
         return df0, df1, df2, df3, df4
 
     # **********************************************************************
-    # *                       3. get_data_time
+    # *                       5. assign_data_time
     # **********************************************************************
-    def get_data_time(self, io_mode='io_time'):
+    def assign_data_time(self, io_mode='io_time'):
         data = []
         name = ''
         for i in range(0, self.n):

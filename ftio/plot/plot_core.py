@@ -29,7 +29,7 @@ def _find_free_port():
 class PlotCore:
     def __init__(self, args):
         self.data = Scales(args)
-        self.data.get_data()
+        self.data.assign_data()
         self.names = self.data.names
         self.barprecision = "%{y:.1f}"
         # ? IEEE

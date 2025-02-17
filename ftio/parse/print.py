@@ -8,7 +8,7 @@ from ftio.parse.helper import scale_metric
 class Print:
     def __init__(self, args):
         self.data = Scales(args)
-        self.data.get_data()
+        self.data.assign_data()
         self.args = self.data.args
 
     def print_txt(self):

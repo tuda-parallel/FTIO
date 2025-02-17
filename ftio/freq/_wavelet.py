@@ -29,7 +29,7 @@ def wavelet_cont(b_sampled: np.ndarray, wavelet: str, scale:np.ndarray, freq: fl
     
     sampling_period = 1 / freq
     console = MyConsole(True)
-    console.print(pywt.scale2frequency(wavelet, scale) / sampling_period)
+    # console.print(pywt.scale2frequency(wavelet, scale) / sampling_period)
     coefficients, frequencies = pywt.cwt(
         b_sampled, scale, wavelet,sampling_period
     )
@@ -67,7 +67,7 @@ def check_wavelet(wavelet, mode="discrete"):
     """
     check = False
     for supported_wavelet in pywt.wavelist(kind=mode):
-        if wavelet == supported_wavelet:
+        if supported_wavelet in wavelet:
             check = True
             break
     if check is False:
@@ -97,7 +97,7 @@ def welch(b, freq):
     plt.show()
 
 
-def decomposition_level(args: Namespace, n: int, wavelet: str) -> int:
+def decomposition_level(args: Namespace, n: int) -> int:
     """
     Determine the decomposition level for wavelet transformation.
 
@@ -120,13 +120,13 @@ def decomposition_level(args: Namespace, n: int, wavelet: str) -> int:
             level = 10
             console.print(f"[green]Decomposition level set to {level}[/]")
         else:
-            level = pywt.dwt_max_level(n, wavelet)  
+            level = pywt.dwt_max_level(n, args.wavelet)  
             console.print(f"[green]Decomposition level optimally adjusted to {level}[/]")
 
     if "wave_cont" in args.transformation:
-        check_wavelet(wavelet, "continuous")
+        check_wavelet(args.wavelet, "continuous")
     elif "wave_disc" in args.transformation:
-        check_wavelet(wavelet, "discrete")
+        check_wavelet(args.wavelet, "discrete")
     else:
         pass
 

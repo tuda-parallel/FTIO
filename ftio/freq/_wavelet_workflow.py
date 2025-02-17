@@ -5,13 +5,15 @@ from argparse import Namespace
 import pandas as pd
 import numpy as np
 from scipy.signal import find_peaks
+from  pywt import frequency2scale
 
 from ftio.freq._wavelet import decomposition_level, wavelet_cont, wavelet_disc
 from ftio.freq.discretize import sample_data_and_prepare_plots
 from ftio.freq.helper import MyConsole
 from ftio.plot.plot_wavelet import plot_wave_cont, plot_wave_disc, plot_spectrum, plot_wave_cont_and_spectrum, plot_scales
 from ftio.freq._dft_workflow import ftio_dft
-# from ftio.freq._logicize import logicize
+from ftio.prediction.helper import get_dominant_and_conf
+from ftio.freq._logicize import logicize
 
 def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray, ranks: int = 0):
     """
@@ -37,6 +39,7 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
         "ranks": 0,
     }
     console = MyConsole(verbose=args.verbose)
+    dominant_freq = np.nan
 
     #! Sample the bandwidth evenly spaced in time
     tik = time.time()
@@ -52,17 +55,36 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
     )
     
     #! Continuous Wavelet transform
-    wavelet = "morl"
-    # wavelet = 'cmor'
-    # wavelet = 'mexh'
-    if args.level == 0:
-        args.level = decomposition_level(args, len(b_sampled), wavelet)
-
     # TODO: use DFT to select the scales (see tmp/test.py)
     # FIXME: determine how to specify the step of the scales
-    scales = np.arange(1, args.level)  # 2** mimcs the DWT
-    # scales = np.arange(1, args.level,0.1)  # 2** mimcs the DWT
-    coefficients, frequencies = wavelet_cont(b_sampled, wavelet, scales, args.freq)
+    
+    args.wavelet = "morl"
+    # args.wavelet = "haar"
+    # args.wavelet = 'cmor' #Phase is not rally needed, no need for complex
+    # args.wavelet = 'mexh'
+    # args.wavelet = "cmor1.5-1.0"
+
+    #NOTE: By making the signal alternate, the wavelet achieves better results
+    # b_sampled = b_sampled - 400000
+    # method = "dft"
+    method = "scale"
+    if "scale" in method:
+        scales = get_scales(args,b_sampled)
+    elif "dft" in method: #use dft
+        tmp_args = args
+        tmp_args.transformation = "dft"
+        t = time_b[0] + np.arange(0, len(b_sampled)) * 1/sampling_frequency
+        prediction, df_out, share = ftio_dft(args, b_sampled, t)  
+        dominant_freq, _ = get_dominant_and_conf(prediction)
+        if not np.isnan(dominant_freq):
+            scales = frequency2scale(args.wavelet, np.array([dominant_freq])/sampling_frequency)
+            # c = 1  # central frequency for wavelet (Mexican Hat = 1)
+            # scales = np.array([c / dominant_freq])  # Scale corresponding to the frequency
+        else:
+            console.info("[red] No dominant freq found with DFT -> Falling back to default method [/]")
+            scales = get_scales(args,b_sampled)
+
+    coefficients, frequencies = wavelet_cont(b_sampled, args.wavelet, scales, sampling_frequency)
     power_spectrum = np.abs(coefficients)**2  # Power of the wavelet transform
     
     # FIXME: Rather than averaging the power, find the dominant frequency by examining the power spectrum
@@ -72,12 +94,11 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
     average_power_per_scale = power_spectrum.mean(axis=1)
     dominant_scale_idx = np.argmax(average_power_per_scale)
     dominant_scale = scales[dominant_scale_idx]
-    dominant_frequency = frequencies[dominant_scale_idx]
-    
     # Extract the power at the dominant scale
     power_at_scale = power_spectrum[dominant_scale_idx, :]
-    print(frequencies)
-    console.info(f"dominant_scale: {dominant_scale}, dominant_frequency: {dominant_frequency}")
+    # Extract dominant frequency
+    dominant_frequency = frequencies[dominant_scale_idx]
+    console.print(f"dominant_scale: {dominant_scale:.3f}, dominant_frequency: {dominant_frequency:.3f}")
 
     # Find local peaks in the power spectrum (use a sliding window approach)
     peaks, _ = find_peaks(power_at_scale, height=0.5)  # 'distance' avoids detecting too close peaks
@@ -85,10 +106,13 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
     peak_times = t[peaks]
 
     # plot functions
-    plot_spectrum(args, t, power_at_scale, dominant_scale, peaks)
-    _ = plot_wave_cont(b_sampled, frequencies, args.freq, time_b, coefficients)
-    plot_wave_cont_and_spectrum(args, t, frequencies,power_spectrum, power_at_scale, dominant_scale, peaks)
-    plot_scales(t, b_sampled, power_spectrum, frequencies, scales)
+    if any(x in args.engine for x in ["mat", "plot"]):
+        # plot_spectrum(args, t, power_at_scale, dominant_scale, peaks)
+        # _ = plot_wave_cont(b_sampled, frequencies, args.freq, time_b, coefficients)
+        fig = plot_wave_cont_and_spectrum(args, t, frequencies,power_spectrum, power_at_scale, dominant_scale, peaks)
+        fig.show()
+        fig = plot_scales(args, t, b_sampled, power_spectrum, frequencies, scales)
+        fig.show()
     
     # Calculate the period (time difference between consecutive peaks)
     if len(peak_times) > 1:
@@ -151,13 +175,12 @@ def ftio_wavelet_disc(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
     # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1-Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20-%202010%20-%20Rede_AIASYB2.pdf
     # https://www.youtube.com/watch?v=hAQQwvKsWCY&ab_channel=NathanKutz
     console.print("[green]Performing discrete wavelet decomposition[/]")
-    wavelet = "db1"  # dmey might be better https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html
     if args.level == 0:
-        args.level = decomposition_level(args,len(b_sampled), wavelet)  
+        args.level = decomposition_level(args,len(b_sampled))  
 
-    coffs = wavelet_disc(b_sampled, wavelet, args.level)
+    coffs = wavelet_disc(b_sampled, args.wavelet, args.level)
     cc, f = plot_wave_disc(
-        b_sampled, coffs, time_b, args.freq, args.level, wavelet, bandwidth
+        b_sampled, coffs, time_b, args.freq, args.level, args.wavelet, bandwidth
     )
     for fig in f:
         fig.show()
@@ -230,3 +253,23 @@ def prepare_plot_wavelet_cont(
         )
     )
     return df0, df1
+
+
+def get_scales(args: Namespace, b_sampled: np.ndarray) -> np.ndarray:
+    """
+    Calculate the scales for wavelet transformation based on the given arguments.
+
+    Parameters:
+    args (Namespace): A namespace object containing the arguments, including the decomposition level.
+    b_sampled (np.ndarray): The sampled data array.
+
+    Returns:
+    np.ndarray: An array of scales to be used for the wavelet transformation.
+    """
+    if args.level == 0:
+        args.level = decomposition_level(args, len(b_sampled))
+
+    scales = np.arange(1, args.level)  # 2** mimcs the DWT
+    # scale = np.arange(1, args.level,0.1)  # 2** mimcs the DWT
+
+    return scales

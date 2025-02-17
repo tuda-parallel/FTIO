@@ -11,3 +11,5 @@ def test_ioparse():
     args = ["ioparse", file]
     main(args)
     assert True
+
+

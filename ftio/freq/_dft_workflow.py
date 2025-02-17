@@ -15,8 +15,8 @@ def ftio_dft(
     args: Namespace,
     bandwidth: np.ndarray,
     time_b: np.ndarray,
-    total_bytes: int,
-    ranks: int,
+    total_bytes: int = 0,
+    ranks: int = 1,
     text: str = "",
 ):
     """
@@ -27,8 +27,8 @@ def ftio_dft(
         args (Namespace): The arguments passed to the function, typically containing options for the transformation.
         bandwidth (np.ndarray): Bandwidth values.
         time (np.ndarray): Time points corresponding to the bandwidth values.
-        total_bytes (int): Total number of bytes transferred.
-        ranks (int): The number of ranks.
+        total_bytes (int, optional): Total number of bytes transferred (default = 0).
+        ranks (int, optional): The number of ranks (default = 1).
         text (str, optional): Additional text for output. Defaults to "".
 
     Returns:

@@ -83,6 +83,7 @@ Full documentation:
         parser.set_defaults(outlier = 'Z-score')
         parser.add_argument('-le', '--level', dest='level', type = int, help ='specifies the decomposition level for the discrete wavelet transformation (default=3). If specified as auto, the maximum decomposition level is automatic calculated')
         parser.set_defaults(level = 0)
+        parser.add_argument('--wavelet', type = str, help = 'Wavelet to use. See pywt documentation for wavelet families: pywt.wavelist(kind="continuous") or pywt.wavelist(kind="discrete") (default "morl" for continuous and "db1" for discrete)')
         parser.add_argument('-t', '--tol', dest= 'tol',   type = float, help ='tolerance value')
         parser.set_defaults(tol =  0.8)
         parser.add_argument('-d', '--dtw', action='store_true', help ='performs dynamic time wrapping on the top 3 frequencies (highest contribution) calculated using the DFT if set (default=False)')
@@ -164,7 +165,14 @@ Full documentation:
 
 
     args = parser.parse_args(argv)
-    #default values:
 
+
+    #default values:
+    if 'ftio' in name.lower() or 'predictor' in name.lower():
+        if "wave" in args.transformation:
+            if "cont" in args.transformation:
+                args.wavelet = 'morl'
+            else:
+                args.wavelet = "db1"
 
     return args

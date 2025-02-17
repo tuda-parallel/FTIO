@@ -9,10 +9,10 @@ from argparse import Namespace
 import time
 import sys
 import numpy as np
-from ftio.parse.scales import Scales
-from ftio.parse.extract import get_time_behavior
+
+from ftio.parse.extract import get_time_behavior_and_args
 from ftio.plot.freq_plot import convert_and_plot
-from ftio.freq.helper import get_mode, MyConsole, merge_results
+from ftio.freq.helper import MyConsole, merge_results
 from ftio.freq.autocorrelation import find_autocorrelation
 from ftio.freq._dft import  display_prediction
 from ftio.prediction.unify_predictions import merge_predictions
@@ -41,13 +41,10 @@ def main(cmd_input: list[str], msgs = None):  # -> dict[Any, Any]:
             - A dictionary containing the prediction results.
             - A Namespace object with the parsed arguments used in the analysis.
     """
-    # prepare data
+    
     start = time.time()
-    data = Scales(cmd_input, msgs)
-    data.get_data()
-    args = data.args
-    df = get_mode(data, args.mode)
-    data = get_time_behavior(df)
+    # extract the data
+    data, args = get_time_behavior_and_args(cmd_input, msgs)
     console = MyConsole(args.verbose)
     console.print(f"\n[cyan]Data imported in:[/] {time.time() - start:.2f} s")
     console.print(f"[cyan]Frequency Analysis:[/] {args.transformation.upper()}")
