@@ -12,10 +12,32 @@ from scipy.fft import fft
 from scipy.signal import stft
 from scipy.signal.windows import gaussian
 from ftio.freq.if_comp_separation import binary_image, component_linking
+from ftio.freq.concentration_measures import cm3, cm4, cm5
 
 def astft(b_sampled, freq, bandwidth, time_b):
     test = test_signal()
-    oastft(test)
+    #oastft(test)
+    astft_mnm(test)
+
+# mix & match
+def astft_mnm(signal):
+    win_len = cm3(signal)
+
+    # sigma
+    sigma = int(win_len / 2.35482)
+
+    signal_tfr = ptfr(signal, win_len, sigma)
+
+    image = binary_image(signal_tfr)
+    component_linking(image)
+
+"""
+Pei, S. C., & Huang, S. G. (2012).
+STFT with adaptive window width based on the chirp rate.
+IEEE Transactions on Signal Processing, 60(8), 4065-4080.
+"""
+def astft_tf(x):
+    win_len = cm3(signal)
 
 """
 Abdoush, Y., Pojani, G., & Corazza, G. E. (2019).
@@ -24,18 +46,6 @@ based on linear time–frequency transforms.
 IEEE Transactions on Signal Processing, 67(12), 3100-3112
 """
 def oastft(x):
-    # 1: construct a ptfr
-    x_ptfr = ptfr(x)
-
-    # 2: IFR estimation
-    # a: create binary image
-    image = binary_image(x_ptfr)
-    # b: component linking
-    component_linking(image)
-
-    # 3: multivariate window STFT
-
-def ptfr(x):
     # regular rate, ratio effective bandwidth and effective time duration
     v_0 = regular_rate(x)
 
@@ -45,6 +55,18 @@ def ptfr(x):
     # FWHM: 2*sqrt(2*ln(2))*sigma = 2.35482*sigma
     win_len = int(2.35482 * sigma)
 
+    # 1: construct a ptfr
+    x_ptfr = ptfr(x, win_len, sigma)
+
+    # 2: IFR estimation
+    # a: create binary image
+    image = binary_image(x_ptfr)
+    # b: component linking
+    component_linking(image)
+
+    # 3: multivariate window STFT
+
+def ptfr(x, win_len, sigma):
     win = gaussian(win_len, sigma * win_len)
     f, t, Zxx = stft(x, fs=1, window=win, nperseg=win_len, noverlap=(win_len-1))
 
