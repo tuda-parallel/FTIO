@@ -30,7 +30,7 @@ def astft_mnm(signal, freqs, args):
     signal_tfr = ptfr(signal, win_len, sigma)
 
     image = binary_image_zscore(signal_tfr, freqs, args)
-    component_linking(image)
+    components = component_linking(image)
 
 """
 Pei, S. C., & Huang, S. G. (2012).
@@ -63,7 +63,7 @@ def oastft(x):
     # a: create binary image
     image = binary_image(x_ptfr)
     # b: component linking
-    component_linking(image)
+    components = component_linking(image)
 
     # 3: multivariate window STFT
 

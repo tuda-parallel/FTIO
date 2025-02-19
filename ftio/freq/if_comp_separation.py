@@ -62,6 +62,8 @@ def component_linking(image):
 
     output = np.zeros(image.shape, dtype="uint8")
 
+    components = []
+
     # Loop through each component
     for i in range(1, totalLabels):
         # Area of the component
@@ -71,6 +73,21 @@ def component_linking(image):
             componentMask = (label_ids == i).astype("uint8") * 255
             output = cv2.bitwise_or(output, componentMask)
 
+            components.append(i)
+
+    result = []
+    for i in components:
+        indices, freqs = np.where(label_ids == i)
+
+        start = indices[0]
+        end = indices[-1]
+        time = start, end
+
+        comp = time, freqs
+        result.append(comp)
+
     cv2.imshow("Image", frame)
     cv2.imshow("Filtered Components", output)
     cv2.waitKey(15000)
+
+    return result
