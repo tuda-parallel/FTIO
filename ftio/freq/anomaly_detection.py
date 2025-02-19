@@ -141,11 +141,11 @@ def z_score(
         dominant_index, msg = dominant(index, freq_arr, conf)
         text+= msg
         
-    if "plotly" in args.engine:
-        i = np.repeat(1, len(indices))
-        if len(dominant_index) != 0:
-            i[np.array(dominant_index) - 1] = -1
-        plot_outliers(args,freq_arr, amp, indices, conf, i)
+    #if "plotly" in args.engine:
+    #    i = np.repeat(1, len(indices))
+    #    if len(dominant_index) != 0:
+    #        i[np.array(dominant_index) - 1] = -1
+    #    plot_outliers(args,freq_arr, amp, indices, conf, i)
 
     return dominant_index, conf, text
 

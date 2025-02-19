@@ -37,6 +37,6 @@ def ftio_astft(
     )
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
-    astft(b_sampled, freq, bandwidth, time_b)
+    astft(b_sampled, freq, bandwidth, time_b, args)
 
     return prediction, df_out, share
