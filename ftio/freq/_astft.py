@@ -8,20 +8,21 @@ OASTFT
 import math
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.fft import fft
+from scipy.fft import fft, ifft
 from scipy.signal import stft
 from scipy.signal.windows import gaussian
 from ftio.freq.if_comp_separation import binary_image, binary_image_zscore, component_linking
+from ftio.freq.anomaly_detection import z_score
 from ftio.freq.concentration_measures import cm3, cm4, cm5
 
-def astft(b_sampled, freqs, bandwidth, time_b, args):
+def astft(b_sampled, freq, bandwidth, time_b, args):
     #test = test_signal()
     #astft_mnm(test, freqs, args)
 
-    astft_mnm(b_sampled, freqs, args)
+    astft_mnm(b_sampled, freq, time_b, args)
 
 # mix & match
-def astft_mnm(signal, freqs, args):
+def astft_mnm(signal, freq, time_b, args):
     win_len = cm3(signal)
 
     # sigma
@@ -29,8 +30,11 @@ def astft_mnm(signal, freqs, args):
 
     signal_tfr = ptfr(signal, win_len, sigma)
 
-    image = binary_image_zscore(signal_tfr, freqs, args)
+    image = binary_image_zscore(signal_tfr, freq, args)
     components = component_linking(image)
+
+    # simple astft
+    simple_astft(components, signal, freq, time_b, args)
 
 """
 Pei, S. C., & Huang, S. G. (2012).
@@ -142,3 +146,34 @@ def test_signal():
     plt.show()
 
     return x
+
+def simple_astft(components, signal, freq, time_b, args):
+    fig, ax = plt.subplots()
+
+    t_start = time_b[0]
+    t_end = time_b[-1]
+
+    N = len(signal)
+    t = np.arange(t_start, t_end, (t_end-t_start)/N, dtype=float)
+
+    ax.plot(t, signal)
+
+    for i in components:
+        start = i[0][0]
+        end = i[0][1] + 1
+        window = signal[start:end]
+
+        yf = fft(window)
+
+        n = len(yf)
+        freq_arr = freq * np.arange(0, n) / n
+        ind = z_score(yf, freq_arr, args)[0]
+
+        for i in ind:
+            array = np.zeros(len(yf), dtype=np.complex128)
+            array[i] = yf[i]
+
+            yif = ifft(array)
+            ax.plot(t[start:end], yif)
+
+    plt.show()
