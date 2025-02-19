@@ -17,7 +17,8 @@ from ftio.freq.autocorrelation import find_autocorrelation
 from ftio.freq._dft import  display_prediction
 from ftio.prediction.unify_predictions import merge_predictions
 from ftio.freq.time_window import data_in_time_window
-from ftio.freq._wavelet_workflow import ftio_wavelet_cont, ftio_wavelet_disc
+from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
+from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
 from ftio.freq._dft_workflow import ftio_dft
 
 

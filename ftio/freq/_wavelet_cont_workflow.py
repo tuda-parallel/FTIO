@@ -7,13 +7,14 @@ import numpy as np
 from scipy.signal import find_peaks
 from  pywt import frequency2scale
 
-from ftio.freq._wavelet import decomposition_level, wavelet_cont, wavelet_disc
+from ftio.freq._wavelet import  wavelet_cont
+from ftio.freq._wavelet_helpers import get_scales
 from ftio.freq.discretize import sample_data_and_prepare_plots
 from ftio.freq.helper import MyConsole
-from ftio.plot.plot_wavelet import plot_wave_cont, plot_wave_disc, plot_spectrum, plot_wave_cont_and_spectrum, plot_scales
+from ftio.plot.plot_wavelet_cont import  plot_wave_cont_and_spectrum, plot_scales # plot_spectrum, plot_wave_cont
 from ftio.freq._dft_workflow import ftio_dft
 from ftio.prediction.helper import get_dominant_and_conf
-from ftio.freq._logicize import logicize
+# from ftio.freq._logicize import logicize
 
 def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray, ranks: int = 0):
     """
@@ -45,7 +46,7 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
     # bandwidth = logicize(bandwidth)
-    b_sampled, sampling_frequency, [df_out[1], df_out[2]] = sample_data_and_prepare_plots(args, bandwidth, time_b, ranks
+    b_sampled, f_s, [df_out[1], df_out[2]] = sample_data_and_prepare_plots(args, bandwidth, time_b, ranks
     )   
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
@@ -73,18 +74,18 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
     elif "dft" in method: #use dft
         tmp_args = args
         tmp_args.transformation = "dft"
-        t = time_b[0] + np.arange(0, len(b_sampled)) * 1/sampling_frequency
+        t = time_b[0] + np.arange(0, len(b_sampled)) * 1/f_s
         prediction, df_out, share = ftio_dft(args, b_sampled, t)  
         dominant_freq, _ = get_dominant_and_conf(prediction)
         if not np.isnan(dominant_freq):
-            scales = frequency2scale(args.wavelet, np.array([dominant_freq])/sampling_frequency)
+            scales = frequency2scale(args.wavelet, np.array([dominant_freq])/f_s)
             # c = 1  # central frequency for wavelet (Mexican Hat = 1)
             # scales = np.array([c / dominant_freq])  # Scale corresponding to the frequency
         else:
             console.info("[red] No dominant freq found with DFT -> Falling back to default method [/]")
             scales = get_scales(args,b_sampled)
 
-    coefficients, frequencies = wavelet_cont(b_sampled, args.wavelet, scales, sampling_frequency)
+    coefficients, frequencies = wavelet_cont(b_sampled, args.wavelet, scales, f_s)
     power_spectrum = np.abs(coefficients)**2  # Power of the wavelet transform
     
     # FIXME: Rather than averaging the power, find the dominant frequency by examining the power spectrum
@@ -102,7 +103,7 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
 
     # Find local peaks in the power spectrum (use a sliding window approach)
     peaks, _ = find_peaks(power_at_scale, height=0.5)  # 'distance' avoids detecting too close peaks
-    t = time_b[0] + np.arange(0, len(b_sampled)) * 1/sampling_frequency
+    t = time_b[0] + np.arange(0, len(b_sampled)) * 1/f_s
     peak_times = t[peaks]
 
     # plot functions
@@ -130,75 +131,6 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
     console.print(
         f"\n[cyan]{args.transformation.upper()} + {args.outlier} finished:[/] {time.time() - tik:.3f} s"
     )
-    return prediction, df_out , share
-
-
-def ftio_wavelet_disc(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray, ranks: int = 0, total_bytes: int = 0):
-    """
-    Executes discrete wavelet transformation on the provided bandwidth data.
-
-    Args:
-        args: The Namespace object containing configuration options.
-        bandwidth (np.ndarray): The bandwidth data to process.
-        time_b (np.ndarray): The corresponding time points for the bandwidth data.
-        ranks (int): The rank value (default is 0).
-        total_bytes (int): total transferred bytes (default is 0).
-    """
-    # Default values for variables
-    share = {}
-    df_out = [[], [], [], []]
-    prediction = {
-        "source": {args.transformation},
-        "dominant_freq": [],
-        "conf": [],
-        "t_start": 0,
-        "t_end": 0,
-        "total_bytes": 0,
-        "freq": 0,
-        "ranks": 0,
-    }
-    console = MyConsole(verbose=args.verbose)
-
-    # Sample the bandwidth evenly spaced in time
-    tik = time.time()
-    console.print("[cyan]Executing:[/] Discretization\n")
-    b_sampled, freq, [df_out[1], df_out[2]] = sample_data_and_prepare_plots(args, bandwidth, time_b, ranks
-    )   
-    console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
-
-    tik = time.time()
-    console.print(
-        f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
-    )
-
-    # discrete wavelet decomposition:
-    # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1-Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20-%202010%20-%20Rede_AIASYB2.pdf
-    # https://www.youtube.com/watch?v=hAQQwvKsWCY&ab_channel=NathanKutz
-    console.print("[green]Performing discrete wavelet decomposition[/]")
-    if args.level == 0:
-        args.level = decomposition_level(args,len(b_sampled))  
-
-    coffs = wavelet_disc(b_sampled, args.wavelet, args.level)
-    cc, f = plot_wave_disc(
-        b_sampled, coffs, time_b, args.freq, args.level, args.wavelet, bandwidth
-    )
-    for fig in f:
-        fig.show()
-
-    cont = input("\nContinue with the DFT? [y/n]")
-
-    if len(cont) == 0 or "y" in cont.lower():
-        args.transformation = "dft"
-        n = len(b_sampled)
-        time_dft =  time_b[0] + 1/freq * np.arange(0, n)
-        bandwidth = cc[0]
-
-        # Option 1: Filter using wavelet and call DFT on lowest last coefficient
-        prediction, df_out, share = ftio_dft(args, bandwidth, time_dft, total_bytes, ranks)   
-        # TODO: Option 2: Find intersection between DWT and DFT
-
-
-    
     return prediction, df_out , share
 
 
@@ -254,22 +186,3 @@ def prepare_plot_wavelet_cont(
     )
     return df0, df1
 
-
-def get_scales(args: Namespace, b_sampled: np.ndarray) -> np.ndarray:
-    """
-    Calculate the scales for wavelet transformation based on the given arguments.
-
-    Parameters:
-    args (Namespace): A namespace object containing the arguments, including the decomposition level.
-    b_sampled (np.ndarray): The sampled data array.
-
-    Returns:
-    np.ndarray: An array of scales to be used for the wavelet transformation.
-    """
-    if args.level == 0:
-        args.level = decomposition_level(args, len(b_sampled))
-
-    scales = np.arange(1, args.level)  # 2** mimcs the DWT
-    # scale = np.arange(1, args.level,0.1)  # 2** mimcs the DWT
-
-    return scales
