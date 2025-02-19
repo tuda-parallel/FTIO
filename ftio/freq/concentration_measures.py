@@ -32,8 +32,8 @@ def normalize_fft(yf):
 def cm3(x):
     win_len = min_win
 
-    max_win = len(x) // 3
-    p = int(len(x) * 0.01)
+    max_win = len(x)
+    p = int(len(x) * 0.005)
     L = (max_win - min_win) // p
 
     sum = np.zeros((L,), dtype=np.complex128)
@@ -45,11 +45,12 @@ def cm3(x):
             x_padded = np.pad(x, (0, win_len-rem), 'constant')
 
         # nd array korrekte dim
-        rows = int(len(x_padded)/win_len)
+        rows = int(len(x_padded)/win_len) * 2 -1
         output = np.empty(shape=(rows, win_len), dtype=np.complex128)
 
+        overlap = win_len//2
         for i in range(0, rows):
-            windowed = x[win_len*i:win_len*(i+1)]
+            windowed = x[overlap*i:overlap*i+win_len]
             yf = fft(windowed)
             yf_norm = normalize_fft(yf) ** alpha
             sum[j] = sum[j] + np.sum(yf_norm)
@@ -66,8 +67,8 @@ def cm3(x):
 def cm4(x):
     win_len = min_win
 
-    max_win = len(x) // 3
-    p = int(len(x) * 0.01)
+    max_win = len(x)
+    p = int(len(x) * 0.005)
     L = (max_win - min_win) // p
 
     sum = np.zeros((L,), dtype=np.complex128)
@@ -79,11 +80,12 @@ def cm4(x):
             x_padded = np.pad(x, (0, win_len-rem), 'constant')
 
         # nd array korrekte dim
-        rows = int(len(x_padded)/win_len)
+        rows = int(len(x_padded)/win_len) * 2 -1
         output = np.empty(shape=(rows, win_len), dtype=np.complex128)
 
+        overlap = win_len//2
         for i in range(0, rows):
-            windowed = x[win_len*i:win_len*(i+1)]
+            windowed = x[overlap*i:overlap*i+win_len]
             yf = fft(windowed)
             yf_norm = normalize_fft(yf) ** beta
             sum[j] = sum[j] + np.sum(yf_norm)
@@ -100,8 +102,8 @@ def cm4(x):
 def cm5(x):
     win_len = min_win
 
-    max_win = len(x) // 3
-    p = int(len(x) * 0.01)
+    max_win = len(x)
+    p = int(len(x) * 0.005)
     L = (max_win - min_win) // p
 
     sum = np.zeros((L,), dtype=np.complex128)
@@ -113,14 +115,15 @@ def cm5(x):
             x_padded = np.pad(x, (0, win_len-rem), 'constant')
 
         # nd array korrekte dim
-        rows = int(len(x_padded)/win_len)
+        rows = int(len(x_padded)/win_len) * 2 -1
         output = np.empty(shape=(rows, win_len), dtype=np.complex128)
 
         sum1 = 0
         sum2 = 0
 
+        overlap = win_len//2
         for i in range(0, rows):
-            windowed = x[win_len*i:win_len*(i+1)]
+            windowed = x[overlap*i:overlap*i+win_len]
             yf = fft(windowed)
             yf_norm = normalize_fft(yf)
             sum1 = sum1 + np.sum(yf_norm) ** beta
