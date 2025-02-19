@@ -2,6 +2,7 @@
 TODO:
 - window function CM?
 - find an CM implementation to verify approach
+- adapt min_win to f_s
 """
 
 import numpy as np
@@ -31,14 +32,15 @@ def normalize_fft(yf):
 def cm3(x):
     win_len = min_win
 
+    max_win = len(x) // 3
+    p = int(len(x) * 0.01)
+    L = (max_win - min_win) // p
+
     sum = np.zeros((L,), dtype=np.complex128)
 
     for j in range(0,L):
-
-        # bestimme rest
-        rem = len(x) % win_len
-
         # zeropad
+        rem = len(x) % win_len
         if (rem != 0):
             x_padded = np.pad(x, (0, win_len-rem), 'constant')
 
@@ -64,14 +66,15 @@ def cm3(x):
 def cm4(x):
     win_len = min_win
 
+    max_win = len(x) // 3
+    p = int(len(x) * 0.01)
+    L = (max_win - min_win) // p
+
     sum = np.zeros((L,), dtype=np.complex128)
 
     for j in range(0,L):
-
-        # bestimme rest
-        rem = len(x) % win_len
-
         # zeropad
+        rem = len(x) % win_len
         if (rem != 0):
             x_padded = np.pad(x, (0, win_len-rem), 'constant')
 
@@ -97,14 +100,15 @@ def cm4(x):
 def cm5(x):
     win_len = min_win
 
+    max_win = len(x) // 3
+    p = int(len(x) * 0.01)
+    L = (max_win - min_win) // p
+
     sum = np.zeros((L,), dtype=np.complex128)
 
     for j in range(0,L):
-
-        # bestimme rest
-        rem = len(x) % win_len
-
         # zeropad
+        rem = len(x) % win_len
         if (rem != 0):
             x_padded = np.pad(x, (0, win_len-rem), 'constant')
 
