@@ -11,16 +11,17 @@ import numpy as np
 from scipy.fft import fft
 from scipy.signal import stft
 from scipy.signal.windows import gaussian
-from ftio.freq.if_comp_separation import binary_image, component_linking
+from ftio.freq.if_comp_separation import binary_image, binary_image_zscore, component_linking
 from ftio.freq.concentration_measures import cm3, cm4, cm5
 
-def astft(b_sampled, freq, bandwidth, time_b):
-    test = test_signal()
-    #oastft(test)
-    astft_mnm(test)
+def astft(b_sampled, freqs, bandwidth, time_b, args):
+    #test = test_signal()
+    #astft_mnm(test, freqs, args)
+
+    astft_mnm(b_sampled, freqs, args)
 
 # mix & match
-def astft_mnm(signal):
+def astft_mnm(signal, freqs, args):
     win_len = cm3(signal)
 
     # sigma
@@ -28,7 +29,7 @@ def astft_mnm(signal):
 
     signal_tfr = ptfr(signal, win_len, sigma)
 
-    image = binary_image(signal_tfr)
+    image = binary_image_zscore(signal_tfr, freqs, args)
     component_linking(image)
 
 """

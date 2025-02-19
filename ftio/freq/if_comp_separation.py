@@ -12,6 +12,7 @@ component_linking:
 import cv2
 import numpy as np
 from scipy.signal import find_peaks, peak_prominences
+from ftio.freq.anomaly_detection import z_score
 
 """
 Rankine, L., Mesbah, M., & Boashash, B. (2007).
@@ -33,6 +34,21 @@ def binary_image(Zxx):
                 if prom[ind] > 0.01:
                     _ind = peaks[0][ind]
                     bin_im[i][_ind] = 255
+
+    return bin_im
+
+def binary_image_zscore(Zxx, freq, args):
+    bin_im = np.zeros_like(Zxx, dtype="uint8")
+    rows = np.shape(Zxx)[0]
+
+    for i in range(0,rows):
+        yf = np.abs(Zxx[i])
+        n = len(yf)
+        freq_arr = freq * np.arange(0, n) / n
+        indices = z_score(yf, freq_arr, args)[0]
+
+        for ind in indices:
+            bin_im[i][ind] = 255
 
     return bin_im
 
