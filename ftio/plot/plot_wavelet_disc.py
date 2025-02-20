@@ -2,13 +2,12 @@
 This module contains functions for plotting discrete wavelet transforms and their spectra
 using Matplotlib and Plotly.
 """
-
+from argparse import Namespace
 import numpy as np
 import pywt
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from argparse import Namespace
 
 
 ####################################################################################################
@@ -389,7 +388,7 @@ def plotly_wavelet_disc_spectrum(
     # Create heatmap for wavelet spectrum
     fig.add_trace(
         go.Heatmap(
-            x=sampled,  # Time
+            x=t_sampled,  # Time
             y=freq_labels,  # Frequency bands (now reversed)
             z=coeffs_magnitude,  # Magnitude
             colorscale="Viridis",  # Color mapping

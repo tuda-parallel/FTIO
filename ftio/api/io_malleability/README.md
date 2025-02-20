@@ -1,4 +1,3 @@
-
 # XLSX to JSON Converter
 
 This Python script converts an Excel file (XLSX format) to a JSON file. It extracts specific data from the Excel sheet, such as I/O bandwidth, time stamps, rank, and total bytes, and outputs them in a structured JSON format.
@@ -16,10 +15,10 @@ pip install pandas openpyxl
 
 ## Usage
 
-To run the script, simply execute the Python file from the command line. You can optionally specify the path to the Excel file.
+To run the script, simply execute the Python file from the command line. You can optionally specify the path to the Excel file and use the interactive mode to select the relevant field for the bandwidth.
 
 ```bash
-python xlsx_to_json.py --file <path_to_excel_file>
+python parse_xlsx.py --file <path_to_excel_file> [--interactive]
 ```
 
 If no file is provided, the default file `IOTraces.xlsx` will be used.
@@ -27,10 +26,18 @@ If no file is provided, the default file `IOTraces.xlsx` will be used.
 ### Example
 
 ```bash
-python xlsx_to_json.py --file IOTraces.xlsx
+python parse_xlsx.py --file IOTraces.xlsx
 ```
 
 This will convert the data from `IOTraces.xlsx` to `output.json`.
+
+### Interactive Mode Example
+
+```bash
+python parse_xlsx.py --file IOTraces.xlsx --interactive
+```
+
+This will prompt you to select the column to map to the bandwidth.
 
 ## Output
 
