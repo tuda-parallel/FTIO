@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+from ftio.freq.freq_html import create_html
+
 
 ####################################################################################################
 #! Deprecated functions
@@ -448,6 +450,8 @@ def plot_coeffs_reconst_signal(
         fig = ploty_coeffs_reconst_signal(
             t, b,  t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis
         )
+        create_html([fig], args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, "freq")
+
     else:
         fig = matplot_coeffs_reconst_signal(
             t, b,  t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis
