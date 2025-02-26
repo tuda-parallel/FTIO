@@ -1,3 +1,9 @@
+"""
+This file provides functions to start and manage various components of the GekkoFS,
+including the Gekko daemon, proxy, cargo, and FTIO. It also includes functions for staging
+data in and out, and executing pre- and post-application calls.
+"""
+
 import os
 import time
 
@@ -42,7 +48,11 @@ console = Console()
 #! Start gekko
 #!#################
 def start_gekko_daemon(settings: JitSettings) -> None:
+    """Starts the Gekko daemon.
 
+    Args:
+        settings (JitSettings): jit settings
+    """
     if settings.exclude_daemon:
         console.print(
             f"[bold yellow]####### Skipping Gkfs Demon [/][black][{get_time()}][/]"
@@ -54,7 +64,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
         # Create host file and dirs for geko
         init_gekko(settings)
         debug_flag = ""
-        if settings.debug:
+        if settings.debug_lvl > 0:
             debug_flag = "--export=ALL,GKFS_DAEMON_LOG_LEVEL=trace"
 
         if settings.cluster:
@@ -109,6 +119,11 @@ def start_gekko_daemon(settings: JitSettings) -> None:
 #! Start Proxy
 #!#######################
 def start_gekko_proxy(settings: JitSettings) -> None:
+    """Starts the Gekko proxy.
+
+    Args:
+        settings (JitSettings): jit settings
+    """
     if settings.exclude_proxy:
         console.print(
             f"[bold yellow]####### Skipping Gkfs Proxy [/][black][{get_time()}][/]"
@@ -153,6 +168,11 @@ def start_gekko_proxy(settings: JitSettings) -> None:
 #! start Cargo
 #!#################
 def start_cargo(settings: JitSettings) -> None:
+    """Starts the Cargo component.
+
+    Args:
+        settings (JitSettings): jit settings
+    """
     if settings.exclude_cargo:
         console.print(
             f"[bold yellow]####### Skipping Cargo [/][black][{get_time()}][/]"
@@ -165,7 +185,7 @@ def start_cargo(settings: JitSettings) -> None:
                 f"{settings.cargo} "
                 f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
             )
-            call = flaged_call(settings, call, settings.app_nodes,  settings.procs_cargo)
+            call = flaged_call(settings, call, settings.app_nodes, settings.procs_cargo)
         else:
             # Command for non-cluster
             call = f"{settings.cargo} --listen {settings.gkfs_daemon_protocol}://127.0.0.1:62000 -b 65536"
@@ -198,6 +218,11 @@ def start_cargo(settings: JitSettings) -> None:
 #! start FTIO
 #!################
 def start_ftio(settings: JitSettings) -> None:
+    """Starts the FTIO component.
+
+    Args:
+        settings (JitSettings): jit settings
+    """
     if settings.exclude_ftio or settings.exclude_all:
         console.print(f"[bold yellow]####### Skipping FTIO [/][black][{get_time()}][/]")
 
@@ -236,23 +261,21 @@ def start_ftio(settings: JitSettings) -> None:
                 f"[cyan]>> FTIO is listening node is {settings.address_ftio}:{settings.port} [/]"
             )
             call = (
-                    f"srun --jobid={settings.job_id} {settings.ftio_node_command} "
-                    f"--disable-status -N 1 --ntasks=1 --cpus-per-task={settings.procs_ftio} "
-                    f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-                    f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} {settings.ftio_args} "
+                f"srun --jobid={settings.job_id} {settings.ftio_node_command} "
+                f"--disable-status -N 1 --ntasks=1 --cpus-per-task={settings.procs_ftio} "
+                f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
+                f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} {settings.ftio_args} "
             )
         else:
             check_port(settings)
-            call = (
-                f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} {settings.ftio_args} "
-                )
-        
+            call = f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} {settings.ftio_args} "
+
         if settings.exclude_cargo:
             call += f"--stage_out_path {settings.stage_out_path} --stage_in_path {settings.stage_in_path} "
             if settings.regex_match:
                 call += f"--regex {settings.regex_match} "
         else:
-            call +=(
+            call += (
                 f"--cargo --cargo_bin {settings.cargo_bin} "
                 f"--cargo_server {settings.cargo_server} --stage_out_path {settings.stage_out_path} "
             )
@@ -285,6 +308,12 @@ def start_ftio(settings: JitSettings) -> None:
 #! Stage in
 #!################
 def stage_in(settings: JitSettings, runtime: JitTime) -> None:
+    """Stages data in from the specified path.
+
+    Args:
+        settings (JitSettings): jit settings
+        runtime (JitTime): runtime object to track elapsed time
+    """
     if settings.exclude_all:
         console.print(
             f"[bold yellow]####### Skipping Stage in [/][black][{get_time()}][/]"
@@ -301,19 +330,32 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
 
         jit_print(f"[cyan]>> Staging in to {settings.stage_in_path}", True)
 
-        if True: #settings.exclude_cargo:
+        if True:  # settings.exclude_cargo:
             # check that there are actually files
             call = ""
-            if len(subprocess.check_output(f"ls -R {settings.stage_in_path}/", shell=True).decode()) > 0:
+            if (
+                len(
+                    subprocess.check_output(
+                        f"ls -R {settings.stage_in_path}/", shell=True
+                    ).decode()
+                )
+                > 0
+            ):
                 call = flaged_call(
-                    settings, f"cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}", exclude = ["ftio"]
+                    settings,
+                    f"cp -r {settings.stage_in_path}/* {settings.gkfs_mntdir}",
+                    exclude=["ftio"],
                 )
             start = time.time()
             _ = execute_block(call, dry_run=settings.dry_run)
-        #TODO: fix cpp cargo
+        # TODO: fix cpp cargo
         else:
             if settings.cluster:
-                call = flaged_call(settings, f"{settings.cargo_bin}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}",exclude = ["ftio"])
+                call = flaged_call(
+                    settings,
+                    f"{settings.cargo_bin}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}",
+                    exclude=["ftio"],
+                )
                 # call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
             else:
                 call = f"mpiexec -x LIBGKFS_ENABLE_METRICS=off -np 1 --oversubscribe {settings.cargo_bin}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
@@ -334,34 +376,42 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
 #! Stage out
 #!################
 def stage_out(settings: JitSettings, runtime: JitTime) -> None:
+    """Stages data out to the specified path.
+
+    Args:
+        settings (JitSettings): jit settings
+        runtime (JitTime): runtime object to track elapsed time
+    """
     if settings.exclude_all:
         console.print(
             f"[bold yellow]####### Skipping  Stage out [/][black][{get_time()}][/]"
         )
     else:
+
+        console.print(
+            f"[bold green]####### Staging out [/][black][{get_time()}][/]\n",
+            f"[cyan]>> Moving data from {settings.gkfs_mntdir} -> {settings.stage_out_path}[/]",
+        )
         if settings.exclude_cargo:
             # additional_arguments = load_flags(settings)
             # call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
             call = flaged_call(
                 settings,
-                f"cp -r  {settings.gkfs_mntdir} {settings.stage_out_path} || echo 'nothing to stage in'",
-                exclude = ["ftio"]
+                f"cp -r  {settings.gkfs_mntdir} {settings.stage_out_path} || echo 'nothing to stage out'",
+                exclude=["ftio"],
             )
             start = time.time()
             _ = execute_block(call, dry_run=settings.dry_run)
             elapsed_time(settings, runtime, "Stage in", time.time() - start)
         else:
-            console.print(
-                f"[bold green]####### Staging out [/][black][{get_time()}][/]"
-            )
+
             reset_relevant_files(settings)
             time.sleep(2)
 
             if not settings.dry_run:
                 try:
                     call = flaged_call(
-                        settings, f"ls -R {settings.gkfs_mntdir}", 
-                        exclude=["ftio"]
+                        settings, f"ls -R {settings.gkfs_mntdir}", exclude=["ftio"]
                     )
                     files = subprocess.check_output(call, shell=True).decode()
                     console.print(
@@ -404,6 +454,12 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
 #! App call
 #!################
 def start_application(settings: JitSettings, runtime: JitTime):
+    """Starts the application specified in the settings.
+
+    Args:
+        settings (JitSettings): jit settings
+        runtime (JitTime): runtime object to track elapsed time
+    """
     name = (
         settings.app_call.split("/", 1)[1]
         if "/" in settings.app_call
@@ -460,7 +516,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     f"LD_PRELOAD={settings.gkfs_intercept},"
                 )
 
-            app_call = get_executable_realpath(settings.app_call,settings.run_dir)
+            app_call = get_executable_realpath(settings.app_call, settings.run_dir)
             call = (
                 f" cd {settings.run_dir} && time -p srun "
                 f"--export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
@@ -543,6 +599,11 @@ def start_application(settings: JitSettings, runtime: JitTime):
 #! Pre app call
 #!################
 def pre_call(settings: JitSettings) -> None:
+    """Executes pre-application calls specified in the settings.
+
+    Args:
+        settings (JitSettings): jit settings
+    """
     if settings.pre_app_call:
         console.print(
             f"[green bold]####### Pre-application Call [/][black][{get_time()}][/]"
@@ -551,7 +612,7 @@ def pre_call(settings: JitSettings) -> None:
         if isinstance(settings.pre_app_call, str):
             call = settings.pre_app_call
             if any(x in call for x in ["mpiex", "mpirun"]):
-                call = flaged_call(settings, call, exclude = ["ftio"])
+                call = flaged_call(settings, call, exclude=["ftio"])
             execute_block_and_monitor(
                 settings.verbose,
                 call,
@@ -562,7 +623,7 @@ def pre_call(settings: JitSettings) -> None:
         elif isinstance(settings.pre_app_call, list):
             for call in settings.pre_app_call:
                 if any(x in call for x in ["mpiex", "mpirun"]):
-                    call = flaged_call(settings, call, exclude = ["ftio"])
+                    call = flaged_call(settings, call, exclude=["ftio"])
                 execute_block_and_monitor(
                     settings.verbose,
                     call,
@@ -578,6 +639,11 @@ def pre_call(settings: JitSettings) -> None:
 #! Post app call
 #!################
 def post_call(settings: JitSettings) -> None:
+    """Executes post-application calls specified in the settings.
+
+    Args:
+        settings (JitSettings): jit settings
+    """
     if settings.post_app_call:
         console.print(
             f"[green bold]####### Post-application Call [/][black][{get_time()}][/]"

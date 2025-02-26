@@ -295,6 +295,10 @@ class FreqPlot:
         bar_plot = go.Figure()
         color_counter = 0
         template = "plotly"
+
+        paper = True
+        if "no_paper" in self.plot_engine:
+            paper = False
         # template = "plotly_dark"
         
         # For faster scatteer plot
@@ -702,16 +706,20 @@ class FreqPlot:
                 f[-1].update_layout(
                     xaxis_title="Time (s)",
                     yaxis_title=f"Bandwidth ({unit})",
-                    width=width,
+                    width=width if paper else 1.5*width,
                     height=height / 1.1,
                     template=template,
                 )
-                f[-1].update_layout(
-                    legend=dict(
-                        orientation="h", yanchor="top", y=0.99, xanchor="left", x=0.01
+
+                if paper:
+                    f[-1].update_layout(
+                        legend=dict(
+                            orientation="h", yanchor="top", y=0.99, xanchor="left", x=0.01
+                        )
                     )
-                )
-                # f[-1].update_layout(legend=dict(orientation="h", yanchor="bottom",y=1.02, xanchor="right", x=1))
+                # else:
+                #     f[-1].update_layout(legend=dict(orientation="h", yanchor="bottom",y=1.02, xanchor="right", x=1))
+                    
                 f[-1].update_xaxes(range=[time[0], time[-1]])
                 f[-1] = format_plot(f[-1])
                 f[-1].show(config=conf)
@@ -772,7 +780,7 @@ class FreqPlot:
                     )
                 if self.recon:
                     f[-1].add_trace(
-                        Scatter(
+                        trace=Scatter(
                             x=time,
                             y=sum_top_2 * order,
                             mode="lines+markers",
@@ -826,15 +834,19 @@ class FreqPlot:
                     yaxis_title=f"Bandwidth ({unit})",
                     font=font_settings,
                     # width=1.05*width,
-                    width=width,
+                    width=width if paper else 1.5*width,
                     height=height / 1.1,
                     # title="Time Plot (Ranks %i)" % r,
                     template=template,
                 )
-                f[-1].update_layout(
-                    legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
-                    # legend=dict(yanchor="top", y=0.99, xanchor="right", x=.99)
-                )
+                if paper:
+                    f[-1].update_layout(
+                        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
+                    )
+                # else:
+                #     f[-1].update_layout(
+                #         legend=dict(yanchor="top", y=0.99, xanchor="right", x=.99)
+                #     )
 
                 f[-1].update_xaxes(range=[time[0], time[-1]])
                 if isinstance(sum_dominant, list):

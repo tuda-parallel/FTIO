@@ -189,10 +189,12 @@ def parse_options(settings: JitSettings, args: list) -> None:
                         sys.exit(1)
         elif opt in ("-x", "--exclude-all"):
             settings.exclude_all = True
-        elif opt in ("-d", "--dry_run"):
+        elif opt in ("-dr", "--dry_run"):
             settings.dry_run = True
         elif opt in ("-v", "--verbose"):
             settings.verbose = True
+        elif opt in ("-d", "--debug"):
+            settings.debug_lvl = int(arg)
         elif opt in ("-y", "--skip_confirm"):
             settings.skip_confirm = True
         elif opt in ("-u", "--use-mpirun"):
@@ -275,9 +277,13 @@ def error_usage(settings: JitSettings):
         If this flag is provided, the setup is executed without FTIO, 
         GekkoFs, and Cargo.
 
-    -d | --dry_run 
+    -dr | --dry_run 
         default: [bold yellow]{settings.dry_run}[/]
         If provided, the tools and the app are not executed
+
+    -d | --debug
+        default: [bold yellow]{settings.debug_lvl}[/]
+        Debug level for displaying additional info
 
     -v | --verbose
         default: [bold yellow]{settings.verbose}[/]
@@ -1079,7 +1085,7 @@ def print_settings(settings) -> None:
 ├─ ftio args      : {settings.ftio_args}
 ├─ address ftio   : {settings.address_ftio}
 ├─ port           : {settings.port}
-├─ # nodes        : 1
+├─ node count     : 1
 └─ ftio node      : {settings.ftio_node_command.replace('--nodelist=', '')}"""
 
     gkfs_daemon_text = f"""
@@ -1099,6 +1105,7 @@ def print_settings(settings) -> None:
 ├─ cargo cli      : {settings.cargo_bin}
 ├─ cargo mode     : {settings.cargo_mode}
 ├─ stage in path  : {settings.stage_in_path}
+├─ stage out path  : {settings.stage_out_path}
 └─ address cargo  : {settings.address_cargo}"""
 
     if settings.exclude_ftio:
@@ -1106,7 +1113,7 @@ def print_settings(settings) -> None:
 ├─ ftio activate  : [yellow]none[/]
 ├─ address ftio   : [yellow]none[/]
 ├─ port           : [yellow]none[/]
-├─ # nodes        : [yellow]none[/]
+├─ node count     : [yellow]none[/]
 └─ ftio node      : [yellow]none[/]"""
         ftio_status = "[bold yellow]off[/]"
         task_ftio = "[bold yellow]-[/]"
@@ -1143,6 +1150,12 @@ def print_settings(settings) -> None:
         task_cargo = "[bold yellow]-[/]"
         cpu_cargo = "[bold yellow]-[/]"
 
+    app_flags = ""
+    if len(settings.app_flags) > 0:
+        flags_list = [flag for flag in settings.app_flags.split(" ") if flag.strip()]
+        # Indent each flag after the colon
+        app_flags = "\n                  : ".join(flags_list)
+
     # print settings
     text = f"""
 [bold green]Settings
@@ -1158,7 +1171,7 @@ def print_settings(settings) -> None:
 ├─ total nodes    : {settings.nodes}
 |   ├─ app        : {settings.app_nodes}
 |   └─ ftio       : 1
-├─ tasks per node : -  
+├─ tasks per node :   
 |   ├─ app        : {settings.procs_app} 
 |   ├─ daemon     : {task_daemon}
 |   ├─ proxy      : {task_proxy}
@@ -1173,8 +1186,9 @@ def print_settings(settings) -> None:
 ├─ OMP threads    : {settings.omp_threads}
 ├─ max time       : {settings.max_time}
 ├─ tasks affinity : {settings.set_tasks_affinity}
-├─ tasks set 0    : {settings.task_set_0 if settings.set_tasks_affinity else "[yellow]none[/]"}
-├─ tasks set 1    : {settings.task_set_1 if settings.set_tasks_affinity else "[yellow]none[/]"}
+|   ├─ set 0      : {settings.task_set_0 if settings.set_tasks_affinity else "[yellow]none[/]"}
+|   └─ set 1      : {settings.task_set_1 if settings.set_tasks_affinity else "[yellow]none[/]"}
+├─ debug level    : {settings.debug_lvl}
 ├─ use mpirun     : {settings.use_mpirun}
 └─ job id         : {settings.job_id}
 
@@ -1186,9 +1200,11 @@ def print_settings(settings) -> None:
 
 [bold green]app[/]
 ├─ run dir        : {settings.run_dir}
-├─ app call       : {settings.app_call}
+├─ realpath       : {os.path.realpath(settings.run_dir)}
 ├─ app nodes      : {settings.app_nodes}
-└─ app nodes list : {settings.app_nodes_command.replace('--nodelist=', '')}
+├─ app nodes list : {settings.app_nodes_command.replace('--nodelist=', '')}
+├─ app call       : {settings.app_call}
+└─ app flags      : {app_flags}
 [bold green]##################[/]
 """
     console.print(text)

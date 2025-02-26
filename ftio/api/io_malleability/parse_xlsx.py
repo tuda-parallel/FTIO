@@ -11,7 +11,8 @@ def parse_args():
     # Set up command-line argument parsing
     parser = argparse.ArgumentParser(description='Convert an XLSX file to JSON.')
     # Set default values for the file
-    parser.add_argument('--file', type=str, default='IOTraces_2.xlsx', help='Path to the Excel file (default: IOTraces.xlsx)')
+    parser.add_argument('--file', '-f', type=str, default='IOTraces_2.xlsx', help='Path to the Excel file (default: IOTraces.xlsx)')
+    parser.add_argument('--out', '-o',type=str, default='output.json', help='Output file name')
     parser.add_argument('-i', '--interactive', dest='interactive', action = 'store_true', help='If passed, allows to select the relevant field for the bandwith')
     parser.add_argument('-b', '--bandwidth_column', default=-1, dest='b', type = int, help ='specifies the column directly for bandwidth (see -i for help)')
     parser.add_argument('-t', '--time_column', default=-1, dest='t', type = int, help ='specifies the column directly for time (see -i for help)')
@@ -76,6 +77,11 @@ def main(args=parse_args()):
         value = int(value)
         console.print(f'[green]> time set to [{value}]: {names[value]}[/]')
         t_s.extend(df[names[value]].tolist())
+        value = input('\nPlease select the column to map to I/O time:\n> ')
+        value = int(value)
+        console.print(f'[green]> time set to [{value}]: {names[value]}[/]')
+        io_time.extend(df[names[value]].tolist())
+
         
     if args.b >= 0:
         b = []
@@ -116,8 +122,7 @@ def main(args=parse_args()):
     }
 
     # Save JSON to file
-    output_file = 'output.json'
-    with open(output_file, 'w') as json_file:
+    with open(args.out, 'w') as json_file:
         json.dump(json_data, json_file, indent=4)
 
     # Print JSON for verification

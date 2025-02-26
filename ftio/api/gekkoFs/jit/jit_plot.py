@@ -1,3 +1,8 @@
+"""
+This module provides functionality to plot results from JSON files
+containing experimental data for JIT, JIT no FTIO, and Pure modes.
+"""
+
 import argparse
 import json
 import os
@@ -5,10 +10,14 @@ import plotly.graph_objects as go
 import numpy as np
 from ftio.plot.helper import format_plot_and_ticks
 
+def plot_results(filenames):
+    """
+    Plot results from the given JSON files. If no filenames are provided,
+    default data is used.
 
-
-
-def main(filenames):
+    Args:
+        filenames (list): List of JSON file paths.
+    """
     if not filenames:
         results = JitResult()
         # # run with x nodes  128 procs [jit | jit_no_ftio | pure] (now in old folder)
@@ -80,6 +89,14 @@ def main(filenames):
         
 
 def extract_and_plot(results,json_file_path:str, title:str):
+    """
+    Extract data from a JSON file and plot the results.
+
+    Args:
+        results (JitResult): The JitResult object to store the extracted data.
+        json_file_path (str): Path to the JSON file.
+        title (str): Title for the plot.
+    """
     with open(json_file_path, "r") as json_file:
         data = json.load(json_file)
         data = sorted(data, key=lambda x: x['nodes'])
@@ -90,6 +107,17 @@ def extract_and_plot(results,json_file_path:str, title:str):
 
 
 def add_mode(list1, list2):
+    """
+    Combine two lists by interleaving elements from the first list with
+    elements from the second list.
+
+    Args:
+        list1 (list): The first list.
+        list2 (list): The second list.
+
+    Returns:
+        list: The combined list.
+    """
     # Create a new list to store the result
     result = []
     step = int(len(list1)/3)
@@ -107,12 +135,24 @@ def add_mode(list1, list2):
 
 class JitResult:
     def __init__(self) -> None:
+        """
+        Initialize a JitResult object to store experimental data.
+        """
         self.app       = []
         self.stage_out = []
         self.stage_in  = []
         self.node = []
 
     def add_experiment(self,tmp_app:list[float],tmp_stage_out:list[float],tmp_stage_in:list[float],run:str):
+        """
+        Add an experiment's data to the JitResult object.
+
+        Args:
+            tmp_app (list[float]): Application times.
+            tmp_stage_out (list[float]): Stage out times.
+            tmp_stage_in (list[float]): Stage in times.
+            run (str): Identifier for the experiment run.
+        """
         self.app = add_mode(self.app,tmp_app)
         self.stage_out = add_mode(self.stage_out,tmp_stage_out)
         self.stage_in = add_mode(self.stage_in,tmp_stage_in)
@@ -120,6 +160,12 @@ class JitResult:
 
 
     def add_dict(self, data_list:list[dict]):
+        """
+        Add data from a dictionary to the JitResult object.
+
+        Args:
+            data_list (list[dict]): List of dictionaries containing experimental data.
+        """
         tmp_app       = [0.0,0.0,0.0]
         tmp_stage_out = [0.0,0.0,0.0]
         tmp_stage_in  = [0.0,0.0,0.0]
@@ -139,6 +185,12 @@ class JitResult:
         
 
     def plot(self,title=""):
+        """
+        Plot the experimental data stored in the JitResult object.
+
+        Args:
+            title (str): Title for the plot.
+        """
         # Sample data for the stacked plot
         categories = ['JIT', 'JIT no FTIO', 'Pure']
         repeated_strings = [s for s in categories for _ in self.node]
@@ -198,10 +250,10 @@ class JitResult:
         # Display the plot
         fig.show()
 
-
-
-
-if __name__ == "__main__":
+def main():
+    """
+    Main function to parse command-line arguments and plot results.
+    """
     parser = argparse.ArgumentParser(description="Load JSON data from files and plot.")
     parser.add_argument(
         'filenames',
@@ -211,6 +263,8 @@ if __name__ == "__main__":
         help="The paths to the JSON file(s) to plot."
     )
     args = parser.parse_args()
-    
-    main(args.filenames)
-    
+    plot_results(args.filenames)
+
+
+if __name__ == "__main__":
+    main()

@@ -19,7 +19,7 @@ class JitSettings:
             "ofi+verbs"  # "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
         )
         self.cargo_mode = "parallel"  # "parallel" or "posix"
-        self.debug = True
+        self.debug_lvl = 1
         self.verbose = True
         self.node_local = True  # execute in node local space
         self.env_var = {}
@@ -295,7 +295,8 @@ class JitSettings:
         ##  ├─ DLIO -->
         self.app_call = "dlio_benchmark"
         self.run_dir = "."
-        workload = " workload=bert " 
+        # workload = " workload=bert " 
+        workload = " workload=bert_small " 
         # workload = " workload=unet3d_my_a100 "
         self.app_flags = (
             f"{workload} "
@@ -399,6 +400,9 @@ class JitSettings:
         # ├─ Wacom++
         elif "wacom" in self.app_call:
             self.regex_match = ".*/(restart|output)/.*\\.nc$"
+        # ├─ DLIO
+        elif "dlio" in self.app_call:
+            self.regex_match = ".*/(checkpoints)/jit/.*\\.pt$"
         # ├─ LAMMPS
         elif "lmp" in self.app_call:
             self.regex_match = ""

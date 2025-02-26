@@ -1,3 +1,9 @@
+"""
+This file provides various functions to execute shell commands and monitor their execution.
+It includes functions to execute commands in blocking and non-blocking modes, log outputs,
+monitor log files, and wait for specific lines or files to appear.
+"""
+
 from datetime import datetime
 import multiprocessing
 import subprocess
@@ -24,6 +30,11 @@ def execute_block(call: str, raise_exception: bool = True, dry_run=False) -> str
 
     Args:
         call (str): bash call to execute
+        raise_exception (bool): whether to raise an exception on failure
+        dry_run (bool): if True, only print the call without executing
+
+    Returns:
+        str: output of the executed call
     """
     jit_print(f">> Executing {call}")
     if dry_run:
@@ -59,7 +70,7 @@ def execute_block(call: str, raise_exception: bool = True, dry_run=False) -> str
 
 
 def execute_block_and_log(call: str, log_file: str) -> float:
-    """Executes a call and logs it's output. This is a blocking call that
+    """Executes a call and logs its output. This is a blocking call that
     writes the output to the log once finished.
 
     Args:
@@ -105,6 +116,15 @@ def execute_block_and_log(call: str, log_file: str) -> float:
 def execute_block_and_monitor(
     verbose: bool, call: str, log_file: str = "", log_err_file: str = "", dry_run=False
 ):
+    """Executes a call, monitors its log file, and waits for completion.
+
+    Args:
+        verbose (bool): whether to print verbose output
+        call (str): bash call to execute
+        log_file (str): log file to monitor
+        log_err_file (str): error log file to monitor
+        dry_run (bool): if True, only print the call without executing
+    """
     if len(log_err_file) == 0:
         log_err_file = log_file
 
@@ -124,15 +144,16 @@ def execute_block_and_monitor(
 def execute_background(
     call: str, log_file: str = "", log_err_file: str = "", dry_run=False
 ):
-    """executes a call in the background and sets up a log dir
+    """Executes a call in the background and sets up a log directory.
 
     Args:
         call (str): call to execute
-        log_dir (str, optional): log dir directory. Defaults to "".
-        error_dir (str, optional): error die directory. Defaults to "".
+        log_file (str): log file to write output
+        log_err_file (str): error log file to write errors
+        dry_run (bool): if True, only print the call without executing
 
     Returns:
-        _type_: _description_
+        subprocess.Popen: process object
     """
     jit_print(f"[cyan]>> Executing {call}")
     with open(log_file, "a") as file:
@@ -188,18 +209,18 @@ def execute_background(
 def execute_background_and_log(
     settings: JitSettings, call: str, log_file: str, name="", err_file: str = ""
 ) -> subprocess.Popen:
-    """execute call in background and returns process. The output is displayed using a
-    thread that reads the log file
+    """Executes a call in the background and returns the process. The output is displayed using a
+    thread that reads the log file.
 
     Args:
         settings (JitSettings): jit settings
         call (str): bash call to execute
         log_file (str): absolute location of the log file to monitor
-        name (str, optional): The src of the file. If set to daemon, proxy, or ftio, the output
-        is colored. Defaults to "".. Defaults to "".
+        name (str): source of the file for colored output
+        err_file (str): error log file
 
     Returns:
-        subprocess.Popen: process
+        subprocess.Popen: process object
     """
     process = execute_background(call, log_file, err_file, settings.dry_run)
     get_pid(settings, name, process.pid)
@@ -211,18 +232,15 @@ def execute_background_and_log(
 def execute_background_and_log_in_process(
     call: str, log_file: str, name="", err_file: str = "", dry_run=False
 ):
-    """execute call in background and returns process. The output is displayed using a
-    thread that reads the log file
+    """Executes a call in the background and returns the process. The output is displayed using a
+    thread that reads the log file.
 
     Args:
-        settings (JitSettings): jit settings
         call (str): bash call to execute
         log_file (str): absolute location of the log file to monitor
-        name (str, optional): The src of the file. If set to daemon, proxy, or ftio, the output
-        is colored. Defaults to "".. Defaults to "".
-
-    Returns:
-        subprocess.Popen: process
+        name (str): source of the file for colored output
+        err_file (str): error log file
+        dry_run (bool): if True, only print the call without executing
     """
     if dry_run:
         print(call)
@@ -241,13 +259,12 @@ def execute_background_and_log_in_process(
 
 
 def execute_block_and_wait_line(call: str, filename: str, target_line: str) -> None:
-    """executes a call and wait for a line to appear
+    """Executes a call and waits for a line to appear in a file.
 
     Args:
         call (str): bash call to execute
         filename (str): file to monitor for target_line to appear
-        target_line (str): target line that need to appear in filename to
-        stop the execution of this function
+        target_line (str): target line that needs to appear in filename to stop the execution
     """
     execute_block(call)
     _ = wait_for_line(filename, target_line)
@@ -256,13 +273,13 @@ def execute_block_and_wait_line(call: str, filename: str, target_line: str) -> N
 def execute_background_and_wait_line(
     call: str, filename: str, target_line: str, dry_run: bool = False
 ) -> None:
-    """executes a call and wait for a line to appear
+    """Executes a call in the background and waits for a line to appear in a file.
 
     Args:
         call (str): bash call to execute
         filename (str): file to monitor for target_line to appear
-        target_line (str): target line that need to appear in filename to
-        stop the execution of this function
+        target_line (str): target line that needs to appear in filename to stop the execution
+        dry_run (bool): if True, only print the call without executing
     """
     process = execute_background(call, filename, dry_run=dry_run)
     _ = monitor_log_file(filename, "")
@@ -278,13 +295,15 @@ def execute_background_and_wait_line(
 
 
 def monitor_log_file(file: str, src: str = "") -> multiprocessing.Process:
-    """monitors a file and displays its output on the console. A process is
+    """Monitors a file and displays its output on the console. A process is
     in charge of monitoring the file.
 
     Args:
-        file (str): absolute File path
-        src (str, optional): The src of the file. If set to daemon, proxy, or ftio, the output
-        is colored. Defaults to "".
+        file (str): absolute file path
+        src (str): source of the file for colored output
+
+    Returns:
+        multiprocessing.Process: process object
     """
     monitor_process = multiprocessing.Process(target=print_file, args=(file, src))
     monitor_process.daemon = True
@@ -296,6 +315,14 @@ def monitor_log_file(file: str, src: str = "") -> multiprocessing.Process:
 def end_of_transfer(
     settings: JitSettings, log_file: str, call: str, monitored_files: list[str] = []
 ) -> None:
+    """Monitors the end of a transfer process by checking log files.
+
+    Args:
+        settings (JitSettings): jit settings
+        log_file (str): log file to monitor
+        call (str): bash call to execute if stuck
+        monitored_files (list[str]): list of files to monitor
+    """
     if settings.dry_run:
         return
 
@@ -404,8 +431,16 @@ def end_of_transfer(
 
 
 def end_of_transfer_online(
-    settings: JitSettings, log_file: str, call: str, timeout=180
+    settings: JitSettings, log_file: str, call: str, timeout=240
 ) -> None:
+    """Monitors the end of a transfer process by checking log files with a timeout.
+
+    Args:
+        settings (JitSettings): jit settings
+        log_file (str): log file to monitor
+        call (str): bash call to execute if stuck
+        timeout (int): timeout in seconds
+    """
     if settings.dry_run:
         return
 
@@ -415,6 +450,7 @@ def end_of_transfer_online(
     stuck_time = 5
     last_lines = read_last_n_lines(log_file)
     stuck_files = 0
+    start = time.time()
     n = len(monitored_files)
     if "Transfer finished for []" in last_lines:
         # Nothing to move
@@ -437,7 +473,7 @@ def end_of_transfer_online(
                         f"Waiting for {len(monitored_files)} files: {monitored_files}"
                     )
                 else:
-                    status.update(f"Waiting for {len(monitored_files)} files")
+                    status.update(f"Waiting for {len(monitored_files)} files ({time.time() - start:.2f} sec)")
 
                 passed_time = int(time.time() - start_time)
                 time_since_last_cargo = int(time.time() - last_cargo_time)
@@ -479,22 +515,36 @@ def end_of_transfer_online(
 
             timestamp = get_time()
             status.update(
-                f"\n[bold green]JIT [cyan]>> finished moving all files at  [{timestamp}]"
+                f"\n[bold green]JIT [cyan]>> finished moving all files at [{timestamp}] after {time.time() - start:.2f} seconds"
             )
-            jit_print(f"\n[cyan]>> finished moving all files at [{timestamp}]", True)
+            jit_print(f"\n[cyan]>> finished moving all files at [{timestamp}] after {time.time() - start:.2f} seconds", True)
 
 
 def get_files(settings: JitSettings, verbose=True):
+    """Gets the list of files to be monitored.
+
+    Args:
+        settings (JitSettings): jit settings
+        verbose (bool): whether to print verbose output
+
+    Returns:
+        list[str]: list of files to be monitored
+    """
     monitored_files = []
     files = ""
     # TODO: fix find for gekko
     try:
         try:
-            command_ls = flaged_call(settings, f" find {settings.gkfs_mntdir}")
+            command_ls = flaged_call(settings, f" find {settings.gkfs_mntdir}", exclude=["ftio"])
             files = subprocess.check_output(command_ls, shell=True, text=True)
         except subprocess.CalledProcessError as e:
-            jit_print(f"[red] >> Error using find, trying ls:\n{e}")
-            command_ls = flaged_call(settings, f" ls -l {settings.gkfs_mntdir}")
+            if settings.debug_lvl > 1:
+                console.print(f"[red] >> Error using find, trying ls:\n{e}[/]")
+            else:
+                console.print("[red] >> Error using find, trying ls[/]")
+
+            command_ls = flaged_call(settings, f" ls -R {settings.gkfs_mntdir}", exclude=["ftio"])
+            # command_ls = flaged_call(settings, f" ls -l {settings.gkfs_mntdir}", exclude=["ftio"])
             files = subprocess.check_output(command_ls, shell=True, text=True)
         if files:
             files = files.splitlines()
@@ -507,23 +557,49 @@ def get_files(settings: JitSettings, verbose=True):
             # remove directories
             files = [item for item in files if "." in item]
 
+
+        # find monitored files
         monitored_files = files_filtered(files, settings.regex_match, verbose)
-        if verbose:
+        if settings.debug_lvl > 0:
+            # try:
+            #     cmd = flaged_call(settings, f" du -sh {settings.gkfs_mntdir}", exclude=["ftio"])
+            #     # cmd = flaged_call(settings, f" du -sh {settings.gkfs_mntdir} | cut -f1", exclude=["ftio"])
+            #     file_size = subprocess.check_output(cmd, shell=True, text=True)
+            #     console.print(f"\n[cyan] >> Files are ({file_size}):\n{files}[/]")
+            # except subprocess.CalledProcessError:
+            console.print(f"\n[cyan] >> Files are:\n{files}[/]")
+        if verbose or settings.debug_lvl > 1:
             timestamp = get_time()
-            jit_print(f"[cyan]>> Files that need to be stage out: [{timestamp}]")
-            for f in monitored_files:
-                console.print(f"[cyan]{f}[/]")
+            console.print(f"[cyan]>> Files that need to be stage out: [{timestamp}][/]")
+            for i,f in enumerate(monitored_files):
+                console.print(f"[cyan]{i}. {f}[/]")
+
     except Exception as e:
-        jit_print(f"[red] >> Error listing files script:\n{e}")
+        console.print(f"[red] >> Error listing files script:\n{e}[/]")
 
     return monitored_files
 
 
 def get_time():
+    """Gets the current time formatted as a string.
+
+    Returns:
+        str: current time formatted as 'YYYY-MM-DD HH:MM:SS.sss'
+    """
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
 
 def files_filtered(list_of_files: list[str], regex_pattern, verbose=True) -> list[str]:
+    """Filters a list of files based on a regex pattern.
+
+    Args:
+        list_of_files (list[str]): list of files to filter
+        regex_pattern (str): regex pattern to match files
+        verbose (bool): whether to print verbose output
+
+    Returns:
+        list[str]: filtered list of files
+    """
     monitored_files = []
     if list_of_files:
         if regex_pattern:
@@ -543,7 +619,12 @@ def files_filtered(list_of_files: list[str], regex_pattern, verbose=True) -> lis
 
 
 def print_file(file, src=""):
-    """Continuously monitor the log file for new lines and print them."""
+    """Continuously monitors the log file for new lines and prints them.
+
+    Args:
+        file (str): absolute file path
+        src (str): source of the file for colored output
+    """
     color = ""
     close = ""
     newline =True
@@ -627,10 +708,12 @@ def print_file(file, src=""):
 
 
 def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
-    """Waits for a file to be created
+    """Waits for a file to be created.
 
     Args:
-        file (str): absolute file path
+        filename (str): absolute file path
+        timeout (int): timeout in seconds
+        dry_run (bool): if True, only print the call without executing
     """
     if dry_run:
         return
@@ -659,14 +742,17 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
 def wait_for_line(
     filename: str, target_line: str, msg: str = "", timeout: int = 60, dry_run=False
 ) -> bool:
-    """
-    Waits for a specific line to appear in a log file
+    """Waits for a specific line to appear in a log file.
 
     Args:
-        filename (str): The path to the log file.
-        target_line (str): The line of text to wait for.
-        msg (str): Message to print
+        filename (str): path to the log file
+        target_line (str): line of text to wait for
+        msg (str): message to print
         timeout (int): maximal timeout
+        dry_run (bool): if True, only print the call without executing
+
+    Returns:
+        bool: True if the line appeared, False if timeout reached
     """
     success = True
     if dry_run:
@@ -713,7 +799,15 @@ def wait_for_line(
 
 
 def read_last_n_lines(filename, n=3):
-    """Read the last `n` lines of a file."""
+    """Reads the last `n` lines of a file.
+
+    Args:
+        filename (str): path to the file
+        n (int): number of lines to read
+
+    Returns:
+        list[str]: list of the last `n` lines
+    """
     with open(filename, "rb") as f:
         # Move the pointer to the end of the file
         f.seek(0, 2)

@@ -29,7 +29,7 @@ def check_setup(settings:JitSettings):
         # files = subprocess.check_output(ls_command, shell=True).decode()
         # console.print(f"[cyan]>> geko_ls {gkfs_mntdir}: \n{files}[/]")
 
-        if settings.cluster and settings.debug and not settings.exclude_daemon:
+        if settings.cluster and settings.debug_lvl > 0 and not settings.exclude_daemon:
 
             additional_arguments = ""
             timestamp = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
