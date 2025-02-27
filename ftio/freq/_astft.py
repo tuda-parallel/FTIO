@@ -11,15 +11,22 @@ import numpy as np
 from scipy.fft import fft, ifft
 from scipy.signal import stft
 from scipy.signal.windows import gaussian
-from ftio.freq.if_comp_separation import binary_image, binary_image_zscore, component_linking
+from ftio.freq.if_comp_separation import (
+            binary_image,
+            binary_image_nprom,
+            binary_image_zscore,
+            binary_image_zscore_extended,
+            component_linking)
 from ftio.freq.anomaly_detection import z_score
 from ftio.freq.concentration_measures import cm3, cm4, cm5
+from ftio.freq.denoise import tfpf_wvd
 
-def astft(b_sampled, freq, bandwidth, time_b, args):
+def astft(b_sampled, freq, b_oversampled, freq_over, bandwidth, time_b, args):
     #test = test_signal()
     #astft_mnm(test, freqs, args)
 
     astft_mnm(b_sampled, freq, time_b, args)
+    #tf_samp = tfpf_wvd(b_oversampled, freq, time_b)
 
 # mix & match
 def astft_mnm(signal, freq, time_b, args):
