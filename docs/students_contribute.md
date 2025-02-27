@@ -22,21 +22,21 @@
    - Before starting your work, please create a GitHub account if you don’t have one already and send me your GitHub username. This will be necessary for setting up your branch and reflect your contributions to the code.
 
 2. **Branch Creation**:  
-   - Once your thesis starts, I will create a branch for your work. This branch will be linked to an issue that allows you to track your progress. Our meetings are reserved for content discussion. The discussions in the issue are only related to code errors.  
+   - Ahmad will create a branch for your work once your thesis starts. This branch will be linked to an issue that allows you to track your progress. Our meetings are reserved for content discussion. The discussions in the issue are only related to code errors.  
    - You **do not** create branches yourself. Also, **do not** work on other student branches.
 
 3. **Creating Issues**:
-   - Once your thesis starts, create an issue to describe the feature, bug fix, or enhancement you plan to implement. This helps us track contributions and avoids duplicate work. Keep the description abstract and add a few checkboxes listing what you want to add. You do not need to explicitly mention the methods. Keep it abstract mentioning the purpose or gained benefits.
+   - Once your thesis starts, create an issue to describe the feature, bug fix, or enhancement you plan to implement. This helps us track contributions and avoids duplicate work. Keep the description abstract and add a few checkboxes listing what you want to add. You do not need to explicitly mention the methods. Keep it abstract, mentioning the purpose or benefits gained.
    - Go to the **Issues** tab in the [FTIO repository](https://github.com/tuda-parallel/FTIO).
    - Click **New Issue** and provide a clear title and description.
    - Label the issue appropriately as `feature` and include call it `feature...`.
    - Once you push commits, some of them should address the issue.
-   - You should regularly update the issue (every few weeks at least).
+   - You should regularly update the issue (at least every few weeks).
 
 4. **Development Workflow**:  
    - Work only on the branch assigned to you.  
-   - Regularly pull updates from the `development` branch and merge them into your branch to stay up-to-date.
-   - Build FTIO with the debug flag, so that changes made in the directory are directly visible to the command line call without reinstalling ftio. For that call:
+   - Regularly pull updates from the `development` branch and merge them into your branch to stay up-to-date (at least every two weeks).
+   - Build FTIO with the debug flag so that changes made in the directory are directly visible to the command line call without reinstalling FTIO. For that call:
 
      ```bash
      cd <ftio_repo>
@@ -44,6 +44,7 @@
      # or
      pip install -e .
      ```
+   - follow the [best practice guidelines](#best-practices) to ensure code compatibility and a smooth experience for all developers
 
 5. **Merging Restrictions**:  
    - You are **not allowed** to merge into the `development` or `main` branches.
@@ -76,7 +77,7 @@
 
 ### 2. Committing Changes
 
-- Make frequent commits with clear and descriptive messages. Ideally, once a finished working on an aspect, you create a commit for it.
+- Make frequent commits with clear and descriptive messages. Ideally, once you are finished working on an aspect, you create a commit for it.
   Example:
 
   ```bash
@@ -124,7 +125,7 @@
 
 ## Best Practices
 
-- **Stay Updated**: Pull changes from `development` regularly to avoid large merge conflicts.  
+- **Stay Updated**: Regularly pull changes from `development` to avoid large merge conflicts. Also, keep the issue updated.  
 - **Communicate**: Reach out if you encounter issues or need clarification.  
 - **Test Thoroughly**: Ensure your work doesn’t break existing functionality. Do **not** rename or reformat entire documents, except if you created them from scratch. Regularly test your code with your [test case](/docs/students_contribute.md#instructions-for-adding-a-test-case).
 - **Document Changes**: Write clear comments and update related documentation as needed.
@@ -151,7 +152,7 @@ To demonstrate how to use `FTIO` with you new feature, you should add a relevant
 To add a test case for verifying your changes, follow these steps:
 
 1. **Write a new test script** in the `test` directory to check for the desired functionality of `FTIO`.
-2. **Ensure the test is clear** and isolates the functionality being tested.
+2. **Ensure the test is clear** and isolates the tested functionality.
 3. **Push and commit** your changes:
 
     ```bash
