@@ -31,12 +31,18 @@ def ftio_astft(
 
     #  Extract time series: Sample the bandwidth evenly spaced in time
     tik = time.time()
-    console.print("[cyan]Executing:[/] Discretization\n")
+    console.print("[cyan]Executing:[/] Resampling\n")
+
     b_sampled, freq = sample_data(
         bandwidth, time_b, args.freq, args.verbose
     )
-    console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
-    astft(b_sampled, freq, bandwidth, time_b, args)
+    b_oversampled, freq_over = sample_data(
+        bandwidth, time_b, freq*30, args.verbose
+    )
+
+    console.print(f"\n[cyan]Resampling finished:[/] {time.time() - tik:.3f} s")
+
+    astft(b_sampled, freq, b_oversampled, freq_over, bandwidth, time_b, args)
 
     return prediction, df_out, share
