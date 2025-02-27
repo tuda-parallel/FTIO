@@ -18,6 +18,7 @@ from scipy.signal import find_peaks
 # all
 import numpy as np
 from ftio.plot.anomaly_plot import  plot_outliers, plot_decision_boundaries
+import matplotlib.pyplot as plt
 
 
 def outlier_detection(amp:np.ndarray, freq_arr:np.ndarray, args) -> tuple[list[float], np.ndarray, Panel]:
@@ -133,12 +134,19 @@ def z_score(
         # get dominant index
         dominant_index, msg = dominant(index, freq_arr, conf)
         text+= msg
+        text += new_periodicity_score(amp,freq_arr)
         
+    sq_amp = amp*amp
+    amplog = np.log(sq_amp)
+    sepstrum = np.abs(np.fft.ifft(amplog))
+    #newdata = np.squeeze(newdatlog2)
+    
     if "plotly" in args.engine:
         i = np.repeat(1, len(indices))
         if len(dominant_index) != 0:
             i[np.array(dominant_index) - 1] = -1
         plot_outliers(args,freq_arr, amp, indices, conf, i)
+        plot_outliers(args,freq_arr, sepstrum, indices, conf, i)
 
     return dominant_index, conf, text
 
@@ -365,9 +373,44 @@ def peaks(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.
 
     clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp,  indecies[dominant_index == -1])
     dominant_index,text_d = dominant(clean_index, freq_arr, conf)
-    
+
     return dominant_index, abs(conf), text+msg+text_d
 
+def new_periodicity_score(
+        amp: np.ndarray, freq_arr: np.ndarray
+) -> tuple[str]:
+    
+    def compute_rpde(freq_arr: np.ndarray) -> float:
+        safe_array = np.where(freq_arr <= 0, 1e-12, freq_arr)
+        sum = np.sum(safe_array * np.log(safe_array))
+        max = np.log(safe_array.size)
+        rpde_score = 1 - (np.divide(sum,-max))
+        return rpde_score
+    
+    def compute_spectral_flatness(freq_arr: np.ndarray) -> float:
+        safe_spectrum = np.where(freq_arr <= 0, 1e-12, freq_arr)
+        geometric_mean = np.exp(np.mean(np.log(safe_spectrum)))
+        arithmetic_mean = np.mean(safe_spectrum)
+        spectral_flatness_score = 1 - float((geometric_mean / arithmetic_mean))
+        return spectral_flatness_score
+
+    newdatlog = np.log(amp)
+    newdata1 = np.squeeze(newdatlog)
+    newdatlog2 = np.abs(np.fft.fft(newdatlog))
+    newdata = np.squeeze(newdatlog2)
+
+    text = ""
+    indices = np.arange(1, int(len(amp) / 2) + 1)
+    amp_tmp = np.array(2 * amp[indices])
+    # norm the data
+    amp_tmp = amp_tmp/ amp_tmp.sum() if amp_tmp.sum() > 0 else amp_tmp
+
+    rpde_score = compute_rpde(amp_tmp)
+    sf_score = compute_spectral_flatness(amp_tmp)
+
+    text += f"\n[blue]RPDE Score: {rpde_score:.4f}[/]\n"
+    text += f"[blue]Spectral Flatness: {sf_score:.4f}[/]\n"
+    return text
 
 def dominant(
     dominant_index: np.ndarray, freq_arr: np.ndarray, conf: np.ndarray
