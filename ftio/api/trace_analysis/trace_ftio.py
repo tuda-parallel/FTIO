@@ -47,7 +47,7 @@ def main(argv=sys.argv):
 
 
     # plot and print info
-    convert_and_plot(data, dfs, args)
+    convert_and_plot(args, dfs, len(data))
     display_prediction("ftio", prediction)
 
 

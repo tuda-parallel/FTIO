@@ -188,8 +188,12 @@ def plot_outliers(
     figs[4].update_yaxes(title_text=plt_names[1])
     for fig in figs:
         fig.update_layout(width=1300, height=400)
+
     configuration = {"toImageButtonOptions": {"format": "png", "scale": 4}}
-    create_html(figs, args.render, configuration, "anaomality")
+    plot_name =  "anaomality"
+    if "plot_name" in args:
+        plot_name +=  "_" + args.plot_name 
+    create_html(figs, args.render, configuration, plot_name)
 
 
 def plot_decision_boundaries(model, d, conf):

@@ -176,7 +176,7 @@ def quick_ftio(argv,b,t, total_bytes, ranks, msg, verbose=True) :
 
 
     # plot and print info
-    convert_and_plot(data, dfs, args)
+    convert_and_plot(args, dfs, len(data))
     if verbose:
         console.print(f'[green]>> Prediction for {msg}[/]')
         display_prediction("ftio", prediction)

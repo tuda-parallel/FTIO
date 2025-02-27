@@ -119,7 +119,7 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
     # if args.verbose:
     display_prediction("ftio", prediction)
 
-    convert_and_plot(data, dfs, args)
+    convert_and_plot(args, dfs)
     process.join()
     
     return prediction, args, data_rank["flush_t"]

@@ -55,7 +55,7 @@ def main(cmd_input: list[str], msgs = None):  # -> dict[Any, Any]:
     prediction, dfs = core(data, args)
 
     # plot and print info
-    convert_and_plot(data, dfs, args)
+    convert_and_plot(args, dfs, len(data))
     display_prediction(cmd_input, prediction)
     console.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
 

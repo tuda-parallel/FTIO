@@ -5,7 +5,7 @@ import datetime
 import json
 import numpy as np
 import pandas as pd
-
+from argparse import Namespace
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
@@ -37,6 +37,7 @@ class FreqPlot:
         self.dominant = []
         self.recon = False
         self.psd = False
+        self.name = ""
         if not isinstance(argv, bool):
             D1 = []
             D2 = []
@@ -223,6 +224,8 @@ class FreqPlot:
                 self.psd = value
             elif prop in "transform":
                 self.transform = value
+            elif prop in "name":
+                self.name = value
 
     def check_mode(self, data, mode):
         if self.check == 0:
@@ -280,8 +283,8 @@ class FreqPlot:
         else:
             pass
 
-        if "plotly" == self.plot_engine:
-            create_html(f, self.render, conf, "freq")
+        if "plotly" in self.plot_engine:
+            create_html(f, self.render, conf, self.name)
         else:
             input()
 
@@ -347,7 +350,7 @@ class FreqPlot:
                 + samples * self.D.settings_df[index_set]["T_s"].values
             )
 
-            if self.plot_engine == "plotly":
+            if  "plotly" in  self.plot_engine:
                 f.append(go.Figure())
             else:
                 bar_plot = plt.figure(figsize=(10, 4))
@@ -885,7 +888,7 @@ class FreqPlot:
             # f[-1].add_trace(go.Bar(x=samples,y=amp,marker_color='rgb(26, 118, 255)',marker_line=dict(width=1, color=color_bar), hovertemplate ='<br><b>k</b>: %{x}<br>' + '<b>Amplitude</b>: %{y:.2e}' +'<br><b>Frequency</b>: %{text} Hz<br>',text = ['%.2f'%i for i in freq]))
             # rangeslider(f[-1],samples,int(len(samples)/5),len(samples) > 1e3 and True)
             # f[-1].update_layout(xaxis_title='Frequency bins', yaxis_title='Amplitude',font=font_settings, width=width, height=height, title = 'Frequency Plot (Ranks %i)'%r, coloraxis_colorbar=dict(yanchor="top", y=1, x=0,ticks="outside"), template = template)
-            if "plotly" == self.plot_engine:
+            if "plotly" in self.plot_engine:
                     fig_tmp = plot_one_spectrum(self.psd, freq, amp, True)
                     fig_tmp.update_traces(
                         marker_line=dict(width=0.1, color=color_bar))
@@ -966,17 +969,21 @@ def rangeslider(f, arr, limit, cond="", point_limit=2.5e3):
 
 
 
-def convert_and_plot(data, dfs: list, args) -> None:
-    """convert from ftio and plot
+def convert_and_plot(args:Namespace, dfs: list, n:int = 1 ) -> None:
+    """Convert data from ftio and plot the results.
 
     Args:
-        data (_type_): _description_
-        dfs (list): _description_
-        args (argparse): _description_
+        args (Namespace): Command line arguments.
+        dfs (list): List of dataframes containing the data to plot.
+        n (int, optional): Number of dataframes. Defaults to 1.
     """
     freq_plot = FreqPlot(True)
     if any(x in args.engine for x in ["mat", "plot"]):
-        freq_plot.add_df(len(data), dfs[0], dfs[1], dfs[2], dfs[3])
+        freq_plot.add_df(n, dfs[0], dfs[1], dfs[2], dfs[3])
+
+    if "plot_name" not in args:
+        args.plot_name = "ftio_dft_result"
+    
     freq_plot.set(
         {
             "render": args.render,
@@ -985,6 +992,7 @@ def convert_and_plot(data, dfs: list, args) -> None:
             "recon": args.reconstruction,
             "psd": args.psd,
             "transform": args.transformation,
+            "name": args.plot_name
         }
     )
     freq_plot.plot()

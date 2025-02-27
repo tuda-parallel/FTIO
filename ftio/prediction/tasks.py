@@ -36,7 +36,7 @@ def ftio_task(metric:str, arrays:np.ndarray, argv:list, ranks:int, show:bool=Tru
         prediction, dfs = core([data], args)
 
         # # plot and print info
-        # convert_and_plot(data, dfs, args)
+        # convert_and_plot(args, dfs, len(data))
         if show:
             CONSOLE.info(f"\n[green underline]Metric: {metric}[/]")
             display_prediction("ftio", prediction)

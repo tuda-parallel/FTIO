@@ -39,5 +39,5 @@ prediction, dfs = core([data], args)
 
 
 # plot and print info
-convert_and_plot(data, dfs, args)
+convert_and_plot(args, dfs)
 display_prediction("ftio", prediction)
