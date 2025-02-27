@@ -19,7 +19,7 @@ class JitSettings:
             "ofi+verbs"  # "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
         )
         self.cargo_mode = "parallel"  # "parallel" or "posix"
-        self.debug_lvl = 1
+        self.debug_lvl = 0
         self.verbose = True
         self.node_local = True  # execute in node local space
         self.env_var = {}

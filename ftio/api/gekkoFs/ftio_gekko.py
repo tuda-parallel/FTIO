@@ -58,7 +58,7 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
         # print(data_rank)
         if not data_rank["avg_thruput_mib"]:
             CONSOLE.print("[red]Terminating prediction (no data passed) [/]")
-        else: 
+        else:
             CONSOLE.print("[red]Read data passed -- ignoring [/]")
         exit(0)
     

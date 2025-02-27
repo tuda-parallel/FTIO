@@ -28,6 +28,7 @@ def ftio_process(shared_resources: SharedResources, args: list[str], msgs = None
         console.print("[yellow]Terminating prediction (no data passed) [/]")
         console.print(f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/]  Stopped')
         exit(0)
+
     # abstract plot prediction 
     # plot_bar_with_rich(shared_resources.t_app,shared_resources.b_app, width_percentage=0.9)
     # get data
@@ -199,3 +200,5 @@ def hits(args, prediction, shared_resources):
 
 
     return text
+
+

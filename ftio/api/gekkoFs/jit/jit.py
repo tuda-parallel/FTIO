@@ -1,3 +1,9 @@
+"""
+This file contains the main function to execute the JIT script.
+It sets up the environment, allocates resources, starts necessary services,
+and manages the workflow from staging in to staging out.
+"""
+
 import sys
 import signal
 from rich.console import Console
@@ -35,7 +41,9 @@ console = Console()
 
 
 def main() -> None:
-    """Executes the jit script
+    """Executes the JIT script by setting up the environment, 
+    allocating resources, starting necessary services, 
+    and managing the workflow from staging in to staging out.
     """
 
     console.print("\n\n[bold green]################ JIT ################[/]\n")

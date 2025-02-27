@@ -560,7 +560,7 @@ def get_files(settings: JitSettings, verbose=True):
 
         # find monitored files
         monitored_files = files_filtered(files, settings.regex_match, verbose)
-        if settings.debug_lvl > 0:
+        if settings.debug_lvl > 1:
             # try:
             #     cmd = flaged_call(settings, f" du -sh {settings.gkfs_mntdir}", exclude=["ftio"])
             #     # cmd = flaged_call(settings, f" du -sh {settings.gkfs_mntdir} | cut -f1", exclude=["ftio"])
@@ -568,7 +568,7 @@ def get_files(settings: JitSettings, verbose=True):
             #     console.print(f"\n[cyan] >> Files are ({file_size}):\n{files}[/]")
             # except subprocess.CalledProcessError:
             console.print(f"\n[cyan] >> Files are:\n{files}[/]")
-        if verbose or settings.debug_lvl > 1:
+        if verbose or settings.debug_lvl > 2:
             timestamp = get_time()
             console.print(f"[cyan]>> Files that need to be stage out: [{timestamp}][/]")
             for i,f in enumerate(monitored_files):
