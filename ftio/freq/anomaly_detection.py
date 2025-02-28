@@ -401,7 +401,7 @@ def new_periodicity_score(
     sf_score = compute_spectral_flatness(amp_tmp)
 
     text += f"\n[blue]RPDE Score: {rpde_score:.4f}[/]\n"
-    text += f"[blue]Spectral Flatness: {sf_score:.4f}[/]\n"
+    text += f"[blue]Spectral Flatness Score: {sf_score:.4f}[/]\n"
     return text
 
 def dominant(

@@ -87,17 +87,11 @@ def plot_cepstrum(
     power_spectrum = amp*amp
     powerlog = np.log(power_spectrum + 1e-10)
     powerlog -= np.mean(powerlog)
-    powerlog2=np.pad(powerlog, (0, len(amp)*2 - len(amp)), mode='constant', constant_values=0.0)
-    print(powerlog2)
-    cepstrum = np.abs(np.fft.ifft(powerlog2).real)
-    
-    plt.plot(cepstrum)
-    plt.title("Cepstrum")
-    plt.xlabel("Quefrency (samples)")
-    plt.ylabel("Amplitude")
-    plt.show()
+    print (len(powerlog))
+    freq_arr_qf = freq_arr * ((len(freq_arr)/20)/5)
+    cepstrum = np.abs(np.fft.fft(powerlog).real)
 
-    spec_figs, plt_names = plot_both_spectrums(args, freq_arr, cepstrum, full=True)
+    spec_figs, plt_names = plot_both_spectrums(args, freq_arr_qf, cepstrum, full=False)
     for trace in list(spec_figs.select_traces()):
         counter += 1
         trace.update(marker={"coloraxis": "coloraxis"})
