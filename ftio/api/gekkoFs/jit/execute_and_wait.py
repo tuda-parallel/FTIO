@@ -532,7 +532,6 @@ def get_files(settings: JitSettings, verbose=True):
     """
     monitored_files = []
     files = ""
-    # TODO: fix find for gekko
     try:
         try:
             command_ls = flaged_call(settings, f" find {settings.gkfs_mntdir}", exclude=["ftio"])

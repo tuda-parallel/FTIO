@@ -23,7 +23,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     jit_print,
     mpiexec_call,
     relevant_files,
-    reset_relevant_files,
+    adjust_regex,
     shut_down,
 )
 from ftio.api.gekkoFs.jit.execute_and_wait import (
@@ -405,7 +405,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             elapsed_time(settings, runtime, "Stage in", time.time() - start)
         else:
 
-            reset_relevant_files(settings)
+            adjust_regex(settings)
             time.sleep(2)
 
             if not settings.dry_run:
