@@ -18,6 +18,7 @@ from scipy.signal import find_peaks
 # all
 import numpy as np
 from ftio.plot.anomaly_plot import  plot_outliers, plot_decision_boundaries
+from ftio.plot.cepstrum_plot import  plot_cepstrum
 import matplotlib.pyplot as plt
 
 
@@ -136,17 +137,13 @@ def z_score(
         text+= msg
         text += new_periodicity_score(amp,freq_arr)
         
-    sq_amp = amp*amp
-    amplog = np.log(sq_amp)
-    sepstrum = np.abs(np.fft.ifft(amplog))
-    #newdata = np.squeeze(newdatlog2)
     
     if "plotly" in args.engine:
         i = np.repeat(1, len(indices))
         if len(dominant_index) != 0:
             i[np.array(dominant_index) - 1] = -1
         plot_outliers(args,freq_arr, amp, indices, conf, i)
-        plot_outliers(args,freq_arr, sepstrum, indices, conf, i)
+        plot_cepstrum(args,freq_arr, amp, indices, conf, i)
 
     return dominant_index, conf, text
 
@@ -393,11 +390,6 @@ def new_periodicity_score(
         arithmetic_mean = np.mean(safe_spectrum)
         spectral_flatness_score = 1 - float((geometric_mean / arithmetic_mean))
         return spectral_flatness_score
-
-    newdatlog = np.log(amp)
-    newdata1 = np.squeeze(newdatlog)
-    newdatlog2 = np.abs(np.fft.fft(newdatlog))
-    newdata = np.squeeze(newdatlog2)
 
     text = ""
     indices = np.arange(1, int(len(amp) / 2) + 1)
