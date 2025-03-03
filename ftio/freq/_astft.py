@@ -21,12 +21,15 @@ from ftio.freq.anomaly_detection import z_score
 from ftio.freq.concentration_measures import cm3, cm4, cm5
 from ftio.freq.denoise import tfpf_wvd
 
+from ftio.plot.plot_tf import plot_tf
+
 def astft(b_sampled, freq, b_oversampled, freq_over, bandwidth, time_b, args):
-    #test = test_signal()
+    test, fs, time = test_signal("time bins")
+    plot_tf(test, fs, time)
     #astft_mnm(test, freqs, args)
 
-    astft_mnm(b_sampled, freq, time_b, args)
-    #tf_samp = tfpf_wvd(b_oversampled, freq, time_b)
+    #astft_mnm(b_sampled, freq, time_b, args)
+    #tf_samp = tfpf_wvd(b_oversampled, freq, time_b, freq_over)
 
 # mix & match
 def astft_mnm(signal, freq, time_b, args):
@@ -131,28 +134,52 @@ def regular_rate(x):
 
     return v_0
 
-def test_signal():
-    len = 1024
-    x = np.zeros((len,), dtype=np.float32)
+def test_signal(type="sinusoidal", noise=False):
+    fs = 200
+    duration = 10
 
-    T = len
-    fs = 4/T
-    t = np.arange(1,T+1)/T
-    freqs = 2*np.pi*(t-0.5-fs)/(fs)
+    f_1 = 0.611
+    f_2 = 3
+    f_3 = 7
 
-    f_1 = 20
-    f_2 = 50
+    t = np.linspace(0, duration, fs*duration)
+    N = len(t)
 
-    x1 = 1.3*(np.cos(2*np.pi*f_1*t[33:450]))
-    x[33:450] = x1
-    x2 = 1.1*(np.cos(2*np.pi*f_2*t[650:797]))
-    x[650:797] = x2
+    start_1 = int(0.03 * N)
+    start_2 = int(0.6 * N)
+    start_3 = int(0.8 * N)
 
-    fig, ax = plt.subplots()
-    ax.plot(t,x)
+    stop_1 = int(0.52 * N)
+    stop_2 = int(0.75 * N)
+    stop_3 = int(0.97 * N)
+
+    amp_1 = 0.5
+    amp_2 = 1
+    amp_3 = 0.75
+
+    s_1 = amp_1 * np.sin(2 * np.pi * f_1 * t[start_1:stop_1] + 2)
+    s_2 = amp_2 * np.sin(2 * np.pi * f_2 * t[start_2:stop_2])
+    s_3 = amp_3 * np.sin(2 * np.pi * f_3 * t[start_3:stop_3])
+
+    signal = np.zeros(len(t))
+
+    if (type == "sinusoidal"):
+        signal[start_1:stop_1] = s_1
+        signal[start_2:stop_2] = s_2
+        signal[start_3:stop_3] = s_3
+    elif (type == "time bins"):
+        signal[start_1:stop_1] = np.where(s_1>=amp_1*0.9, 0.5, 0)
+        signal[start_2:stop_2] = np.where(s_2>=amp_2*0.9, 1, 0)
+        signal[start_3:stop_3] = np.where(s_3>=amp_3*0.9, 0.75, 0)
+
+    if noise:
+        signal += np.random.normal(-0.1, 0.01, N)
+
+    plt.plot(t, signal)
     plt.show()
 
-    return x
+    return signal, fs, t
+
 
 def simple_astft(components, signal, freq, time_b, args):
     fig, ax = plt.subplots()
