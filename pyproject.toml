@@ -27,6 +27,7 @@ dependencies = [
 	"rich",
 	"pytest",
 	"fastcluster",
+	"opencv-contrib-python",
 ]
 
 requires-python = ">=3.8"
