@@ -43,6 +43,8 @@ def cm3(x):
         rem = len(x) % win_len
         if (rem != 0):
             x_padded = np.pad(x, (0, win_len-rem), 'constant')
+        else:
+            x_padded = x
 
         # nd array korrekte dim
         rows = int(len(x_padded)/win_len) * 2 -1
@@ -78,6 +80,8 @@ def cm4(x):
         rem = len(x) % win_len
         if (rem != 0):
             x_padded = np.pad(x, (0, win_len-rem), 'constant')
+        else:
+            x_padded = x
 
         # nd array korrekte dim
         rows = int(len(x_padded)/win_len) * 2 -1
@@ -113,6 +117,8 @@ def cm5(x):
         rem = len(x) % win_len
         if (rem != 0):
             x_padded = np.pad(x, (0, win_len-rem), 'constant')
+        else:
+            x_padded = x
 
         # nd array korrekte dim
         rows = int(len(x_padded)/win_len) * 2 -1
