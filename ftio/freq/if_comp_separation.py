@@ -21,6 +21,15 @@ techniques in the time-frequency domain.
 Signal Processing, 87(6), 1234-1250.
 """
 def binary_image(Zxx):
+    """
+    Creates binary image with 255 at frequency domain peaks.
+
+    Args:
+        Zxx (np.ndarray): array of FFTs for each point
+
+    Returns:
+        bin_im (np.ndarray): binary image
+    """
     bin_im = np.zeros_like(Zxx, dtype="uint8")
     rows = np.shape(Zxx)[0]
 
@@ -115,6 +124,19 @@ def binary_image_zscore_extended(Zxx, freq, args):
 
 # https://www.geeksforgeeks.org/python-opencv-connected-component-labeling-and-analysis/
 def component_linking(image):
+    """
+    Extracts individual signal components by connecting frequency peaks of binary image.
+
+    Args:
+        image (np.ndarray): binary image
+
+    Returns:
+        tuple:
+            tuple:
+                start (int): start of component as index of original signal 
+                end (int): start of component as index of original signal 
+            comp (np.ndarray): frequency index of component at each time
+    """
 
     frame = np.array(image, dtype="uint8")
 
