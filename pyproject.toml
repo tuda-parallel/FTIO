@@ -31,6 +31,7 @@ dependencies = [
 	"dash_extensions",
 	"pytest",
 	"fastcluster",
+	"opencv-contrib-python",
 ]
 requires-python = ">=3.8"
 authors = [{ name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de" }]
