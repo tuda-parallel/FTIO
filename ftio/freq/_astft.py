@@ -21,11 +21,11 @@ from ftio.freq.anomaly_detection import z_score
 from ftio.freq.concentration_measures import cm3, cm4, cm5
 #from ftio.freq.denoise import tfpf_wvd
 
-from ftio.plot.plot_tf import plot_tf
+from ftio.plot.plot_tf import plot_tf, plot_tf_contour
 
 def astft(b_sampled, freq, b_oversampled, freq_over, bandwidth, time_b, args):
     test, fs, time = test_signal("time bins")
-    plot_tf(test, fs, time)
+    plot_tf_contour(test, fs, time)
     #astft_mnm(test, freqs, args)
 
     #astft_mnm(b_sampled, freq, time_b, args)
