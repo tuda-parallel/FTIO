@@ -110,14 +110,15 @@ parallel_trace_analysis  . -j -p 30 -f 10 -o ~/tmp -n intrepid
 
 
 ### For Blue waters
+accuire the data from: [https://bluewaters.ncsa.illinois.edu/data-sets](https://bluewaters.ncsa.illinois.edu/data-sets)
 ```bash
 parallel_trace_analysis  . -j -p 30 -f 10 -n blue_waters
 ```
 
 
 
-## Citation
 You can cite the [data set](https://doi.org/10.5281/zenodo.14965920) as:
+## Citation
 ```
  @dataset{boito_2025_14965920,
   author       = {Boito, Francieli Zanon and
