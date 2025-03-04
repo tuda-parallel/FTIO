@@ -16,6 +16,8 @@ console = Console()
 def main(argv=sys.argv[1:]) -> None:
     verbose = False
     name = "plafrim"
+    json_flag = False
+    
     # specify the name with -n
     if "-n" in argv:
         index = argv.index("-n")
@@ -27,7 +29,10 @@ def main(argv=sys.argv[1:]) -> None:
         verbose = bool(argv[index + 1])
         argv.pop(index)
         argv.pop(index)
-
+    if "-j" in argv:
+        index = argv.index("-j")
+        argv.pop(index)
+        json_flag = True
     # print(argv)
     start_time = time.time()
     # pattern = "_signal_plafrim.csv"
@@ -77,7 +82,7 @@ def main(argv=sys.argv[1:]) -> None:
                 )
 
                 # Run the trace_ftio function
-                res = trace_ftio([file_path] + argv, verbose)
+                res = trace_ftio([file_path] + argv, verbose,json_flag)
 
                 # Create the new file name by replacing the pattern
                 base_name = os.path.basename(file_path)
@@ -162,7 +167,11 @@ def statistics(df,elapsed_time="",settings={}) -> None:
     df_dom = reduce_to_max_conf(df)
     prefixes = relevant_prefix(df)
     color = ["purple4", "gold3", "deep_sky_blue1"]
-    path = settings["res_path"]
+    if settings:
+        path = settings["res_path"]
+    else:
+        path = "."
+
     content = ""
     with open(f"{path}/ftio_output.txt", 'w') as file:
         for prefix in prefixes:
