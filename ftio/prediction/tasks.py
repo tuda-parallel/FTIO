@@ -1,8 +1,8 @@
 
+import numpy as np
 from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
 from ftio.freq._dft import display_prediction
-import numpy as np
 # from ftio.prediction.helper import get_dominant
 # from ftio.plot.freq_plot import convert_and_plot
 from ftio.freq.helper import MyConsole
@@ -12,7 +12,7 @@ CONSOLE.set(True)
 
 #TODO: extend this similar to ftio/prediction/analysis.py
 
-def ftio_task(metric:str, arrays:np.ndarray, argv:list, ranks:int, show:bool=True) -> dict:
+def ftio_metric_task(metric:str, arrays:np.ndarray, argv:list, ranks:int, show:bool=True) -> dict:
     """generate FTIO prediction from 2d np array
 
     Args:
@@ -33,7 +33,7 @@ def ftio_task(metric:str, arrays:np.ndarray, argv:list, ranks:int, show:bool=Tru
         args = parse_args(argv, "ftio")
 
         # perform prediction
-        prediction, dfs = core([data], args)
+        prediction, dfs = core(data, args)
 
         # # plot and print info
         # convert_and_plot(args, dfs, len(data))
@@ -44,8 +44,8 @@ def ftio_task(metric:str, arrays:np.ndarray, argv:list, ranks:int, show:bool=Tru
         return prediction
 
 
-def ftio_task_save(data, metric:str, arrays:np.ndarray, argv:list, ranks:int, show:bool=False) -> None:
-    prediction = ftio_task(metric, arrays ,argv ,ranks, show)
+def ftio_metric_task_save(data, metric:str, arrays:np.ndarray, argv:list, ranks:int, show:bool=False) -> None:
+    prediction = ftio_metric_task(metric, arrays ,argv ,ranks, show)
     # freq = get_dominant(prediction) #just get a single dominant value
     if prediction:
         data.append({

@@ -22,7 +22,7 @@ from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
 from ftio.freq._dft_workflow import ftio_dft
 
 
-def main(cmd_input: list[str], msgs = None):  # -> dict[Any, Any]:
+def main(cmd_input: list[str], msgs = None) ->tuple[list[dict], Namespace]:  # -> dict[Any, Any]:
     """
     Main entry point to process input data, perform frequency analysis, and generate predictions.
 
@@ -35,11 +35,11 @@ def main(cmd_input: list[str], msgs = None):  # -> dict[Any, Any]:
 
     Args:
         cmd_input (list[str]): A list of input strings containing the command-line arguments or data.
-        msgs (optional): ZMQ message, in case the input is not provided via a file
+        msgs (optional): ZMQ message, in case the input is not provided via a file.
 
     Returns:
-        tuple[dict, Namespace]: 
-            - A dictionary containing the prediction results.
+        tuple[dict|list[dict], list[list], Namespace]: 
+            - A dictionary or list of dictionaries containing the prediction results.
             - A Namespace object with the parsed arguments used in the analysis.
     """
     
@@ -51,18 +51,24 @@ def main(cmd_input: list[str], msgs = None):  # -> dict[Any, Any]:
     console.print(f"[cyan]Frequency Analysis:[/] {args.transformation.upper()}")
     console.print(f"[cyan]Mode:[/] {args.mode}")
 
-    # get prediction
-    prediction, dfs = core(data, args)
+    dfs_out = [[],[],[],[]]
+    prediction_out = []
+    
+    for sim in data:
+        # get prediction
+        prediction, dfs = core(sim, args)
+        # merge results from several files into one
+        merge_results(prediction_out, dfs_out, prediction, dfs)
 
-    # plot and print info
-    convert_and_plot(args, dfs, len(data))
-    display_prediction(cmd_input, prediction)
+    # show merge results
+    display_prediction(cmd_input, prediction_out)
+    convert_and_plot(args, dfs_out, len(data))
     console.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
 
-    return prediction, args
+    return prediction_out, args
 
 
-def core(data: list[dict], args:Namespace) -> tuple[dict, list]:
+def core(sim: dict, args:Namespace) -> tuple[dict, list[list]]:
     """
     FTIO core function that processes data and arguments to generate predictions and results.
 
@@ -70,7 +76,7 @@ def core(data: list[dict], args:Namespace) -> tuple[dict, list]:
     performs operations based on the parsed arguments.
 
     Args:
-        data (list[dict]): A list of dictionaries where each dictionary contains:
+        data (dict): dictionary where each dictionary contains:
             - "time" (np.ndarray): Array of time points.
             - "bandwidth" (np.ndarray): Array of bandwidth values.
             - "total_bytes" (int): Total number of bytes.
@@ -82,26 +88,20 @@ def core(data: list[dict], args:Namespace) -> tuple[dict, list]:
             - The first element is a dictionary with the obtained predictions (key-value pairs).
             - The second is element is used for storing dataframes for plotting.
     """
-    # init
-    prediction = {}
-    share = {}
-    dfs_out = [[],[],[],[]]
+    if not sim:
+        return {}, [[],[],[],[]]
 
-    # get predictions
-    for sim in data:
-        # Perform frequency analysis (dft/wavelet)
-        prediction_dft, dfs, share = freq_analysis(args, sim)
-        # Perform autocorrelation if args.autocorrelation is true + Merge the results into a single prediction
-        prediction_auto = find_autocorrelation(args, sim, share)
-        # Merge results
-        prediction = merge_predictions(args, prediction_dft, prediction_auto)
-        # merge plots
-        dfs_out = merge_results(dfs_out, df1=dfs)
+    # Perform frequency analysis (dft/wavelet)
+    prediction_dft, dfs, share = freq_analysis(args, sim)
+    # Perform autocorrelation if args.autocorrelation is true + Merge the results into a single prediction
+    prediction_auto = find_autocorrelation(args, sim, share)
+    # Merge results
+    prediction = merge_predictions(args, prediction_dft, prediction_auto)
 
-    return prediction, dfs_out
+    return prediction, dfs
 
 
-def freq_analysis(args:Namespace, data: dict) -> tuple[dict, tuple[list, list, list, list], dict]:
+def freq_analysis(args:Namespace, data: dict) -> tuple[dict, list[list], dict]:
     """
     Performs frequency analysis (DFT, continuous wavelet, or discrete wavelet) and prepares data for plotting.
 
@@ -140,11 +140,11 @@ def freq_analysis(args:Namespace, data: dict) -> tuple[dict, tuple[list, list, l
 
     
     #! Init
-    df_out = [[], [], [], []]
     bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
     time_b = data["time"] if "time" in data else np.array([])
     total_bytes = data["total_bytes"] if "total_bytes" in data else 0
     ranks = data["ranks"] if "ranks" in data else 0
+
 
     #! Extract relevant data
     bandwidth, time_b, text = data_in_time_window(

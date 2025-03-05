@@ -169,18 +169,25 @@ def prepare_plot_dft(
     return df0, df1
 
 
-def display_prediction(argv: list[str], prediction: dict) -> None:
+def display_prediction(argv: list[str], prediction: dict| list[dict]) -> None:
     """Displays the result of the prediction from ftio
 
     Args:
         argv (list[str]|str): command line arguments
-        prediction (dict): the result from ftio
+        prediction (dict|list[dict]): the result from ftio
     """
 
     if isinstance(argv, list):
         func_name = argv[0][argv[0].rfind("/") + 1 :]
     else:
         func_name = argv
+
+    if isinstance(prediction,list):
+        # In case several files are examined at the same time
+        for pred in prediction:
+            display_prediction(argv, pred)
+
+        return
 
     if "ftio" in func_name:
         if prediction:

@@ -78,7 +78,7 @@ def classify_waves(data, normed=True):
     other = [x['metric'] for x in data if all(y not in x['metric'] for y in seen)] 
     phasemode_list.append(PhaseMode('Other', other))
 
-    sampling_freq = np.NaN
+    sampling_freq = np.nan
     t_s = np.inf
     t_e = 0
     for d in data:

@@ -41,7 +41,7 @@ def quick_ftio(
     args = parse_args(argv, "ftio")
 
     # perform prediction
-    prediction, dfs = core([data], args)
+    prediction, dfs = core(data, args)
 
     # plot and print info
     convert_and_plot(args, dfs, len(data))

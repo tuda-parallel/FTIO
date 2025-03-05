@@ -113,7 +113,7 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
     }
 
     # 8) perform prediction
-    prediction, dfs = core([data], args)
+    prediction, dfs = core(data, args)
 
     # 9) plot and print info
     # if args.verbose:
