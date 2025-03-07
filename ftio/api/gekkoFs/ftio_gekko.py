@@ -12,8 +12,7 @@ import plotly.graph_objects as go
 from ftio.plot.helper import format_plot
 from ftio.plot.units import set_unit
 from ftio.freq.helper import MyConsole
-
-from ftio.prediction.async_process import handle_in_process
+from ftio.multiprocessing.async_process import handle_in_process
 from ftio.prediction.helper import dump_json
 
 CONSOLE = MyConsole()

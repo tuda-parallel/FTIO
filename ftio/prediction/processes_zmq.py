@@ -2,11 +2,9 @@
 from __future__ import annotations
 import zmq
 import subprocess
-import time
-from ftio.prediction.async_process import join_procs
+from ftio.multiprocessing.async_process import join_procs, handle_in_process
 from ftio.prediction.processes import prediction_process
 from ftio.prediction.helper import print_data, export_extrap
-from ftio.prediction.async_process import handle_in_process
 from ftio.parse.args import parse_args
 from ftio.freq.helper import MyConsole
 

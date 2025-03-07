@@ -150,9 +150,13 @@ def find_lowest_time_change(t:np.ndarray)-> float:
         if (
             t_rec > (t[i + 1] - t[i])
             and (t[i + 1] - t[i]) != 0
-            and (t[i + 1] - t[i]) >= 0.001
+            # and (t[i + 1] - t[i]) >= 0.001
         ):
             t_rec = t[i + 1] - t[i]
+
+    if t_rec <= 0.001:
+        t_rec = 0.001
+
     return t_rec
 
 

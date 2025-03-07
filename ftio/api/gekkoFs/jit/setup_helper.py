@@ -626,7 +626,7 @@ def adjust_regex(settings: JitSettings, mode: str = "stage_out") -> None:
         mode (str, optional): Mode for regex adjustment. Defaults to "stage_out".
     """
     if settings.cluster:
-        jit_print("[cyan]>> Resetting regex for {mode}[/]")
+        jit_print(f"[cyan]>> Resetting regex for {mode}[/]")
 
         if "stage" in mode:
             settings.regex_match = settings.regex_stage_out_match
