@@ -1482,15 +1482,24 @@ def load_flags_mpiexec(
         additional_arguments += (
             f"-x LIBGKFS_PROXY_PID_FILE={default['LIBGKFS_PROXY_PID_FILE']} "
         )
-    if not settings.exclude_daemon and "demon" not in exclude:
-        additional_arguments += (
-            f"-x LIBGKFS_LOG={default['LIBGKFS_LOG']} "
-            f"-x LIBGKFS_LOG_OUTPUT={default['LIBGKFS_LOG_OUTPUT']} "
-            f"-x LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']} "
-            f"-x LD_PRELOAD={default['LD_PRELOAD']} "
-        )
+    if not settings.exclude_daemon: 
+        if "demon" not in exclude:
+            if "demon_log" not in exclude:
+                additional_arguments += (
+                    f"-x LIBGKFS_LOG={default['LIBGKFS_LOG']} "
+                    f"-x LIBGKFS_LOG_OUTPUT={default['LIBGKFS_LOG_OUTPUT']} "
+                )
+            if "hostfile" not in exclude:
+                additional_arguments += (
+                f"-x LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']} "
+                )
+            if "preload" not in exclude:
+                additional_arguments += (
+                f"-x LD_PRELOAD={default['LD_PRELOAD']} "
+                )
 
     additional_arguments += get_env(settings, "mpi")
+
     return additional_arguments
 
 
@@ -1518,49 +1527,24 @@ def load_flags_srun(
         additional_arguments += (
             f"LIBGKFS_PROXY_PID_FILE={default['LIBGKFS_PROXY_PID_FILE']},"
         )
-    if not settings.exclude_daemon and "demon" not in exclude:
-        additional_arguments += (
-            f"LIBGKFS_LOG={default['LIBGKFS_LOG']},"
-            f"LIBGKFS_LOG_OUTPUT={default['LIBGKFS_LOG_OUTPUT']},"
-            f"LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']},"
-            f"LD_PRELOAD={default['LD_PRELOAD']},"
-        )
-        additional_arguments += get_env(settings, "srun")
+    if not settings.exclude_daemon: 
+        if "demon" not in exclude:
+            if "demon_log" not in exclude:
+                additional_arguments += (
+                    f"LIBGKFS_LOG={default['LIBGKFS_LOG']},"
+                    f"LIBGKFS_LOG_OUTPUT={default['LIBGKFS_LOG_OUTPUT']},"
+                )
+            if "hostfile" not in exclude:
+                additional_arguments += (
+                f"LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']},"
+                )
+            if "preload" not in exclude:
+                additional_arguments += (
+                f"LD_PRELOAD={default['LD_PRELOAD']},"
+                )
 
-    return additional_arguments
+    additional_arguments += get_env(settings, "srun")
 
-
-def load_flags(
-    settings: JitSettings, ftio_metrics: bool = False, special_flags: dict = {}
-) -> str:
-    """Load flags for a command.
-
-    Args:
-        settings (JitSettings): The JIT settings object.
-        ftio_metrics (bool, optional): Whether to include FTIO metrics. Defaults to False.
-        special_flags (dict, optional): Special flags for the command. Defaults to {}.
-
-    Returns:
-        str: Flags for the command.
-    """
-    default = load_defauts(settings, special_flags)
-    additional_arguments = ""
-    if not settings.exclude_ftio and ftio_metrics:
-        additional_arguments += (
-            f" LIBGKFS_METRICS_IP_PORT={default['LIBGKFS_METRICS_IP_PORT']} "
-            f" LIBGKFS_ENABLE_METRICS={default['LIBGKFS_ENABLE_METRICS']} "
-        )
-    if not settings.exclude_proxy:
-        additional_arguments += (
-            f" LIBGKFS_PROXY_PID_FILE={default['LIBGKFS_PROXY_PID_FILE']} "
-        )
-    if not settings.exclude_daemon:
-        additional_arguments += (
-            f" LIBGKFS_LOG={default['LIBGKFS_LOG']} "
-            f" LIBGKFS_LOG_OUTPUT={default['LIBGKFS_LOG_OUTPUT']} "
-            f" LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']} "
-            f" LD_PRELOAD={default['LD_PRELOAD']} "
-        )
     return additional_arguments
 
 

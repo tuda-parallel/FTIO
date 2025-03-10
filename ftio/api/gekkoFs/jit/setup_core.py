@@ -186,12 +186,12 @@ def start_cargo(settings: JitSettings) -> None:
                 f"{settings.cargo} "
                 f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
             )
-            call = flaged_call(settings, call, settings.app_nodes, settings.procs_cargo,exclude=["ftio","demon", "proxy"])
+            call = flaged_call(settings, call, settings.app_nodes, settings.procs_cargo,exclude=["ftio","demon_log","preload", "proxy"])
 
         else:
             # Command for non-cluster
             call = f"{settings.cargo} --listen {settings.gkfs_daemon_protocol}://127.0.0.1:62000 -b 65536"
-            call = flaged_call(settings, call, 1, settings.procs_cargo, exclude=["ftio","demon", "proxy"])
+            call = flaged_call(settings, call, 1, settings.procs_cargo, exclude=["ftio","demon_log","preload", "proxy"])
 
         jit_print("[cyan]>> Starting Cargo[/]")
 
@@ -398,7 +398,6 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             f"[cyan]>> Moving data from {settings.gkfs_mntdir} -> {settings.stage_out_path}[/]",
         )
         if settings.exclude_cargo:
-            # additional_arguments = load_flags(settings)
             # call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
             call = flaged_call(
                 settings,
@@ -618,7 +617,6 @@ def pre_call(settings: JitSettings) -> None:
         console.print(
             f"[green bold]####### Pre-application Call [/][black][{get_time()}][/]"
         )
-        # additional_arguments = load_flags(settings)
         if isinstance(settings.pre_app_call, str):
             call = settings.pre_app_call
             if any(x in call for x in ["mpiex", "mpirun"]):
@@ -658,7 +656,7 @@ def post_call(settings: JitSettings) -> None:
         console.print(
             f"[green bold]####### Post-application Call [/][black][{get_time()}][/]"
         )
-        additional_arguments = ""  # load_flags(settings)
+        additional_arguments = "" 
         if isinstance(settings.post_app_call, str):
             call = f"{additional_arguments} {settings.post_app_call}"
             execute_block_and_monitor(
