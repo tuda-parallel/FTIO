@@ -1022,7 +1022,7 @@ def get_address_cargo(settings: JitSettings) -> None:
             settings.address_cargo = ""
             settings.cargo_server = ""
     else:
-        settings.cargo_server = f"ofi+tcp://{settings.address_cargo}:62000"
+        settings.cargo_server = f"{settings.gkfs_daemon_protocol}://{settings.address_cargo}:62000"
 
     jit_print(f">> Address CARGO: {settings.address_cargo}")
     jit_print(f">> CARGO server:  {settings.cargo_server} \n")

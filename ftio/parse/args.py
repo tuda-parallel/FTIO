@@ -124,7 +124,11 @@ Full documentation:
         parser.set_defaults(stage_in_path = '/lustre/project/nhr-admire/tarraf/stage-in')
         parser.add_argument('--regex', '--regex', dest='regex', type = str, help = 'Files that match the regex expression are ignored during stage out')
         parser.set_defaults(regex = '')
-        
+        # filter arguments
+        parser.add_argument("--filter_type", type=str, default=None, choices=["lowpass", "highpass", "bandpass"], help="Type of filter to apply.")
+        parser.add_argument("--filter_cutoff", type=float, nargs='+', help="Cutoff frequency for low/high-pass filters or low and high cutoff for bandpass.")
+        parser.add_argument("--filter_order", type=int, default=4, help="Order of Butterworth filter.")
+
 
     #! IOPLOT Settings
     if 'plot' in name.lower():
