@@ -68,9 +68,9 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
 
     
     #NOTE: By making the signal alternate, the wavelet achieves better results
-    # b_sampled = b_sampled - 400000
-    method = "dft"
-    # method = "scale"
+    # b_sampled = b_sampled - np.mean(b_sampled)
+    # method = "dft"
+    method = "scale"
     args.wavelet = "mexh"
     if "scale" in method:
         scales = get_scales(args,b_sampled)

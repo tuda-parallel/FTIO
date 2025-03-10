@@ -13,6 +13,7 @@ from ftio.freq._wavelet_helpers import (
     decomposition_level,
     upsample_coefficients,
 )
+from ftio.freq.autocorrelation import find_fd_autocorrelation
 from ftio.freq.discretize import sample_data_and_prepare_plots
 from ftio.freq.helper import MyConsole
 from ftio.plot.freq_plot import convert_and_plot
@@ -114,6 +115,7 @@ def ftio_wavelet_disc(
     # analysis = "dft_on_all" 
     # analysis = "dft_on_approx_coeff" 
     analysis = "dft_x_dwt" 
+    analysis = "dwt_x_autocorrelation" 
 
     #? Option 1 ("dft_on_approx_coeff"): Execute  DFT on approx. coefficients from DWT
     # cont = input("\nContinue with the DFT? [y/n]")
@@ -148,13 +150,16 @@ def ftio_wavelet_disc(
             exit()
 
     #? Option 3: Find intersection between DWT and DFT
-    if "dft_x_dwt" in analysis:
+    elif "dft_x_dwt" in analysis:
         args.transformation = "dft"
         # Option 1: Filter using wavelet and call DFT on lowest last coefficient
         prediction, df_out, share = ftio_dft(
             args, b_sampled, t_sampled, total_bytes, ranks
         )
         display_prediction("ftio", prediction)
-        
 
+    #? Option 4: Apply autocorrelation on low
+    elif "dwt_x_autocorrelation" in analysis:
+        res = find_fd_autocorrelation(args, coefficients_upsampled[0],args.freq)
+        exit()
     return prediction, df_out, share

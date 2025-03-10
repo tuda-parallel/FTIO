@@ -129,8 +129,9 @@ def parse_options(settings: JitSettings, args: list) -> None:
     parser.add_argument("-d", "--debug", type=int, help="Debug level for additional info.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Show output of each step.")
     parser.add_argument("-y", "--skip_confirm", action="store_true", help="Automatically cancel running JIT jobs.")
-    parser.add_argument("-u", "--use-mpirun", action="store_true", help="Use mpirun instead of srun.")
-    parser.add_argument("-s", "--use-syscall", action="store_true", help="GekkoFS uses syscall instead of libc.")
+    parser.add_argument("-u", "--use_mpirun", action="store_true", help="Use mpirun instead of srun.")
+    parser.add_argument("-s", "--use_syscall", action="store_true", help="GekkoFS uses syscall instead of libc.")
+    parser.add_argument("-m", "--use_mem", action="store_true", help="GekkoFS uses nodelocal space (default) or memory (is this flag is passed).")
     
     
     parsed_args = parser.parse_args(args)
@@ -230,6 +231,8 @@ def parse_options(settings: JitSettings, args: list) -> None:
         settings.use_mpirun = True
     if parsed_args.use_syscall:
         settings.gkfs_use_syscall = True
+    if parsed_args.use_mem:
+        settings.node_local = False
 
     settings.update()
 
@@ -614,6 +617,7 @@ def relevant_files(settings: JitSettings) -> None:
     # Display the contents of the regex file
     with open(settings.regex_file, "r") as file:
         content = file.read()
+
     if settings.verbose:
         jit_print(f"[cyan]>> content of {settings.regex_file}: \n{content}[/]")
 
@@ -1449,7 +1453,7 @@ def flaged_srun_call(
         )
         call = srun_call(settings, call, nodes, procs, additional_arguments)
     else:
-        call = flaged_mpiexec_call(settings, call, procs)
+        call = flaged_mpiexec_call(settings, call, procs, exclude=exclude, special_flags=special_flags)
 
     return call
 

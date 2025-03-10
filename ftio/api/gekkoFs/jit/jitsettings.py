@@ -23,7 +23,8 @@ class JitSettings:
         self.cargo_mode = "parallel"  # "parallel" or "posix"
         self.debug_lvl = 0
         self.verbose = True
-        self.node_local = True  # execute in node local space
+        self.verbose_error = True
+        self.node_local = True  # execute in node local space or memory
         self.env_var = {}
         self.log_speed = 0.1 # how fast to read the log
         

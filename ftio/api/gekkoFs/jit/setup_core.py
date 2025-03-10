@@ -109,7 +109,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
             "daemon",
             settings.gkfs_daemon_err,
         )
-        if settings.verbose:
+        if settings.verbose_error:
             _ = monitor_log_file(settings.gkfs_daemon_err, "Error Demon")
 
         wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run)
@@ -154,6 +154,7 @@ def start_gekko_proxy(settings: JitSettings) -> None:
         # p.start()
         # if settings.verbose:
         #     _ = monitor_log_file(settings.gkfs_proxy_log,"Proxy")
+        # if settings.verbose_error:
         #     _ = monitor_log_file(settings.gkfs_proxy_err,"Error Proxy")
 
         _ = execute_background_and_log(
@@ -185,11 +186,12 @@ def start_cargo(settings: JitSettings) -> None:
                 f"{settings.cargo} "
                 f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
             )
-            call = flaged_call(settings, call, settings.app_nodes, settings.procs_cargo)
+            call = flaged_call(settings, call, settings.app_nodes, settings.procs_cargo,exclude=["ftio","demon", "proxy"])
+
         else:
             # Command for non-cluster
             call = f"{settings.cargo} --listen {settings.gkfs_daemon_protocol}://127.0.0.1:62000 -b 65536"
-            call = flaged_call(settings, call, 1, settings.procs_cargo)
+            call = flaged_call(settings, call, 1, settings.procs_cargo, exclude=["ftio","demon", "proxy"])
 
         jit_print("[cyan]>> Starting Cargo[/]")
 
@@ -197,13 +199,15 @@ def start_cargo(settings: JitSettings) -> None:
         # p_cargo.start()
         # if settings.verbose:
         #     _ = monitor_log_file(settings.cargo_log,"Cargo")
+        # if settings.verbose_error:
         #     _ = monitor_log_file(settings.cargo_err,"Error Cargo")
 
         process = execute_background_and_log(
             settings, call, settings.cargo_log, "cargo", settings.cargo_err
         )
-        if settings.verbose:
+        if settings.verbose_error:
             _ = monitor_log_file(settings.cargo_err, "Error Cargo")
+
         # wait for line to appear
         time.sleep(2)
         flag = wait_for_line(
@@ -211,6 +215,7 @@ def start_cargo(settings: JitSettings) -> None:
         )
         if not flag:
             handle_sigint(settings)
+
         time.sleep(4)
         console.print("\n")
 
@@ -284,7 +289,7 @@ def start_ftio(settings: JitSettings) -> None:
         _ = execute_background_and_log(
             settings, call, settings.ftio_log, "ftio", settings.ftio_err
         )
-        if settings.verbose:
+        if settings.verbose_error:
             _ = monitor_log_file(settings.ftio_err, "Error Ftio")
 
         # p_ftio = multiprocessing.Process(target=execute_background,args=(call, settings.ftio_log, settings.ftio_err, settings.dry_run))
@@ -561,9 +566,14 @@ def start_application(settings: JitSettings, runtime: JitTime):
     process = execute_background(
         call, settings.app_log, settings.app_err, settings.dry_run
     )
+    # monitor log
     if settings.verbose:
         _ = monitor_log_file(settings.app_log, "")
+
+    # monitor error 
+    if settings.verbose_error:
         _ = monitor_log_file(settings.app_err, f"{name} error")
+
     _, stderr = process.communicate()
 
     # get the real time
