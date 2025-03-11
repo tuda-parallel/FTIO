@@ -10,7 +10,6 @@ import time
 import sys
 import numpy as np
 
-from ftio.freq._filter import filter_signal
 from ftio.parse.extract import get_time_behavior_and_args
 from ftio.plot.freq_plot import convert_and_plot
 from ftio.freq.helper import MyConsole, merge_results
@@ -151,10 +150,6 @@ def freq_analysis(args:Namespace, data: dict) -> tuple[dict, list[list], dict]:
     bandwidth, time_b, text = data_in_time_window(
         args, bandwidth, time_b, total_bytes, ranks
     )
-
-    #! Apply filter if specified
-    if args.filter_type:
-        bandwidth  = filter_signal(args, bandwidth, time_b)
 
     #! Perform transformation
     if "dft" in args.transformation:

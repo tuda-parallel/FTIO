@@ -1,5 +1,5 @@
 """
-Functions for testing the core functionalities of the ftio package.
+Functions for filters.
 """
 
 import os

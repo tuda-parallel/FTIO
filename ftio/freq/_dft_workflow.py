@@ -9,6 +9,7 @@ from ftio.freq.discretize import sample_data_and_prepare_plots
 from ftio.freq._dft import dft, prepare_plot_dft, precision_dft
 from ftio.freq.anomaly_detection import outlier_detection
 from ftio.freq.helper import MyConsole
+from ftio.freq._filter import filter_signal
 
 
 def ftio_dft(
@@ -37,7 +38,7 @@ def ftio_dft(
             - df_out (list): A list of DataFrames for plotting.
             - share (dict): Contains shared information, including sampled bandwidth and total bytes.
     """
-    # Default values for variables
+    #! Default values for variables
     share = {}
     df_out = [[], [], [], []]
     prediction = {
@@ -52,7 +53,7 @@ def ftio_dft(
     }
     console = MyConsole(verbose=args.verbose)
 
-    #  Discretize signal: Sample the bandwidth evenly spaced in time
+    #!  Discretize signal: Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
     b_sampled, freq, [df_out[1], df_out[2]] = sample_data_and_prepare_plots(
@@ -60,7 +61,12 @@ def ftio_dft(
     )
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
-    #  Perform DFT
+
+    #! Apply filter if specified
+    if args.filter_type:
+        b_sampled  = filter_signal(args, b_sampled)
+
+    #!  Perform DFT
     tik = time.time()
     console.print(
         f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
@@ -73,7 +79,7 @@ def ftio_dft(
     conf = np.zeros(len(amp))
     # welch(bandwidth,freq)
 
-    #  Find the dominant frequency
+    #!  Find the dominant frequency
     (
         dominant_index,
         conf[1 : int(n / 2) + 1],
@@ -87,7 +93,7 @@ def ftio_dft(
     else:
         conf[int(n / 2) + 1 :] = np.flip(conf[1 : int(n / 2) + 1])
 
-    #  Assign data
+    #!  Assign data
     prediction["dominant_freq"] = freq_arr[dominant_index]
     prediction["conf"] = conf[dominant_index]
     prediction["amp"] = amp[dominant_index]
@@ -98,7 +104,7 @@ def ftio_dft(
     prediction["ranks"] = ranks
     prediction["total_bytes"] = total_bytes
 
-    #  save up to n_freq from the top candidates
+    #!  save up to n_freq from the top candidates
     if args.n_freq > 0:
         arr = amp[0 : int(np.ceil(n / 2))]
         top_candidates = np.argsort(-arr)  # from max to min
@@ -121,7 +127,6 @@ def ftio_dft(
     # precision_text = precision_dft(
     #     amp, phi, dominant_index, b_sampled, time_b[0] + np.arange(0, N) * 1/freq, freq_arr, args.engine
     # )
-
     text = Group(text, outlier_text, precision_text[:-1])
 
     if any(x in args.engine for x in ["mat", "plot"]):
