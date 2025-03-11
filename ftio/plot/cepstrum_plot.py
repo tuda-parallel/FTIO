@@ -86,8 +86,8 @@ def plot_cepstrum(
 
     power_spectrum = amp*amp
     powerlog = np.log(power_spectrum + 1e-10)
-    powerlog -= np.mean(powerlog)
-    print (len(powerlog))
+    #powerlog -= np.mean(powerlog)
+    #print (len(powerlog))
     freq_arr_qf = freq_arr * ((len(freq_arr)/20)/5)
     cepstrum = np.abs(np.fft.fft(powerlog).real)
 
