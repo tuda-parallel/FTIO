@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from ftio.freq._dft import  compute_dft_spectrum
+from ftio.freq.freq_html import create_html
 
 
 
@@ -60,85 +61,78 @@ def plot_filter_results_plotly(args, b, filtered_signal):
     - filtered_signal: np.ndarray, the filtered signal.
     """
     # Compute the DFT of the filtered signal
-    amp, _, freqs = compute_dft_spectrum(b,args.freq)
-    amp_filtered, _, _ = compute_dft_spectrum(filtered_signal,args.freq)
+    amp, _, freqs = compute_dft_spectrum(b, args.freq)
+    amp_filtered, _, _ = compute_dft_spectrum(filtered_signal, args.freq)
 
-    #compute the time:
-    t =  1 / args.freq * np.arange(0, len(b))
+    # Compute the time:
+    t = 1 / args.freq * np.arange(0, len(b))
 
-    # Create a subplot figure with 2 rows and 1 column
-    fig = make_subplots(
-        rows=2,
-        cols=1,
-        subplot_titles=("Time-Domain Signal", "Frequency Response"),
-        vertical_spacing=0.15,
-        shared_xaxes=False,
-        row_heights=[0.45, 0.55],
-    )
+    # Create list of figures
+    figs = []
 
     # Time-domain signal plot (Original vs Filtered)
-    fig.add_trace(
+    fig_time = go.Figure()
+    fig_time.add_trace(
         go.Scatter(
             x=t,
             y=b,
             mode="lines+markers",
             line={"shape": "hv"},
             name="Original Signal",
-        ),
-        row=1,
-        col=1,
+        )
     )
-    fig.add_trace(
+    fig_time.add_trace(
         go.Scatter(
             x=t,
             y=filtered_signal,
             mode="lines+markers",
             line={"shape": "hv"},
             name="Filtered Signal",
-        ),
-        row=1,
-        col=1,
+        )
     )
+    fig_time.update_layout(
+        title="Time-Domain Signal",
+        xaxis_title="Time [s]",
+        yaxis_title="Amplitude",
+        showlegend=True,
+    )
+    figs.append(fig_time)
 
     # Magnitude Response Plot
-    fig.add_trace(
+    fig_freq = go.Figure()
+    fig_freq.add_trace(
         go.Bar(
             x=freqs,
             y=amp,
             name="Original",
             marker=dict(color="green"),
-            # opacity=0.3,  
-        ),
-        row=2,
-        col=1,
+            # marker_line=dict(width=2, color='black')
+        )
     )
 
-    # Phase Response Plot
-    fig.add_trace(
+    fig_freq.add_trace(
         go.Bar(
             x=freqs,
             y=amp_filtered,
             name="Filtered",
             marker=dict(color="red"),
-            # opacity=0.3,  
-        ),
-        row=2,
-        col=1,
-    )
-
-    # Update layout for the figure
-    fig.update_layout(
-        title=f"Filtered Signal ({args.filter_type} filter)",
-        xaxis_title="Time [s]",
+            # marker_line=dict(width=0.2, color='black')
+        )
+    )    
+    fig_freq.update_layout(
+        title="Magnitude Response",
+        xaxis_title="Frequency [Hz]",
         yaxis_title="Amplitude",
-        showlegend=True,
+        
     )
+    figs.append(fig_freq)
 
-    fig.update_xaxes(title_text="Frequency [Hz]", row=2, col=1)
-    fig.update_yaxes(title_text="Amplitude", row=2, col=1)
-    fig.update_yaxes(title_text="Amplitude", row=1, col=1)
+    # Save figures
+    plot_name = "filter"
+    if "plot_name" in args:
+        plot_name += "_" + args.plot_name
 
-    fig.show()
+    create_html(figs, args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, plot_name)
 
 
 def plot_filter_results(args, b, filtered_signal):
@@ -150,9 +144,6 @@ def plot_filter_results(args, b, filtered_signal):
     - b: np.ndarray, original signal.
     - filtered_signal: np.ndarray, the filtered signal.
     """
-
-    
-    
     if "plot" in args.engine:
         # Use Plotly function
         plot_filter_results_plotly(args, b, filtered_signal)
