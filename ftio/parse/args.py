@@ -79,7 +79,7 @@ Full documentation:
         parser.set_defaults(transformation='dft')
         parser.add_argument('-e', '--engine', type = str, help = 'specifies the engine used to display the figures. Either plotly (default) or matplotlib can be used.  Plotly is used to generate interactive plots as HTML files. Set this value to no if you do not want to generate plots')
         parser.set_defaults(engine = 'plotly')
-        parser.add_argument('-o', '--outlier',   choices=["z-score" , "db", "forest", "lof"], type = str, help = 'outlier detection method: Z-score (default), DB-Scan, Isolation_forest, or LOF')
+        parser.add_argument('-o', '--outlier',   choices=["z-score" , "dbscan", "forest", "lof"], type = str, help = 'outlier detection method: Z-score (default), DB-Scan, Isolation_forest, or LOF')
         parser.set_defaults(outlier = 'Z-score')
         parser.add_argument('-le', '--level', dest='level', type = int, help ='specifies the decomposition level for the discrete wavelet transformation (default=3). If specified as auto, the maximum decomposition level is automatic calculated')
         parser.set_defaults(level = 0)
