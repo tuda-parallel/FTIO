@@ -64,7 +64,7 @@ msg:
 clean_project:
 	echo "Cleaning old installation"
 	$(PYTHON) -m pip uninstall --yes ftio-hpc || echo "no installation of ftio found"
-	@mv old_pyproject pyproject.toml && mv setup.py old_setup || true
+	# @mv old_pyproject pyproject.toml && mv setup.py old_setup || true
 
 clean: clean_project
 	rm -rf .venv

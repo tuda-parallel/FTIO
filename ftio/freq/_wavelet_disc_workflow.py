@@ -114,7 +114,7 @@ def ftio_wavelet_disc(
 
     analysis = "dft_on_all" 
     # analysis = "dft_on_approx_coeff" 
-    # analysis = "dft_x_dwt" 
+    analysis = "dft_x_dwt" 
     # analysis = "dwt_x_autocorrelation" 
 
     #? Option 1 ("dft_on_approx_coeff"): Execute  DFT on approx. coefficients from DWT
