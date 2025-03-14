@@ -36,7 +36,9 @@ def plot_tf(x, fs, time):
     step = (2.0/N * np.max(abs(Zxx[0]))) / 10
 
     for i in range(0,time_steps):
-        ax.plot(xf[:], 2.0/N * np.abs(Zxx[i][:40])+step*i, color='black', linewidth=1)
+        yf = 2.0/N * np.abs(Zxx[i][:40])
+        yf_norm = yf / np.max(yf)
+        ax.plot(xf[:], yf_norm+step*i, color='black', linewidth=1)
 
     # x-label
     freq_arr = fs * np.arange(0, N) / N
@@ -45,8 +47,8 @@ def plot_tf(x, fs, time):
     ax.set_xticks(xticks, labels=xlabels)
 
     # y-label
-    minimum = np.min(2.0/N * np.abs(Zxx[0][:40]))
-    maximum = np.min(2.0/N * np.abs(Zxx[time_steps-1][:40])+step*(time_steps-1))
+    minimum = np.min(2.0/N * np.abs(Zxx[0][:40])) / np.max(2.0/N * np.abs(Zxx[0][:40]))
+    maximum = (np.min(2.0/N * np.abs(Zxx[time_steps-1][:40]) / np.max(2.0/N * np.abs(Zxx[time_steps-1][:40]))) +step*(time_steps-1))
     yticks = np.linspace(minimum, maximum, 5, endpoint=True)
 
     t_start = time[0]
