@@ -32,6 +32,7 @@ dependencies = [
 	"pytest",
 	"fastcluster",
 	"opencv-contrib-python",
+	"tftb",
 ]
 requires-python = ">=3.8"
 authors = [{ name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de" }]
