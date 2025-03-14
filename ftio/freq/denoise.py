@@ -1,20 +1,15 @@
 """
 TODO:
 - scaling parameter mu
-- lag window length (21): time or frequency window?
+- set f_peak (highest relevant frequency), lag window too large
 - normalization of max?
-- f_p: highest relevant frequency
 """
 
 import math
-import numpy as np
-
-from tftb.processing import PseudoWignerVilleDistribution as pwvd
-from tftb.processing import smoothed_pseudo_wigner_ville
-
 import matplotlib.pyplot as plt
-
-from scipy.signal.windows import boxcar
+import numpy as np
+from scipy.signal.windows import hamming
+from tftb.processing import PseudoWignerVilleDistribution as pwvd
 
 """
 Boashash, B., & Mesbah, M. (2004).
@@ -22,44 +17,72 @@ Signal enhancement by time-frequency peak filtering.
 IEEE Transactions on signal processing, 52(4), 929-937.
 """
 
-def tfpf_wvd(x, fs, time_b):
+def tfpf_wvd(x, fs, time):
+
+    # lag window length
+    f_peak = 4
+    tau = (0.634 * fs) / (np.pi * f_peak)
+    tau = int(tau) + 1 - (tau % 2)
+
+    # TODO: mak lag window length adaptive
+    tau = 21
+
+    # endpoint extension
+    """
+    Lin, T., Zhang, Y., Yi, X., Fan, T., & Wan, L. (2018).
+    Time-frequency peak filtering for random noise attenuation
+    of magnetic resonance sounding signal.
+    Geophysical Journal International, 213(2), 727-738.
+    """
+    p = tau // 2 + 1
+    x_ext = np.pad(x, (p, p), 'constant', constant_values=(x[0], x[-1]))
 
     # scaling
-    x_scaled = scale_signal(x)
-
-    # resample
-    # 30-times oversampled
+    x_scaled = scale_signal(x_ext)
 
     # encode
-    mu = 5 # TODO: don't know, guessed
+    mu = 0.5 # TODO: don't know, guessed
 
-    z_x = np.zeros((len(x),), dtype=np.complex128)
+    z_x = np.zeros((len(x_scaled),), dtype=np.complex128)
     sum = 0.0
-    for m in range(0, len(x)):
+    for m in range(0, len(x_scaled)):
         sum += x_scaled[m]
         z_x[m] = np.exp(1j*2*np.pi*mu*sum)
 
-    # window length
-    #tau = (0.634 * fs) / (np.pi * f_peak)
+    # time sample
+    ts = np.arange(time[0], time[-1], (time[-1]-time[0])/len(x))
 
-    # lag window: 21 samples
-    ts = np.arange(0.0, len(x), 1)
+    # add endpoints
+    step = (time[-1]-time[0])/len(x)
+    ts_begin = np.arange(time[0] - p*step, time[0], step)
+    ts_end = np.arange(time[-1], time[-1] + p*step, step)
+    ts_padded = np.concatenate((ts_begin, ts, ts_end))
+
 
     # PWVD
-    twindow = boxcar(209) # random
-    fwindow = boxcar(21)
-    tfr_wvd = smoothed_pseudo_wigner_ville(x, twindow=twindow, fwindow=fwindow)
+    tfr_wvd = pwvd(z_x, timestamps=ts_padded)
+    tfr_wvd.fwindow = hamming(tau)
+    tfr_wvd.run()
+    tfr_wvd.plot(show_tf=True, kind="contour")
 
     # estimate peak
-    x_c_hat = np.max(tfr_wvd, axis=0) / mu
-    x_c_hat /= len(x) # normalisation? result too large...
+    x_c_hat = np.argmax(tfr_wvd.tfr, axis=0) / mu
+
+    # conversion: "Time–frequency peak filtering for random noise attenuation [...]"
+    #nfreqbin = len(tfr_wvd.fwindow)
+    #x_c_hat = (x_c_hat - 1) * fs/ nfreqbin
+
+    x_c_hat /= len(x_ext)*2
 
     # recover signal
-    x_hat = recover_signal(x, x_c_hat)
+    x_hat = recover_signal(x_ext, x_c_hat)
 
-    tfpf_wvd_plot(x, x_hat, time_b)
+    # endpoint removal
+    x_rem = x_hat[p:-p]
 
-    return x_hat
+    tfpf_wvd_plot(x, x_rem, time)
+
+    return x_rem
 
 def scale_signal(x):
     # [0,0.5], arb chosen in "IF estimation for multicomponent signals [..]"
@@ -99,8 +122,6 @@ def tfpf_wvd_plot(x, x_hat, time_b):
     t = np.arange(t_start, t_end, (t_end-t_start)/N, dtype=float)
 
     ax[0].plot(t, x)
-
-    ax[1].plot(t, x)
     ax[1].plot(t, x_hat)
 
     plt.show()

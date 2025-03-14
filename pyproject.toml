@@ -28,6 +28,7 @@ dependencies = [
 	"pytest",
 	"fastcluster",
 	"opencv-contrib-python",
+	"tftb",
 ]
 
 requires-python = ">=3.8"
