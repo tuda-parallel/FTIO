@@ -186,7 +186,7 @@ def start_cargo(settings: JitSettings) -> None:
                 f"{settings.cargo} "
                 f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
             )
-            call = flaged_call(settings, call, settings.app_nodes, settings.procs_cargo,exclude=["ftio","demon_log","preload", "proxy"])
+            call = flaged_call(settings, call, settings.app_nodes, settings.procs_cargo, exclude=["ftio","demon_log","preload", "proxy"])
 
         else:
             # Command for non-cluster

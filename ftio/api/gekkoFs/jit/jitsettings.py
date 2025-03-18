@@ -79,6 +79,7 @@ class JitSettings:
         self.gkfs_daemon_pid = 0
         self.gkfs_proxy_pid = 0
         self.cargo_pid = 0
+        self.app_pid = 0
 
         # parsed variables
         ###################
@@ -330,6 +331,7 @@ class JitSettings:
             self.run_dir = "."
             # workload = " workload=bert " 
             workload = " workload=bert_small " 
+            # workload = " workload=bert_small_2 " 
             # workload = " workload=unet3d_my_a100 "        
             self.app_flags = (
                 f"{workload} "

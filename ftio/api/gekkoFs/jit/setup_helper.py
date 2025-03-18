@@ -745,9 +745,27 @@ def allocate(settings: JitSettings) -> None:
 
             if nodes_arr:
                 # Get FTIO node
-                settings.ftio_node = nodes_arr[-1]
+                # its the node where the code is executed
+                try:
+                    result = subprocess.run(
+                    ["hostname"],  
+                    capture_output=True,
+                    text=True,
+                    check=True  
+                    )
+                    ftio_node = result.stdout.strip()
+                    
+                except subprocess.CalledProcessError:
+                    ftio_node = nodes_arr[-1]
+
                 # Get node for single commands
-                settings.single_node = nodes_arr[0]
+                if len(nodes_arr) > 1:
+                    single_node = nodes_arr[0] if nodes_arr[0] != ftio_node else nodes_arr[1]
+                else:
+                    single_node = nodes_arr[0]
+
+                settings.ftio_node = ftio_node
+                settings.single_node = single_node
 
                 if len(nodes_arr) > 1:
                     settings.ftio_node_command = f"--nodelist={settings.ftio_node}"
@@ -817,6 +835,9 @@ def get_pid(settings: JitSettings, name: str, pid: int) -> None:
     elif name.lower() in "ftio" or name.lower() in "predictor_jit":
         settings.ftio_pid = pid
         jit_print(f">> FTIO startup successful. PID is {pid}")
+    elif name.lower() in "app" or name.lower() in settings.app_call:
+        settings.app_pid = pid
+        jit_print(f">> {settings.app_call} startup successful. PID is {pid}")
 
 
 def handle_sigint(settings: JitSettings) -> None:
@@ -876,6 +897,13 @@ def soft_kill(settings: JitSettings) -> None:
         except:
             jit_print("[bold cyan] >> Unable to soft kill CARGO [/]")
 
+    if not settings.dry_run:
+        try:
+            shut_down(settings, "CARGO", settings.app_pid)
+            jit_print("[bold cyan] >> killed App [/]")
+        except:
+            jit_print("[bold cyan] >> Unable to soft kill App [/]")
+
     jit_print(">> Soft kill finished")
 
 
@@ -904,6 +932,8 @@ def hard_kill(settings: JitSettings) -> None:
                 settings.gkfs_daemon,
                 settings.gkfs_proxy,
                 f"{settings.ftio_bin_location}/predictor_jit",
+                settings.app_call
+                
             ]
 
             for process in processes:
@@ -1482,7 +1512,7 @@ def load_flags_mpiexec(
         additional_arguments += (
             f"-x LIBGKFS_PROXY_PID_FILE={default['LIBGKFS_PROXY_PID_FILE']} "
         )
-    if not settings.exclude_daemon: 
+    if not settings.exclude_daemon:
         if "demon" not in exclude:
             if "demon_log" not in exclude:
                 additional_arguments += (

@@ -112,10 +112,14 @@ def ftio_wavelet_disc(
         # for fig in f:
         #     fig.show()
 
+
     analysis = "dft_on_all" 
     # analysis = "dft_on_approx_coeff" 
     analysis = "dft_x_dwt" 
     # analysis = "dwt_x_autocorrelation" 
+    if len(coefficients) <= 2:
+        analysis = "dft_on_all" 
+        console.print(f"[green]Setting analysis to {analysis}")
 
     #? Option 1 ("dft_on_approx_coeff"): Execute  DFT on approx. coefficients from DWT
     # cont = input("\nContinue with the DFT? [y/n]")
