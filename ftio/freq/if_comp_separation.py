@@ -47,28 +47,26 @@ def binary_image(Zxx):
 
     return bin_im
 
-def binary_image_nprom(Zxx):
+def binary_image_nprom(Zxx, n=3):
     bin_im = np.zeros_like(Zxx, dtype="uint8")
     rows = np.shape(Zxx)[0]
 
     for i in range(0,rows):
         freqs = np.abs(Zxx[i])
         peaks = find_peaks(freqs)
-
         prom = peak_prominences(freqs, peaks[0])[0]
-        prom_sorted = np.argsort(prom)
 
         prom_filtered = []
-        if (len(peaks[0]) > 3):
-            prom_filtered.append(prom[prom_sorted[-1]])
-            prom_filtered.append(prom[prom_sorted[-2]])
-            prom_filtered.append(prom[prom_sorted[-3]])
+        if (len(peaks[0]) > n):
+            prom_sorted = np.argsort(prom)
+            for j in range (1,n+1):
+                prom_filtered.append(prom[prom_sorted[-j]])
         else:
             prom_filtered = prom
 
         if(len(prom_filtered) > 0):
             for ind in range(0,len(prom_filtered)):
-                if prom_filtered[ind] > 0.1:
+                if prom_filtered[ind] > 0.01:
                     _ind = peaks[0][ind]
                     bin_im[i][_ind] = 255
 
@@ -169,13 +167,13 @@ def component_linking(image):
         comp = time, freqs
         result.append(comp)
 
-    #filename = "cv2_image.jpg"
-    #cv2.imwrite(filename, frame)
-    #filename = "cv2_filtered.jpg"
-    #cv2.imwrite(filename, output)
+    filename = "cv2_image.jpg"
+    cv2.imwrite(filename, frame)
+    filename = "cv2_filtered.jpg"
+    cv2.imwrite(filename, output)
 
-    cv2.imshow("Image", frame)
-    cv2.imshow("Filtered Components", output)
-    cv2.waitKey(15000)
+    #cv2.imshow("Image", frame)
+    #cv2.imshow("Filtered Components", output)
+    #cv2.waitKey(15000)
 
     return result

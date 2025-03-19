@@ -16,8 +16,16 @@ from scipy.signal.windows import gaussian, boxcar
 
 from ftio.freq.concentration_measures import cm3,cm4,cm5
 
-def plot_tf(x, fs, time):
-    win_len = cm4(x)
+def plot_tf(x, fs, time, win_len=None, nfreqbins=40, step=None):
+    if not isinstance(win_len, int):
+        if win_len == "cm3":
+            win_len = cm3(x)
+        elif win_len == "cm4":
+            win_len = cm4(x)
+        elif win_len == "cm5":
+            win_len = cm5(x)
+        else:
+            win_len = cm5(x)
 
     time_steps = 100
     hop = len(x) // time_steps
@@ -29,26 +37,27 @@ def plot_tf(x, fs, time):
 
     N = win_len
     T = 1.0 / 300.0
-    xf = np.linspace(0.0, 1.0/(2.0*T), 40)
+    xf = np.linspace(0.0, 1.0/(2.0*T), nfreqbins)
 
     fig, ax = plt.subplots()
 
-    step = (2.0/N * np.max(abs(Zxx[0]))) / 10
+    if step is None:
+        step = (2.0/N * np.max(abs(Zxx[0]))) / 10
 
     for i in range(0,time_steps):
-        yf = 2.0/N * np.abs(Zxx[i][:40])
+        yf = 2.0/N * np.abs(Zxx[i][:nfreqbins])
         yf_norm = yf / np.max(yf)
         ax.plot(xf[:], yf_norm+step*i, color='black', linewidth=1)
 
     # x-label
     freq_arr = fs * np.arange(0, N) / N
-    xticks = xf[:40:10]
-    xlabels = freq_arr[:40:10]
+    xticks = xf[:nfreqbins:10]
+    xlabels = freq_arr[:nfreqbins:10]
     ax.set_xticks(xticks, labels=xlabels)
 
     # y-label
-    minimum = np.min(2.0/N * np.abs(Zxx[0][:40])) / np.max(2.0/N * np.abs(Zxx[0][:40]))
-    maximum = (np.min(2.0/N * np.abs(Zxx[time_steps-1][:40]) / np.max(2.0/N * np.abs(Zxx[time_steps-1][:40]))) +step*(time_steps-1))
+    minimum = np.min(2.0/N * np.abs(Zxx[0][:nfreqbins])) / np.max(2.0/N * np.abs(Zxx[0][:nfreqbins]))
+    maximum = (np.min(2.0/N * np.abs(Zxx[time_steps-1][:nfreqbins]) / np.max(2.0/N * np.abs(Zxx[time_steps-1][:nfreqbins]))) +step*(time_steps-1))
     yticks = np.linspace(minimum, maximum, 5, endpoint=True)
 
     t_start = time[0]
