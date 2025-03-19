@@ -19,32 +19,40 @@ from ftio.freq.if_comp_separation import (
             component_linking)
 from ftio.freq.anomaly_detection import z_score
 from ftio.freq.concentration_measures import cm3, cm4, cm5
-#from ftio.freq.denoise import tfpf_wvd
-
+from ftio.freq.denoise import tfpf_wvd
 from ftio.plot.plot_tf import plot_tf, plot_tf_contour
 
 def astft(b_sampled, freq, b_oversampled, freq_over, bandwidth, time_b, args):
-    test, fs, time = test_signal("time bins")
-    plot_tf_contour(test, fs, time)
-    #astft_mnm(test, freqs, args)
+    test, fs, time = test_signal("sinusoidal", noise=False)
+    astft_mnm(test, fs, time, args)
+    plot_tf(test, fs, time, win_len=350, step=0.1)
 
-    #astft_mnm(b_sampled, freq, time_b, args)
-    #tf_samp = tfpf_wvd(b_oversampled, freq, time_b, freq_over)
+    #tf_samp = tfpf_wvd(test, fs, time)
+    #plot_tf(tf_samp, fs, time)
+    #decomp_vmd(tf_samp, time_b)
 
 # mix & match
-def astft_mnm(signal, freq, time_b, args):
-    win_len = cm3(signal)
+def astft_mnm(signal, freq, time_b, args, filtered=None):
+    if filtered is None:
+        win_len = cm3(signal)
+    else:
+        win_len = cm3(filtered)
 
     # sigma
     sigma = int(win_len / 2.35482)
 
-    signal_tfr = ptfr(signal, win_len, sigma)
+    if filtered is None:
+        signal_tfr, f, t = ptfr(signal, freq, win_len, sigma)
+    else:
+        signal_tfr, f, t = ptfr(filtered, freq, win_len, sigma)
 
-    image = binary_image_zscore(signal_tfr, freq, args)
+    image = binary_image_nprom(signal_tfr, n=3)
+    #image = binary_image_zscore(signal_tfr, freq, args)
+
     components = component_linking(image)
 
     # simple astft
-    simple_astft(components, signal, freq, time_b, args)
+    simple_astft(components, signal, filtered, freq, time_b, args)
 
 """
 Pei, S. C., & Huang, S. G. (2012).
@@ -81,13 +89,13 @@ def oastft(x):
 
     # 3: multivariate window STFT
 
-def ptfr(x, win_len, sigma):
+def ptfr(x, fs, win_len, sigma):
     win = gaussian(win_len, sigma * win_len)
-    f, t, Zxx = stft(x, fs=1, window=win, nperseg=win_len, noverlap=(win_len-1))
+    f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=(win_len-1))
 
     Zxx = Zxx.transpose()
 
-    return Zxx
+    return Zxx, f, t
 
 """
 Abdoush, Y., Pojani, G., & Corazza, G. E. (2019).
@@ -147,11 +155,11 @@ def test_signal(type="sinusoidal", noise=False):
 
     start_1 = int(0.03 * N)
     start_2 = int(0.6 * N)
-    start_3 = int(0.8 * N)
+    start_3 = int(0.85 * N)
 
     stop_1 = int(0.52 * N)
-    stop_2 = int(0.75 * N)
-    stop_3 = int(0.97 * N)
+    stop_2 = int(0.8 * N)
+    stop_3 = int(0.978 * N)
 
     amp_1 = 0.5
     amp_2 = 1
@@ -180,8 +188,9 @@ def test_signal(type="sinusoidal", noise=False):
 
     return signal, fs, t
 
+from scipy.signal import find_peaks
 
-def simple_astft(components, signal, freq, time_b, args):
+def simple_astft(components, signal, filtered, freq, time_b, args):
     fig, ax = plt.subplots()
 
     t_start = time_b[0]
@@ -191,6 +200,10 @@ def simple_astft(components, signal, freq, time_b, args):
     t = np.arange(t_start, t_end, (t_end-t_start)/N, dtype=float)
 
     ax.plot(t, signal)
+
+    if filtered is not None:
+        ax.plot(t, filtered)
+        signal = filtered
 
     for i in components:
         start = i[0][0]
@@ -202,6 +215,7 @@ def simple_astft(components, signal, freq, time_b, args):
         n = len(yf)
         freq_arr = freq * np.arange(0, n) / n
         ind = z_score(yf, freq_arr, args)[0]
+        #ind = find_peaks(yf)[0]
 
         for i in ind:
             array = np.zeros(len(yf), dtype=np.complex128)
