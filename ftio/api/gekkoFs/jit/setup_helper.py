@@ -849,15 +849,35 @@ def handle_sigint(settings: JitSettings) -> None:
     if settings.trap_exit:
         settings.trap_exit = False
         jit_print("[bold blue]>> Keyboard interrupt detected. Exiting script.[/]")
-        info = (
-            f"{settings.app_call} with {settings.nodes} nodes ({settings.log_suffix})"
+        exit_routine(settings)
+
+
+def exit_routine(settings: JitSettings):
+    """
+    Handles the exit routine for a JIT (Just-In-Time) job.
+
+    This function performs the following steps:
+    1. Logs the job information.
+    2. Prints a message indicating the job is being killed.
+    3. Logs any failed jobs.
+    4. Performs a soft kill of the job.
+    5. Performs a hard kill of the job.
+    6. Prints an exit message.
+    7. Exits the script with a status code of 0.
+
+    Args:
+        settings (JitSettings): The settings for the JIT job, including
+                                application call, number of nodes, and log suffix.
+    """
+    info = (
+            f"{settings.app_call} with {settings.nodes} nodes {settings.log_suffix} (./{ os.path.relpath(settings.log_dir, os.getcwd())})"
         )
-        jit_print(f"[bold blue]>> Killing Job: {info}.\n Exiting script.[/]")
-        log_failed_jobs(settings, info)
-        soft_kill(settings)
-        hard_kill(settings)
-        jit_print(">> Exciting\n")
-        sys.exit(0)
+    jit_print(f"[bold blue]>> Killing Job: {info}.\n Exiting script.[/]")
+    log_failed_jobs(settings, info)
+    soft_kill(settings)
+    hard_kill(settings)
+    jit_print(">> Exciting\n")
+    sys.exit(0)
 
 
 def soft_kill(settings: JitSettings) -> None:

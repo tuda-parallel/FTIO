@@ -18,7 +18,7 @@ pip install pandas openpyxl
 To run the script, simply execute the Python file from the command line. You can optionally specify the path to the Excel file and use the interactive mode to select the relevant field for the bandwidth.
 
 ```bash
-python parse_xlsx.py --file <path_to_excel_file> [--interactive]
+python custom_parser.py --file <path_to_excel_file> [--interactive]
 ```
 
 If no file is provided, the default file `IOTraces.xlsx` will be used.
@@ -26,7 +26,7 @@ If no file is provided, the default file `IOTraces.xlsx` will be used.
 ### Example
 
 ```bash
-python parse_xlsx.py --file IOTraces.xlsx
+python custom_parser.py --file IOTraces.xlsx
 ```
 
 This will convert the data from `IOTraces.xlsx` to `output.json`.
@@ -34,7 +34,7 @@ This will convert the data from `IOTraces.xlsx` to `output.json`.
 ### Interactive Mode Example
 
 ```bash
-python parse_xlsx.py --file IOTraces.xlsx --interactive
+python custom_parser.py --file IOTraces.xlsx --interactive
 ```
 
 This will prompt you to select the column to map to the bandwidth.

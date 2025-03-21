@@ -330,9 +330,9 @@ class JitSettings:
             self.app_call = "dlio_benchmark"
             self.run_dir = "."
             # workload = " workload=bert " 
-            workload = " workload=bert_small " 
-            # workload = " workload=bert_small_2 " 
+            # workload = " workload=bert_small " 
             # workload = " workload=unet3d_my_a100 "        
+            workload = " workload=resnet50_my_a100 "        
             self.app_flags = (
                 f"{workload} "
                 f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "

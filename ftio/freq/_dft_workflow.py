@@ -56,7 +56,7 @@ def ftio_dft(
     #!  Discretize signal: Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
-    b_sampled, freq, [df_out[1], df_out[2]] = sample_data_and_prepare_plots(
+    b_sampled, args.freq, [df_out[1], df_out[2]] = sample_data_and_prepare_plots(
         args, bandwidth, time_b, ranks
     )
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
@@ -64,7 +64,7 @@ def ftio_dft(
 
     #! Apply filter if specified
     if args.filter_type:
-        b_sampled  = filter_signal(args, b_sampled)
+        b_sampled  = filter_signal(args, b_sampled,)
 
     #!  Perform DFT
     tik = time.time()
@@ -74,7 +74,7 @@ def ftio_dft(
     X = dft(b_sampled)
     n = len(X)
     amp = abs(X)
-    freq_arr = freq * np.arange(0, n) / n
+    freq_arr = args.freq * np.arange(0, n) / n
     phi = np.arctan2(X.imag, X.real)
     conf = np.zeros(len(amp))
     # welch(bandwidth,freq)
@@ -100,7 +100,7 @@ def ftio_dft(
     prediction["phi"] = phi[dominant_index]
     prediction["t_start"] = time_b[0]
     prediction["t_end"] = time_b[-1]
-    prediction["freq"] = freq
+    prediction["freq"] = args.freq
     prediction["ranks"] = ranks
     prediction["total_bytes"] = total_bytes
 
@@ -118,7 +118,7 @@ def ftio_dft(
 
     if args.autocorrelation:
         share["b_sampled"] = b_sampled
-        share["freq"] = freq
+        share["freq"] = args.freq
         share["t_start"] = prediction["t_start"]
         share["t_end"] = prediction["t_end"]
         share["total_bytes"] = prediction["total_bytes"]

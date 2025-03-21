@@ -16,6 +16,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     check,
     check_port,
     elapsed_time,
+    exit_routine,
     flaged_call,
     get_env,
     get_executable_realpath,
@@ -594,6 +595,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
     if process.returncode != 0:
         console.print(f"[red]Error executing command:{call}")
         console.print(f"[red] Error was:\n{stderr}")
+        exit_routine(settings)
     else:
         pass
 

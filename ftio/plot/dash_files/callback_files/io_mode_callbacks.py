@@ -388,4 +388,4 @@ def get_io_mode_specific_callbacks(app: DashProxy, data: DataSource) -> None:
         fig = figure_by_id_figure[id["index"]]
         if fig is None:
             return dash.no_update
-        return fig.construct_update_data(relayoutdata)
+        return fig._construct_update_data(relayoutdata)
