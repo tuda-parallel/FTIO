@@ -332,7 +332,9 @@ class JitSettings:
             # workload = " workload=bert " 
             # workload = " workload=bert_small " 
             # workload = " workload=unet3d_my_a100 "        
-            workload = " workload=resnet50_my_a100 "        
+            # workload = " workload=resnet50_my_a100 "        
+            workload = " workload=llama_my_7b_zero3 "        
+            
             self.app_flags = (
                 f"{workload} "
                 f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
