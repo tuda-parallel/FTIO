@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - 'main'  # Run tests on pull requests targeting the main branch
+  workflow_dispatch:
 
 jobs:
   build:

@@ -23,7 +23,6 @@ dependencies = [
 	"plotly",
 	"kneed",
 	"PyWavelets",
-	"trace_updater",
 	"msgpack",
 	"rich",
 	"pytest",
@@ -93,6 +92,7 @@ external-libs = [
 	"dash",
 	"dash_extensions",
 	"plotly_resampler",
+	"trace_updater",
 ]
 
 

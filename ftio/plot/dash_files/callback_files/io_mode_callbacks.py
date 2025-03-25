@@ -2,7 +2,6 @@ import sys
 import importlib.util
 import numpy as np
 import plotly.graph_objects as go
-from trace_updater import TraceUpdater
 import ftio.plot.dash_files.constants.id as id
 import ftio.plot.dash_files.constants.io_mode as io_mode
 import ftio.plot.dash_files.constants.legend_group as legend_group
@@ -16,6 +15,7 @@ else:
     import dash
     from dash import MATCH, Input, Output, State, dcc, html
     from dash_extensions.enrich import DashProxy, Serverside
+    from trace_updater import TraceUpdater
     from plotly_resampler import FigureResampler
     from plotly_resampler.aggregation import MinMaxAggregator, MinMaxOverlapAggregator, NoGapHandler
     # -------
