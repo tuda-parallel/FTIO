@@ -16,22 +16,20 @@ dependencies = [
 	"pyzmq",
 	"numba",
 	"darshan",
-	"fastdtw",
 	"scipy",
 	"pandas",
+	"orjson",
 	"jsonlines",
 	"plotly",
-	"dash",
 	"kneed",
 	"PyWavelets",
 	"trace_updater",
-	"plotly_resampler",
 	"msgpack",
 	"rich",
-	"dash_extensions",
 	"pytest",
 	"fastcluster",
 ]
+
 requires-python = ">=3.8"
 authors = [{ name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de" }]
 maintainers = [
@@ -90,7 +88,12 @@ admire_proxy_invoke_ftio = "ftio.api.metric_proxy.proxy_invoke_ftio:main"
 jit_plot = "ftio.api.gekkoFs.jit.jit_plot:main"
 
 [project.optional-dependencies]
-debug = []  # Optional, if there are no additional dependencies for debug mode
+external-libs = [
+	"fastdtw",
+	"dash",
+	"dash_extensions",
+	"plotly_resampler",
+]
 
 
 [project.gui-scripts]

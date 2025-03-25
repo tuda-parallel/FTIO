@@ -2,12 +2,10 @@ import os
 import socket
 from multiprocessing import Process
 from threading import Thread
-
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-
 from ftio.parse.metrics import Metrics
 from ftio.parse.scales import Scales
 from ftio.plot.dash_files.dash_app import IOAnalysisApp

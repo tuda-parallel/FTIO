@@ -1,42 +1,46 @@
-import dash
+import sys
+import importlib.util
 import numpy as np
 import plotly.graph_objects as go
-from dash import MATCH, Input, Output, State, dcc, html
-from dash_extensions.enrich import DashProxy, Serverside
-from plotly_resampler import FigureResampler
-from plotly_resampler.aggregation import MinMaxAggregator, MinMaxOverlapAggregator, NoGapHandler
-
-# -------
-# TODO: Check if this problem is still not fixed or feature is now implemented
-# Solves a problem for a still open issue
-# Issue: line plot ends cutoff after last visible point #257
-# https://github.com/predict-idlab/plotly-resampler/issues/257
-from plotly_resampler.aggregation.plotly_aggregator_parser import PlotlyAggregatorParser
 from trace_updater import TraceUpdater
-
 import ftio.plot.dash_files.constants.id as id
 import ftio.plot.dash_files.constants.io_mode as io_mode
 import ftio.plot.dash_files.constants.legend_group as legend_group
 from ftio.plot.dash_files.data_source import DataSource, FileData
 
 
-class patched_parser(PlotlyAggregatorParser):
-    @staticmethod
-    def get_start_end_indices(hf_trace_data, axis_type, start, end):
-        start_idx, end_idx = PlotlyAggregatorParser.get_start_end_indices(
-            hf_trace_data, axis_type, start, end
-        )
-        start_idx = min(max(0, start_idx - 1), max(0, start_idx - 2))
-        length_x = len(hf_trace_data["x"])
-        end_idx = max(min(length_x, end_idx + 1), min(length_x, end_idx + 2))
-        return start_idx, end_idx
+DASH_AVAILABLE = importlib.util.find_spec("dash") is not None
+if not DASH_AVAILABLE:
+    sys.exit("Dash module not found. Please install it using 'make full' or 'pip install dash dash-extensions plotly_resampler'.")
+else:
+    import dash
+    from dash import MATCH, Input, Output, State, dcc, html
+    from dash_extensions.enrich import DashProxy, Serverside
+    from plotly_resampler import FigureResampler
+    from plotly_resampler.aggregation import MinMaxAggregator, MinMaxOverlapAggregator, NoGapHandler
+    # -------
+    # TODO: Check if this problem is still not fixed or feature is now implemented
+    # Solves a problem for a still open issue
+    # Issue: line plot ends cutoff after last visible point #257
+    # https://github.com/predict-idlab/plotly-resampler/issues/257
+    from plotly_resampler.aggregation.plotly_aggregator_parser import PlotlyAggregatorParser
+    class patched_parser(PlotlyAggregatorParser):
+        @staticmethod
+        def get_start_end_indices(hf_trace_data, axis_type, start, end):
+            start_idx, end_idx = PlotlyAggregatorParser.get_start_end_indices(
+                hf_trace_data, axis_type, start, end
+            )
+            start_idx = min(max(0, start_idx - 1), max(0, start_idx - 2))
+            length_x = len(hf_trace_data["x"])
+            end_idx = max(min(length_x, end_idx + 1), min(length_x, end_idx + 2))
+            return start_idx, end_idx
 
 
-from plotly_resampler.figure_resampler import figure_resampler_interface
+    from plotly_resampler.figure_resampler import figure_resampler_interface
 
-figure_resampler_interface.PlotlyAggregatorParser = patched_parser
-# end of problem solving issue #257
-# -------
+    figure_resampler_interface.PlotlyAggregatorParser = patched_parser
+    # end of problem solving issue #257
+    # -------
 
 
 def _create_id_figure(data: DataSource, filename: str = ""):
