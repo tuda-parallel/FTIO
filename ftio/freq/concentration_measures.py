@@ -27,6 +27,7 @@ L = 105
 # https://de.mathworks.com/matlabcentral/answers/356692-how-to-normalize-a-fft-to-plot-in-frequency-domain
 def normalize_fft(yf):
     yf_norm = fftshift(yf/ len(yf))
+    #yf_norm = yf / np.max(yf)
     return yf_norm
 
 def cm3(x):
@@ -34,6 +35,8 @@ def cm3(x):
 
     max_win = len(x)
     p = int(len(x) * 0.005)
+    if p == 0:
+        p = 1
     L = (max_win - min_win) // p
 
     sum = np.zeros((L,), dtype=np.complex128)
@@ -71,6 +74,8 @@ def cm4(x):
 
     max_win = len(x)
     p = int(len(x) * 0.005)
+    if p == 0:
+        p = 1
     L = (max_win - min_win) // p
 
     sum = np.zeros((L,), dtype=np.complex128)
@@ -108,6 +113,8 @@ def cm5(x):
 
     max_win = len(x)
     p = int(len(x) * 0.005)
+    if p == 0:
+        p = 1
     L = (max_win - min_win) // p
 
     sum = np.zeros((L,), dtype=np.complex128)
