@@ -1,9 +1,8 @@
 import glob
-from multiprocessing import Manager
 from rich.console import Console
 import ftio.prediction.monitor as pm
 from ftio.prediction.helper import print_data, export_extrap
-from ftio.prediction.async_process import handle_in_process
+from ftio.multiprocessing.async_process import handle_in_process
 from ftio.prediction.probability_analysis import find_probability
 from ftio.prediction.helper import get_dominant
 from ftio.api.gekkoFs.ftio_gekko import run
@@ -12,6 +11,19 @@ from ftio.prediction.shared_resources import SharedResources
 
 
 def main(args: list[str] = []) -> None:
+    """
+    Main function to monitor files and launch prediction processes.
+
+    Args:
+        args (list[str], optional): List of arguments for the prediction process. Defaults to an empty list.
+
+    Initializes shared resources and monitors specified files for changes. When changes are detected,
+    it launches a prediction process with the provided arguments. The function runs indefinitely until
+    interrupted by a KeyboardInterrupt, at which point it prints and exports the collected data.
+
+    Raises:
+        KeyboardInterrupt: When the function is interrupted by the user.
+    """
 
     n_buffers = 4
     args = ["-e", "plotly", "-f", "0.01"]
@@ -57,6 +69,21 @@ def prediction_process(
     matched_files: list[str],
     n_buffers: int,
 ) -> None:
+    """
+    Executes the prediction process using the provided shared resources, arguments, and matched files.
+
+    Args:
+        shared_resources (SharedResources): An instance containing shared resources and data.
+        args (list[str]): A list of arguments to be modified and used in the prediction process.
+        matched_files (list[str]): A list of file paths that match the criteria for prediction.
+        n_buffers (int): The number of buffers expected to match the number of files.
+
+    Raises:
+        RuntimeError: If the number of buffers does not match the number of files.
+
+    Returns:
+        None
+    """
     console = Console()
     console.print(f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/]  Started")
     # Modify the arguments

@@ -97,6 +97,9 @@ make install
 # or using a specific python version,
 # which is often needed on a cluster 
 make install PYTHON=python3.12
+
+# or additionally install all optional packages
+make full PYTHON=python3.12
 ```
 
 This generates a virtual environment in the current directory, sources `.venv/bin/activate`, and installs FTIO as a module.

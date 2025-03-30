@@ -221,11 +221,11 @@ def matplot_plot_scales(
     
     # Plot the power spectrum at each scale
     for i, scale in enumerate(scales):
-        axes[i + 2].plot(t, power_spectrum[i, :], label=f"Scale {scale} (Frequency {frequencies[i]:.3f})")
+        axes[i + 2].plot(t, power_spectrum[i, :], label=f"Scale {scale:.3e} (Frequency {frequencies[i]:.3e})")
         axes[i + 2].set_xlabel("Time")
         axes[i + 2].set_ylabel("Power")
         axes[i + 2].legend()
-        axes[i + 2].set_title(f"Power at Scale {scale} (Frequency {frequencies[i]:.3f})")
+        axes[i + 2].set_title(f"Power at Scale {scale:.3e} (Frequency {frequencies[i]:.3e})")
 
     # Adjust layout to avoid overlapping
     # plt.tight_layout()
@@ -262,7 +262,7 @@ def matplotlib_plot_scales_all_in_one(
     ax.plot(t, b, label="Bandwidth over time", color="blue")
     
     for i, scale in enumerate(scales):
-        label = f"Power at Scale {scale} (freq. {frequencies[i]:.3f} -- period {1/frequencies[i] if frequencies[i] > 0 else 0:.3f})"
+        label = f"Power at Scale {scale:.3e} (freq. {frequencies[i]:.3e} -- period {1/frequencies[i] if frequencies[i] > 0 else 0:.3e})"
         ax.plot(t, power_spectrum[i, :], label=label)
     
     ax.set_title("Wavelet Power Spectrum and Time Series")
@@ -456,7 +456,7 @@ def plotly_plot_scales(
     names = ["bandwidth over time", "Wavelet Power Spectrum (All Scales)"]
     names.extend(
         [
-            f"Power at Scale {scale} (freq. {frequencies[i]:.3f} -- period {1/frequencies[i] if frequencies[i] > 0 else 0:.3f})"
+            f"Power at Scale {scale:.3e} (freq. {frequencies[i]:.3e} -- period {1/frequencies[i] if frequencies[i] > 0 else 0:.3e})"
             for i, scale in enumerate(scales)
         ]
     )
@@ -473,7 +473,7 @@ def plotly_plot_scales(
         fig = plotly_dominant_scale(
             t,
             power_spectrum[i, :],
-            f"Scale {scale} (Frequency {frequencies[i]:.3f})",
+            f"Scale {scale} (Frequency {frequencies[i]:.3e})",
             subplot=[i + 3, 1],
             fig=fig,
         )
@@ -497,7 +497,8 @@ def plotly_plot_scales_all_in_one(
     b: np.ndarray,
     power_spectrum: np.ndarray,
     frequencies: np.ndarray,
-    scales: np.ndarray
+    scales: np.ndarray,
+    peaks: np.ndarray = np.array([])
 )-> go.Figure:
     """
     Creates a Plotly figure showing the bandwidth over time and the power spectrum
@@ -521,7 +522,7 @@ def plotly_plot_scales_all_in_one(
     names = ["bandwidth over time",]
     names.extend(
         [
-            f"Power at Scale {scale} (freq. {frequencies[i]:.3f} -- period {1/frequencies[i] if frequencies[i] > 0 else 0:.3f})"
+            f"Power at Scale {scale:.3e} (freq. {frequencies[i]:.3e} -- period {1/frequencies[i] if frequencies[i] > 0 else 0:.3e})"
             for i, scale in enumerate(scales)
         ]
     )
@@ -537,7 +538,18 @@ def plotly_plot_scales_all_in_one(
                 mode="lines",
                 name=names[i+1],
             )
-        )
+            )
+        if len(peaks) > 0 :
+            fig.add_trace(
+            go.Scatter(
+                x=t[peaks[i]],
+                y=power_spectrum[i, peaks[i]],
+                mode="markers",
+                marker=dict(color="red"),
+                name=names[i+1].replace("Power","Peaks"),
+            )
+            )
+    
     fig.update_layout(
         title="Wavelet Power Spectrum and Time Series",
         xaxis_title="Time",
@@ -693,6 +705,7 @@ def plot_scales_all_in_one(
     power_spectrum: np.ndarray,
     frequencies: np.ndarray,
     scales: np.ndarray,
+    peaks: np.ndarray = np.array([]),
 ) -> plt.Figure:
     """
     Plots the wavelet scales using either Plotly or Matplotlib based on the specified engine.
@@ -709,7 +722,7 @@ def plot_scales_all_in_one(
         plt.Figure: Matplotlib or Plotly figure object.
     """
     if "plotly" in args.engine:
-        fig = plotly_plot_scales_all_in_one(t, b, power_spectrum, frequencies, scales)
+        fig = plotly_plot_scales_all_in_one(t, b, power_spectrum, frequencies, scales, peaks)
     else:
         fig = matplotlib_plot_scales_all_in_one(t, b, power_spectrum, frequencies, scales)
 

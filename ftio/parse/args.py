@@ -65,7 +65,7 @@ Full documentation:
     #! PLAY Settings
     if 'play' in name.lower():
         parser.add_argument('-f', '--freq', dest='freq', type = float, help ='specifies the sampling rate with which the continuous signal is discretized (default=10Hz). This directly affects the highest captured frequency (Nyquist). The value is specified in Hz. In case this value is set to -1, the auto mode is launched which sets the sampling frequency automatically to the smallest change in the bandwidth detected. Note that the lowest allowed frequency in the auto mode is 2000 Hz')
-        parser.add_argument('-e', '--engine',         type = str, help = 'plot engine. Either plotly (default) or matplotlib. Specifies the engine used to display the figures. Plotly is used to generate HTML files')
+        parser.add_argument('-e', '--engine', type = str, help = 'plot engine. Either plotly (default) or matplotlib. Specifies the engine used to display the figures. Plotly is used to generate HTML files')
         parser.set_defaults(engine = 'plotly')
 
     #! FTIO and Predictor Settings
@@ -73,13 +73,13 @@ Full documentation:
         parser.set_defaults(mode='write_sync')
         parser.add_argument('-f', '--freq', dest='freq', type = float, help ='specifies the sampling rate with which the continuous signal is discretized (default=10Hz). This directly affects the highest captured frequency (Nyquist). The value is specified in Hz. In case this value is set to -1, the auto mode is launched which sets the sampling frequency automatically to the smallest change in the bandwidth detected. Note that the lowest allowed frequency in the auto mode is 2000 Hz')
         parser.set_defaults(freq = 10)
-        parser.add_argument('-ts', '--ts',         type = float, help = 'modifies the start time of the examined time window')
-        parser.add_argument('-te', '--te',         type = float, help = 'modifies the end time of the examined time window')
+        parser.add_argument('-ts', '--ts', type = float, help = 'modifies the start time of the examined time window')
+        parser.add_argument('-te', '--te', type = float, help = 'modifies the end time of the examined time window')
         parser.add_argument('-tr', '--transformation', dest='transformation',  type = str, help = 'Specifies the frequency technique to use. Supported modes are: dft (default), wave_disc, and wave_cont')
         parser.set_defaults(transformation='dft')
-        parser.add_argument('-e', '--engine',         type = str, help = 'specifies the engine used to display the figures. Either plotly (default) or matplotlib can be used.  Plotly is used to generate interactive plots as HTML files. Set this value to no if you do not want to generate plots')
+        parser.add_argument('-e', '--engine', type = str, help = 'specifies the engine used to display the figures. Either plotly (default) or matplotlib can be used.  Plotly is used to generate interactive plots as HTML files. Set this value to no if you do not want to generate plots')
         parser.set_defaults(engine = 'plotly')
-        parser.add_argument('-o', '--outlier',         type = str, help = 'outlier detection method: Z-score (default), DB-Scan, Isolation_forest, or LOF')
+        parser.add_argument('-o', '--outlier',   choices=["z-score" , "dbscan", "forest", "lof"], type = str, help = 'outlier detection method: Z-score (default), DB-Scan, Isolation_forest, or LOF')
         parser.set_defaults(outlier = 'Z-score')
         parser.add_argument('-le', '--level', dest='level', type = int, help ='specifies the decomposition level for the discrete wavelet transformation (default=3). If specified as auto, the maximum decomposition level is automatic calculated')
         parser.set_defaults(level = 0)
@@ -88,8 +88,7 @@ Full documentation:
         parser.set_defaults(tol =  0.8)
         parser.add_argument('-d', '--dtw', action='store_true', help ='performs dynamic time wrapping on the top 3 frequencies (highest contribution) calculated using the DFT if set (default=False)')
         parser.set_defaults(dtw=False)
-        parser.add_argument('-re', '--reconstruction', action='store_true', help ='plots reconstruction of top 10 signals on figure')
-        parser.set_defaults(reconstruction=False)
+        parser.add_argument('-re', '--reconstruction', action='store', nargs='*', default=[], help='plots reconstruction of top 10 signals on figure')
         parser.add_argument('-np','--no-psd', dest='psd', action='store_false', help='if set, replace the power density spectrum (a*a/N) with the amplitude spectrum (a)')
         parser.set_defaults(psd=True)
         parser.add_argument('-n', '--n_freq', dest= 'n_freq',   type = float, help ='number of frequencies to extract. By default FTIO finds the dominant frequency. With this flag, up to "n_freq" can be extracted from FTIO')
@@ -104,7 +103,7 @@ Full documentation:
         parser.set_defaults(verbose =  False)
         parser.add_argument('--zmq', action='store_true', help='avoids opening the generated HTML file since zmq is used')
         parser.set_defaults(zmq=False)
-        parser.add_argument('--zmq_source',         type = str, help = 'the source of zmq: TMIO, direct, etc.')
+        parser.add_argument('--zmq_source', type = str, help = 'the source of zmq: TMIO, direct, etc.')
         parser.set_defaults(zmq_source = 'direct')
         parser.add_argument('--zmq_address', '--zmq_address', dest='zmq_address', type = str, help = 'zmq address for communication')
         parser.set_defaults(zmq_address = '*')
@@ -124,7 +123,11 @@ Full documentation:
         parser.set_defaults(stage_in_path = '/lustre/project/nhr-admire/tarraf/stage-in')
         parser.add_argument('--regex', '--regex', dest='regex', type = str, help = 'Files that match the regex expression are ignored during stage out')
         parser.set_defaults(regex = '')
-        
+        # filter arguments
+        parser.add_argument("--filter_type", type=str, default=None, choices=["lowpass", "highpass", "bandpass"], help="Type of filter to apply.")
+        parser.add_argument("--filter_cutoff", type=float, nargs='+', help="Cutoff frequency for low/high-pass filters or low and high cutoff for bandpass.")
+        parser.add_argument("--filter_order", type=int, default=4, help="Order of Butterworth filter.")
+
 
     #! IOPLOT Settings
     if 'plot' in name.lower():
@@ -132,7 +135,7 @@ Full documentation:
         parser.add_argument('-z', '--zoom',       type = float, help ='upper zoom limit on the y-axis')
         parser.add_argument('-nt', '--no-threaded', dest='threaded', action='store_false', help= 'turn multithreading off (default=on)')
         parser.set_defaults(threaded=True)
-        parser.add_argument('-e', '--engine',         type = str, help = 'plot engine to use. Either plotly (default), dash, matplotlib or no (disables plots)')
+        parser.add_argument('-e', '--engine', type = str, help = 'plot engine to use. Either plotly (default), dash, matplotlib or no (disables plots)')
         parser.set_defaults(engine = 'plotly')
         parser.add_argument('--n_shown_samples', type=int, help='only for dash: Number of shown samples per trace (default: 20_000). Caution: Too small numbers could lead to incorrect representations!')
         parser.set_defaults(n_shown_samples=20_000)

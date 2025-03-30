@@ -1,50 +1,47 @@
-""" Function for DTW calcluations
-"""
-from scipy.spatial.distance import euclidean
-from fastdtw import fastdtw
 import numpy as np
+import importlib.util
+from scipy.spatial.distance import euclidean
 from threading import Thread
 
+# Check if fastdtw is available
+FASTDTW_AVAILABLE = importlib.util.find_spec("fastdtw") is not None
+if FASTDTW_AVAILABLE:
+    from fastdtw import fastdtw
 
 
-##Fill DTW Matrix
+## Fill DTW Cost Matrix using NumPy
 def fill_dtw_cost_matrix(s1, s2):
     l_s_1, l_s_2 = len(s1), len(s2)
-    cost_matrix = np.zeros((l_s_1 + 1, l_s_2 + 1))
-    for i in range(l_s_1 + 1):
-        for j in range(l_s_2 + 1):
-            cost_matrix[i, j] = np.inf
-    cost_matrix[0, 0] = 0
+    # Initialize the cost matrix
+    cost_matrix = np.full((l_s_1 + 1, l_s_2 + 1), np.inf)
+    cost_matrix[0, 0] = 0  # Starting point
 
+    # Fill the cost matrix
     for i in range(1, l_s_1 + 1):
         for j in range(1, l_s_2 + 1):
-            cost = abs(s1[i - 1] - s2[j - 1])
-            # take last min from the window
-            prev_min = np.min(
-                [
-                    cost_matrix[i - 1, j],
-                    cost_matrix[i, j - 1],
-                    cost_matrix[i - 1, j - 1],
-                ]
+            cost = abs(s1[i - 1] - s2[j - 1])  # Euclidean distance
+            # Take the minimum of three previous entries (top, left, diagonal)
+            cost_matrix[i, j] = cost + min(
+                cost_matrix[i - 1, j],  # from top
+                cost_matrix[i, j - 1],  # from left
+                cost_matrix[i - 1, j - 1],  # diagonal
             )
-            cost_matrix[i, j] = cost + prev_min
 
-    return cost_matrix[-1, -1]
-
-
-##Call DTW function
+    return cost_matrix[-1, -1], None
 
 
+## Call DTW function
 def fdtw(s1, s2):
-    distance, path = fastdtw(s1, s2, dist=euclidean)
-    return distance, path
-
+    if FASTDTW_AVAILABLE:
+        return fastdtw(s1.reshape(-1, 1), s2.reshape(-1, 1), dist=euclidean)
+    else:
+        return fill_dtw_cost_matrix(s1, s2)
 
 
 def evaluate_dtw(discret_arr, original_discret_signal, freq):
-    dtw_k1, _ = fastdtw(discret_arr, original_discret_signal, dist=euclidean)
-    print("    '-> \033[1;32mfreq %.2f Hz\033[1;0m --> dtw: %d" % (freq, dtw_k1))
-
+    # Call the fdtw function which handles both fastdtw and fallback
+    dtw_k1, _ = fdtw(discret_arr, original_discret_signal)
+    print(f"    '-> \033[1;32mfreq {freq:.2f} Hz\033[1;0m --> dtw: {dtw_k1}")
 
 
 def threaded_dtw(
@@ -72,7 +69,7 @@ def threaded_dtw(
             ),
         )
     )
-    # t.append(Thread(target=evaluate_dtw, args=(dominant_X3,sum,df.iloc[dominant_k3]['freq'])))
+
     for thread in threads:
         thread.start()
 

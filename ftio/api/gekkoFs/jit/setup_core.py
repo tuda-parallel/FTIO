@@ -16,6 +16,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     check,
     check_port,
     elapsed_time,
+    exit_routine,
     flaged_call,
     get_env,
     get_executable_realpath,
@@ -23,7 +24,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     jit_print,
     mpiexec_call,
     relevant_files,
-    reset_relevant_files,
+    adjust_regex,
     shut_down,
 )
 from ftio.api.gekkoFs.jit.execute_and_wait import (
@@ -109,7 +110,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
             "daemon",
             settings.gkfs_daemon_err,
         )
-        if settings.verbose:
+        if settings.verbose_error:
             _ = monitor_log_file(settings.gkfs_daemon_err, "Error Demon")
 
         wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run)
@@ -154,6 +155,7 @@ def start_gekko_proxy(settings: JitSettings) -> None:
         # p.start()
         # if settings.verbose:
         #     _ = monitor_log_file(settings.gkfs_proxy_log,"Proxy")
+        # if settings.verbose_error:
         #     _ = monitor_log_file(settings.gkfs_proxy_err,"Error Proxy")
 
         _ = execute_background_and_log(
@@ -185,11 +187,12 @@ def start_cargo(settings: JitSettings) -> None:
                 f"{settings.cargo} "
                 f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
             )
-            call = flaged_call(settings, call, settings.app_nodes, settings.procs_cargo)
+            call = flaged_call(settings, call, settings.app_nodes, settings.procs_cargo, exclude=["ftio","demon_log","preload", "proxy"])
+
         else:
             # Command for non-cluster
             call = f"{settings.cargo} --listen {settings.gkfs_daemon_protocol}://127.0.0.1:62000 -b 65536"
-            call = flaged_call(settings, call, 1, settings.procs_cargo)
+            call = flaged_call(settings, call, 1, settings.procs_cargo, exclude=["ftio","demon_log","preload", "proxy"])
 
         jit_print("[cyan]>> Starting Cargo[/]")
 
@@ -197,13 +200,15 @@ def start_cargo(settings: JitSettings) -> None:
         # p_cargo.start()
         # if settings.verbose:
         #     _ = monitor_log_file(settings.cargo_log,"Cargo")
+        # if settings.verbose_error:
         #     _ = monitor_log_file(settings.cargo_err,"Error Cargo")
 
         process = execute_background_and_log(
             settings, call, settings.cargo_log, "cargo", settings.cargo_err
         )
-        if settings.verbose:
+        if settings.verbose_error:
             _ = monitor_log_file(settings.cargo_err, "Error Cargo")
+
         # wait for line to appear
         time.sleep(2)
         flag = wait_for_line(
@@ -211,6 +216,7 @@ def start_cargo(settings: JitSettings) -> None:
         )
         if not flag:
             handle_sigint(settings)
+
         time.sleep(4)
         console.print("\n")
 
@@ -284,7 +290,7 @@ def start_ftio(settings: JitSettings) -> None:
         _ = execute_background_and_log(
             settings, call, settings.ftio_log, "ftio", settings.ftio_err
         )
-        if settings.verbose:
+        if settings.verbose_error:
             _ = monitor_log_file(settings.ftio_err, "Error Ftio")
 
         # p_ftio = multiprocessing.Process(target=execute_background,args=(call, settings.ftio_log, settings.ftio_err, settings.dry_run))
@@ -393,7 +399,6 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             f"[cyan]>> Moving data from {settings.gkfs_mntdir} -> {settings.stage_out_path}[/]",
         )
         if settings.exclude_cargo:
-            # additional_arguments = load_flags(settings)
             # call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
             call = flaged_call(
                 settings,
@@ -405,7 +410,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             elapsed_time(settings, runtime, "Stage in", time.time() - start)
         else:
 
-            reset_relevant_files(settings)
+            adjust_regex(settings)
             time.sleep(2)
 
             if not settings.dry_run:
@@ -561,9 +566,14 @@ def start_application(settings: JitSettings, runtime: JitTime):
     process = execute_background(
         call, settings.app_log, settings.app_err, settings.dry_run
     )
+    # monitor log
     if settings.verbose:
         _ = monitor_log_file(settings.app_log, "")
+
+    # monitor error 
+    if settings.verbose_error:
         _ = monitor_log_file(settings.app_err, f"{name} error")
+
     _, stderr = process.communicate()
 
     # get the real time
@@ -585,6 +595,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
     if process.returncode != 0:
         console.print(f"[red]Error executing command:{call}")
         console.print(f"[red] Error was:\n{stderr}")
+        exit_routine(settings)
     else:
         pass
 
@@ -608,7 +619,6 @@ def pre_call(settings: JitSettings) -> None:
         console.print(
             f"[green bold]####### Pre-application Call [/][black][{get_time()}][/]"
         )
-        # additional_arguments = load_flags(settings)
         if isinstance(settings.pre_app_call, str):
             call = settings.pre_app_call
             if any(x in call for x in ["mpiex", "mpirun"]):
@@ -648,7 +658,7 @@ def post_call(settings: JitSettings) -> None:
         console.print(
             f"[green bold]####### Post-application Call [/][black][{get_time()}][/]"
         )
-        additional_arguments = ""  # load_flags(settings)
+        additional_arguments = "" 
         if isinstance(settings.post_app_call, str):
             call = f"{additional_arguments} {settings.post_app_call}"
             execute_block_and_monitor(

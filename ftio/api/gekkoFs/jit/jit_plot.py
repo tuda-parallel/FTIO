@@ -6,9 +6,7 @@ containing experimental data for JIT, JIT no FTIO, and Pure modes.
 import argparse
 import json
 import os
-import plotly.graph_objects as go
-import numpy as np
-from ftio.plot.helper import format_plot_and_ticks
+from ftio.api.gekkoFs.jit.jit_result import JitResult
 
 def plot_results(filenames):
     """
@@ -88,7 +86,7 @@ def plot_results(filenames):
             extract_and_plot(results,json_file_path,title)
         
 
-def extract_and_plot(results,json_file_path:str, title:str):
+def extract_and_plot(results: JitResult ,json_file_path:str, title:str):
     """
     Extract data from a JSON file and plot the results.
 
@@ -106,149 +104,8 @@ def extract_and_plot(results,json_file_path:str, title:str):
     results.plot(title)
 
 
-def add_mode(list1, list2):
-    """
-    Combine two lists by interleaving elements from the first list with
-    elements from the second list.
-
-    Args:
-        list1 (list): The first list.
-        list2 (list): The second list.
-
-    Returns:
-        list: The combined list.
-    """
-    # Create a new list to store the result
-    result = []
-    step = int(len(list1)/3)
-    
-    # Iterate over the range of the lists' lengths
-    for i in range(len(list2)):
-        # Add the current element from each list    
-        for j in range(step):
-            result.append(list1[i*step+j])
-        result.append(list2[i])
-    
-    return result
 
 
-
-class JitResult:
-    def __init__(self) -> None:
-        """
-        Initialize a JitResult object to store experimental data.
-        """
-        self.app       = []
-        self.stage_out = []
-        self.stage_in  = []
-        self.node = []
-
-    def add_experiment(self,tmp_app:list[float],tmp_stage_out:list[float],tmp_stage_in:list[float],run:str):
-        """
-        Add an experiment's data to the JitResult object.
-
-        Args:
-            tmp_app (list[float]): Application times.
-            tmp_stage_out (list[float]): Stage out times.
-            tmp_stage_in (list[float]): Stage in times.
-            run (str): Identifier for the experiment run.
-        """
-        self.app = add_mode(self.app,tmp_app)
-        self.stage_out = add_mode(self.stage_out,tmp_stage_out)
-        self.stage_in = add_mode(self.stage_in,tmp_stage_in)
-        self.node.append(run)
-
-
-    def add_dict(self, data_list:list[dict]):
-        """
-        Add data from a dictionary to the JitResult object.
-
-        Args:
-            data_list (list[dict]): List of dictionaries containing experimental data.
-        """
-        tmp_app       = [0.0,0.0,0.0]
-        tmp_stage_out = [0.0,0.0,0.0]
-        tmp_stage_in  = [0.0,0.0,0.0]
-
-        for i in data_list["data"]:
-            if i["mode"] in {"DPCF","DCF"}:
-                index = 0
-            elif i["mode"] in {"DC","DPC"}:
-                index = 1
-            else:
-                index = 2
-            tmp_app[index] = i["app"]
-            tmp_stage_out[index] = i["stage_out"]
-            tmp_stage_in[index] = i["stage_in"]
-                
-        self.add_experiment(tmp_app,tmp_stage_out,tmp_stage_in,f"# {data_list["nodes"]}")
-        
-
-    def plot(self,title=""):
-        """
-        Plot the experimental data stored in the JitResult object.
-
-        Args:
-            title (str): Title for the plot.
-        """
-        # Sample data for the stacked plot
-        categories = ['JIT', 'JIT no FTIO', 'Pure']
-        repeated_strings = [s for s in categories for _ in self.node]
-        repeated_numbers = self.node * len(categories)
-        categories = [repeated_strings, repeated_numbers]
-
-        fig = go.Figure()
-        
-
-        fig.add_bar(x=categories, y=self.app, text=self.app,  name="App")
-        fig.add_bar(x=categories, y=self.stage_out, text=self.stage_out,  name="Stage out")
-        fig.add_bar(x=categories, y=self.stage_in, text=self.stage_in,  name="Stage in")
-
-        # text 
-        # Update the layout to stack the bars
-        fig.update_traces(textposition='inside', texttemplate = "%{text:.2f}", textfont_size=14, textangle=0, textfont=dict(
-            # family="sans serif",
-            color="white"
-        ))
-        # comment out to see all text
-        fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-        # sum total
-        total = list(np.round(np.array(self.app) + np.array(self.stage_out) + np.array(self.stage_in),2))
-        # plot total
-        fig.add_trace(go.Scatter(
-            x=categories, 
-            y=total,
-            text=total,
-            mode='text',
-            textposition='top center',
-            textfont=dict(
-                size=14,
-            ),
-            showlegend=False
-        ))
-
-        
-        fig.update_layout(
-            yaxis_title="Time (s)",
-            xaxis_title=f"Experimental Runs with # Nodes",
-            showlegend=True,
-            title=title,
-            barmode="relative",
-            width=1500,
-            height=600,
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=0.9,
-                xanchor="right",
-                x=0.995
-                )
-            )
-
-        
-        format_plot_and_ticks(fig, x_minor=False)
-        # Display the plot
-        fig.show()
 
 def main():
     """

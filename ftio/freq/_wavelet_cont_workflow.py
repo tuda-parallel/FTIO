@@ -4,7 +4,7 @@ import time
 from argparse import Namespace
 import pandas as pd
 import numpy as np
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, find_peaks_cwt
 from  pywt import frequency2scale
 
 from ftio.freq._wavelet import  wavelet_cont
@@ -42,7 +42,7 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
     console = MyConsole(verbose=args.verbose)
     dominant_freq = np.nan
     t = np.array([])
-    f_c = 1
+    mw_central_frequency = 1
     
     #! Sample the bandwidth evenly spaced in time
     tik = time.time()
@@ -68,9 +68,10 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
 
     
     #NOTE: By making the signal alternate, the wavelet achieves better results
-    # b_sampled = b_sampled - 400000
-    method = "dft"
-    # method = "scale"
+    # b_sampled = b_sampled - np.mean(b_sampled)
+    # method = "dft"
+    method = "scale"
+    args.wavelet = "mexh"
     if "scale" in method:
         scales = get_scales(args,b_sampled)
     elif "dft" in method: #use dft
@@ -81,25 +82,31 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
         prediction, df_out, share = ftio_dft(args, b_sampled, t)  
         dominant_freq, _ = get_dominant_and_conf(prediction)
 
-        # args.wavelet = "cmor0.01-1.0"
-        b = 1/(dominant_freq)
-        f_c = dominant_freq#/args.freq
-        args.wavelet = f"cmor{b:f}-{f_c:f}"
-        # args.wavelet = f"cmor{args.freq/dominant_freq}-{dominant_freq}"
-        if not np.isnan(dominant_freq) and use_dominant_only:
+        # Adjust wavelet
+        mw_bandwidth = 1/(dominant_freq)
+        mw_central_frequency = dominant_freq#/args.freq
+        use_custom_cmor= False
+        if not np.isnan(dominant_freq) and use_custom_cmor:
+            args.wavelet = f"cmor{mw_bandwidth:f}-{mw_central_frequency:f}"
+            # args.wavelet = f"cmor{args.freq/dominant_freq}-{dominant_freq}"
+        else:
+            # This works better
+            args.wavelet = "mexh"
+            mw_central_frequency = 1 
+
         # Use only the dominant frequency
-            scales = frequency2scale(args.wavelet, np.array([dominant_freq]))/args.freq
-            # c = 1  # central frequency for wavelet (Mexican Hat = 1)
-            # scales = np.array([c / dominant_freq])  # Scale corresponding to the frequency
-        elif not use_dominant_only:
+        if  use_dominant_only and not np.isnan(dominant_freq) :
+            scales = frequency2scale(args.wavelet, np.array([dominant_freq]))*args.freq
         # use the top frequencies
+        elif not use_dominant_only:
             top_freqs = prediction['top_freq']['freq'] if 'freq' in prediction['top_freq'] else []
             top_freqs = np.delete(top_freqs, np.where(top_freqs == 0))
             if len(top_freqs) > 0:
-                if f_c == 1:
-                    scales = frequency2scale(args.wavelet, np.array(top_freqs))
+                if mw_central_frequency == 1:
+                    scales = frequency2scale(args.wavelet, np.array(top_freqs))*args.freq
                 else:
-                    scales = f_c/np.array(top_freqs)
+                    scales = mw_central_frequency/np.array(top_freqs)
+
                 console.print(f"Wavelet: {args.wavelet}")
                 console.print(f"Scales: {scales}")
                 console.print(f"Dominant freq: {dominant_freq}")
@@ -137,10 +144,19 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
     console.print(f"dominant_scale: {dominant_scale:.3f}, dominant_frequency: {dominant_frequency:.3f}")
 
     # Find local peaks in the power spectrum (use a sliding window approach)
-    peaks, _ = find_peaks(power_at_scale, height=0.5)  # 'distance' avoids detecting too close peaks
+    # samples per time step
+    distance = int(args.freq/dominant_frequency)
+    peaks, _ = find_peaks(power_at_scale, distance=distance)  # 'distance' avoids detecting too close peaks
+    # use cwt and find peaks
+    # peaks = find_peaks_cwt(power_at_scale, np.arange(distance,5*distance))
     if len(t) == 0:
         t = time_b[0] + np.arange(0, len(b_sampled)) * 1/args.freq
+
     peak_times = t[peaks]
+
+    # find all peaks
+    all_peaks = [find_peaks(p)[0] for p in power_spectrum]
+
 
     # plot functions
     if any(x in args.engine for x in ["mat", "plot"]):
@@ -152,6 +168,9 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_b: np.ndarray,
         fig.show()
         fig = plot_scales_all_in_one(args, t, b_sampled, power_spectrum/np.max(b_sampled), frequencies, scales)
         fig.show()
+        if "plot" in args.engine:
+            fig = plot_scales_all_in_one(args, t, b_sampled, coefficients, frequencies, scales, all_peaks)
+            fig.show()
     
     # Calculate the period (time difference between consecutive peaks)
     if len(peak_times) > 1:

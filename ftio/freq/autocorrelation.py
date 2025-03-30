@@ -1,21 +1,21 @@
+"""
+This module contains functions to find the period using autocorrelation
+and to filter outliers from the detected peaks.
+"""
+
 from __future__ import annotations
 import time
 import numpy as np
 from scipy.signal import find_peaks
 from rich.panel import Panel
-import plotly.graph_objects as go
+from argparse import Namespace
 # from rich.padding import Padding
 import ftio.freq.discretize as dis
-from ftio.plot.helper import format_plot
 from ftio.freq.helper import MyConsole
+from ftio.plot.plot_autocorrelation import plot_autocorr_results
 
 
-# PLOT_MODE = "on"
-# try:
-# except ImportError:
-#     PLOT_MODE = "empty"
 
-CONSOLE = MyConsole()
 
 def find_autocorrelation(args, data: dict, share:dict) -> dict:
     """Finds the period using autocorreleation
@@ -33,11 +33,11 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
     """
     prediction = {}
     candidates = np.array([])
-    fig = []
-    CONSOLE.set(args.verbose)
+    console = MyConsole()
+    console.set(args.verbose)
     tik = time.time()
     if args.autocorrelation:
-        CONSOLE.print("[cyan]Executing:[/] Autocorrelation\n")
+        console.print("[cyan]Executing:[/] Autocorrelation\n")
         prediction = {
         "source":"autocorrelation",
         "dominant_freq": [],
@@ -52,9 +52,7 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
         t_s = np.nan
         t_e = np.nan
         total_bytes = np.nan
-        # Ckeck if figure is on
-        if any(x in args.engine for x in ["mat","plot"]):
-            fig.append(go.Figure())
+
 
         # Take data if already avilable from previous step
         if share:
@@ -76,9 +74,9 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
                 total_bytes = np.sum(
                     bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b)
                 )
-                CONSOLE.print(f"[purple]Start time set to {args.ts:.2f}")
+                console.print(f"[purple]Start time set to {args.ts:.2f}")
             else:
-                CONSOLE.print(f"[purple]Start time: {time_b[0]:.2f}")
+                console.print(f"[purple]Start time: {time_b[0]:.2f}")
 
             if args.te:  # shorten data
                 time_b = time_b[time_b <= args.te]
@@ -87,134 +85,24 @@ def find_autocorrelation(args, data: dict, share:dict) -> dict:
                 total_bytes = np.sum(
                     bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b)
                 )
-                CONSOLE.print(f"[purple]End time set to {args.te:.2f}")
+                console.print(f"[purple]End time set to {args.te:.2f}")
             else:
-                CONSOLE.print(f"[purple]End time: {time_b[-1]:.2f}")
+                console.print(f"[purple]End time: {time_b[-1]:.2f}")
 
             # sample the bandwidth bandwidth
             b_sampled, freq = dis.sample_data(bandwidth, time_b, args.freq, args.verbose) 
 
-        # Scipy autocorrelation
-        # lags = range(int(freq*len(b_sampled)))
-        # acorr = sm.tsa.acf(b_sampled, nlags = len(lags)-1)
-        #! numpy autocorrelation
-        # # Mean
-        mean = np.mean(b_sampled)
-        # Variance
-        var = np.var(b_sampled)
-        # Normalized data
-        ndata = b_sampled - mean
-        # Caclualte autocorrelation:
-        acorr = np.correlate(ndata, ndata, "full")[len(ndata) - 1 :]
-        acorr = acorr / var / len(ndata)
-        # plot
-        if any(x in args.engine for x in ["mat","plot"]):
-            fig[-1].add_scatter(y=acorr, mode="markers+lines", name="ACF", 
-                                marker=dict(
-                                            color = acorr,
-                                            colorscale = ["rgb(0,50,150)", "rgb(150,50,150)", "rgb(255,50,0)"],
-                                            showscale = True
-                                            ))
-            fig[-1].update_layout(
-                font={"family": "Courier New, monospace", "size": 24, "color": "black"},
-                xaxis_title="Lag (Samples)",
-                yaxis_title="ACF",
-                width = 1100,
-                height = 400 #500
-                )
-            fig[-1].update_layout(coloraxis_colorbar=dict(yanchor="top", y=1, x=0, ticks="outside", ticksuffix=" bills"))
-            # fig[-1].update_layout(legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.01))
-            fig[-1].update_layout(legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99))
-            fig[-1] = format_plot(fig[-1])
-            fig[-1].show()
+        res = find_fd_autocorrelation(args, b_sampled, freq)
 
-        #! finding peak locations and calc the average time differences between them:
-        peaks, prop  = find_peaks(acorr, height=0.15)
-        candidates = np.diff(peaks) / freq
-        weights = np.diff(prop['peak_heights'])
-        # weights = []
-        # heights = prop['peak_heights']
-        # for i,_ in enumerate(heights):
-        #     if i != len(heights) - 1:
-        #         weights.append(abs(prop['peak_heights'][i+1]) +abs(prop['peak_heights'][i]))
-        # weights = np.array(weights)
-        # if len(weights) > 0:
-        #     weights = weights/np.sum(weights)
-        # print(peaks)
-        # print(heights)
-        # print(weights)
-        
-        if "mat" in args.engine or "plotly" in args.engine:
-            fig[-1].add_scatter(
-                x=peaks,
-                y=acorr[peaks],
-                marker=dict(
-                    color = "rgba(20, 220, 70, 0.9)",
-                    size=14, #12,
-                    symbol="star-triangle-up",
-                    angle=0,
-                    line=dict(width=1, color="DarkSlateGrey")
-                ),
-                mode="markers",
-                name="peaks",
-            )
-
-        # find outliers
-        text  = ""
-        outliers, text = filter_outliers(freq, candidates, weights)
-        # remove outliers
-        if len(outliers) != 0:
-            candidates = np.delete(candidates, outliers)
-            weights = np.delete(weights, outliers)
-        # calculate period
-        mean = np.average(candidates, weights=weights) if len(weights) > 0 else 0 
-        std =  np.sqrt(np.abs(np.average((candidates-mean)**2, weights=weights))) if len(weights) > 0 else 0
-        tmp = 1 / candidates if len(candidates) > 0 and any(candidates > 0) else 0
-        if isinstance(tmp,list) and len(tmp) > 0:
-            tmp = [f"{i:.4f}" for i in tmp]
-
-        text += f"Found periods are [purple]{candidates}[/]\n"
-        text += f"Matching frequencies are [purple]{tmp}[/]\n"
-        periodicity = mean if len(candidates) > 0 else np.nan
-        text += f"Average periods is [purple]{periodicity:.2f} [/]sec\n"
-        text += f"Average frequency is [purple]{1/periodicity if periodicity > 0 else np.nan:.4f} [/]Hz\n"
-
-        # calculate confidence using "Coefficient of variation": https://en.wikipedia.org/wiki/Coefficient_of_variation
-        coef_var = np.abs(std / mean ) if len(candidates) > 0 else np.nan
-        # coef_var = np.abs(np.std(candidates) / np.mean(candidates) ) if len(candidates) > 0 else np.nan
-        conf = np.abs(1 - coef_var)
-        text += f"confidence is [purple]{conf*100:.2f} [/]%\n"
-        
-        # CONSOLE.print(Padding(Panel.fit(text[:-1], style="white", border_style='purple', title="Autocorreleation", title_align='left'), (0, 4)))
-        CONSOLE.print(Panel.fit(text[:-1], style="white", border_style="purple", title="Autocorreleation", title_align="left"))
-
-        if "mat" in args.engine or "plotly" in args.engine:
-            if len(candidates) > 0:
-                val = np.delete(peaks,outliers)
-                fig[-1].add_scatter(
-                    x=val,
-                    y=acorr[val],
-                    marker=dict(
-                        color = "rgba(220, 20, 70, 0.9)",
-                        size=21, #19,
-                        symbol="circle-open-dot",
-                        angle=0,
-                        line=dict(width=2, color="DarkSlateGrey")
-                    ),
-                    mode="markers",
-                    name="relevant peaks",
-                )
-            fig[-1] = format_plot(fig[-1])
-            fig[-1].show(config = {"toImageButtonOptions": {"format": "png", "scale": 5}})
-
-        prediction["dominant_freq"] = 1/periodicity  if periodicity > 0 else np.nan
-        prediction["conf"] = conf
+        #save the results
+        prediction["dominant_freq"] = 1/res["periodicity"]  if res["periodicity"] > 0 else np.nan
+        prediction["conf"] = res["conf"]
         prediction["t_start"] = t_s
         prediction["t_end"] = t_e
         prediction["total_bytes"] = total_bytes
         prediction["freq"] = freq
         prediction["candidates"] = candidates
-        CONSOLE.print(f"\n[cyan]Autocorrelation finished:[/] {time.time() - tik:.3f} s")
+        console.print(f"\n[cyan]Autocorrelation finished:[/] {time.time() - tik:.3f} s")
         
     return prediction
 
@@ -271,12 +159,100 @@ def filter_outliers(freq: float, candidates: np.ndarray, weights: np.ndarray) ->
 
     return outliers, text
 
+
+def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float) -> dict:
+    """
+    Computes the autocorrelation of a sampled signal, detects peaks, and calculates periodicity and confidence
+    based on the detected periods.
+
+    Args:
+        args (Namespace): Command line arguments.
+        b_sampled (np.ndarray): The sampled input signal.
+        freq (float): The frequency at which the signal is sampled.
+
+    Returns:
+        dict: A dictionary containing the autocorrelation, peak locations, weights, 
+                calculated periodicity, and confidence level.
+    """
+    # Compute autocorrelation of the sampled signal
+    acorr = autocorrelation(b_sampled)
+
+    # Finding peak locations and calculating the average time differences between them
+    peaks, prop = find_peaks(acorr, height=0.15)
+    candidates = np.diff(peaks) / freq
+    weights = np.diff(prop['peak_heights'])
+
+    # Removing outliers
+    outliers, text = filter_outliers(freq, candidates, weights)
+    if outliers:
+        candidates = np.delete(candidates, outliers)
+        weights = np.delete(weights, outliers)
+        
+    # Calculating period and its statistics
+    if candidates.size > 0:
+        mean = np.average(candidates, weights=weights)
+        std = np.sqrt(np.abs(np.average((candidates - mean) ** 2, weights=weights)))
+        tmp = [f"{1/i:.4f}" for i in candidates]  # Formatting frequencies
+        periodicity = mean
+        coef_var = np.abs(std / mean)
+        conf = 1 - coef_var
+    else:
+        mean = np.nan
+        std = np.nan
+        tmp = np.nan
+        periodicity = np.nan
+        conf = np.nan
+
+    # Building output text
+    text += (
+        f"Found periods are [purple]{candidates}[/]\n"
+        f"Matching frequencies are [purple]{tmp}[/]\n"
+        f"Average period is [purple]{periodicity:.2f} [/]sec\n"
+        f"Average frequency is [purple]{1/periodicity if periodicity > 0 else np.nan:.4f} [/]Hz\n"
+        f"Confidence is [purple]{conf * 100:.2f} [/]%\n"
+    )
+    console = MyConsole()
+    console.set(args.verbose)
+    console.print(Panel.fit(text[:-1], style="white", border_style="purple", title="Autocorrelation", title_align="left"))
+
+    # plot
+    plot_autocorr_results(args, acorr, peaks, outliers, len(candidates) > 0)
+
+    return {"autocorrelation": acorr, "candidates": candidates, "peaks": peaks, "outliers": outliers, "weights": weights, "periodicity": periodicity, "conf": conf}
+
+
+def autocorrelation(arr: np.ndarray) -> np.ndarray:
+    """
+    Computes the autocorrelation of a given array.
+
+    Args:
+        arr (np.ndarray): Input array for which to compute the autocorrelation.
+
+    Returns:
+        np.ndarray: Autocorrelation values.
+    """
+    # Scipy autocorrelation
+    # lags = range(int(freq*len(arr)))
+    # acorr = sm.tsa.acf(arr, nlags = len(lags)-1)
+    #! numpy autocorrelation
+    # # Mean
+    mean = np.mean(arr)
+    # Variance
+    var = np.var(arr)
+    # Normalized data
+    ndata = arr - mean
+    # Calculate autocorrelation:
+    acorr = np.correlate(ndata, ndata, "full")[len(ndata) - 1 :]
+    acorr = acorr / var / len(ndata)
+
+    return acorr
+
+
 def print_array(array:np.ndarray) -> str:
     out = ""
     if len(array) == 0:
         out =" "
     for i in array:
         out += f" {i:.2f}"
-    
 
     return "["+out[1:]+"]"

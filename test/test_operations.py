@@ -2,15 +2,14 @@
 Functions for testing the API functionalities of the ftio package.
 """
 
-import numpy as np
-from ftio.cli.ftio_core import core
-from ftio.parse.args import parse_args
-from ftio.freq._dft import display_prediction
-from ftio.plot.freq_plot import convert_and_plot
+import os
 from ftio.parse.bandwidth import overlap
+from ftio.plot.freq_plot import convert_and_plot
+from ftio.processing.operations import quick_ftio
+from ftio.processing.post_processing import label_phases
+from ftio.cli.ftio_core import main
 
-
-def test_api():
+def test_quick_ftio():
     """Test the API functionality of ftio."""
     ranks = 10
     total_bytes = 100
@@ -63,20 +62,24 @@ def test_api():
         64.5,
     ]
     b, t = overlap(b_rank, t_rank_s, t_rank_e)
-    # command line arguments
-    argv = ["-e", "no"]  # ["-e", "mat"]
-    # set up data
-    data = {
-        "time": np.array(t),
-        "bandwidth": np.array(b),
-        "total_bytes": total_bytes,
-        "ranks": ranks,
-    }
-    # parse args
-    args = parse_args(argv, "ftio")
-    # perform prediction
-    prediction, dfs = core(data, args)
-    # plot and print info
-    convert_and_plot(args, dfs, len(data))
-    display_prediction("ftio", prediction)
+    argv =["-e", "no"]
+    _ = quick_ftio(argv, b, t, total_bytes, ranks)
     assert True
+
+
+
+def test_post_processing():
+    """Test the plotting functionality of ftio."""
+    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
+    args = ["ftio", file, "-e", "no"]
+    prediction, args = main(args)
+    _ = label_phases(prediction[-1], args)
+    assert True 
+
+
+def test_ftio_multiple_files():
+    """Test the plotting functionality of ftio."""
+    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
+    args = ["ftio", file, file, "-e", "no"]
+    _, args = main(args)
+    assert True 

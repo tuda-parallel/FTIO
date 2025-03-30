@@ -119,7 +119,7 @@ class Scales:
                     break  # no reclusive walk
 
             # Compare Several files
-            elif not self.same_path and '.json' in path[-6:]:
+            elif not self.same_path and '.json' in path[-6:] and not 'ftio' in self.prog_name.lower():
                 self.names.append(path)
                 console.print(f'[cyan]Current file:[/] {path}')
                 self.load_file(path, self.paths.index(path))

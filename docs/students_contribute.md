@@ -120,11 +120,11 @@
 
 5. **Gender-Neutral and Inclusive Language**:  
    - Ensure that all language used in the project, including commit messages, documentation, and communication, is gender-neutral and inclusive. Avoid using gendered pronouns or assumptions, and instead use terms that are respectful and inclusive of all genders. This helps create a welcoming environment for everyone involved in the project.
-
 ---
 
 ## Best Practices
 
+- **External dependencies**: Some features in the project rely on optional external dependencies (e.g., `fastdtw`, `dash`, `dash-extensions`), that are not essential, but provide optimized version or additional functionalities. If these dependencies are not available, the code should fall back and continue to function without those specific features as described [here]
 - **Stay Updated**: Regularly pull changes from `development` to avoid large merge conflicts. Also, keep the issue updated.  
 - **Communicate**: Reach out if you encounter issues or need clarification.  
 - **Test Thoroughly**: Ensure your work doesn’t break existing functionality. Do **not** rename or reformat entire documents, except if you created them from scratch. Regularly test your code with your [test case](/docs/students_contribute.md#instructions-for-adding-a-test-case).
@@ -132,6 +132,37 @@
 
 ---
 
+## Instructions for External Dependencies:
+Some features in the project rely on optional external dependencies (e.g., `fastdtw`). If these dependencies are not available, and if they are not essential, the code should fall back and continue to function without those specific features.
+
+Example of how to handle optional dependencies:
+
+```python
+import numpy as np
+import importlib.util
+from scipy.spatial.distance import euclidean
+
+# Check if fastdtw is available
+FASTDTW_AVAILABLE = importlib.util.find_spec("fastdtw") is not None
+if FASTDTW_AVAILABLE:
+    from fastdtw import fastdtw
+
+## Call DTW function
+def fdtw(s1, s2):
+    if FASTDTW_AVAILABLE:
+        return fastdtw(s1, s2, dist=euclidean)
+    else:
+        return fill_dtw_cost_matrix(s1, s2)
+
+## Fill DTW Cost Matrix using NumPy
+def fill_dtw_cost_matrix(s1, s2):
+    ...
+```
+
+> [!note]
+> External dependencies should be avoided as much as possible, as each additional dependency introduces a potential risk for the code to break. Only include dependencies that are essential for the core functionality of the project. Optional dependencies should be handled in a way that the code can continue functioning without them, using fallbacks where possible.
+
+---
 ## Instructions for Adding an Example
 
 To demonstrate how to use `FTIO` with you new feature, you should add a relevant example under the `examples` directory:
