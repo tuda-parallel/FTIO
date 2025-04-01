@@ -402,6 +402,12 @@ def new_periodicity_score(
 
     text += f"\n[blue]RPDE Score: {rpde_score:.4f}[/]\n"
     text += f"[blue]Spectral Flatness Score: {sf_score:.4f}[/]\n"
+
+    # test classifier
+    if rpde_score > 0.30 and sf_score > 0.85:
+        text += f"[green]Period likely matches signal\n"
+    else:
+        text += f"[red]Signal most likely not periodic\n"    
     return text
 
 def dominant(
