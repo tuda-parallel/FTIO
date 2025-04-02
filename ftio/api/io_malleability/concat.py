@@ -1,7 +1,6 @@
 import argparse
-import os
 
-def process_log_files(input_files, output_file):
+def process_log_files(input_files, output_file, timestamp_column):
     last_timestamp = 0
     with open(output_file, 'w') as outfile:
         for input_file in input_files:
@@ -10,13 +9,12 @@ def process_log_files(input_files, output_file):
                     # Split line by spaces and extract the relevant columns
                     columns = line.split()
                     
-                    # Extract the timestamp (2nd column) and offset it
-                    timestamp = float(columns[2])
-                    
+                    # Extract the timestamp from the specified column and offset it
+                    timestamp = float(columns[timestamp_column])
                     timestamp += last_timestamp
                     
                     # Update the timestamp in the line
-                    columns[2] = f"{timestamp:.6f}"
+                    columns[timestamp_column] = f"{timestamp:.6f}"
                     
                     # Join the columns back into a string and write to the output file
                     outfile.write(" ".join(columns) + '\n')
@@ -31,12 +29,13 @@ def main():
     # Add arguments for input files and output file
     parser.add_argument('input_files', nargs='+', help="List of input log files to process")
     parser.add_argument('output_file', help="Output file to store the processed logs")
+    parser.add_argument('-t','--timestamp-column', type=int, default=2, help="Column index (zero-based) for timestamps (default: 2)")
     
     # Parse the arguments
     args = parser.parse_args()
     
     # Process the log files
-    process_log_files(args.input_files, args.output_file)
+    process_log_files(args.input_files, args.output_file, args.timestamp_column)
     print(f"Processed log files and saved the result to {args.output_file}")
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import copy
 from argparse import Namespace
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from ftio.freq._dft import display_prediction
+from ftio.processing.print_output import display_prediction
 from ftio.freq._wavelet import wavelet_disc
 from ftio.freq._wavelet_helpers import (
     wavelet_freq_bands,
@@ -160,7 +160,7 @@ def ftio_wavelet_disc(
         prediction, df_out, share = ftio_dft(
             args, b_sampled, t_sampled, total_bytes, ranks
         )
-        display_prediction("ftio", prediction)
+        display_prediction(args, prediction)
 
     #? Option 4: Apply autocorrelation on low
     elif "dwt_x_autocorrelation" in analysis:

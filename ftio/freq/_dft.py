@@ -3,11 +3,6 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from ftio.prediction.unify_predictions import color_pred
-from ftio.prediction.helper import get_dominant_and_conf
-from ftio.freq.helper import MyConsole
-
-CONSOLE = MyConsole()
 
 
 #!################
@@ -52,7 +47,7 @@ def compute_dft_spectrum(b: np.ndarray, fs: float):
 #!################
 #! DFT flavors
 #!################
-# Wrapper
+#! Wrapper
 def dft(b: np.ndarray) -> np.ndarray:
     """
     Wrapper function to compute the DFT using numpy's FFT implementation.
@@ -66,7 +61,7 @@ def dft(b: np.ndarray) -> np.ndarray:
     return numpy_dft(b)
 
 
-# 1) Custom implementation
+#! 1) Custom implementation
 def dft_fast(b: np.ndarray) -> np.ndarray:
     """
     Custom implementation of the Discrete Fourier Transform (DFT).
@@ -86,7 +81,7 @@ def dft_fast(b: np.ndarray) -> np.ndarray:
     return X
 
 
-# 2) numpy DFT
+#! 2) numpy DFT
 def numpy_dft(b: np.ndarray) -> np.ndarray:
     """
     Compute the Discrete Fourier Transform (DFT) using numpy's FFT implementation.
@@ -100,7 +95,7 @@ def numpy_dft(b: np.ndarray) -> np.ndarray:
     return np.fft.fft(b)
 
 
-# 3) DFT with complex
+#! 3) DFT with complex
 def dft_slow(b: np.ndarray) -> np.ndarray:
     """
     Compute the Discrete Fourier Transform (DFT) using a slower, more explicit method.
@@ -242,38 +237,3 @@ def prepare_plot_dft(
     )
     return df0, df1
 
-
-def display_prediction(argv: list[str], prediction: dict | list[dict]) -> None:
-    """
-    Displays the result of the prediction from ftio.
-
-    Args:
-        argv (list[str]|str): command line arguments
-        prediction (dict|list[dict]): the result from ftio
-    """
-    if isinstance(argv, list):
-        func_name = argv[0][argv[0].rfind("/") + 1 :]
-    else:
-        func_name = argv
-
-    if isinstance(prediction, list):
-        # In case several files are examined at the same time
-        for pred in prediction:
-            display_prediction(argv, pred)
-        return
-
-    if "ftio" in func_name:
-        if prediction:
-            freq, conf = get_dominant_and_conf(prediction)
-            if not np.isnan(freq):
-                CONSOLE.info(
-                    f"[cyan underline]Prediction results:[/]\n[cyan]Frequency:[/] {freq:.3e} Hz"
-                    f"[cyan] ->[/] {np.round(1/freq,4)} s\n"
-                    f"[cyan]Confidence:[/] {color_pred(conf)}"
-                    f"{np.round(conf*100,2)}[/] %\n"
-                )
-            else:
-                CONSOLE.info(
-                    "[cyan underline]Prediction results:[/]\n"
-                    "[red]No dominant frequency found[/]\n"
-                )

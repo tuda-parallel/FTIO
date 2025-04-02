@@ -5,7 +5,7 @@ Functions for testing the API functionalities of the ftio package.
 import os
 from ftio.parse.bandwidth import overlap
 from ftio.plot.freq_plot import convert_and_plot
-from ftio.processing.operations import quick_ftio
+from ftio.processing.compact_operations import quick_ftio
 from ftio.processing.post_processing import label_phases
 from ftio.cli.ftio_core import main
 

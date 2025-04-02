@@ -37,10 +37,10 @@ Report any bugs to:
 {__repo__}/issues
 
 COPYRIGHT:
-{__copyright__} 
+{__copyright__}
 
 LICENSE:
-{__license__} 
+{__license__}
 
 Full documentation:
 {__repo__}

@@ -2,7 +2,7 @@
 import numpy as np
 from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
-from ftio.freq._dft import display_prediction
+from ftio.processing.print_output import display_prediction
 # from ftio.prediction.helper import get_dominant
 # from ftio.plot.freq_plot import convert_and_plot
 from ftio.freq.helper import MyConsole
@@ -39,7 +39,7 @@ def ftio_metric_task(metric:str, arrays:np.ndarray, argv:list, ranks:int, show:b
         # convert_and_plot(args, dfs, len(data))
         if show:
             CONSOLE.info(f"\n[green underline]Metric: {metric}[/]")
-            display_prediction("ftio", prediction)
+            display_prediction(args, prediction)
 
         return prediction
 

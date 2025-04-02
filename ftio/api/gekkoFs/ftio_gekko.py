@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
-from ftio.freq._dft import display_prediction
+from ftio.processing.print_output import display_prediction
 from ftio.plot.freq_plot import convert_and_plot
 from ftio.parse.bandwidth import overlap
 from ftio.api.gekkoFs.parse_gekko import parse
@@ -116,7 +116,7 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
 
     # 9) plot and print info
     # if args.verbose:
-    display_prediction("ftio", prediction)
+    display_prediction(args, prediction)
 
     convert_and_plot(args, dfs)
     process.join()

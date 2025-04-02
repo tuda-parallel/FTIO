@@ -3,9 +3,7 @@ Functions for filters.
 """
 
 import os
-from ftio.cli.ftio_core import main, core
-from ftio.parse.args import parse_args
-from ftio.freq._dft import display_prediction
+from ftio.cli.ftio_core import core
 
 def test_lowpass():
     """Test the core functionality of ftio with no extra options."""
@@ -27,3 +25,5 @@ def test_bandpass():
     args = ["ftio", file, "-e", "no", "--filter_type " , "bandpass", "--filter_cutoff", "0.01", "5"]
     _ = core({}, args)
     assert True
+
+    

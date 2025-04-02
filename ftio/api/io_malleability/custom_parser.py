@@ -36,8 +36,8 @@ def parse_txt(args, file_path):
     with open(file_path, 'r') as file:
         for line in file:
             parts = line.split()
-            if len(parts) >= 13:
-                data.append(parts)  # Store the full line (split into parts)
+            # if len(parts) >= 13:
+            data.append(parts)  # Store the full line (split into parts)
 
     # If interactive mode is enabled, display a preview of the data
     if args.interactive:
@@ -90,7 +90,7 @@ def parse_txt(args, file_path):
             value_io_time = int(args.io_time)
             console.print(f'[green]> Selected IO time column: {value_io_time}')
             for i in range(len(data)):
-                t_s.append(float(data[i][value_io_time]))  # Append time data
+                io_time.append(float(data[i][value_io_time]))  # Append time data
 
     else:
         # If not interactive, just load the data based on fixed indices
@@ -194,6 +194,11 @@ def main(args=parse_args()):
         console.print('[green]> Calculating overlap metrics[/]')
         io_time = [io_time[i] for i in valid_indices]
         t_e = np.array(t_s) + np.array(io_time)
+        #  sort:
+        # sorted_indices = np.argsort(t_s)
+        # b = b[sorted_indices]
+        # t_s = t_s[sorted_indices]
+        # t_e = t_e[sorted_indices]
         b, t = overlap(b,t_s, t_e)
     else:
         t = t_s

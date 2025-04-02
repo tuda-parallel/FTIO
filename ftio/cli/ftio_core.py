@@ -14,7 +14,7 @@ from ftio.parse.extract import get_time_behavior_and_args
 from ftio.plot.freq_plot import convert_and_plot
 from ftio.freq.helper import MyConsole, merge_results
 from ftio.freq.autocorrelation import find_autocorrelation
-from ftio.freq._dft import  display_prediction
+from ftio.processing.print_output import display_prediction
 from ftio.prediction.unify_predictions import merge_predictions
 from ftio.freq.time_window import data_in_time_window
 from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
@@ -61,7 +61,7 @@ def main(cmd_input: list[str], msgs = None) ->tuple[list[dict], Namespace]:  # -
         merge_results(prediction_out, dfs_out, prediction, dfs)
 
     # show merge results
-    display_prediction(cmd_input, prediction_out)
+    display_prediction(args, prediction_out)
     convert_and_plot(args, dfs_out, len(data))
     console.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
 

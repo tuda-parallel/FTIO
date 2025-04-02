@@ -5,7 +5,7 @@ Functions for testing the core functionalities of the ftio package.
 import os
 from ftio.cli.ftio_core import main, core
 from ftio.parse.args import parse_args
-from ftio.freq._dft import display_prediction
+from ftio.processing.print_output import display_prediction
 
 def test_ftio_core_no_input():
     """Test the core functionality of ftio with no input and no extra options."""
@@ -74,5 +74,5 @@ def test_ftio_display_prediction():
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no"]
     prediction, args = main(args)
-    display_prediction("ftio", prediction)
+    display_prediction(args, prediction)
     assert True
