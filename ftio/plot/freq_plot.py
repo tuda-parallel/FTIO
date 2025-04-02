@@ -931,9 +931,6 @@ def convert_and_plot(args:Namespace, dfs: list, n:int = 1 ) -> None:
     if args.n_freq:
         if args.reconstruction and args.n_freq not in args.reconstruction:
             args.reconstruction.append(int(args.n_freq))
-        else:
-            args.reconstruction = [int(args.n_freq)]
-    
     
     freq_plot.set(
         {
