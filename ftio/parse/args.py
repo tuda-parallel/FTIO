@@ -33,6 +33,9 @@ def parse_args(argv:list, name='') -> argparse.Namespace:
 Author: 
 Ahmad H. Tarraf
 
+Contributors:
+{__repo__}/tree/main/docs/contributors.md
+
 Report any bugs to:
 {__repo__}/issues
 
