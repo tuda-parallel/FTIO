@@ -1,7 +1,7 @@
 import json
 import os
 from rich.console import Console
-from rich.panel import Panel
+from rich.table import Table
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 
 
@@ -56,21 +56,34 @@ class JitTime:
     def print_time(self):
         console = Console()
         text = (
-            f"App time      : {self._app}s\n"
-            f"Stage out time: {self._stage_out}s\n"
-            f"Stage in time : {self._stage_in}s\n"
+            f"App time      : {self._app:.6f}s\n"
+            f"Stage out time: {self._stage_out:.6f}s\n"
+            f"Stage in time : {self._stage_in:.6f}s\n"
             "--------------------------------\n"
-            f"Total time : {self._app + self._stage_out + self._stage_in}s\n"
+            f"Total time : {self._app + self._stage_out + self._stage_in:.6f}s\n"
         )
-        console.print(
-            Panel.fit(
-                "[cyan]" + text,
-                title="Total Time",
-                style="white",
-                border_style="white",
-                title_align="left",
-            )
-        )
+        
+# This block of code is creating a table using the `rich` library in Python to display the time data
+# in a structured format. Here's a breakdown of what each part does:
+# This block of code is creating a table using the `rich` library in Python to display the time data
+# related to different stages. Here's a breakdown of what each part does:
+        # Create a Table object
+        table = Table(show_header=True, header_style="bold magenta")
+
+        # Add columns to the table
+        table.add_column("Task", justify="left")
+        table.add_column("Time (s)", justify="left")
+
+        # Add rows with the time data
+        table.add_row("App", f"{self._app:.8f}")
+        table.add_row("Stage out", f"{self.stage_out:.8f}")
+        table.add_row("Stage in",f"{self.stage_in:.8f}")
+        table.add_row("-" * 10, "")
+        table.add_row("Total", f"{self._app + self._stage_out + self._stage_in:.8f}",style="bold green")
+
+        # Print the table to the console
+        console.print(table)
+        
         return text
 
     def to_dict(self):

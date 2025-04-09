@@ -40,9 +40,11 @@ class JitResult:
         tmp_stage_in  = [0.0,0.0,0.0]
 
         for i in data_list["data"]: # jit
-            if i["mode"] in {"DPCF","DCF"}:
+            # if i["mode"] in {"DPCF","DCF"}:
+            if "F" in i["mode"] :
                 index = 0
-            elif i["mode"] in {"DC","DPC"}: # lustre + Gekko
+            # elif i["mode"] in {"DC","DPC"}: # lustre + Gekko
+            elif "D" in i["mode"] : # lustre + Gekko
                 index = 1
             else: # Lustre
                 index = 2
@@ -60,7 +62,7 @@ class JitResult:
             title (str): Title for the plot.
         """
         # Sample data for the stacked plot
-        categories = ['JIT', 'Lustre & Gekko', 'Lustre']
+        categories = ['GLASS', 'Lustre & Gekko', 'Lustre']
         repeated_strings = [s for s in categories for _ in self.node]
         repeated_numbers = self.node * len(categories)
         categories = [repeated_strings, repeated_numbers]
@@ -120,7 +122,7 @@ class JitResult:
         )
 
         
-        format_plot_and_ticks(fig, x_minor=False)
+        format_plot_and_ticks(fig, x_minor=False,font_size=20)
         # Display the plot
         fig.show()
 

@@ -11,6 +11,7 @@ import time
 import subprocess
 from rich.console import Console
 
+from ftio.api.gekkoFs.data_control import DataControl
 from ftio.api.gekkoFs.jit.setup_check import check_setup
 from ftio.api.gekkoFs.jit.setup_helper import (
     check,
@@ -42,6 +43,7 @@ from ftio.api.gekkoFs.jit.execute_and_wait import (
 from ftio.api.gekkoFs.jit.setup_init import init_gekko
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.jittime import JitTime
+from ftio.api.gekkoFs.data_control import DataControl
 
 console = Console()
 
@@ -89,8 +91,12 @@ def start_gekko_daemon(settings: JitSettings) -> None:
                 # Demon call with proxy
                 call += " -p ofi+verbs -L ib0"
         else:  # no cluster mode
+            if settings.debug_lvl > 0:
+                debug_flag = "GKFS_DAEMON_LOG_LEVEL=trace"
+            else:
+                debug_flag = "GKFS_DAEMON_LOG_LEVEL=err"
             call = (
-                f"GKFS_DAEMON_LOG_LEVEL=info GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+                f"{debug_flag} LIBGKFS_LOG=all  GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
                 f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l lo -P {settings.gkfs_daemon_protocol}"
             )
             if not settings.exclude_proxy:
@@ -179,19 +185,21 @@ def start_cargo(settings: JitSettings) -> None:
         console.print(
             f"[bold yellow]####### Skipping Cargo [/][black][{get_time()}][/]"
         )
+        # if not settings.exclude_all:
+        #     data_control = DataControl(settings) #TODO move to JIT.py
     else:
         console.print(f"[bold green]####### Starting Cargo [/][black][{get_time()}][/]")
 
         if settings.cluster:
             call = (
                 f"{settings.cargo} "
-                f"--listen {settings.gkfs_daemon_protocol}://ib0:62000 -b 65536"
+                f"--listen {settings.gkfs_daemon_protocol}://ib0:{settings.port_cargo} -b 65536"
             )
             call = flaged_call(settings, call, settings.app_nodes, settings.procs_cargo, exclude=["ftio","demon_log","preload", "proxy"])
 
         else:
             # Command for non-cluster
-            call = f"{settings.cargo} --listen {settings.gkfs_daemon_protocol}://127.0.0.1:62000 -b 65536"
+            call = f"{settings.cargo} --listen {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} -b 65536"
             call = flaged_call(settings, call, 1, settings.procs_cargo, exclude=["ftio","demon_log","preload", "proxy"])
 
         jit_print("[cyan]>> Starting Cargo[/]")
@@ -242,13 +250,13 @@ def start_ftio(settings: JitSettings) -> None:
                 f"srun --jobid={settings.job_id} {settings.single_node_command} "
                 f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
                 f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/cargo_ftio "
-                f"--server {settings.cargo_server} --run"
+                f"--server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --run"
             )
             call_1 = (
                 f"srun --jobid={settings.job_id} {settings.single_node_command} "
                 f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
                 f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/ccp "
-                f"--server {settings.cargo_server} --input / --output {settings.stage_out_path} "
+                f"--server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --input / --output {settings.stage_out_path} "
                 f"--if gekkofs --of {settings.cargo_mode}"
             )
 
@@ -264,17 +272,17 @@ def start_ftio(settings: JitSettings) -> None:
                 f"[cyan]>> FTIO started on node {settings.ftio_node}, remaining nodes for the application: {settings.app_nodes} each with {settings.procs_ftio} processes [/]"
             )
             jit_print(
-                f"[cyan]>> FTIO is listening node is {settings.address_ftio}:{settings.port} [/]"
+                f"[cyan]>> FTIO is listening node is {settings.address_ftio}:{settings.port_ftio} [/]"
             )
             call = (
                 f"srun --jobid={settings.job_id} {settings.ftio_node_command} "
                 f"--disable-status -N 1 --ntasks=1 --cpus-per-task={settings.procs_ftio} "
                 f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-                f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} {settings.ftio_args} "
+                f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port_ftio} {settings.ftio_args} "
             )
         else:
             check_port(settings)
-            call = f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port} {settings.ftio_args} "
+            call = f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port_ftio} {settings.ftio_args} "
 
         if settings.exclude_cargo:
             call += f"--stage_out_path {settings.stage_out_path} --stage_in_path {settings.stage_in_path} "
@@ -283,7 +291,7 @@ def start_ftio(settings: JitSettings) -> None:
         else:
             call += (
                 f"--cargo --cargo_bin {settings.cargo_bin} "
-                f"--cargo_server {settings.cargo_server} --stage_out_path {settings.stage_out_path} "
+                f"--cargo_server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --stage_out_path {settings.stage_out_path} "
             )
         jit_print("[cyan]>> Starting FTIO[/]")
 
@@ -359,12 +367,12 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
             if settings.cluster:
                 call = flaged_call(
                     settings,
-                    f"{settings.cargo_bin}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}",
+                    f"{settings.cargo_bin}/ccp --server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}",
                     exclude=["ftio"],
                 )
                 # call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
             else:
-                call = f"mpiexec -x LIBGKFS_ENABLE_METRICS=off -np 1 --oversubscribe {settings.cargo_bin}/ccp --server {settings.cargo_server} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
+                call = f"mpiexec -x LIBGKFS_ENABLE_METRICS=off -np 1 --oversubscribe {settings.cargo_bin}/ccp --server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --output / --input {settings.stage_in_path} --of gekkofs --if {settings.cargo_mode}"
 
             start = time.time()
 
@@ -407,7 +415,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             )
             start = time.time()
             _ = execute_block(call, dry_run=settings.dry_run)
-            elapsed_time(settings, runtime, "Stage in", time.time() - start)
+            elapsed_time(settings, runtime, "Stage out", time.time() - start)
         else:
 
             adjust_regex(settings)
@@ -431,12 +439,12 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
                     f"srun --jobid={settings.job_id} {settings.single_node_command} "
                     f"--disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
                     f"--overcommit --overlap --oversubscribe --mem=0 {settings.cargo_bin}/cargo_ftio "
-                    f"--server {settings.cargo_server} --run"
+                    f"--server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --run"
                 )
             else:
                 call = (
                     f"mpiexec -np 1 --oversubscribe {settings.cargo_bin}/cargo_ftio "
-                    f"--server {settings.cargo_server} --run"
+                    f"--server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --run"
                 )
 
             # Measure and print elapsed time
@@ -484,7 +492,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
         additional_arguments = ""
         if settings.use_mpirun:
             if not settings.exclude_ftio:
-                additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
+                additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} -x LIBGKFS_ENABLE_METRICS=on "
             if not settings.exclude_proxy:
                 additional_arguments += (
                     f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
@@ -508,14 +516,15 @@ def start_application(settings: JitSettings, runtime: JitTime):
             )
         else:
             if not settings.exclude_ftio:
-                additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port},"
+                additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},"
             if not settings.exclude_proxy:
                 additional_arguments += (
                     f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
                 )
             if not settings.exclude_daemon:
                 additional_arguments += (
-                    f"LIBGKFS_LOG=info,warnings,errors,"
+                    #f"LIBGKFS_LOG=info,warnings,errors,syscalls"
+                    f"LIBGKFS_LOG=all"
                     f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
                     f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
                     f"LD_PRELOAD={settings.gkfs_intercept},"
@@ -551,7 +560,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f" time mpiexec -np {settings.procs_app} --oversubscribe "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LIBGKFS_LOG=none -x LIBGKFS_ENABLE_METRICS=on "
-                f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} "
+                f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} "
                 f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} {settings.app_call} {settings.app_flags}"
             )

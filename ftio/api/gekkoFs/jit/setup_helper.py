@@ -1,6 +1,6 @@
 """
 This module contains helper functions for setting up and managing the JIT environment.
-It includes functions for checking ports, parsing options, allocating resources, 
+It includes functions for checking ports, parsing options, allocating resources,
 handling signals, and managing various components like FTIO, GekkoFS, and Cargo.
 """
 
@@ -18,15 +18,17 @@ from ftio.api.gekkoFs.jit.jittime import JitTime
 console = Console()
 
 
-def is_port_in_use(port_number: int) -> bool:
-    """Check if a given port is in use.
+def is_port_in_use(port_number: int | str) -> bool:
+    """
+    Check if a given port is in use.
 
     Args:
-        port_number (int): The port number to check.
+        port_number (int | str): The port number to check.
 
     Returns:
         bool: True if the port is in use, False otherwise.
     """
+    out = False
     try:
         # Run the netstat command and search for the port number
         netstat_output = subprocess.check_output(
@@ -39,29 +41,31 @@ def is_port_in_use(port_number: int) -> bool:
             jit_print(
                 f"[bold red]>> Error: Port {port_number} is already in use...[/bold red]"
             )
-            return True  # Port is in use
+            out =  True  # Port is in use
     except subprocess.CalledProcessError:
         # grep returns a non-zero exit status if it finds no matches
         jit_print(f"[bold blue]>> Port {port_number} is available.[/bold blue]")
-        return False  # Port is free
+        out = False  # Port is free
 
+    return out 
 
 def check_port(settings: JitSettings) -> None:
-    """Check if a port is available and terminate any existing process using it.
+    """
+    Check if a port is available and terminate any existing process using it.
 
     Args:
         settings (JitSettings): The JIT settings object.
     """
-    if is_port_in_use(settings.port):
+    if is_port_in_use(settings.port_ftio):
         jit_print(
-            f"[bold red]>> Error: Port {settings.port} is already in use on {settings.address_ftio}. Terminating existing process...[/]"
+            f"[bold red]>> Error: Port {settings.port_ftio} is already in use on {settings.address_ftio}. Terminating existing process...[/]"
         )
 
-        # Identify the process ID using the settings.port
+        # Identify the process ID using the settings.port_ftio
         try:
             process_output = (
                 subprocess.check_output(
-                    f"netstat -nlp | grep :{settings.port} ", shell=True
+                    f"netstat -nlp | grep :{settings.port_ftio} ", shell=True
                 )
                 .decode()
                 .strip()
@@ -74,12 +78,11 @@ def check_port(settings: JitSettings) -> None:
                 )
                 os.kill(int(process_id), 9)
                 jit_print(
-                    f"[bold green]>> Using port {settings.port} on {settings.address_ftio}.[/]"
+                    f"[bold green]>> Using port {settings.port_ftio} on {settings.address_ftio}.[/]"
                 )
-                return 0
             else:
                 jit_print(
-                    f">>[bold red]>> Failed to identify process ID for PORT {settings.port}.[/]"
+                    f">>[bold red]>> Failed to identify process ID for PORT {settings.port_ftio}.[/]"
                 )
                 exit(1)
         except subprocess.CalledProcessError as e:
@@ -87,58 +90,135 @@ def check_port(settings: JitSettings) -> None:
             exit(1)
     else:
         jit_print(
-            f"[bold green]>> Using port {settings.port} on {settings.address_ftio}.[/]"
+            f"[bold green]>> Using port {settings.port_ftio} on {settings.address_ftio}.[/]"
         )
 
 
-
-def parse_options(settings: JitSettings, args: list) -> None:
-    """Parse command-line options and update the JIT settings.
+def parse_options(settings: JitSettings, args: list[str]) -> None:
+    """
+    Parse command-line options and update the JIT settings.
 
     Args:
         settings (JitSettings): The JIT settings object.
-        args (list): List of command-line arguments.
+        args (list[str]): List of command-line arguments.
     """
     parser = argparse.ArgumentParser(description="JIT Setup Script")
 
     # Define command-line arguments with descriptions
     parser.add_argument(
-        "-a", "--app", type=str, help="App to execute. Supported: dlio, lammps, wacom, nek5000, ior, haccio."
+        "-a",
+        "--app",
+        type=str,
+        help="App to execute. Supported: dlio, lammps, wacom, nek5000, ior, haccio, or s3d.",
+        default=""
     )
-    parser.add_argument("-n", "--nodes", type=int, help="Number of nodes to run the setup.")
-    parser.add_argument("-t", "--max-time", type=int, help="Max execution time in minutes.")
-    parser.add_argument("-j", "--job-id", type=int, help="Use existing job ID instead of allocating new resources.")
-    parser.add_argument("-l", "--log-name", type=str, help="Directory name for storing logs.")
-    parser.add_argument("-i", "--install_location", type=str, help="Install everything in the given directory.")
-    parser.add_argument("-c", "--total_procs", type=int, help="Default number of procs if --procs_list is omitted.")
-    parser.add_argument("-o", "--omp_threads", type=int, help="Number of OpenMP threads used.")
     parser.add_argument(
-        "-p", "--procs_list", type=str, 
-        help="Comma-separated list specifying procs per node/cpu for app, daemon, proxy, cargo, and ftio."
+        "--app-flags",
+        type=str,
+        default="",
+        help='Application-specific flags as a string (e.g., "600 600 600 6 6 6 0 F .").',
     )
-    parser.add_argument("-f", "--ftio_args", type=str, help='FTIO arguments as a string (e.g., "--freq 10 -v -e no").')
+
+    parser.add_argument(
+        "-n", "--nodes", type=int, help="Number of nodes to run the setup."
+    )
+    parser.add_argument(
+        "-t", "--max-time", type=int, help="Max execution time in minutes."
+    )
+    parser.add_argument(
+        "-j",
+        "--job-id",
+        type=int,
+        help="Use existing job ID instead of allocating new resources.",
+    )
+    parser.add_argument(
+        "-l", "--log-name", type=str, help="Directory name for storing logs."
+    )
+    parser.add_argument(
+        "-i",
+        "--install_location",
+        type=str,
+        help="Install everything in the given directory.",
+    )
+    parser.add_argument(
+        "-c",
+        "--total_procs",
+        type=int,
+        help="Default number of procs if --procs_list is omitted.",
+    )
+    parser.add_argument(
+        "-o", "--omp_threads", type=int, help="Number of OpenMP threads used."
+    )
+    parser.add_argument(
+        "-p",
+        "--procs_list",
+        type=str,
+        help="Comma-separated list specifying procs per node/cpu for app, daemon, proxy, cargo, and ftio.",
+    )
+    parser.add_argument(
+        "-f",
+        "--ftio_args",
+        type=str,
+        help='FTIO arguments as a string (e.g., "--freq 10 -v -e no").',
+    )
     parser.add_argument("--address", type=str, help="Address where FTIO is executed.")
     parser.add_argument("--port", type=str, help="Port for FTIO and GekkoFS.")
-    parser.add_argument("--gkfs-daemon-protocol", type=str, choices=["ofi+verbs", "ofi+sockets"], help="Protocol for GekkoFS daemon (ofi+verbs or ofi+sockets).")
     parser.add_argument(
-        "-e", "--exclude", type=str, 
-        help="Exclude specific tools: ftio, daemon, proxy, gkfs (daemon + proxy), cargo, or all."
+        "--gkfs-daemon-protocol",
+        type=str,
+        choices=["ofi+verbs", "ofi+sockets"],
+        help="Protocol for GekkoFS daemon (ofi+verbs or ofi+sockets).",
     )
-    parser.add_argument("-x", "--exclude-all", action="store_true", help="Exclude FTIO, GekkoFs, and Cargo.")
-    parser.add_argument("-r", "--dry_run", action="store_true", help="Do not execute tools and app.")
-    parser.add_argument("-d", "--debug", type=int, help="Debug level for additional info.")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Show output of each step.")
-    parser.add_argument("-y", "--skip_confirm", action="store_true", help="Automatically cancel running JIT jobs.")
-    parser.add_argument("-u", "--use_mpirun", action="store_true", help="Use mpirun instead of srun.")
-    parser.add_argument("-s", "--use_syscall", action="store_true", help="GekkoFS uses syscall instead of libc.")
-    parser.add_argument("-m", "--use_mem", action="store_true", help="GekkoFS uses nodelocal space (default) or memory (is this flag is passed).")
-    
-    
+    parser.add_argument(
+        "-e",
+        "--exclude",
+        type=str,
+        help="Exclude specific tools: ftio, daemon, proxy, gkfs (daemon + proxy), cargo, or all.",
+    )
+    parser.add_argument(
+        "-x",
+        "--exclude-all",
+        action="store_true",
+        help="Exclude FTIO, GekkoFs, and Cargo.",
+    )
+    parser.add_argument(
+        "-r", "--dry_run", action="store_true", help="Do not execute tools and app."
+    )
+    parser.add_argument(
+        "-d", "--debug", type=int, help="Debug level for additional info."
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Show output of each step."
+    )
+    parser.add_argument(
+        "-y",
+        "--skip_confirm",
+        action="store_true",
+        help="Automatically cancel running JIT jobs.",
+    )
+    parser.add_argument(
+        "-u", "--use_mpirun", action="store_true", help="Use mpirun instead of srun."
+    )
+    parser.add_argument(
+        "-s",
+        "--use_syscall",
+        action="store_true",
+        help="GekkoFS uses syscall instead of libc.",
+    )
+    parser.add_argument(
+        "-m",
+        "--use_mem",
+        action="store_true",
+        help="GekkoFS uses nodelocal space (default) or memory (is this flag is passed).",
+    )
+
     parsed_args = parser.parse_args(args)
 
     # Assign parsed arguments to settings
     if parsed_args.app:
         settings.app = parsed_args.app
+    if parsed_args.app_flags:
+        settings.app_flags = parsed_args.app_flags.strip()
     if parsed_args.nodes:
         settings.nodes = parsed_args.nodes
     if parsed_args.max_time:
@@ -159,7 +239,9 @@ def parse_options(settings: JitSettings, args: list) -> None:
         try:
             procs_list = [int(proc) for proc in parsed_args.procs_list.split(",")]
         except ValueError:
-            console.print("[bold red]Invalid --procs value. Must be a comma-separated list of numbers.[/]")
+            console.print(
+                "[bold red]Invalid --procs value. Must be a comma-separated list of numbers.[/]"
+            )
             sys.exit(1)
 
         if len(procs_list) > 5:
@@ -175,7 +257,9 @@ def parse_options(settings: JitSettings, args: list) -> None:
         if len(procs_list) > 3:
             settings.procs_cargo = procs_list[3]
             if settings.procs_cargo < 2:
-                jit_print("[bold yellow]>> Warning: Not recommended to set Cargo < 2[/]")
+                jit_print(
+                    "[bold yellow]>> Warning: Not recommended to set Cargo < 2[/]"
+                )
         if len(procs_list) > 4:
             settings.procs_ftio = procs_list[4]
 
@@ -184,7 +268,7 @@ def parse_options(settings: JitSettings, args: list) -> None:
     if parsed_args.address:
         settings.address_ftio = parsed_args.address
     if parsed_args.port:
-        settings.port = parsed_args.port
+        settings.port_ftio = parsed_args.port
     if parsed_args.gkfs_daemon_protocol:
         settings.gkfs_daemon_protocol = parsed_args.gkfs_daemon_protocol
 
@@ -237,15 +321,17 @@ def parse_options(settings: JitSettings, args: list) -> None:
     settings.update()
 
 
-
 def abort() -> None:
-    """Abort the installation process."""
+    """
+    Abort the installation process.
+    """
     jit_print("[bold red] >>> Aborting installation[/]")
     exit(1)
 
 
 def install_all(settings: JitSettings) -> None:
-    """Install all necessary components for the JIT environment.
+    """
+    Install all necessary components for the JIT environment.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -509,10 +595,9 @@ def install_all(settings: JitSettings) -> None:
             abort()
 
 
-def replace_line_in_file(
-    file_path: str, line_number: int, new_line_content: str
-) -> None:
-    """Replace a specific line in a file with new content.
+def replace_line_in_file(file_path: str, line_number: int, new_line_content: str) -> None:
+    """
+    Replace a specific line in a file with new content.
 
     Args:
         file_path (str): Path to the file.
@@ -547,7 +632,8 @@ def replace_line_in_file(
 
 
 def cancel_jit_jobs(settings: JitSettings) -> None:
-    """Cancel any existing JIT jobs.
+    """
+    Cancel any existing JIT jobs.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -599,7 +685,8 @@ def cancel_jit_jobs(settings: JitSettings) -> None:
 
 
 def relevant_files(settings: JitSettings) -> None:
-    """Set up ignored files based on regex match.
+    """
+    Set up ignored files based on regex match.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -623,7 +710,8 @@ def relevant_files(settings: JitSettings) -> None:
 
 
 def adjust_regex(settings: JitSettings, mode: str = "stage_out") -> None:
-    """Adjust the regex for stage out or flush mode.
+    """
+    Adjust the regex for stage out or flush mode.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -651,7 +739,8 @@ def adjust_regex(settings: JitSettings, mode: str = "stage_out") -> None:
 
 
 def total_time(log_dir: str) -> None:
-    """Calculate and print the total time from the log file.
+    """
+    Calculate and print the total time from the log file.
 
     Args:
         log_dir (str): Directory containing the log file.
@@ -674,7 +763,8 @@ def total_time(log_dir: str) -> None:
 
 
 def allocate(settings: JitSettings) -> None:
-    """Allocate resources for the JIT environment.
+    """
+    Allocate resources for the JIT environment.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -748,19 +838,18 @@ def allocate(settings: JitSettings) -> None:
                 # its the node where the code is executed
                 try:
                     result = subprocess.run(
-                    ["hostname"],  
-                    capture_output=True,
-                    text=True,
-                    check=True  
+                        ["hostname"], capture_output=True, text=True, check=True
                     )
                     ftio_node = result.stdout.strip()
-                    
+
                 except subprocess.CalledProcessError:
                     ftio_node = nodes_arr[-1]
 
                 # Get node for single commands
                 if len(nodes_arr) > 1:
-                    single_node = nodes_arr[0] if nodes_arr[0] != ftio_node else nodes_arr[1]
+                    single_node = (
+                        nodes_arr[0] if nodes_arr[0] != ftio_node else nodes_arr[1]
+                    )
                 else:
                     single_node = nodes_arr[0]
 
@@ -805,7 +894,8 @@ def allocate(settings: JitSettings) -> None:
 
 
 def get_pid(settings: JitSettings, name: str, pid: int) -> None:
-    """Get the process ID for a given component.
+    """
+    Get the process ID for a given component.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -841,7 +931,8 @@ def get_pid(settings: JitSettings, name: str, pid: int) -> None:
 
 
 def handle_sigint(settings: JitSettings) -> None:
-    """Handle SIGINT signal for graceful shutdown.
+    """
+    Handle SIGINT signal for graceful shutdown.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -852,26 +943,14 @@ def handle_sigint(settings: JitSettings) -> None:
         exit_routine(settings)
 
 
-def exit_routine(settings: JitSettings):
+def exit_routine(settings: JitSettings) -> None:
     """
-    Handles the exit routine for a JIT (Just-In-Time) job.
-
-    This function performs the following steps:
-    1. Logs the job information.
-    2. Prints a message indicating the job is being killed.
-    3. Logs any failed jobs.
-    4. Performs a soft kill of the job.
-    5. Performs a hard kill of the job.
-    6. Prints an exit message.
-    7. Exits the script with a status code of 0.
+    Perform the exit routine for the JIT environment.
 
     Args:
-        settings (JitSettings): The settings for the JIT job, including
-                                application call, number of nodes, and log suffix.
+        settings (JitSettings): The JIT settings object.
     """
-    info = (
-            f"{settings.app_call} with {settings.nodes} nodes {settings.log_suffix} (./{ os.path.relpath(settings.log_dir, os.getcwd())})"
-        )
+    info = f"{settings.app_call} with {settings.nodes} nodes {settings.log_suffix} (./{ os.path.relpath(settings.log_dir, os.getcwd())})"
     jit_print(f"[bold blue]>> Killing Job: {info}.\n Exiting script.[/]")
     log_failed_jobs(settings, info)
     soft_kill(settings)
@@ -881,7 +960,8 @@ def exit_routine(settings: JitSettings):
 
 
 def soft_kill(settings: JitSettings) -> None:
-    """Perform a soft kill of the JIT environment.
+    """
+    Perform a soft kill of the JIT environment.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -928,7 +1008,8 @@ def soft_kill(settings: JitSettings) -> None:
 
 
 def hard_kill(settings: JitSettings) -> None:
-    """Perform a hard kill of the JIT environment.
+    """
+    Perform a hard kill of the JIT environment.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -952,8 +1033,7 @@ def hard_kill(settings: JitSettings) -> None:
                 settings.gkfs_daemon,
                 settings.gkfs_proxy,
                 f"{settings.ftio_bin_location}/predictor_jit",
-                settings.app_call
-                
+                settings.app_call,
             ]
 
             for process in processes:
@@ -976,7 +1056,8 @@ def hard_kill(settings: JitSettings) -> None:
 
 
 def shut_down(settings: JitSettings, name: str, pid: int) -> None:
-    """Shut down a specific component by its process ID.
+    """
+    Shut down a specific component by its process ID.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -997,7 +1078,8 @@ def shut_down(settings: JitSettings, name: str, pid: int) -> None:
 
 
 def log_dir(settings: JitSettings) -> None:
-    """Create and set up the log directory.
+    """
+    Create and set up the log directory.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1027,7 +1109,8 @@ def log_dir(settings: JitSettings) -> None:
 
 
 def get_address_ftio(settings: JitSettings) -> None:
-    """Get the address for FTIO.
+    """
+    Get the address for FTIO.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1035,7 +1118,9 @@ def get_address_ftio(settings: JitSettings) -> None:
     # Get Address and port
     jit_print(">> Getting FTIO ADDRESS")
     if settings.cluster:
-        call = f"srun --jobid={settings.job_id} {settings.ftio_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
+        # call = f"srun --jobid={settings.job_id} {settings.ftio_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
+        call = "ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
+        call = generate_cluster_command(settings, call,1,1, node_list=settings.ftio_node)
         jit_print(f"[bold cyan]>> Executing: {call}")
         try:
             result = subprocess.run(
@@ -1046,40 +1131,41 @@ def get_address_ftio(settings: JitSettings) -> None:
             jit_print(f"[bold red]>>Error occurred: {e}")
             settings.address_ftio = ""
 
-    jit_print(f">> Address FTIO: {settings.address_ftio}", True)
+    jit_print(f">> Address FTIO: {settings.address_ftio}\n")
 
 
 def get_address_cargo(settings: JitSettings) -> None:
-    """Get the address for Cargo.
+    """
+    Get the address for Cargo.
 
     Args:
         settings (JitSettings): The JIT settings object.
     """
     jit_print(">> Getting Cargo ADDRESS")
     if settings.cluster:
-        call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
+        # call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
+        call = f"ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
+        call = generate_cluster_command(settings, call,1,1, node_list=settings.single_node)
         jit_print(f"[bold cyan]>> Executing: {call}")
         try:
             result = subprocess.run(
                 call, shell=True, capture_output=True, text=True, check=True
             )
             settings.address_cargo = result.stdout.strip()
-            settings.cargo_server = (
-                f"{settings.gkfs_daemon_protocol}://{settings.address_cargo}:62000"
-            )
         except subprocess.CalledProcessError as e:
             jit_print(f"[bold red]>>Error occurred: {e}")
             settings.address_cargo = ""
-            settings.cargo_server = ""
-    else:
-        settings.cargo_server = f"{settings.gkfs_daemon_protocol}://{settings.address_cargo}:62000"
-
+    
     jit_print(f">> Address CARGO: {settings.address_cargo}")
-    jit_print(f">> CARGO server:  {settings.cargo_server} \n")
+    jit_print(f">> Port CARGO:  {settings.port_cargo}")
+    jit_print(
+        f">> Server CARGO:  {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} \n"
+    )
 
 
 def set_dir_gekko(settings: JitSettings) -> None:
-    """Set the directory for GekkoFS.
+    """
+    Set the directory for GekkoFS.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1100,8 +1186,16 @@ def set_dir_gekko(settings: JitSettings) -> None:
 
         for attr in ["run_dir", "app_flags", "pre_app_call", "post_app_call"]:
             if old_gkfs_mntdir in getattr(settings, attr):
-                setattr(settings, attr, getattr(settings, attr).replace(old_gkfs_mntdir, settings.gkfs_mntdir))
-                jit_print(f">> |-> {attr.replace('_', ' ').capitalize()} updated to: {getattr(settings, attr)}")
+                setattr(
+                    settings,
+                    attr,
+                    getattr(settings, attr).replace(
+                        old_gkfs_mntdir, settings.gkfs_mntdir
+                    ),
+                )
+                jit_print(
+                    f">> |-> {attr.replace('_', ' ').capitalize()} updated to: {getattr(settings, attr)}"
+                )
 
     if settings.update_files_with_gkfs_mntdir:
         for file_path in settings.update_files_with_gkfs_mntdir:
@@ -1125,7 +1219,8 @@ def set_dir_gekko(settings: JitSettings) -> None:
 
 
 def print_settings(settings: JitSettings) -> None:
-    """Print the current JIT settings.
+    """
+    Print the current JIT settings.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1150,7 +1245,7 @@ def print_settings(settings: JitSettings) -> None:
 ├─ ftio location  : {settings.ftio_bin_location}
 ├─ ftio args      : {settings.ftio_args}
 ├─ address ftio   : {settings.address_ftio}
-├─ port           : {settings.port}
+├─ port ftio      : {settings.port_ftio}
 ├─ node count     : 1
 └─ ftio node      : {settings.ftio_node_command.replace('--nodelist=', '')}"""
 
@@ -1171,14 +1266,16 @@ def print_settings(settings: JitSettings) -> None:
 ├─ cargo cli      : {settings.cargo_bin}
 ├─ cargo mode     : {settings.cargo_mode}
 ├─ stage in path  : {settings.stage_in_path}
-├─ stage out path  : {settings.stage_out_path}
-└─ address cargo  : {settings.address_cargo}"""
+├─ stage out path : {settings.stage_out_path}
+├─ address cargo  : {settings.address_cargo}
+├─ port cargo     : {settings.port_cargo}
+└─ server cargo   : {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo}"""
 
     if settings.exclude_ftio:
         ftio_text = """
 ├─ ftio activate  : [yellow]none[/]
 ├─ address ftio   : [yellow]none[/]
-├─ port           : [yellow]none[/]
+├─ port ftio      : [yellow]none[/]
 ├─ node count     : [yellow]none[/]
 └─ ftio node      : [yellow]none[/]"""
         ftio_status = "[bold yellow]off[/]"
@@ -1211,7 +1308,9 @@ def print_settings(settings: JitSettings) -> None:
 ├─ cargo cli      : [yellow]none[/]
 ├─ cargo mode     : [yellow]none[/]
 ├─ stage in path  : [yellow]none[/]
-└─ address cargo  : [yellow]none[/]"""
+├─ address cargo  : [yellow]none[/]
+├─ port cargo     : [yellow]none[/]
+└─ server cargo   : [yellow]none[/]"""
         cargo_status = "[bold yellow]off[/]"
         task_cargo = "[bold yellow]-[/]"
         cpu_cargo = "[bold yellow]-[/]"
@@ -1279,7 +1378,8 @@ def print_settings(settings: JitSettings) -> None:
 
 
 def print_to_file(text: str, file: str) -> None:
-    """Print text to a file.
+    """
+    Print text to a file.
 
     Args:
         text (str): Text to print.
@@ -1294,7 +1394,8 @@ def print_to_file(text: str, file: str) -> None:
 
 
 def jit_print(s: str, new_line: bool = False) -> None:
-    """Print a message with JIT prefix.
+    """
+    Print a message with JIT prefix.
 
     Args:
         s (str): Message to print.
@@ -1307,7 +1408,8 @@ def jit_print(s: str, new_line: bool = False) -> None:
 
 
 def create_hostfile(settings: JitSettings) -> None:
-    """Create a hostfile for the JIT environment.
+    """
+    Create a hostfile for the JIT environment.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1337,7 +1439,8 @@ def create_hostfile(settings: JitSettings) -> None:
 
 
 def format_time(elapsed: float) -> str:
-    """Format the elapsed time in a readable way.
+    """
+    Format the elapsed time in a readable way.
 
     Args:
         elapsed (float): Elapsed time in seconds.
@@ -1350,10 +1453,9 @@ def format_time(elapsed: float) -> str:
     return f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
 
 
-def elapsed_time(
-    settings: JitSettings, runtime: JitTime, name: str, elapsed: float
-) -> None:
-    """Calculate and print the elapsed time for a specific component.
+def elapsed_time(settings: JitSettings, runtime: JitTime, name: str, elapsed: float) -> None:
+    """
+    Calculate and print the elapsed time for a specific component.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1387,7 +1489,8 @@ def elapsed_time(
 
 
 def check(settings: JitSettings) -> None:
-    """Check the files in the GekkoFS mount directory.
+    """
+    Check the files in the GekkoFS mount directory.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1408,6 +1511,49 @@ def check(settings: JitSettings) -> None:
         jit_print(f"[red]>> Failed to list files in {settings.gkfs_mntdir}: {e}[/]")
 
 
+def generate_cluster_command(
+    settings: JitSettings,
+    call: str,
+    nodes: int = 1,
+    procs_per_node: int = 1,
+    additional_arguments: str = "",
+    node_list: str = "",
+    force_srun = False
+) -> str:
+    """
+    Generate a command to execute on the cluster, using either `mpiexec` or `srun`.
+
+    Args:
+        settings (JitSettings): The JIT settings object containing configuration details.
+        call (str): The command to execute.
+        nodes (int, optional): Number of nodes to use. Defaults to 1.
+        procs_per_node (int, optional): Number of processes per node. Defaults to 1.
+        additional_arguments (str, optional): Additional arguments to include in the command. Defaults to "".
+        node_list (str, optional): Specific node list to use. Defaults to "".
+
+    Returns:
+        str: The generated command string ready for execution.
+    """
+    procs = nodes * procs_per_node
+
+    if not settings.cluster:
+        call = f"mpiexec -np {procs} --oversubscribe " f"{additional_arguments} {call}"
+    else:
+        if not node_list:
+            node_list = f"--nodelist={settings.single_node}"
+            
+
+        if settings.use_mpirun and not force_srun:
+            call, procs = clean_call(call, procs)
+            call = mpiexec_call(settings, call, procs, additional_arguments, node_list)
+        else:
+            call = srun_call(
+                settings, call, nodes, procs_per_node, additional_arguments, node_list
+            )
+
+    return call
+
+
 def flaged_call(
     settings: JitSettings,
     call: str,
@@ -1416,7 +1562,8 @@ def flaged_call(
     exclude: list = [],
     special_flags: dict = {},
 ) -> str:
-    """Generate a command with appropriate flags for execution.
+    """
+    Generate a command with appropriate flags for execution.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1448,7 +1595,8 @@ def flaged_mpiexec_call(
     exclude: list = [],
     special_flags: dict = {},
 ) -> str:
-    """Generate an mpiexec command with appropriate flags.
+    """
+    Generate an mpiexec command with appropriate flags.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1484,7 +1632,8 @@ def flaged_srun_call(
     exclude: list = [],
     special_flags: dict = {},
 ) -> str:
-    """Generate an srun command with appropriate flags.
+    """
+    Generate an srun command with appropriate flags.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1503,7 +1652,9 @@ def flaged_srun_call(
         )
         call = srun_call(settings, call, nodes, procs, additional_arguments)
     else:
-        call = flaged_mpiexec_call(settings, call, procs, exclude=exclude, special_flags=special_flags)
+        call = flaged_mpiexec_call(
+            settings, call, procs, exclude=exclude, special_flags=special_flags
+        )
 
     return call
 
@@ -1511,7 +1662,8 @@ def flaged_srun_call(
 def load_flags_mpiexec(
     settings: JitSettings, exclude: list = [], special_flags: dict = {}
 ) -> str:
-    """Load flags for mpiexec command.
+    """
+    Load flags for mpiexec command.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1541,12 +1693,10 @@ def load_flags_mpiexec(
                 )
             if "hostfile" not in exclude:
                 additional_arguments += (
-                f"-x LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']} "
+                    f"-x LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']} "
                 )
             if "preload" not in exclude:
-                additional_arguments += (
-                f"-x LD_PRELOAD={default['LD_PRELOAD']} "
-                )
+                additional_arguments += f"-x LD_PRELOAD={default['LD_PRELOAD']} "
 
     additional_arguments += get_env(settings, "mpi")
 
@@ -1556,7 +1706,8 @@ def load_flags_mpiexec(
 def load_flags_srun(
     settings: JitSettings, exclude: list = [], special_flags: dict = {}
 ) -> str:
-    """Load flags for srun command.
+    """
+    Load flags for srun command.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1577,7 +1728,7 @@ def load_flags_srun(
         additional_arguments += (
             f"LIBGKFS_PROXY_PID_FILE={default['LIBGKFS_PROXY_PID_FILE']},"
         )
-    if not settings.exclude_daemon: 
+    if not settings.exclude_daemon:
         if "demon" not in exclude:
             if "demon_log" not in exclude:
                 additional_arguments += (
@@ -1586,12 +1737,10 @@ def load_flags_srun(
                 )
             if "hostfile" not in exclude:
                 additional_arguments += (
-                f"LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']},"
+                    f"LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']},"
                 )
             if "preload" not in exclude:
-                additional_arguments += (
-                f"LD_PRELOAD={default['LD_PRELOAD']},"
-                )
+                additional_arguments += f"LD_PRELOAD={default['LD_PRELOAD']},"
 
     additional_arguments += get_env(settings, "srun")
 
@@ -1599,7 +1748,8 @@ def load_flags_srun(
 
 
 def load_defauts(settings: JitSettings, special_flags: dict = {}):
-    """Load default flags for a command.
+    """
+    Load default flags for a command.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1609,7 +1759,7 @@ def load_defauts(settings: JitSettings, special_flags: dict = {}):
         dict: Default flags for the command.
     """
     default = {
-        "LIBGKFS_METRICS_IP_PORT": f"{settings.address_ftio}:{settings.port}",
+        "LIBGKFS_METRICS_IP_PORT": f"{settings.address_ftio}:{settings.port_ftio}",
         "LIBGKFS_ENABLE_METRICS": "on",
         "LIBGKFS_PROXY_PID_FILE": f"{settings.gkfs_proxyfile}",
         "LIBGKFS_LOG": "info,warnings,errors",
@@ -1628,22 +1778,34 @@ def load_defauts(settings: JitSettings, special_flags: dict = {}):
 
 
 def mpiexec_call(
-    settings: JitSettings, command: str, procs: int = 1, additional_arguments: str = ""
+    settings: JitSettings,
+    command: str,
+    procs: int = 1,
+    additional_arguments: str = "",
+    node_list: str = "",
 ) -> str:
-    """Generate an mpiexec command.
+    """
+    Generate an mpiexec command.
 
     Args:
         settings (JitSettings): The JIT settings object.
         command (str): Command to execute.
         procs (int, optional): Number of processes. Defaults to 1.
         additional_arguments (str, optional): Additional arguments for the command. Defaults to "".
+        nodelist (str, optional): List of nodes. Defaults to "".
 
     Returns:
         str: mpiexec command.
     """
+    if not node_list:
+        node_list = f"--hostfile {settings.dir}/hostfile_mpi"
+    else:
+        if "--host" not in node_list:
+            node_list = f"--host {node_list}"
+
     call = (
         f" mpiexec -np {procs} --oversubscribe "
-        f"--hostfile {settings.dir}/hostfile_mpi -map-by node "
+        f"{node_list} -map-by node "
         f"{additional_arguments} "
         f"{settings.task_set_0} {command}"
     )
@@ -1656,8 +1818,10 @@ def srun_call(
     nodes: int = 1,
     procs: int = 1,
     additional_arguments: str = "",
+    node_list: str = "",
 ) -> str:
-    """Generate an srun command.
+    """
+    Generate an srun command.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1665,17 +1829,24 @@ def srun_call(
         nodes (int, optional): Number of nodes. Defaults to 1.
         procs (int, optional): Number of processes. Defaults to 1.
         additional_arguments (str, optional): Additional arguments for the command. Defaults to "".
+        nodelist (str, optional): List of nodes. Defaults to "".
 
     Returns:
         str: srun command.
     """
-    nodelist = (
-        settings.single_node_command if nodes == 1 else settings.app_nodes_command
-    )
+    if not node_list:
+        node_list = (
+            settings.single_node_command if nodes == 1 else settings.app_nodes_command
+        )
+    else:
+        if "--nodelist" not in node_list:
+            node_list = f"--nodelist={node_list}"
+            
+
     call = (
         f"srun "
         f"--export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
-        f"--jobid={settings.job_id} {nodelist} --disable-status "
+        f"--jobid={settings.job_id} {node_list} --disable-status "
         f"-N {nodes} --ntasks={nodes*procs} "
         f"--cpus-per-task={procs} --ntasks-per-node={procs} "
         f"--overcommit --overlap --oversubscribe --mem=0 "
@@ -1685,7 +1856,8 @@ def srun_call(
 
 
 def clean_call(call: str, procs: int) -> tuple:
-    """Clean a command by removing mpiexec or mpirun.
+    """
+    Clean a command by removing mpiexec or mpirun.
 
     Args:
         call (str): Command to clean.
@@ -1708,7 +1880,8 @@ def clean_call(call: str, procs: int) -> tuple:
 
 
 def get_executable_realpath(executable_name: str, search_location: str = None) -> str:
-    """Get the real path of an executable.
+    """
+    Get the real path of an executable.
 
     Args:
         executable_name (str): Name of the executable.
@@ -1740,7 +1913,8 @@ def get_executable_realpath(executable_name: str, search_location: str = None) -
 
 
 def update_hostfile_mpi(settings: JitSettings) -> None:
-    """Update the hostfile for MPI.
+    """
+    Update the hostfile for MPI.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1762,7 +1936,8 @@ def update_hostfile_mpi(settings: JitSettings) -> None:
 
 
 def log_failed_jobs(settings: JitSettings, info: str) -> None:
-    """Log failed jobs to a file.
+    """
+    Log failed jobs to a file.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1787,7 +1962,8 @@ def log_failed_jobs(settings: JitSettings, info: str) -> None:
 
 
 def set_env(settings: JitSettings) -> None:
-    """Set environment variables for the JIT environment.
+    """
+    Set environment variables for the JIT environment.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1803,7 +1979,8 @@ def set_env(settings: JitSettings) -> None:
 
 
 def get_env(settings: JitSettings, mode: str = "srun") -> str:
-    """Get environment variables for a command.
+    """
+    Get environment variables for a command.
 
     Args:
         settings (JitSettings): The JIT settings object.
@@ -1824,7 +2001,8 @@ def get_env(settings: JitSettings, mode: str = "srun") -> str:
 
 
 def save_bandwidth(settings: JitSettings) -> None:
-    """Save bandwidth data to a file.
+    """
+    Save bandwidth data to a file.
 
     Args:
         settings (JitSettings): The JIT settings object.

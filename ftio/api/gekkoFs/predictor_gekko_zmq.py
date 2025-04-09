@@ -86,7 +86,7 @@ def main(args: list[str] = sys.argv[1:]) -> None:
 
 
 def prediction_zmq_process(
-    shared_resources, args, msg
+    shared_resources:SharedResources, args:list[str], msg
 ) -> None:
     """performs prediction
 
@@ -135,12 +135,13 @@ def prediction_zmq_process(
             break
 
     # send data to trigger proc
+    console.print(f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Added data to trigger queue")
     shared_resources.sync_trigger.put(
         {
     't_wait':  time.time() ,
     't_end':  prediction['t_end'],
     't_start':  prediction['t_start'],
-    't_flush': t_flush + (t_prediction- time.time()),
+    't_flush': t_flush + (t_prediction - time.time()),
     'freq': freq,
     'conf': conf,
     'probability': probability,

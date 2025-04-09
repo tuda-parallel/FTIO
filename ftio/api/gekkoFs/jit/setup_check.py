@@ -36,7 +36,7 @@ def check_setup(settings:JitSettings):
             file = create_test_file("test.sh"+timestamp, settings)
             if settings.use_mpirun:
                 # if not settings.exclude_ftio:
-                #     additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port} -x LIBGKFS_ENABLE_METRICS=on "
+                #     additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} -x LIBGKFS_ENABLE_METRICS=on "
                 if not settings.exclude_proxy:
                     additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
                 if not settings.exclude_daemon:
@@ -55,7 +55,7 @@ def check_setup(settings:JitSettings):
                     )
             else:
                 # if not settings.exclude_ftio:
-                #     additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port},"
+                #     additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},"
                 if not settings.exclude_proxy:
                     additional_arguments += (
                         f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"

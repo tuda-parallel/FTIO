@@ -1,7 +1,7 @@
 """Performs prediction with Pools (ProcessPoolExecutor) and a callback mechanism"""
 from __future__ import annotations
-import zmq
 import subprocess
+import zmq
 from ftio.multiprocessing.async_process import join_procs, handle_in_process
 from ftio.prediction.processes import prediction_process
 from ftio.prediction.helper import print_data, export_extrap
@@ -67,7 +67,7 @@ def predictor_with_processes_zmq(
 
 
 
-def bind_socket(addr, port):
+def bind_socket(addr:str, port:str):
     """Bind the ZMQ socket, retrying with a corrected IP if necessary."""
     context = zmq.Context()
     socket = context.socket(zmq.PULL)
@@ -107,7 +107,7 @@ def receive_messages(socket, poller):
     #     continue
     
     #3) Loop and accept messages from both channels, acting accordingly
-    while socks: 
+    while socks:
         if socks.get(socket) == zmq.POLLIN:
             msgs.append(socket.recv(zmq.NOBLOCK))
             # CONSOLE.print(f"[cyan]Got message {ranks}:[/] {msg}")
@@ -115,5 +115,5 @@ def receive_messages(socket, poller):
         # if time.time() - start > 0.5:
         #     break
         socks = dict(poller.poll(1000))
-    
+
     return msgs, ranks

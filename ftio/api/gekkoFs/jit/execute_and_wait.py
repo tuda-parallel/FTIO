@@ -630,10 +630,10 @@ def print_file(file, src=""):
     wait_time = 0.05
     if src:
         if "daemon" in src.lower():
-            color = "[purple4]"
+            color = "[deep_pink1]"
             wait_time = 0.1
         elif "proxy" in src.lower():
-            color = "[deep_pink1]"
+            color = "[purple4]"
             wait_time = 0.1
         elif any(keyword in src.lower() for keyword in ["dlio", "lammp"]):
             color = "[gold3]"

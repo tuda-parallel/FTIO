@@ -1,4 +1,5 @@
 import os
+import re
 import socket
 import numpy as np
 from rich.console import Console
@@ -14,8 +15,8 @@ class JitSettings:
 
         # app
         ##############
-        # can be controlled through command line arguments 9see jit -h)
-        self.app = "dlio" #dlio, lammps, wacom, nek5000, ior, haccio
+        # can be controlled through command line arguments see jit -h)
+        self.app = ""
         
         # flags
         ##############
@@ -84,8 +85,10 @@ class JitSettings:
         # parsed variables
         ###################
         self.address_ftio = "127.0.0.1"
+        self.port_ftio = "5555" # port between ftio and gkfs
         self.address_cargo = "127.0.0.1"
-        self.port = "5555"
+        self.port_cargo = "62000" #port between cargo and ftio
+        
         self.nodes = 1
         self.max_time = 30
         self.ftio_args = "-m write -v --freq -1" #10 -w data -v "
@@ -242,27 +245,55 @@ class JitSettings:
         self.app_err = os.path.join(self.log_dir, "app.err")
 
     def to_dict(self):  # -> dict[str, Any]:
-        return {
-            "nodes": self.nodes,
-            "app nodes": self.app_nodes,
-            "procs": self.procs,
-            "procs daemon": self.procs_daemon,
-            "procs proxy": self.procs_proxy,
-            "procs cargo": self.procs_cargo,
-            "procs app  ": self.procs_app,
-            "procs ftio ": self.procs_ftio,
-            "task_set_0": self.task_set_0,
-            "task_set_1": self.task_set_1,
-            "OpenMP threads": self.omp_threads,
-            "protocol": self.gkfs_daemon_protocol,
-            "run dir": self.run_dir,
-            "app call": self.app_call,
-            "id": self.job_id,
-            "mode": self.log_suffix,
-            "node local": self.node_local,
-            "gkfs_mntdir": self.gkfs_mntdir if not self.exclude_daemon else "",
-            "gkfs_rootdir": self.gkfs_rootdir if not self.exclude_daemon else "",
-        }
+        # Define a list of attribute names to be promoted to top-level keys
+        top_level_keys = [
+            'log_suffix',  # This will be renamed to 'mode'
+            'app',         # This will be renamed to 'app name'
+            'nodes',
+            'procs',
+            'procs_app',
+            'procs_ftio',
+            'procs_daemon',
+            'procs_proxy',
+            'procs_cargo',
+            'omp_threads',
+            'task_set_0',
+            'task_set_1',
+        ]
+
+        # Initialize the result dictionary with top-level keys in the desired order
+        result = {}
+
+        # Iterate over the top-level keys and add them to the result dictionary if they exist
+        for key in top_level_keys:
+            value = getattr(self, key, None)
+            if value is not None:
+                if key == 'log_suffix':
+                    result['mode'] = value
+                elif key == 'app':
+                    result['app name'] = value
+                else:
+                    result[key.replace('_', ' ')] = value
+
+        # Add the 'settings' dictionary at the end
+        result['settings'] = {}
+
+        # Iterate over all instance attributes
+        for key, value in self.__dict__.items():
+            # Skip keys that have already been added as top-level keys
+            if key in top_level_keys:
+                continue
+            # Replace underscores with spaces in the key for settings
+            new_key = key.replace('_', ' ')
+            result['settings'][new_key] = value
+
+        # Handle specific conditions for certain fields
+        if self.exclude_daemon:
+            result['settings']["gkfs mntdir"] = ""
+            result['settings']["gkfs rootdir"] = ""
+
+        return result
+
 
     #!##########################
     #! only modify here
@@ -299,7 +330,6 @@ class JitSettings:
         # ****** cargo variables ******
         self.cargo_bin = f"{self.gkfs_deps}/gekkofs_zmq_install/bin"  # "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
         self.cargo = f"{self.cargo_bin}/cargo"  # "/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
-        self.cargo_server = f"{self.gkfs_daemon_protocol}://127.0.0.1:62000"
 
         # ? APP settings
         # ?##########################
@@ -318,14 +348,16 @@ class JitSettings:
         #  ├─ Wacom++ --> change wacom.json if needed
         elif "wacom" in self.app:
             self.app_call = "./wacommplusplus"
-            self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
-            self.app_flags = ""
+            # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
+            self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/roms"
+            if not self.app_flags: #default value if app_flags is not set
+                self.app_flags = ""
         #  ├─ LAMMPS 
         elif "lammps" in self.app:
             self.app_call = "/lustre/project/nhr-admire/shared/mylammps/build/lmp"
             self.run_dir = f"{self.gkfs_mntdir}"
             self.app_flags = "-in in.spce.hex"
-        #  └─ DLIO 
+        #  ├─ DLIO 
         elif "dlio" in self.app:
             self.app_call = "dlio_benchmark"
             self.run_dir = "."
@@ -342,7 +374,17 @@ class JitSettings:
                 f"++workload.dataset.data_folder={self.run_dir}/data/jit ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/jit "  
                 f"++workload.output.output_folder={self.run_dir}/hydra_log/jit "
             )
+        #  └─ S3D-IO
+        elif "s3d" in self.app:
+            self.app_call = "/lustre/project/nhr-admire/shared/S3D-IO/s3d_io.x"
+            self.run_dir = "."
+            if not self.app_flags: #default value if app_flags is not set
+                self.app_flags = "600 600 600 6 6 6 0 F ."
 
+        else:
+            self.app_call = ""
+            self.run_dir = ""
+            self.app_flags = ""
         # ? Pre and post app settings
         # ?##########################
         # Application specific calls executed before the actual run. Executed as
@@ -351,7 +393,7 @@ class JitSettings:
         # > ${POST_APP_CALL}
         # ├─ dlio
         if "dlio" in self.app:
-            if self.exclude_all:
+            if self.exclude_daemon:
                 # self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                 self.pre_app_call  = ""
                 self.post_app_call = ""
@@ -364,13 +406,11 @@ class JitSettings:
                     f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log/jit "
                     # ++workload.output.log_file={self.gkfs_mntdir}/hydra_log/unet3d"# ++workload.dataset.num_files_train=16"
                 )
-                # self.app_flags = "workload=unet3d_my_a100_gekko"
-                # self.pre_app_call = f"mpirun -np 10 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                 self.pre_app_call  = ""
                 self.post_app_call = ""
         # ├─ Nek5000
         elif "nek" in self.app:
-            if self.exclude_all:
+            if self.exclude_daemon:
                 self.pre_app_call = f"echo -e 'turbPipe\\n{self.run_dir}/input' > {self.run_dir}/SESSION.NAME"
                 self.post_app_call = f"rm {self.run_dir}/input/*.f* || echo true"
             else:
@@ -378,11 +418,11 @@ class JitSettings:
                 self.post_app_call = ""
         # ├─ Wacom++
         elif "wacom" in self.app:
-            if self.exclude_all:
+            if self.exclude_daemon:
                 # in case a previous simulation fails
                 self.pre_app_call = (
                     f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.run_dir}/wacomm.pfs.json {self.run_dir}/wacomm.json; "
-                    f"cd {self.run_dir} && rm -rf input restart results processed output;  mkdir -p /lustre/project/nhr-admire/tarraf/wacom_run; cp -r stage-in/*  /lustre/project/nhr-admire/tarraf/wacom_run "
+                    f"cd {self.run_dir} && rm -rf input restart results processed output; cp -r stage-in/*  {self.run_dir} "
                 )
                 self.post_app_call = ""
             else:
@@ -394,7 +434,12 @@ class JitSettings:
                 self.post_app_call = (
                     f"ln -sf {self.run_dir}/wacomm.pfs.json {self.run_dir}/wacomm.json"
                 )
-        # └─ Other
+        # ├─ S3D-IO
+        elif "s3d" in self.app:
+            self.pre_app_call = ""
+            self.post_app_call = ""
+            if not self.exclude_daemon:
+                self.app_flags = self.app_flags.replace('.', f"{self.gkfs_mntdir}")
         else:
             self.pre_app_call = ""
             self.post_app_call = ""
@@ -441,6 +486,10 @@ class JitSettings:
         elif "lmp" in self.app_call:
             self.regex_flush_match = ""
             self.regex_stage_out_match = ".*"
+        # ├─ S3D-IO
+        elif "s3d" in self.app_call:
+            self.regex_flush_match = ".*/pressure_wave_test\\..*\\.field\\.nc$"
+            self.regex_stage_out_match = ".*"
         # └─ Other
         else:
             self.regex_flush_match = ""
@@ -469,10 +518,19 @@ class JitSettings:
             self.regex_file = "/tmp/jit/nek_regex4cargo.txt"
             self.env_var = {"CARGO_REGEX": self.regex_file}
 
-            if "dlio" in self.app:
+            self.stage_in_path = "/tmp/input"
+            self.stage_out_path = "/tmp/output"
+
+            # Create the folder if it doesn't exist
+            os.makedirs(self.stage_in_path, exist_ok=True)
+            os.makedirs(self.stage_out_path, exist_ok=True)
+            with open(os.path.join(self.stage_in_path, 'test.txt'), 'w') as f:
+                pass
+            
+            if "dlio" in self.app:                
                 self.stage_in_path = "/d/github/dlio_benchmark/data"
                 # generate data with
-                if self.exclude_all:
+                if self.exclude_daemon:
                     self.app_flags = (
                     f"{workload} "
                     f"++workload.workflow.generate_data=False ++workload.workflow.train=True ++workload.workflow.checkpoint=True " #++workload.workflow.evaluation=True "
@@ -509,7 +567,7 @@ class JitSettings:
             elif "nek" in self.app:
                 self.run_dir = "/d/benchmark/Nek5000/turbPipe/run"
                 self.stage_in_path = "/d/benchmark/Nek5000/turbPipe/run/input"
-                if self.exclude_all:
+                if self.exclude_daemon:
                     self.pre_app_call = "echo -e 'turbPipe\\n/d/benchmark/Nek5000/turbPipe/run/input' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
                     self.post_app_call = (
                         "rm /d/benchmark/Nek5000/turbPipe/run/input/*.f* || true"
@@ -517,7 +575,9 @@ class JitSettings:
                 else:
                     self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
                     self.post_app_call = f"rm {self.stage_out_path}/*.f* || true"
-
-            self.stage_out_path = "/tmp/output"
-            # self.stage_in_path = "/tmp/input"
-            # self.stage_out_path = "/tmp/output"
+            elif "s3d" in self.app:
+                self.app_call = "/d/benchmark/S3D-IO/s3d_io.x"
+                # execute "mkdir -p /d/benchmark/S3D-IO/input && touch /d/benchmark/S3D-IO/input/test"
+                self.stage_in_path = "/tmp/input"
+                if not self.exclude_daemon:
+                    self.app_flags =  re.sub(r"/[^\s]+", self.gkfs_mntdir, self.app_flags)
