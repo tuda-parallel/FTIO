@@ -32,6 +32,7 @@ from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
 from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
 from ftio.freq._dft_workflow import ftio_dft
 from ftio.freq._astft_workflow import ftio_astft
+from ftio.freq._amd_workflow import ftio_amd
 
 
 def main(cmd_input: list[str], msgs = None) ->tuple[list[dict], Namespace]:  # -> dict[Any, Any]:
@@ -175,6 +176,9 @@ def freq_analysis(args:Namespace, data: dict) -> tuple[dict, list[list], dict]:
 
     elif "astft" in args.transformation:
         prediction, df_out, share  = ftio_astft(args, bandwidth, time_b, total_bytes, ranks, text)
+
+    elif "amd" in args.transformation:
+        prediction, df_out, share  = ftio_amd(args, bandwidth, time_b, total_bytes, ranks, text)
 
     else:
         raise Exception("Unsupported decomposition specified")
