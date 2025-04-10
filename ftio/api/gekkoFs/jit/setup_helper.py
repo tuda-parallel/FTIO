@@ -2,6 +2,14 @@
 This module contains helper functions for setting up and managing the JIT environment.
 It includes functions for checking ports, parsing options, allocating resources,
 handling signals, and managing various components like FTIO, GekkoFS, and Cargo.
+
+Author: Ahmad Tarraf  
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: January 2023
+
+Licensed under the BSD 3-Clause License. 
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 import sys
@@ -1262,8 +1270,7 @@ def print_settings(settings: JitSettings) -> None:
 └─ gkfs proxyfile : {settings.gkfs_proxyfile}"""
 
     cargo_text = f"""
-├─ cargo          : {settings.cargo}
-├─ cargo cli      : {settings.cargo_bin}
+├─ cargo bin      : {settings.cargo_bin}
 ├─ cargo mode     : {settings.cargo_mode}
 ├─ stage in path  : {settings.stage_in_path}
 ├─ stage out path : {settings.stage_out_path}
@@ -1304,8 +1311,7 @@ def print_settings(settings: JitSettings) -> None:
 
     if settings.exclude_cargo:
         cargo_text = """
-├─ cargo location : [yellow]none[/]
-├─ cargo cli      : [yellow]none[/]
+├─ cargo bin      : [yellow]none[/]
 ├─ cargo mode     : [yellow]none[/]
 ├─ stage in path  : [yellow]none[/]
 ├─ address cargo  : [yellow]none[/]
@@ -1901,7 +1907,7 @@ def get_executable_realpath(executable_name: str, search_location: str = None) -
 
     # Fall back to searching in the system PATH
     executable_path = shutil.which(executable_name)
-    if executable_path:
+    if (executable_path):
         try:
             return os.path.realpath(executable_path)
         except Exception as e:
@@ -2015,3 +2021,67 @@ def save_bandwidth(settings: JitSettings) -> None:
             )
         except Exception as e:
             jit_print(f"[red] >> Error saving bandwidth:\n{e}")
+
+
+def parse_time(line: str) -> float | None:
+    """
+    Parses a line starting with 'real' to extract a duration in seconds.
+
+    Supports:
+    - Compound formats like '1d2h3m4.56s'
+    - Simple float seconds like '123.456'
+    - European decimal format with commas (e.g., '1m1,129s')
+
+    Args:
+        line: A string that should start with 'real' followed by a duration.
+
+    Returns:
+        The parsed time in seconds as a float, or None if parsing fails.
+    """
+    try:
+        # Remove 'real' and strip whitespace
+        parts = line.strip().split(maxsplit=1)
+        if len(parts) != 2 or parts[0] != "real":
+            return None
+        duration_str = parts[1].replace(",", ".").strip()
+
+        # Try parsing compact duration format (e.g., 1d2h3m4.56s)
+        pattern = r'(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+(?:\.\d+)?)s)?$'
+        match = re.fullmatch(pattern, duration_str)
+        if match:
+            days = int(match.group(1)) if match.group(1) else 0
+            hours = int(match.group(2)) if match.group(2) else 0
+            minutes = int(match.group(3)) if match.group(3) else 0
+            seconds = float(match.group(4)) if match.group(4) else 0.0
+            return days * 86400 + hours * 3600 + minutes * 60 + seconds
+
+        # Try parsing as a raw float (e.g., "123.456")
+        return float(duration_str)
+    except Exception as parse_err:
+        jit_print(f">>[yellow] Warning: Failed to parse real time line: '{line.strip()}' — {parse_err}[/]")
+        return None
+
+
+def extract_accurate_time(settings: JitSettings,real_time: float) -> float:
+    """
+    Attempts to extract a more accurate 'real' time from the application error log.
+
+    Args:
+        settings: A JitSettings object containing the path to the error log file.
+        real_time: A fallback real time value (e.g., measured with time.time()).
+
+    Returns:
+        The smaller of the fallback time and the extracted time from the error log.
+    """
+    try:
+        with open(settings.app_err, "r") as file:
+            for line in file:
+                if line.startswith("real"):
+                    accurate_real_time = parse_time(line)
+                    if accurate_real_time is not None:
+                        real_time = min(accurate_real_time, real_time)
+                    break
+    except Exception as e:
+        jit_print(f">>[red] Could not extract real time due to\n{e}[/]\n")
+
+    return real_time

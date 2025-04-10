@@ -1,7 +1,15 @@
 """
-This file provides functions to start and manage various components of the GekkoFS,
+This file provides functions to start and manage various components of the GLASS approach,
 including the Gekko daemon, proxy, cargo, and FTIO. It also includes functions for staging
 data in and out, and executing pre- and post-application calls.
+
+Author: Ahmad Tarraf  
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: January 2023
+
+Licensed under the BSD 3-Clause License. 
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 import os
@@ -18,6 +26,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     check_port,
     elapsed_time,
     exit_routine,
+    extract_accurate_time,
     flaged_call,
     get_env,
     get_executable_realpath,
@@ -94,6 +103,8 @@ def start_gekko_daemon(settings: JitSettings) -> None:
             if settings.debug_lvl > 0:
                 debug_flag = "GKFS_DAEMON_LOG_LEVEL=trace"
             else:
+                #debug_flag = "GKFS_DAEMON_LOG_LEVEL=debug"
+                # debug_flag = "GKFS_DAEMON_LOG_LEVEL=trace"
                 debug_flag = "GKFS_DAEMON_LOG_LEVEL=err"
             call = (
                 f"{debug_flag} LIBGKFS_LOG=all  GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
@@ -192,14 +203,20 @@ def start_cargo(settings: JitSettings) -> None:
 
         if settings.cluster:
             call = (
-                f"{settings.cargo} "
+                f"{settings.cargo_bin}/cargo "
                 f"--listen {settings.gkfs_daemon_protocol}://ib0:{settings.port_cargo} -b 65536"
             )
             call = flaged_call(settings, call, settings.app_nodes, settings.procs_cargo, exclude=["ftio","demon_log","preload", "proxy"])
 
         else:
+            # if settings.debug_lvl > 0:
+            #     debug_flag = "CARGO_LOG_LEVEL=trace"
+            # else:
+            #     debug_flag = "CARGO_LOG_LEVEL=debug"
+            debug_flag = ""
+            
             # Command for non-cluster
-            call = f"{settings.cargo} --listen {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} -b 65536"
+            call = f"{debug_flag} {settings.cargo_bin}/cargo --listen {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} -b 65536"
             call = flaged_call(settings, call, 1, settings.procs_cargo, exclude=["ftio","demon_log","preload", "proxy"])
 
         jit_print("[cyan]>> Starting Cargo[/]")
@@ -267,6 +284,20 @@ def start_ftio(settings: JitSettings) -> None:
 
         relevant_files(settings)
 
+        ftio_data_stage_args = ""
+        if settings.exclude_cargo:
+            ftio_data_stage_args += (
+                f"--stage_out_path {settings.stage_out_path} --stage_in_path {settings.stage_in_path} "
+                f"--ld_preload {settings.gkfs_intercept} --host_file {settings.gkfs_hostfile} --gkfs_mntdir {settings.gkfs_mntdir} "
+                )
+            if settings.regex_match:
+                ftio_data_stage_args += f"--regex {settings.regex_match} "
+        else:
+            ftio_data_stage_args += (
+                f"--cargo --cargo_bin {settings.cargo_bin} "
+                f"--cargo_server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --stage_out_path {settings.stage_out_path} "
+            )
+            
         if settings.cluster:
             jit_print(
                 f"[cyan]>> FTIO started on node {settings.ftio_node}, remaining nodes for the application: {settings.app_nodes} each with {settings.procs_ftio} processes [/]"
@@ -278,21 +309,12 @@ def start_ftio(settings: JitSettings) -> None:
                 f"srun --jobid={settings.job_id} {settings.ftio_node_command} "
                 f"--disable-status -N 1 --ntasks=1 --cpus-per-task={settings.procs_ftio} "
                 f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-                f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port_ftio} {settings.ftio_args} "
+                f"{settings.ftio_bin_location}/predictor_jit {ftio_data_stage_args} --  --zmq_address {settings.address_ftio} --zmq_port {settings.port_ftio} {settings.ftio_args} "
             )
         else:
             check_port(settings)
-            call = f"{settings.ftio_bin_location}/predictor_jit --zmq_address {settings.address_ftio} --zmq_port {settings.port_ftio} {settings.ftio_args} "
+            call = f"{settings.ftio_bin_location}/predictor_jit {ftio_data_stage_args} --  --zmq_address {settings.address_ftio} --zmq_port {settings.port_ftio} {settings.ftio_args} "
 
-        if settings.exclude_cargo:
-            call += f"--stage_out_path {settings.stage_out_path} --stage_in_path {settings.stage_in_path} "
-            if settings.regex_match:
-                call += f"--regex {settings.regex_match} "
-        else:
-            call += (
-                f"--cargo --cargo_bin {settings.cargo_bin} "
-                f"--cargo_server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --stage_out_path {settings.stage_out_path} "
-            )
         jit_print("[cyan]>> Starting FTIO[/]")
 
         _ = execute_background_and_log(
@@ -344,7 +366,7 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
 
         jit_print(f"[cyan]>> Staging in to {settings.stage_in_path}", True)
 
-        if True:  # settings.exclude_cargo:
+        if settings.exclude_cargo:  # settings.exclude_cargo:
             # check that there are actually files
             call = ""
             if (
@@ -590,14 +612,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
 
     # Extract the 'real' time from the output
     real_time = time.time() - start
-    try:
-        with open(settings.app_err, "r") as file:
-            for line in file:
-                if line.startswith("real"):
-                    real_time = min(float(line.split()[1]), real_time)
-                    break
-    except Exception as e:
-        jit_print(f">>[red] Could not extract real time due to \n {e}[/]\n")
+    real_time = extract_accurate_time(settings, real_time)
 
     elapsed_time(settings, runtime, "App", real_time)
 

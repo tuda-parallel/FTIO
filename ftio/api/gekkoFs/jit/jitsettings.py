@@ -1,3 +1,15 @@
+"""
+JIT Settings Module
+
+Author: Ahmad Tarraf  
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: January 2023
+
+Licensed under the BSD 3-Clause License. 
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import os
 import re
 import socket
@@ -329,7 +341,6 @@ class JitSettings:
 
         # ****** cargo variables ******
         self.cargo_bin = f"{self.gkfs_deps}/gekkofs_zmq_install/bin"  # "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
-        self.cargo = f"{self.cargo_bin}/cargo"  # "/lustre/project/nhr-admire/tarraf/cargo/build/src/cargo"
 
         # ? APP settings
         # ?##########################
@@ -512,8 +523,7 @@ class JitSettings:
             self.gkfs_hostfile = f"{os.getcwd()}/gkfs_hosts.txt"
             self.gkfs_proxy = f"{self.install_location}/gekkofs/build/src/proxy/gkfs_proxy"
             self.gkfs_proxyfile = f"{self.install_location}/tarraf_gkfs_proxy.pid"
-            self.cargo = f"{self.install_location}/cargo/build/src/cargo"
-            self.cargo_bin = f"{self.install_location}/cargo/build/cli"
+            self.cargo_bin = f"{self.install_location}/iodeps/bin"
 
             self.regex_file = "/tmp/jit/nek_regex4cargo.txt"
             self.env_var = {"CARGO_REGEX": self.regex_file}

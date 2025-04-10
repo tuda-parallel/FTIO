@@ -163,6 +163,55 @@ def fill_dtw_cost_matrix(s1, s2):
 > [!note]
 > External dependencies should be avoided as much as possible, as each additional dependency introduces a potential risk for the code to break. Only include dependencies that are essential for the core functionality of the project. Optional dependencies should be handled in a way that the code can continue functioning without them, using fallbacks where possible.
 
+
+## Creating New Files and Modules
+
+To keep the codebase maintainable and collaboration-friendly, we recommend organizing your work into **cohesive modules** rather than placing everything into a single file or a monolithic script.
+
+### ✅ Why modularize?
+
+- **Avoid merge conflicts**: Isolating related functionality into separate files reduces the chances of developers working on the same file at the same time.
+- **Improve readability**: Smaller, focused modules are easier to read, understand, and review.
+- **Enhance reusability**: Modular code is easier to reuse across different parts of the project.
+- **Enable testing**: Individual modules and their functions can be unit tested more effectively.
+
+---
+
+### ⚠️ But don’t go overboard
+
+While modularization is good, **creating too many small or overly granular files** can:
+
+- Make the project harder to navigate.
+- Introduce unnecessary complexity in the import structure.
+- Obscure the overall logic of the system.
+
+**Guideline**: Group logically related functions or classes into a single module. Avoid creating new files for each utility or tiny helper unless it serves a clear organizational purpose.
+
+---
+
+### 🧾 Module Documentation and Licensing
+
+Every new module should start with a module-level docstring to explain its purpose, authorship, and license. Below is a template you should use:
+
+```python
+"""
+Example Description: 
+This module provides helper functions for setting up and managing the JIT environment.
+It includes utilities for checking ports, parsing options, allocating resources,
+handling signals, and managing components like FTIO, GekkoFS, and Cargo.
+
+Author: Your Name  
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: <Month Year>
+
+Licensed under the BSD 3-Clause License.  
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
+```
+
+
 ---
 ## Instructions for Adding an Example
 
@@ -214,7 +263,7 @@ To ensure proper documentation for your work, follow these steps:
     git commit -m "FTIO: Add documentation for feature XXX"
     ```
 
-4. if you made changes to the command line arguments, please update the usage section in the [readme](/README.md#usage).
+4. If you made changes to the command line arguments, please update the usage section in the [readme](/README.md#usage).
 
 ---
 
