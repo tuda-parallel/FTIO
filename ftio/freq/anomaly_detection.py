@@ -11,13 +11,6 @@ Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
-
-"""
-------------------------------
-Outlier detection methods
-------------------------------
-"""
-# DB-scan
 from __future__ import annotations
 from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestNeighbors
