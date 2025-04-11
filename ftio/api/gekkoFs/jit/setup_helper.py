@@ -326,6 +326,8 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
     if parsed_args.use_mem:
         settings.node_local = False
 
+    # Save the original call as a string
+    settings.cmd_call = "jit " + " ".join(args)
     settings.update()
 
 
@@ -958,7 +960,9 @@ def exit_routine(settings: JitSettings) -> None:
     Args:
         settings (JitSettings): The JIT settings object.
     """
-    info = f"{settings.app_call} with {settings.nodes} nodes {settings.log_suffix} (./{ os.path.relpath(settings.log_dir, os.getcwd())})"
+    info = (
+        f"{settings.app_call} with {settings.nodes} nodes {settings.log_suffix} (./{ os.path.relpath(settings.log_dir, os.getcwd())})"
+        )
     jit_print(f"[bold blue]>> Killing Job: {info}.\n Exiting script.[/]")
     log_failed_jobs(settings, info)
     soft_kill(settings)
@@ -1957,14 +1961,16 @@ def log_failed_jobs(settings: JitSettings, info: str) -> None:
     """
     parent = os.path.dirname(settings.log_dir)
     execution_path = os.path.join(parent, "execution.txt")
-    try:
-        jit_print(
-            f"[yellow]>> Adding execution to list of failed jobs in {execution_path}.[/]"
-        )
-        with open(execution_path, "a") as file:
-            file.write(f"- {info}\n")
-    except:
-        jit_print(f"[Red]>> Killing Job: {info}.\n Exiting script.[/]")
+    if settings.cmd_call:
+        try:
+            jit_print(
+                f"[yellow]>> Adding execution to list of failed jobs in {execution_path}.[/]"
+            )
+            with open(execution_path, "a") as file:
+                file.write(f"- {info}\n\t{settings.cmd_call}\n")
+            settings.cmd_call = ""
+        except:
+            jit_print(f"[Red]>> Killing Job: {info}.\n Exiting script.[/]")
 
 
 def set_env(settings: JitSettings) -> None:

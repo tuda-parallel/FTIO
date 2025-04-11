@@ -94,7 +94,9 @@ class JitResult:
             tmp_app[index] = i["app"]
             tmp_stage_out[index] = i["stage_out"]
             tmp_stage_in[index] = i["stage_in"]
-        self.add_experiment(tmp_app,tmp_stage_out,tmp_stage_in,f"# {data_list["nodes"]}")
+            # Jit nodes are off by 1, as FTIO runs on a dedicated on
+            nodes = int(data_list['nodes']) -1
+        self.add_experiment(tmp_app,tmp_stage_out,tmp_stage_in,f"# {nodes}")
 
 
     def plot(self, title=""):
@@ -105,7 +107,7 @@ class JitResult:
             title (str): Title for the plot.
         """
         # Sample data for the stacked plot
-        categories = ['GLASS', 'Lustre & Gekko', 'Lustre']
+        categories = ['GLASS', 'GekkoFs & Lustre', 'Lustre']
         repeated_strings = [s for s in categories for _ in self.node]
         repeated_numbers = self.node * len(categories)
         categories = [repeated_strings, repeated_numbers]
@@ -115,6 +117,16 @@ class JitResult:
         fig.add_bar(x=categories, y=self.app, text=self.app, name="App")
         fig.add_bar(x=categories, y=self.stage_out, text=self.stage_out, name="Stage out")
         fig.add_bar(x=categories, y=self.stage_in, text=self.stage_in, name="Stage in")
+
+                # Update text formatting
+        fig.update_traces(
+            textposition='inside',
+            texttemplate="%{text:.2f}",
+            textfont_size=18,  # Increased font size
+            textangle=0,
+            textfont=dict(color="white")
+        )
+
 
         # Sum total
         total = list(np.round(np.array(self.app) + np.array(self.stage_out) + np.array(self.stage_in), 2))
@@ -130,20 +142,20 @@ class JitResult:
             showlegend=False
         ))
 
-        self.format_and_show(fig,title)
+        self.format_and_show(fig,title,False)
 
 
-    def format_and_show(self,fig: go.Figure, title:str = "", barmode: str = "relative"):
+    def format_and_show(self,fig: go.Figure, title:str = "", text:bool = True,barmode: str = "relative"):
 
-
-        # Update text formatting
-        fig.update_traces(
-            textposition='inside',
-            texttemplate="%{text:.2f}",
-            textfont_size=18,  # Increased font size
-            textangle=0,
-            textfont=dict(color="white")
-        )
+        if text:
+            # Update text formatting
+            fig.update_traces(
+                textposition='inside',
+                texttemplate="%{text:.2f}",
+                textfont_size=18,  # Increased font size
+                textangle=0,
+                textfont=dict(color="white")
+            )
 
         # Comment out to see all text
         fig.update_layout(uniformtext_minsize=10, uniformtext_mode='hide')
@@ -158,21 +170,25 @@ class JitResult:
             barmode= barmode,
             title_font_size=24,  # Increased title font size
             width=1000 + 100 * len(self.node),
-            height=700,
+            height=600,
             xaxis=dict(title_font=dict(size=24)),  # Increased x-axis title font size
             yaxis=dict(title_font=dict(size=24)),  # Increased y-axis title font size
             legend=dict(
                 font=dict(size=20),  # Increased legend font size
-                orientation="h",
-                yanchor="bottom",
-                y=0.9,
-                xanchor="right",
-                x=0.995
             )
         )
 
         
         format_plot_and_ticks(fig, x_minor=False,font_size=20)
+        fig.update_layout(legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=0.9,
+                xanchor="right",
+                # x=0.005#
+                x=.995
+            ))
+    
         # Display the plot
         fig.show()
 
@@ -180,15 +196,14 @@ class JitResult:
 # Add and plot all
 #####################
 
-    def add_all(self, data_list: list[dict], get_latest_timestamp: bool = True):
+    def add_all(self, data_list: list[dict]):
         """
         Add data from a dictionary to the JitResult object, optionally using the latest data based on the timestamp.
 
         Args:
             data_list (list[dict]): List of dictionaries containing experimental data.
-            get_latest_timestamp (bool): Whether to use the latest entry based on the timestamp (default is False).
         """
-        sorted_data = sort_data(data_list, get_latest_timestamp)
+        sorted_data = sort_data(data_list, False)
 
         # Add data per node configuration
         tmp_app = [0.0, 0.0, 0.0]
@@ -244,10 +259,13 @@ class JitResult:
                 "mean": np.mean(stage_in_values[index]) if stage_in_values[index] else 0
             }
 
+        # Jit nodes are off by 1, as FTIO runs on a dedicated on
+        nodes = int(data_list['nodes']) -1
+
         # Now call add_experiment, including stats
         self.add_experiment_with_stats(
             tmp_app, tmp_stage_out, tmp_stage_in,
-            f"# {data_list['nodes']}",
+            f"# {nodes}",
             stats["app"], stats["stage_out"], stats["stage_in"]
         )
 
@@ -298,7 +316,7 @@ class JitResult:
                 app_error_diff.append(app_max - app_min)
                 stage_out_error_diff.append(stage_out_max - stage_out_min)
                 stage_in_error_diff.append(stage_in_max - stage_in_min)
-
+        
         # Plot app mean with min-max error bars
         fig.add_trace(go.Bar(
             x = [categories[0], categories[1]],

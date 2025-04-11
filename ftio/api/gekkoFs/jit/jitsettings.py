@@ -122,11 +122,18 @@ class JitSettings:
         self.procs_cargo = 0
         self.procs_app = 0
         self.procs_ftio = 0
+        self.cmd_call = ""
 
         self.set_cluster_mode()
         self.set_default_procs()
         self.set_variables()
 
+    def __str__(self) -> str:
+        """returns the settings in a readable format
+        """
+        return str(self.to_dict())
+
+        
     def set_cluster_mode(self) -> None:
         """automatically identifies if it's a cluster or local machine"""
         hostname = socket.gethostname()

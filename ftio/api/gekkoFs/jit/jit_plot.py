@@ -15,6 +15,7 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 import argparse
 import json
 import os
+from pathlib import Path
 from ftio.api.gekkoFs.jit.jit_result import JitResult
 
 def plot_results(args):
@@ -87,6 +88,7 @@ def plot_results(args):
         extract_and_plot(results,json_file_path,title)
     else:
         for filename in args.filenames:
+            filename = str(Path(filename).resolve())
             print(f"Processing file: {filename}")
             results = JitResult()
             title = filename
@@ -140,6 +142,7 @@ def main():
     )
     # Boolean argument to determine whether to use the diff data
     parser.add_argument(
+        '-n', 
         '--no_diff', 
         action='store_true',  # This stores True if the argument is provided, False otherwise
         help="Use the latest data based on the timestamp. Otherwise all data are plotted with error bars",

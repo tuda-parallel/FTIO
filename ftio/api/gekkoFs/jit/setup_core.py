@@ -433,6 +433,12 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             # )
             start = time.time()
             # _ = execute_block(call, dry_run=settings.dry_run)
+
+            #  give ftio slightly more time to finish moving
+            if not settings.exclude_ftio:
+                jit_print("[cyan]>> Shuting down FTIO as application finished")
+                shut_down(settings, "FTIO", settings.ftio_pid)
+                
             jit_move(settings)
             elapsed_time(settings, runtime, "Stage out", time.time() - start)
         else:
@@ -620,7 +626,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
     else:
         pass
 
-    if not settings.exclude_ftio:
+    if not settings.exclude_ftio and settings.exclude_cargo:
         jit_print("[cyan]>> Shuting down FTIO as application finished")
         shut_down(settings, "FTIO", settings.ftio_pid)
 

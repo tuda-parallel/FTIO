@@ -202,15 +202,19 @@ class JitTime:
                 # Check if there is an existing entry with the same number of nodes and mode
                 for entry in existing_data:
                     if entry.get("nodes") == data["nodes"]:
-                        for i, data_entry in enumerate(entry["data"]):
-                            if data_entry["mode"] == data["mode"]:
-                                # Update existing entry (no timestamp added here)
-                                entry["data"][i] = data
-                                break
-                        else:
-                            # If no mode match, add the new entry (with timestamp if enabled)
+                        if add_timestamp:
                             entry["data"].append(data)
-                        break
+                            break
+                        else:
+                            for i, data_entry in enumerate(entry["data"]):
+                                if data_entry["mode"] == data["mode"]:
+                                    # Update existing entry (no timestamp added here)
+                                    entry["data"][i] = data
+                                    break
+                            else:
+                                # If no mode match, add the new entry (with timestamp if enabled)
+                                entry["data"].append(data)
+                            break
                 else:
                     # If no entry with the same nodes exists, add a new one (with timestamp if enabled)
                     existing_data.append({"nodes": data["nodes"], "data": [data]})
