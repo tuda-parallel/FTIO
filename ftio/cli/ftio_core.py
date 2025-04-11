@@ -1,3 +1,17 @@
+"""
+This file provides functions to process input data, perform frequency analysis, and generate predictions
+using the FTIO framework. It includes core functionalities for data transformation, frequency analysis,
+autocorrelation, and result visualization.
+
+Author: Ahmad Tarraf
+Copyright (c) 2025 TU Darmstadt, Germany
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 """This functions calculates the frequency based on the input data provided. 
 Currently Darshan, recorder, and traces generated with our internal tool TMIO are supported. 
 

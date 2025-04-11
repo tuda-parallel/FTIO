@@ -5,7 +5,7 @@ monitor log files, and wait for specific lines or files to appear.
 
 Author: Ahmad Tarraf  
 Copyright (c) 2025 TU Darmstadt, Germany  
-Date: January 2023
+Date: Aug 2024
 
 Licensed under the BSD 3-Clause License. 
 For more information, see the LICENSE file in the project root:

@@ -1,7 +1,15 @@
 """
-This file contains the main function to execute the JIT script.
-It sets up the environment, allocates resources, starts necessary services,
-and manages the workflow from staging in to staging out.
+This file provides functions to execute the JIT script, including setting up the environment,
+allocating resources, starting necessary services, and managing the workflow from staging
+data in to staging out. It also handles pre- and post-application calls.
+
+Author: Ahmad Tarraf  
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: Aug 2023
+
+Licensed under the BSD 3-Clause License.  
+For more information, see the LICENSE file in the project root:  
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 import sys

@@ -3,17 +3,18 @@ This module provides the `JitTime` class for managing and recording timing infor
 for various stages of a process. It includes functionality to display timing data,
 convert it to a dictionary, and save it in JSON format.
 
-Author: Ahmad Tarraf  
-Copyright (c) 2025 TU Darmstadt, Germany  
-Date: January 2023
+Author: Ahmad Tarraf
+Copyright (c) 2025 TU Darmstadt, Germany
+Date: Dec 2024
 
-Licensed under the BSD 3-Clause License. 
+Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 import json
 import os
+from datetime import datetime
 from rich.console import Console
 from rich.table import Table
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
@@ -169,16 +170,28 @@ class JitTime:
             "stage_out": self._stage_out,
         }
 
-    def dump_json(self, settings: JitSettings) -> None:
+    def dump_json(self, settings: JitSettings, add_timestamp: bool = True) -> None:
         """
-        Save the timing information and settings to a JSON file.
+        Save the timing information and settings to a JSON file, with an option to add timestamps to new entries.
 
         Args:
             settings (JitSettings): The settings object containing additional data.
+            add_timestamp (bool): Whether to add a timestamp to new entries (default is True).
         """
-        data = {**self.to_dict(), **settings.to_dict()}
+        # Create the base data dictionary from the instance and settings
+        # data = {**self.to_dict(), **settings.to_dict()}\
+        if add_timestamp:
+            data = {
+                **self.to_dict(),
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                **settings.to_dict(),
+            }
+        else:
+            data = {**self.to_dict(), **settings.to_dict()}
+
         parent = os.path.dirname(settings.log_dir)
         json_path = os.path.join(parent, "result.json")
+
         try:
             with open(json_path, "r+") as file:
                 try:
@@ -191,13 +204,15 @@ class JitTime:
                     if entry.get("nodes") == data["nodes"]:
                         for i, data_entry in enumerate(entry["data"]):
                             if data_entry["mode"] == data["mode"]:
-                                entry["data"][i] = data  # Overwrite the existing data
+                                # Update existing entry (no timestamp added here)
+                                entry["data"][i] = data
                                 break
                         else:
-                            entry["data"].append(data)  # Add new entry if no mode match
+                            # If no mode match, add the new entry (with timestamp if enabled)
+                            entry["data"].append(data)
                         break
                 else:
-                    # If no entry with the same nodes exists, add a new one
+                    # If no entry with the same nodes exists, add a new one (with timestamp if enabled)
                     existing_data.append({"nodes": data["nodes"], "data": [data]})
 
                 # Write the updated data back to the file
@@ -206,7 +221,7 @@ class JitTime:
                 file.truncate()
 
         except FileNotFoundError:
-            # If the file does not exist, create it with the new data
+            # If the file does not exist, create it with the new data (with timestamp if enabled)
             with open(json_path, "w") as file:
                 json.dump([{"nodes": data["nodes"], "data": [data]}], file, indent=4)
 

@@ -1,9 +1,9 @@
 """
-JIT Settings Module
+JIT Settings 
 
 Author: Ahmad Tarraf  
 Copyright (c) 2025 TU Darmstadt, Germany  
-Date: January 2023
+Date: Aug 2024
 
 Licensed under the BSD 3-Clause License. 
 For more information, see the LICENSE file in the project root:
@@ -33,7 +33,7 @@ class JitSettings:
         # flags
         ##############
         self.set_tasks_affinity = True  # required for ls and cp
-        self.cargo_mode = "parallel"  # "parallel" or "posix"
+        self.cargo_mode = "posix"  # "parallel" or "posix"
         self.debug_lvl = 0
         self.verbose = True
         self.verbose_error = True

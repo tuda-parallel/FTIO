@@ -5,7 +5,7 @@ data in and out, and executing pre- and post-application calls.
 
 Author: Ahmad Tarraf  
 Copyright (c) 2025 TU Darmstadt, Germany  
-Date: January 2023
+Date: Aug 2024
 
 Licensed under the BSD 3-Clause License. 
 For more information, see the LICENSE file in the project root:
@@ -19,7 +19,6 @@ import time
 import subprocess
 from rich.console import Console
 
-from ftio.api.gekkoFs.data_control import DataControl
 from ftio.api.gekkoFs.jit.setup_check import check_setup
 from ftio.api.gekkoFs.jit.setup_helper import (
     check,
@@ -52,7 +51,7 @@ from ftio.api.gekkoFs.jit.execute_and_wait import (
 from ftio.api.gekkoFs.jit.setup_init import init_gekko
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.jittime import JitTime
-from ftio.api.gekkoFs.data_control import DataControl
+from ftio.api.gekkoFs.posix_control import jit_move
 
 console = Console()
 
@@ -75,7 +74,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
         )
         # Create host file and dirs for geko
         init_gekko(settings)
-        debug_flag = ""
+        debug_flag = "--export=ALL,GKFS_DAEMON_LOG_LEVEL=err"
         if settings.debug_lvl > 0:
             debug_flag = "--export=ALL,GKFS_DAEMON_LOG_LEVEL=trace"
 
@@ -196,8 +195,6 @@ def start_cargo(settings: JitSettings) -> None:
         console.print(
             f"[bold yellow]####### Skipping Cargo [/][black][{get_time()}][/]"
         )
-        # if not settings.exclude_all:
-        #     data_control = DataControl(settings) #TODO move to JIT.py
     else:
         console.print(f"[bold green]####### Starting Cargo [/][black][{get_time()}][/]")
 
@@ -295,7 +292,7 @@ def start_ftio(settings: JitSettings) -> None:
         else:
             ftio_data_stage_args += (
                 f"--cargo --cargo_bin {settings.cargo_bin} "
-                f"--cargo_server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --stage_out_path {settings.stage_out_path} "
+                f"--cargo_server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --stage_out_path {settings.stage_out_path} -t 0.2"
             )
             
         if settings.cluster:
@@ -429,14 +426,14 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             f"[cyan]>> Moving data from {settings.gkfs_mntdir} -> {settings.stage_out_path}[/]",
         )
         if settings.exclude_cargo:
-            # call = f"{additional_arguments} cp -r  {settings.gkfs_mntdir}/* {settings.stage_out_path} "
-            call = flaged_call(
-                settings,
-                f"cp -r  {settings.gkfs_mntdir} {settings.stage_out_path} || echo 'nothing to stage out'",
-                exclude=["ftio"],
-            )
+            # call = flaged_call(
+            #     settings,
+            #     f"cp -r  {settings.gkfs_mntdir} {settings.stage_out_path} || echo 'nothing to stage out'",
+            #     exclude=["ftio"],
+            # )
             start = time.time()
-            _ = execute_block(call, dry_run=settings.dry_run)
+            # _ = execute_block(call, dry_run=settings.dry_run)
+            jit_move(settings)
             elapsed_time(settings, runtime, "Stage out", time.time() - start)
         else:
 

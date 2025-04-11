@@ -5,13 +5,14 @@ data transfer mechanisms.
 
 Author: Ahmad Tarraf  
 Copyright (c) 2025 TU Darmstadt, Germany  
-Date: January 2023
+Date: Mar 2025
 
 Licensed under the BSD 3-Clause License. 
 For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
+from concurrent.futures import ThreadPoolExecutor
 import os
 import sys
 import time
@@ -41,7 +42,7 @@ def stage_files(args: argparse.Namespace, prediction: dict) -> None:
     if args.cargo:
         move_files_cargo(args)
     else:  # standard move
-        move_files_os(args)
+        move_files_os(args, period=period)
 
 def setup_cargo(args: argparse.Namespace) -> None:
     """
@@ -85,80 +86,79 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
     # adaptive = "" 
     # adaptive = "skip"
     adaptive = "cancel"
-
     not_in_time = 0
     skipped = 0
-    while True:
-        try:
-            if not sync_trigger.empty():
-                skip_flag = False
-                prediction = sync_trigger.get()
-                t = time.time() - prediction["t_wait"]  # time waiting so far
-                # CONSOLE.print(f"[bold green][Trigger] queue wait time = {t:.3f} s[/]\n")
-                if not np.isnan(prediction["freq"]):
-                    # ? 1) Find estimated number of phases and skip in case less than 1
-                    # n_phases = (prediction['t_end']- prediction['t_start'])*prediction['freq']
-                    # if n_phases <= 1:
-                    #     CONSOLE.print(f"[bold green][Trigger] Skipping this prediction[/]\n")
-                    #     continue
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        while True:
+            try:
+                if not sync_trigger.empty():
+                    skip_flag = False
+                    prediction = sync_trigger.get()
+                    t = time.time() - prediction["t_wait"]  # time waiting so far
+                    # CONSOLE.print(f"[bold green][Trigger] queue wait time = {t:.3f} s[/]\n")
+                    if not np.isnan(prediction["freq"]):
+                        # ? 1) Find estimated number of phases and skip in case less than 1
+                        # n_phases = (prediction['t_end']- prediction['t_start'])*prediction['freq']
+                        # if n_phases <= 1:
+                        #     CONSOLE.print(f"[bold green][Trigger] Skipping this prediction[/]\n")
+                        #     continue
 
-                    # ? 2) Time analysis to find the right instance when to send the data
-                    target_time = prediction["t_end"] + 1 / prediction["freq"]
-                    gkfs_elapsed_time = (
-                        prediction["t_flush"] + t
-                    )  # t  is the waiting time in this function. t_flush contains the overhead of ftio + when the data was flushed from gekko
-                    remaining_time = target_time - gkfs_elapsed_time
-                    CONSOLE.print(
-                        f"[bold green][Trigger {prediction['source']}][/][green]\n"
-                        f"Probability   : {prediction['probability']*100:.0f}%\n"
-                        f"Elapsed time  : {gkfs_elapsed_time:.3f} s\n"
-                        f"Target time   : {target_time:.3f} s\n"
-                        f"--> trigger in {remaining_time:.3f} s[/]\n"
-                    )
-                    if remaining_time > 0:
-                        countdown = time.time() + remaining_time
-                        # wait till the time elapses:
-                        while time.time() < countdown:
-                            pass
-                        
-                        # ? 3) Skip in case new prediction is available    
+                        # ? 2) Time analysis to find the right instance when to send the data
+                        target_time = prediction["t_end"] + 1 / prediction["freq"]
+                        gkfs_elapsed_time = (
+                            prediction["t_flush"] + t
+                        )  # t  is the waiting time in this function. t_flush contains the overhead of ftio + when the data was flushed from gekko
+                        remaining_time = target_time - gkfs_elapsed_time
+                        CONSOLE.print(
+                            f"[bold green][Trigger {prediction['source']}][/][green]\n"
+                            f"Probability   : {prediction['probability']*100:.0f}%\n"
+                            f"Elapsed time  : {gkfs_elapsed_time:.3f} s\n"
+                            f"Target time   : {target_time:.3f} s\n"
+                            f"--> trigger in {remaining_time:.3f} s[/]\n"
+                        )
+                        if remaining_time > 0:
+                            countdown = time.time() + remaining_time
+                            # wait till the time elapses:
+                            while time.time() < countdown:    
+                                # ? 3) While waiting skip in case new prediction is available    
+                                condition = True
+                                if adaptive:
+                                    if not sync_trigger.empty():
+                                        if "skip" in adaptive:
+                                            skip_flag = True
+                                            skipped += 1
+                                        condition = (not skip_flag or skipped >= 2)
+                                    else:
+                                        # remove the new prediction from the queue
+                                        _ = sync_trigger.get()
+                                time.sleep(0.01)
 
-                        condition = True
-                        if adaptive:
-                            if not sync_trigger.empty():
-                                if "skip" in adaptive:
-                                    skip_flag = True
-                                    skipped += 1
-                                condition = (not skip_flag or skipped == 2)
+                            if condition and prediction["probability"] > 0.5: 
+                                future = executor.submit(stage_files, args, prediction) 
+                                # stage_files(args, prediction)
+                                skipped = 0
                             else:
-                                # remove the new prediction from the queue
-                                _ = sync_trigger.get()
+                                # TODO: skip only of the predictions overlap
+                                CONSOLE.print(
+                                    f"[bold green][Trigger][/][yellow] Skipping, new prediction is ready (skipped: {skipped})[/]\n"
+                                )
 
-                        if condition and prediction["probability"] > 0.5: 
-                            stage_files(args, prediction)
-                            skipped = 0
                         else:
-                            # TODO: skip only of the predictions overlap
-                            CONSOLE.print(
-                                f"[bold green][Trigger][/][yellow] Skipping, new prediction is ready (skipped: {skipped})[/]\n"
-                            )
+                            not_in_time += 1
+                            if not_in_time == 3:
+                                CONSOLE.print(
+                                    "[bold green][Trigger][/][yellow] Not in time 3 times, triggering flush[/]\n"
+                                )
+                                stage_files(args, prediction)
+                                not_in_time = 0
+                            else:
+                                CONSOLE.print(
+                                    "[bold green][Trigger][/][yellow] Skipping, not in time[/]\n"
+                                )
 
-                    else:
-                        not_in_time += 1
-                        if not_in_time == 3:
-                            CONSOLE.print(
-                                "[bold green][Trigger][/][yellow] Not in time 3 times, triggering flush[/]\n"
-                            )
-                            stage_files(args, prediction)
-                            not_in_time = 0
-                        else:
-                            CONSOLE.print(
-                                "[bold green][Trigger][/][yellow] Skipping, not in time[/]\n"
-                            )
-
-            time.sleep(0.01)
-        except KeyboardInterrupt:
-            exit()
+                time.sleep(0.01)
+            except KeyboardInterrupt:
+                exit()
 
 
 def move_files_cargo(args: argparse.Namespace) -> None:
@@ -208,22 +208,15 @@ def parse_args_cargo(
     )
 
     # cargo flags
-    parser.add_argument('--cargo', '--cargo', dest='cargo', action = 'store_true', help = 'Uses Cargo if provided to move data')
-    parser.set_defaults(cargo =  False)
-    parser.add_argument('--cargo_bin', '--cargo_bin', dest='cargo_bin', type = str, help = 'Location of Cargo cli')
-    parser.set_defaults(cargo_bin = '/lustre/project/nhr-admire/vef/cargo/build/cli')
-    parser.add_argument('--cargo_server', '--cargo_server', dest='cargo_server', type = str, help = 'Address and port where cargo is running')
-    parser.set_defaults(cargo_server = 'ofi+sockets://127.0.0.1:62000')
-    parser.add_argument('--stage_out_path', '--stage_out_path', dest='stage_out_path', type = str, help = 'Cargo stage out path')
-    parser.set_defaults(stage_out_path = '/lustre/project/nhr-admire/tarraf/stage-out')
-    # JIT flags without cargo
-    parser.add_argument('--stage_in_path', '--stage_in_path', dest='stage_in_path', type = str, help = 'Cargo stage int path')
-    parser.set_defaults(stage_in_path = '/lustre/project/nhr-admire/tarraf/stage-in')
-    parser.add_argument('--regex', '--regex', dest='regex', type = str, default=None, help = 'Files that match the regex expression are ignored during stage out')
+    parser.add_argument('--cargo', '--cargo', dest='cargo', action = 'store_true', help = 'Uses Cargo if provided to move data', default =  False)
+    parser.add_argument('--cargo_bin', '--cargo_bin', dest='cargo_bin', type = str, help = 'Location of Cargo cli', default = '/lustre/project/nhr-admire/vef/cargo/build/cli')
+    parser.add_argument('--cargo_server', '--cargo_server', dest='cargo_server', type = str, help = 'Address and port where cargo is running', default = 'ofi+sockets://127.0.0.1:62000')
+    parser.add_argument('-t', '--mtime-threshold', dest='mtime_threshold', type=float, default=1,  help='Minimum age (in seconds) of a file\'s modification time to be considered for transfer (default=1 second).')
+    parser.add_argument('--stage_out_path', '--stage_out_path', dest='stage_out_path', type = str, help = 'Cargo stage out path', default = '/lustre/project/nhr-admire/tarraf/stage-out')
     
-    parser.add_argument('-T', '--mtime-threshold', dest='mtime_threshold', type=float, default=1,  help='Minimum age (in seconds) of a file\'s modification time to be considered for transfer (default=1 second).')
-
-            
+    # JIT flags without cargo
+    parser.add_argument('--stage_in_path', '--stage_in_path', dest='stage_in_path', type = str, help = 'Cargo stage int path', default = '/lustre/project/nhr-admire/tarraf/stage-in')
+    parser.add_argument('--regex', '--regex', dest='regex', type = str, default=None, help = 'Files that match the regex expression are ignored during stage out')
     parser.add_argument("--ld_preload", type=str, default=None, help="LD_PRELOAD call to GekkoFs file.")
     parser.add_argument("--host_file", type=str, default=None,  help="Hostfile for GekkoFs.")
     parser.add_argument("--gkfs_mntdir", type=str, default=None,  help="Mount directory for GekkoFs.")

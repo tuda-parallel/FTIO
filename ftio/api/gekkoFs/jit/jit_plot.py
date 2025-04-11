@@ -1,6 +1,15 @@
 """
-This module provides functionality to plot results from JSON files
-containing experimental data for JIT, JIT no FTIO, and Pure modes.
+This file provides functionality to plot results from JSON files
+containing experimental data for JIT, JIT no FTIO, and Pure modes. It includes
+functions to extract data, process it, and generate visualizations.
+
+Author: Ahmad Tarraf  
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: Dec 2024
+
+Licensed under the BSD 3-Clause License. 
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 import argparse
@@ -8,7 +17,7 @@ import json
 import os
 from ftio.api.gekkoFs.jit.jit_result import JitResult
 
-def plot_results(filenames):
+def plot_results(args):
     """
     Plot results from the given JSON files. If no filenames are provided,
     default data is used.
@@ -16,7 +25,7 @@ def plot_results(filenames):
     Args:
         filenames (list): List of JSON file paths.
     """
-    if not filenames:
+    if not args:
         results = JitResult()
         # # run with x nodes  128 procs [jit | jit_no_ftio | pure] (now in old folder)
         # ################ Edit area ############################
@@ -77,16 +86,16 @@ def plot_results(filenames):
         
         extract_and_plot(results,json_file_path,title)
     else:
-        for filename in filenames:
+        for filename in args.filenames:
             print(f"Processing file: {filename}")
             results = JitResult()
             title = filename
             current_directory = os.getcwd()
             json_file_path = os.path.join(current_directory, filename)
-            extract_and_plot(results,json_file_path,title)
+            extract_and_plot(results,json_file_path,title, no_diff = args.no_diff)
         
 
-def extract_and_plot(results: JitResult ,json_file_path:str, title:str):
+def extract_and_plot(results: JitResult, json_file_path: str, title: str, no_diff:bool = True):
     """
     Extract data from a JSON file and plot the results.
 
@@ -94,15 +103,25 @@ def extract_and_plot(results: JitResult ,json_file_path:str, title:str):
         results (JitResult): The JitResult object to store the extracted data.
         json_file_path (str): Path to the JSON file.
         title (str): Title for the plot.
+        all (bool): Flag to control whether to call add_dict or add_all (default is False).
     """
+    # Open the file and load the JSON data
     with open(json_file_path, "r") as json_file:
         data = json.load(json_file)
-        data = sorted(data, key=lambda x: x['nodes'])
+    
+    # Sort the data by 'nodes'
+    data = sorted(data, key=lambda x: x['nodes'])
+
+
+    # Depending on the 'all' flag, process the data differently
+    if no_diff:
         for d in data:
             results.add_dict(d)
-    
-    results.plot(title)
-
+        results.plot(title)
+    else:
+        for d in data:
+            results.add_all(d)
+        results.plot_all(title)
 
 
 
@@ -119,8 +138,15 @@ def main():
         default=[],
         help="The paths to the JSON file(s) to plot."
     )
+    # Boolean argument to determine whether to use the diff data
+    parser.add_argument(
+        '--no_diff', 
+        action='store_true',  # This stores True if the argument is provided, False otherwise
+        help="Use the latest data based on the timestamp. Otherwise all data are plotted with error bars",
+        default = False
+    )
     args = parser.parse_args()
-    plot_results(args.filenames)
+    plot_results(args)
 
 
 if __name__ == "__main__":
