@@ -161,7 +161,7 @@ def prediction_zmq_process(
         })
 
     console.print(f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Ended')
-    shared_resources.count.value += 1
+    shared_resources.count.value += 1 #proc-safe, as manager already handles this
 
 
 

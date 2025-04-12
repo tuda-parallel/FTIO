@@ -18,6 +18,7 @@ import argparse
 import os
 import signal
 import shutil
+from datetime import datetime
 import re
 from rich.console import Console
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
@@ -1953,14 +1954,8 @@ def log_failed_jobs(settings: JitSettings, info: str) -> None:
         settings (JitSettings): The JIT settings object.
         info (str): Information about the failed job.
     """
-    """Add failed job to a file
-
-    Args:
-        settings (JitSettings): Jit settings
-        info (str): log text
-    """
     parent = os.path.dirname(settings.log_dir)
-    execution_path = os.path.join(parent, "execution.txt")
+    execution_path = os.path.join(parent, "failed_execution.txt")
     if settings.cmd_call:
         try:
             jit_print(
@@ -1969,8 +1964,67 @@ def log_failed_jobs(settings: JitSettings, info: str) -> None:
             with open(execution_path, "a") as file:
                 file.write(f"- {info}\n\t{settings.cmd_call}\n")
             settings.cmd_call = ""
-        except:
-            jit_print(f"[Red]>> Killing Job: {info}.\n Exiting script.[/]")
+        except Exception as e:
+            jit_print(f"[Red]>> Killing Job: {info}. No entry added to failed_execution due to {e}.\n Exiting script.[/]")
+
+def log_execution(settings: JitSettings) -> None:
+    """
+    Log job executions with their status. Update the status to 'complete' if the job call matches.
+
+    Args:
+        settings (JitSettings): The JIT settings object.
+    """
+    parent = os.path.dirname(settings.log_dir)
+    execution_path = os.path.join(parent, "executions.txt")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    info = (
+        f"(Log dir: {os.path.abspath(settings.log_dir)})"
+    )
+        
+    if settings.cmd_call:
+        try:
+            # Ensure the file exists before reading
+            if not os.path.exists(execution_path):
+                # If the file doesn't exist, create it and add an initial comment
+                with open(execution_path, "w") as file:
+                    file.write("# Execution log file\n")
+            
+            # Check if job is already in the log file
+            job_exists = False
+            updated_lines = []
+            with open(execution_path, "r") as file:
+                lines = file.readlines()
+                for line in lines:
+                    if info in line and settings.cmd_call in line:
+                        # If the job info and cmd_call match, replace status with complete and timestamp
+                        updated_lines.append(
+                            f"- [{timestamp}] Completed:  {settings.cmd_call} {info}\n"
+                        )
+                        job_exists = True
+                        jit_print(
+                            f"[yellow]>> Job marked as completed in {execution_path}.[/]"
+                        )
+                    else:
+                        updated_lines.append(line)
+            
+            # If the job does not exist, add it with the 'pending' status and timestamp
+            if not job_exists:
+                jit_print(
+                    f"[yellow]>> Adding execution to list of pending jobs in {execution_path}.[/]"
+                )
+                updated_lines.append(
+                    f"- [{timestamp}] Pending: {settings.cmd_call} {info}\n"
+                )
+            
+            # Write the updated lines back to the file
+            with open(execution_path, "w") as file:
+                file.writelines(updated_lines)
+        
+        except Exception as e:
+            jit_print(
+                f"[red]>> Error logging execution: {e}[/]"
+            )
+
 
 
 def set_env(settings: JitSettings) -> None:
