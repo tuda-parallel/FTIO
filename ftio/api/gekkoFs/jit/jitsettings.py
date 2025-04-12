@@ -49,6 +49,11 @@ class JitSettings:
         self.run_dir = ""
         self.dir = ""
         self.cluster = False
+        self.ignore_mtime = False
+        self.parallel_move = False
+        self.lock_generator = False
+        self.lock_consumer = False
+        self.adaptive = "cancel"
         self.job_id = 0
         self.static_allocation = False
         self.ftio_node = ""
@@ -61,9 +66,11 @@ class JitSettings:
         self.alloc_call_flags = ""
         self.job_name = ""
         self.ftio_bin_location = ""
-        self.gkfs_intercept = ""
         self.gkfs_hostfile = ""
         self.gkfs_proxyfile = ""
+        self.mpi_hostfile = ""
+        self.parsed_gkfs_daemon = ""
+        self.parsed_gkfs_intercept = ""
         
         self.log_dir = ""
         self.gkfs_daemon_log = ""
@@ -123,6 +130,7 @@ class JitSettings:
         self.procs_app = 0
         self.procs_ftio = 0
         self.cmd_call = ""
+        
 
         self.set_cluster_mode()
         self.set_default_procs()
@@ -168,9 +176,10 @@ class JitSettings:
 
         # Gekko settings
         if self.gkfs_use_syscall:
-            self.gkfs_intercept = self.gkfs_syscall_intercept
+            # already correct
+            pass 
         else:
-            self.gkfs_intercept = self.gkfs_libc_intercept
+            self.gkfs_intercept = self.gkfs_intercept.replace("_intercept.so", "_libc_intercept.so")
 
     def set_absolute_path(self) -> None:
         self.run_dir = os.path.expanduser(self.run_dir)
@@ -202,7 +211,16 @@ class JitSettings:
             self.gkfs_proxyfile = self.gkfs_proxyfile.replace(
                 ".pid", f"_{self.job_id}.pid"
             )
-        
+
+    def set_mpi_host_file(self,job_id=None):
+        if job_id:
+            self.mpi_hostfile = f"{self.dir}/mpi_hostfile_{self.job_id}"
+        else:
+            self.mpi_hostfile = f"{self.dir}/mpi_hostfile"
+
+
+
+            
     def set_flags(self) -> None:
         """sets the flags in case exclude all is specified
         in the options passed
@@ -336,9 +354,16 @@ class JitSettings:
 
         # ****** gkfs variables ******
         self.gkfs_deps = "/lustre/project/nhr-admire/tarraf/deps"  # _gcc12_2"
-        self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
-        self.gkfs_syscall_intercept =  f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so" 
-        self.gkfs_libc_intercept = f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_libc_intercept.so" 
+        if  self.parsed_gkfs_daemon:
+            self.gkfs_daemon = self.parsed_gkfs_daemon
+        else:
+            self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
+
+        if  self.parsed_gkfs_intercept:
+            self.gkfs_intercept = self.parsed_gkfs_intercept
+        else:
+            self.gkfs_intercept =  f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so" 
+
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
         self.gkfs_hostfile = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
@@ -367,7 +392,8 @@ class JitSettings:
         elif "wacom" in self.app:
             self.app_call = "./wacommplusplus"
             # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
-            self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/roms"
+            # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/roms"
+            self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build_new"
             if not self.app_flags: #default value if app_flags is not set
                 self.app_flags = ""
         #  ├─ LAMMPS 
@@ -490,12 +516,14 @@ class JitSettings:
         self.regex_file = "/lustre/project/nhr-admire/shared/nek_regex4cargo.txt"
         # ├─ Nek5000
         if "nek" in self.app_call:
-            self.regex_flush_match = "^/[a-zA-Z0-9]*turbPipe0\\.f\\d+"
-            self.regex_stage_out_match = ".*"
+            self.regex_flush_match = ".*/[a-zA-Z0-9]*turbPipe0\\.f\\d+"
+            self.regex_stage_out_match = ".*/[a-zA-Z0-9]*turbPipe0\\.f\\d+" #".*"
         # ├─ Wacom++
         elif "wacom" in self.app_call:
-            self.regex_flush_match = ".*/(restart|output)/.*\\.nc$"
-            self.regex_stage_out_match = ".*"
+            self.regex_flush_match = ".*/(history|restart|output)/.*\\.(nc|json)$"
+            # self.regex_flush_match = ".*/output/.*\\.nc$"
+            # self.regex_stage_out_match = ".*"
+            self.regex_stage_out_match = ".*/(history|restart|output)/.*\\.(nc|json)$"
         # ├─ DLIO
         elif "dlio" in self.app_call:
             self.regex_flush_match = ".*/(checkpoints)/jit/.*\\.pt$"
@@ -514,7 +542,22 @@ class JitSettings:
             self.regex_stage_out_match = ".*"
 
         self.regex_match = self.regex_flush_match 
-        self.env_var = {"CARGO_REGEX": self.regex_file}
+        self.env_var = {
+            "CARGO_REGEX": self.regex_file
+                        }
+        
+        # With GENERATOR (app): At open/create we create an extra .lockgekko file with size = number of opens to that file (it is distributed). We decrease and delete the file on close
+        # with CONSUMER (Cargo): At Open we wait until (40 seconds~) for the lock file to dissapear. No modifications needed on the client, it is transparent.
+        if self.lock_generator and not self.exclude_daemon:
+            self.env_var["LIBGKFS_PROTECT_FILES_GENERATOR"]="1" #app, i.e., Gekko
+        # else:
+        #     self.env_var["LIBGKFS_PROTECT_FILES_GENERATOR"]="0"
+
+        if self.lock_consumer and not self.exclude_cargo:
+            self.env_var["LIBGKFS_PROTECT_FILES_CONSUMER"]="1" #Cargo
+        # else:
+        #     self.env_var["LIBGKFS_PROTECT_FILES_CONSUMER"]="0"
+
 
         # ? local machine settings
         # ?###############################
@@ -522,9 +565,16 @@ class JitSettings:
             self.gkfs_daemon_protocol ="ofi+sockets" #"ofi+tcp"
             self.install_location = "/d/github/JIT"
             self.ftio_bin_location = "/d/github/FTIO/.venv/bin"
-            self.gkfs_daemon = f"{self.install_location}/iodeps/bin/gkfs_daemon"
-            self.gkfs_syscall_intercept = f"{self.install_location}/iodeps/lib/libgkfs_intercept.so"
-            self.gkfs_libc_intercept = f"{self.install_location}/iodeps/lib/libgkfs_libc_intercept.so"
+            if  self.parsed_gkfs_daemon:
+                self.gkfs_daemon = self.parsed_gkfs_daemon
+            else:
+                self.gkfs_daemon = f"{self.install_location}/iodeps/bin/gkfs_daemon"
+
+            if  self.parsed_gkfs_intercept:
+                self.gkfs_intercept = self.parsed_gkfs_intercept
+            else:
+                self.gkfs_intercept =  f"{self.install_location}/iodeps/lib/libgkfs_intercept.so" 
+            
             self.gkfs_mntdir = "/tmp/jit/tarraf_gkfs_mountdir"
             self.gkfs_rootdir = "/tmp/jit/tarraf_gkfs_rootdir"
             self.gkfs_hostfile = f"{os.getcwd()}/gkfs_hosts.txt"

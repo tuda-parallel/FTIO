@@ -16,7 +16,6 @@ import time
 # import numpy as np
 import zmq
 from rich.console import Console
-from ftio.parse.args import parse_args
 from ftio.plot.plot_bandwidth import plot_bar_with_rich
 from ftio.prediction.shared_resources import SharedResources
 from ftio.prediction.helper import print_data#, export_extrap
@@ -25,7 +24,7 @@ from ftio.prediction.probability_analysis import find_probability
 from ftio.prediction.helper import get_dominant_and_conf
 from ftio.prediction.analysis import display_result, save_data, window_adaptation
 from ftio.prediction.processes_zmq import bind_socket, receive_messages
-from ftio.api.gekkoFs.stage_data import parse_args_cargo, setup_cargo, trigger_cargo
+from ftio.api.gekkoFs.stage_data import parse_args_data_stager, setup_cargo, trigger_cargo
 from ftio.api.gekkoFs.ftio_gekko import run
 from ftio.freq.helper import MyConsole
 
@@ -41,7 +40,7 @@ def main(args: list[str] = sys.argv[1:]) -> None:
         args (_type_, optional): FTIO arguments, see 'ftio -h'.
     '''
     #parse arguments
-    cargo_args, ftio_args = parse_args_cargo(args,False)
+    data_stager_args, ftio_args = parse_args_data_stager(args,False)
     ranks = 0
     procs = []
     
@@ -51,10 +50,10 @@ def main(args: list[str] = sys.argv[1:]) -> None:
     # args.extend(['-e', 'no', '-f', '10', '-m', 'write','-v'])
     
     #start cargo
-    setup_cargo(cargo_args)
+    setup_cargo(data_stager_args)
 
     # bind to socket
-    socket = bind_socket(cargo_args.zmq_address,cargo_args.zmq_port)
+    socket = bind_socket(data_stager_args.zmq_address,data_stager_args.zmq_port)
     # can be extended to listen to multiple sockets
     poller = zmq.Poller()
     poller.register(socket, zmq.POLLIN)
@@ -63,9 +62,7 @@ def main(args: list[str] = sys.argv[1:]) -> None:
     shared_resources = SharedResources()
 
     # for Cargo trigger process:
-    trigger = handle_in_process(trigger_cargo, args=(shared_resources.sync_trigger, cargo_args),) 
-
-
+    trigger = handle_in_process(trigger_cargo, args=(shared_resources.sync_trigger, data_stager_args),) 
 
     # Loop and predict if changes occur
     try:

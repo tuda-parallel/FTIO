@@ -5,7 +5,7 @@ data in to staging out. It also handles pre- and post-application calls.
 
 Author: Ahmad Tarraf  
 Copyright (c) 2025 TU Darmstadt, Germany  
-Date: Aug 2023
+Date: Aug 2024
 
 Licensed under the BSD 3-Clause License.  
 For more information, see the LICENSE file in the project root:  
@@ -41,7 +41,9 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     log_dir,
     print_settings,
     save_bandwidth,
+    save_hosts_file,
     set_dir_gekko,
+    snapshot_directory,
     soft_kill,
 )
 
@@ -126,6 +128,12 @@ def main() -> None:
 
     # mark execution as completed
     log_execution(settings)
+
+    # save the host files
+    save_hosts_file(settings)
+
+    # save the host files
+    snapshot_directory(settings)
     
     # 11.0 Soft kill
     soft_kill(settings)
