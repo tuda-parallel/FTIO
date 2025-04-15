@@ -36,7 +36,6 @@ files_in_progress = FileQueue()
 def move_files_os(
     args: argparse.Namespace,
     parallel: bool = False,
-    ignore_modification_time: bool = False,
     period:float = 0
 ) -> None:
     """
@@ -45,15 +44,16 @@ def move_files_os(
     Args:
         args (argparse.Namespace): Parsed command line arguments.
         parallel (bool, optional): Whether to use parallel processing for file moving.
-        ignore_modification_time (bool, optional): Whether to ignore file 
             modification time checks. Defaults to False.
         period (float, optional): Time period for file modification checks. Defaults to 0.
     """
-    debug = False
     CONSOLE.print("[bold green][Trigger][/][green] Moving files\n")
     args.ld_preload = args.ld_preload.replace("libc_", "")
     if not os.path.exists(args.stage_out_path):
         os.makedirs(args.stage_out_path)
+
+    if args.parallel_move:
+        parallel = True
 
     regex = None
     # Compile the regex pattern if provided
@@ -65,6 +65,8 @@ def move_files_os(
 
     # Iterate over all items in the source directory
     files = get_files(args)
+    if args.debug:
+        f"[bold green][Trigger][/][green] Files are:\n {files}[/]\n"
 
     # Ensure the target directory exists
     os.makedirs(args.stage_out_path, exist_ok=True)
@@ -73,16 +75,16 @@ def move_files_os(
             if regex and regex.match(file_name):
                 if not files_in_progress.in_progress(file_name):
                     files_in_progress.put(file_name)
-                    move_file(args, file_name, ignore_modification_time, period)
+                    move_file(args, file_name, period)
                     files_in_progress.mark_done(file_name)
                 else:
-                    if debug:
+                    if args.debug:
                         CONSOLE.print(
                             f"[bold green][Trigger][/]: already moving {file_name}"
                         )
 
             else:
-                if debug:
+                if args.debug:
                     CONSOLE.print(f"[bold green][Trigger][/]:  Ignored {file_name}")
     else:
         futures = {}
@@ -94,17 +96,17 @@ def move_files_os(
                         files_in_progress.put(file_name)
                         futures[
                             executor.submit(
-                                move_file, args, file_name, ignore_modification_time, period
+                                move_file, args, file_name, period
                             )
                         ] = i
                     else:
-                        if debug:
+                        if args.debug:
                             CONSOLE.print(
                                 f"[bold green][Trigger][/]:  already moving {file_name}"
                             )
 
                 else:
-                    if debug:
+                    if args.debug:
                         CONSOLE.print(f"[bold green][Trigger][/]:  Ignored {file_name}")
 
             # Process results as they complete
@@ -120,7 +122,7 @@ def move_files_os(
 
 
 def move_file(
-    args: argparse.Namespace, file_name: str, ignore_modification_time: bool = False, period:float = 0
+    args: argparse.Namespace, file_name: str, period:float = 0
 ) -> None:
     """
     Stages out a single file if it matches the regex and meets modification time criteria.
@@ -128,7 +130,6 @@ def move_file(
     Args:
         args (argparse.Namespace): Parsed command line arguments.
         file_name (str): Name of the file to stage out.
-        ignore_modification_time (bool, optional): Whether to ignore file modification time checks. Defaults to False.
     """
     threshold = period/2 # the io took half the time
     threshold = max(threshold,10)
@@ -136,7 +137,7 @@ def move_file(
 
     modification_time = time.time() - get_time(args, file_name)
     # CONSOLE.print(f"File modified {modification_time:.2} seconds ago")
-    if ignore_modification_time or modification_time >= threshold:
+    if args.ignore_mtime or modification_time >= threshold:
         CONSOLE.print(
             f"[bold green][Trigger][/][bold yellow]: Moving (copy & unlink) file {file_name} (last modified {modification_time:.3} -- threshold {threshold})[/]\n"
         )
@@ -169,7 +170,7 @@ def copy_file_and_unlink(args: argparse.Namespace, file_name: str) -> None:
     preloaded_call(args, f"cp {file_name} {args.stage_out_path}")
 
     CONSOLE.print(
-        f"[bold green][Trigger][/][green]: Unlinking {file_name} to {args.stage_out_path})--[/]\n"
+        f"[bold green][Trigger][/][green]: Unlinking {file_name} to {args.stage_out_path})[/]\n"
     )
     preloaded_call(args, f" unlink {file_name}")
     CONSOLE.print(
@@ -187,12 +188,30 @@ def get_files(args: argparse.Namespace) -> list[str]:
     Returns:
         list[str]: List of file paths.
     """
-    files = preloaded_call(args, f"ls -R {args.gkfs_mntdir}")
+    try:
+        files = preloaded_call(args, f"find {args.gkfs_mntdir}")
+        if isinstance(files, str):
+            files = files.strip().splitlines()
+        if args.debug:
+            CONSOLE.print(f"[bold green][Trigger][/][green]: Finished moving  {files}[/]\n")
+        files = [f"{item}" for item in files if "." in item]
+        if args.debug:
+            CONSOLE.print(f"[bold green][Trigger][/][green]: Finished moving  {files}[/]\n")
+        
+    except Exception as e:
+        if args.debug:
+            CONSOLE.print(f"[bold green][Trigger][/][green]: Error encountered  {e}[/]\n")
+        
+        files = preloaded_call(args, f"ls -R {args.gkfs_mntdir}")
+        
+        if files:
+            files = files.splitlines()
+            # if args.debug:
+            #     CONSOLE.print(f"[bold green][Trigger][/][green]: Found files are{files}[/]\n")
+            files = [f for f in files if "LIBGKFS" not in f]
+            files = [f"{args.gkfs_mntdir}/{item}" for item in files if "." in item]
+    
     if files:
-        files = files.splitlines()
-        files = [f for f in files if "LIBGKFS" not in f]
-        files = [f"{args.gkfs_mntdir}/{item}" for item in files if "." in item]
-
         return files
     else:
         return []
@@ -342,10 +361,17 @@ def jit_move(settings: JitSettings) -> None:
         str(settings.gkfs_hostfile),
         "--gkfs_mntdir",
         str(settings.gkfs_mntdir),
+        "--ignore_mtime"
     ]
     if settings.regex_match:
-        args += ["--regex", str(settings.regex_match)]
+        args += ["--regex", f"{str(settings.regex_match)}"]
 
+    if settings.parallel_move:
+        args += ["--parallel_move"]
+
+    if settings.debug_lvl > 0:
+        args +=  ["--debug"]
+    
     # Define CLI parser
     parser = argparse.ArgumentParser(
         description="Data staging arguments", prog="file_mover"
@@ -378,7 +404,29 @@ def jit_move(settings: JitSettings) -> None:
     parser.add_argument(
         "--gkfs_mntdir", type=str, default=None, help="Mount directory for GekkoFs."
     )
+    parser.add_argument(
+        "--ignore_mtime",action="store_true", default=True
+        )
+    parser.add_argument(
+        "--parallel_move",action="store_true", default=False
+        )
+    parser.add_argument(
+        "--debug",
+        dest="debug",
+        action="store_true",
+        help="Debug flag",
+        default=False,
+    )
+    parser.add_argument(
+        "--adaptive",
+        dest="adaptive",
+        help="Adaptive flag for flushing",
+        default="cancel",
+        choices={"skip","cancel",""}
+    )
 
     # Parse and call mover
     parsed_args = parser.parse_args(args)
-    move_files_os(parsed_args, ignore_modification_time=True)
+
+    if not settings.dry_run:
+        move_files_os(parsed_args)

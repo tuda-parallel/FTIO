@@ -74,19 +74,25 @@ def start_gekko_daemon(settings: JitSettings) -> None:
         )
         # Create host file and dirs for geko
         init_gekko(settings)
-        debug_flag = "--export=ALL,GKFS_DAEMON_LOG_LEVEL=err"
-        if settings.debug_lvl > 0:
-            debug_flag = "--export=ALL,GKFS_DAEMON_LOG_LEVEL=trace"
+
+        if settings.use_mpirun:
+            debug_flag = "-x GKFS_DAEMON_LOG_LEVEL=err"
+            if settings.debug_lvl > 0:
+                debug_flag = "-x GKFS_DAEMON_LOG_LEVEL=trace"
+        else:
+            debug_flag = "--export=ALL,GKFS_DAEMON_LOG_LEVEL=err"
+            if settings.debug_lvl > 0:
+                debug_flag = "--export=ALL,GKFS_DAEMON_LOG_LEVEL=trace"
 
         if settings.cluster:
             if settings.use_mpirun:
                 # mpiexec
                 call = (
-                    f"{settings.gkfs_daemon} "
+                    f" {settings.gkfs_daemon} "
                     f"-r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
                     f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol}"
                 )
-                call = mpiexec_call(settings, call, settings.app_nodes)
+                call = mpiexec_call(settings, call, settings.app_nodes, additional_arguments=debug_flag)
             else:
                 call = (
                     f"srun {debug_flag} --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
@@ -281,16 +287,30 @@ def start_ftio(settings: JitSettings) -> None:
 
         relevant_files(settings)
 
-        ftio_data_stage_args = ""
+        ftio_data_staget_args = ""
         if settings.exclude_cargo:
-            ftio_data_stage_args += (
+            ftio_data_staget_args += (
                 f"--stage_out_path {settings.stage_out_path} --stage_in_path {settings.stage_in_path} "
                 f"--ld_preload {settings.gkfs_intercept} --host_file {settings.gkfs_hostfile} --gkfs_mntdir {settings.gkfs_mntdir} "
                 )
+            
             if settings.regex_match:
-                ftio_data_stage_args += f"--regex {settings.regex_match} "
+                ftio_data_staget_args += f"--adaptive '{settings.adaptive}' "
+
+            if settings.adaptive:
+                ftio_data_staget_args += f"--regex '{settings.regex_match}' "
+
+            if settings.ignore_mtime:
+                ftio_data_staget_args += "--ignore_mtime "
+
+            if settings.parallel_move:
+                ftio_data_staget_args += "--parallel_move "
+
+            if settings.debug_lvl > 0:
+                ftio_data_staget_args += "--debug "
+            
         else:
-            ftio_data_stage_args += (
+            ftio_data_staget_args += (
                 f"--cargo --cargo_bin {settings.cargo_bin} "
                 f"--cargo_server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --stage_out_path {settings.stage_out_path} -t 0.2"
             )
@@ -306,11 +326,11 @@ def start_ftio(settings: JitSettings) -> None:
                 f"srun --jobid={settings.job_id} {settings.ftio_node_command} "
                 f"--disable-status -N 1 --ntasks=1 --cpus-per-task={settings.procs_ftio} "
                 f"--ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 "
-                f"{settings.ftio_bin_location}/predictor_jit {ftio_data_stage_args} --  --zmq_address {settings.address_ftio} --zmq_port {settings.port_ftio} {settings.ftio_args} "
+                f"{settings.ftio_bin_location}/predictor_jit {ftio_data_staget_args} --  --zmq_address {settings.address_ftio} --zmq_port {settings.port_ftio} {settings.ftio_args} "
             )
         else:
             check_port(settings)
-            call = f"{settings.ftio_bin_location}/predictor_jit {ftio_data_stage_args} --  --zmq_address {settings.address_ftio} --zmq_port {settings.port_ftio} {settings.ftio_args} "
+            call = f"{settings.ftio_bin_location}/predictor_jit {ftio_data_staget_args} --  --zmq_address {settings.address_ftio} --zmq_port {settings.port_ftio} {settings.ftio_args} "
 
         jit_print("[cyan]>> Starting FTIO[/]")
 
@@ -425,6 +445,8 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             f"[bold green]####### Staging out [/][black][{get_time()}][/]\n",
             f"[cyan]>> Moving data from {settings.gkfs_mntdir} -> {settings.stage_out_path}[/]",
         )
+        adjust_regex(settings)
+        
         if settings.exclude_cargo:
             # call = flaged_call(
             #     settings,
@@ -442,9 +464,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             jit_move(settings)
             elapsed_time(settings, runtime, "Stage out", time.time() - start)
         else:
-
-            adjust_regex(settings)
-            time.sleep(2)
+            
 
             if not settings.dry_run:
                 try:
@@ -529,13 +549,16 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                     f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 )
+                
+            if (settings.lock_generator and not settings.exclude_daemon) or (settings.lock_consumer and not settings.exclude_cargo):
+                additional_arguments += get_env(settings, "mpi")
 
             call = (
                 # f" cd {settings.run_dir} && "
                 # f"strace -f -e trace=read,write,open,close,stat,fstat,lseek,access -o /gpfs/fs1/home/tarrafah/strace_n{settings.app_nodes}_p{settings.procs_app}.txt mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
                 # f" cd {settings.run_dir} && time -p mpiexec --mca errhandler ftmpi --mca mpi_abort_print_stack 1  -np {settings.app_nodes*settings.procs_app} --oversubscribe "
                 f" cd {settings.run_dir} && time -p mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
-                f"--hostfile {settings.dir}/hostfile_mpi --map-by node "
+                f"--hostfile {settings.mpi_hostfile} --map-by node "
                 f"{additional_arguments} "
                 f"{settings.task_set_1} {settings.app_call} {settings.app_flags}"
             )
@@ -549,11 +572,13 @@ def start_application(settings: JitSettings, runtime: JitTime):
             if not settings.exclude_daemon:
                 additional_arguments += (
                     #f"LIBGKFS_LOG=info,warnings,errors,syscalls"
-                    f"LIBGKFS_LOG=all"
+                    f"LIBGKFS_LOG=all,"
                     f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
                     f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
                     f"LD_PRELOAD={settings.gkfs_intercept},"
                 )
+                if not settings.exclude_cargo and settings.lock_generator: # if gekko and cargo active
+                    additional_arguments += get_env(settings, "srun")
 
             app_call = get_executable_realpath(settings.app_call, settings.run_dir)
             call = (
@@ -571,24 +596,28 @@ def start_application(settings: JitSettings, runtime: JitTime):
             os.chdir(settings.run_dir)
             jit_print(f">> Changing directory to  {os.getcwd()}")
 
-        if settings.exclude_all:
-            call = f" time mpiexec -np {settings.procs_app} --oversubscribe {settings.app_call} {settings.app_flags}"
-        elif settings.exclude_ftio:
-            call = (
-                f" time mpiexec -np {settings.procs_app} --oversubscribe "
-                f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                f"-x LIBGKFS_LOG=info,warnings,errors -x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-                f"-x LD_PRELOAD={settings.gkfs_intercept} {settings.app_call} {settings.app_flags}"
-            )
-        else:
-            call = (
-                f" time mpiexec -np {settings.procs_app} --oversubscribe "
-                f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                f"-x LIBGKFS_LOG=none -x LIBGKFS_ENABLE_METRICS=on "
-                f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} "
+        additional_arguments = ""
+        if not settings.exclude_ftio:
+            additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} -x LIBGKFS_ENABLE_METRICS=on "
+        if not settings.exclude_proxy:
+            additional_arguments += (
                 f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-                f"-x LD_PRELOAD={settings.gkfs_intercept} {settings.app_call} {settings.app_flags}"
             )
+        if not settings.exclude_daemon:
+            additional_arguments += (
+                f"-x LIBGKFS_LOG=info,warnings,errors "
+                f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
+                f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                f"-x LD_PRELOAD={settings.gkfs_intercept} "
+            )
+            if not settings.exclude_cargo and settings.lock_generator: # if gekko and cargo active
+                additional_arguments += get_env(settings, "mpi")
+
+        call = (
+            f" time  mpiexec -np {settings.procs_app} --oversubscribe "
+            f"{additional_arguments} {settings.app_call} {settings.app_flags}"
+            )
+
 
     # elapsed = execute_block_and_log(call, settings.app_log_dir)
     check(settings)

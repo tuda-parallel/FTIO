@@ -39,7 +39,7 @@ def stage_files(args: argparse.Namespace, prediction: dict) -> None:
     text = f"frequency: {prediction['freq']}\nperiod: {period} \nconfidence: {prediction['conf']}\nprobability: {prediction['probability']}\n"
     CONSOLE.print(f"[bold green][Trigger][/][green] {text}\n")
     if args.cargo:
-        move_files_cargo(args)
+        move_files_cargo(args, period=period)
     else:  # standard move
         move_files_os(args, period=period)
 
@@ -176,19 +176,27 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                 exit()
 
 
-def move_files_cargo(args: argparse.Namespace) -> None:
+def move_files_cargo(args: argparse.Namespace, period:float = 0) -> None:
     """
     Moves files using Cargo.
 
     Args:
         args (Namespace): Parsed command line arguments.
+        period (float, optional): Time period for file modification checks. Defaults to 0.
+
     """
-    call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
+    if period != 0 and args.ignore_mtime:
+        threshold = period/2 # the io took half the time
+        threshold = max(threshold,10)
+        call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run --mtime {int(threshold)}"
+    else:
+        call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
+        
     CONSOLE.print(f"[bold green][Trigger][/][green] {call}")
     os.system(call)
 
 
-def parse_args_cargo(
+def parse_args_data_stager(
     args: list[str], parse_args_ftio: bool = False
 ) -> tuple[argparse.Namespace, list[str]]:
     """
@@ -247,6 +255,20 @@ def parse_args_cargo(
         default="ofi+sockets://127.0.0.1:62000",
     )
     parser.add_argument(
+        "--adaptive",
+        dest="adaptive",
+        help="Adaptive flag for flushing",
+        default="cancel",
+        choices={"skip","cancel",""}
+    )
+    parser.add_argument(
+        "--ignore_mtime",
+        dest="ignore_mtime",
+        action="store_true",
+        help="Ignores mtime for files when flushing",
+        default=False,
+    )
+    parser.add_argument(
         "-t",
         "--mtime-threshold",
         dest="mtime_threshold",
@@ -256,16 +278,27 @@ def parse_args_cargo(
     )
     parser.add_argument(
         "--stage_out_path",
-        "--stage_out_path",
         dest="stage_out_path",
         type=str,
         help="Cargo stage out path",
         default="/lustre/project/nhr-admire/tarraf/stage-out",
     )
-
+    parser.add_argument(
+        "--parallel_move",
+        dest="parallel_move",
+        action="store_true",
+        help="If set, flushes files in parallel",
+        default=False,
+    )
+    parser.add_argument(
+        "--debug",
+        dest="debug",
+        action="store_true",
+        help="Debug flag",
+        default=False,
+    )
     # JIT flags without cargo
     parser.add_argument(
-        "--stage_in_path",
         "--stage_in_path",
         dest="stage_in_path",
         type=str,
@@ -273,7 +306,6 @@ def parse_args_cargo(
         default="/lustre/project/nhr-admire/tarraf/stage-in",
     )
     parser.add_argument(
-        "--regex",
         "--regex",
         dest="regex",
         type=str,

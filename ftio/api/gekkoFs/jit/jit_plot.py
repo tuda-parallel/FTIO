@@ -92,6 +92,7 @@ def plot_results(args):
             print(f"Processing file: {filename}")
             results = JitResult()
             title = filename
+            # title = ""
             current_directory = os.getcwd()
             json_file_path = os.path.join(current_directory, filename)
             extract_and_plot(results,json_file_path,title, no_diff = args.no_diff)

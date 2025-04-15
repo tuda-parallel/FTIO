@@ -1,3 +1,17 @@
+"""
+This file provides functions to check the setup for the JIT script, including verifying
+configuration files, generating test scripts, and executing them to ensure the environment
+is correctly configured.
+
+Author: Ahmad Tarraf  
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: Aug 2024
+
+Licensed under the BSD 3-Clause License.  
+For more information, see the LICENSE file in the project root:  
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import os
 import time
 from datetime import datetime
@@ -5,15 +19,28 @@ from rich.console import Console
 from ftio.api.gekkoFs.jit.execute_and_wait import execute_block
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.setup_helper import jit_print
+
 console = Console()
 
-def check_setup(settings:JitSettings):
-    
+
+def check_setup(settings: JitSettings):
+    """
+    Checks the setup for the JIT script by verifying configuration files, generating
+    and executing a test script, and ensuring the environment is correctly configured.
+
+    Args:
+        settings (JitSettings): The settings object containing configuration details
+                                for the JIT environment.
+
+    Returns:
+        None
+    """
+
     if not settings.exclude_all:
 
         # Display MPI hostfile
         if settings.cluster:
-            mpi_hostfile_path = os.path.expanduser(f"{settings.dir}/hostfile_mpi")
+            mpi_hostfile_path = os.path.expanduser(f"{settings.mpi_hostfile}")
             with open(mpi_hostfile_path, "r") as file:
                 mpi_hostfile_content = file.read()
             console.print(f"[cyan]>> MPI hostfile:\n{mpi_hostfile_content}[/]")
@@ -24,7 +51,6 @@ def check_setup(settings:JitSettings):
             gekkofs_hostfile_content = file.read()
         console.print(f"[cyan]>> Geko hostfile:\n{gekkofs_hostfile_content}[/]")
 
-        
         # ls_command = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={gekkofs_hostfile} ls {settings.gkfs_mntdir}"
         # files = subprocess.check_output(ls_command, shell=True).decode()
         # console.print(f"[cyan]>> geko_ls {gkfs_mntdir}: \n{files}[/]")
@@ -32,27 +58,29 @@ def check_setup(settings:JitSettings):
         if settings.cluster and settings.debug_lvl > 0 and not settings.exclude_daemon:
 
             additional_arguments = ""
-            timestamp = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-            file = create_test_file("test.sh"+timestamp, settings)
+            timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+            file = create_test_file("test.sh" + timestamp, settings)
             if settings.use_mpirun:
                 # if not settings.exclude_ftio:
                 #     additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} -x LIBGKFS_ENABLE_METRICS=on "
                 if not settings.exclude_proxy:
-                    additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+                    additional_arguments += (
+                        f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+                    )
                 if not settings.exclude_daemon:
                     additional_arguments += (
                         f"-x LIBGKFS_LOG=info,warnings,errors "
                         f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
                         f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                         f"-x LD_PRELOAD={settings.gkfs_intercept} "
-                        )
+                    )
 
                 call = (
-                        f" mpiexec -np {settings.app_nodes} --oversubscribe "
-                        f"--hostfile {settings.dir}/hostfile_mpi --map-by node "
-                        f"{additional_arguments} "
-                        f"{file}"
-                    )
+                    f" mpiexec -np {settings.app_nodes} --oversubscribe "
+                    f"--hostfile {settings.mpi_hostfile} --map-by node "
+                    f"{additional_arguments} "
+                    f"{file}"
+                )
             else:
                 # if not settings.exclude_ftio:
                 #     additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},"
@@ -75,7 +103,7 @@ def check_setup(settings:JitSettings):
                     f"--overcommit --overlap --oversubscribe --mem=0 "
                     f"{file} "
                 )
-            #test script
+            # test script
             jit_print("[cyan] >> Checking test file")
             try:
                 out = execute_block(call, False)
@@ -90,15 +118,27 @@ def check_setup(settings:JitSettings):
     time.sleep(1)
 
 
-def create_test_file(name:str, settings:JitSettings) -> str:
+def create_test_file(name: str, settings: JitSettings) -> str:
+    """
+    Creates a shell script to test the JIT environment by performing basic operations
+    such as listing and checking the status of the GekkoFS mount directory.
+
+    Args:
+        name (str): The name of the shell script file to be created.
+        settings (JitSettings): The settings object containing configuration details
+                                for the JIT environment.
+
+    Returns:
+        str: The path to the created shell script file.
+    """
     # Define the content of the shell script
     script_content = "#!/bin/bash\n"
-    script_content +="myhostname=$(hostname)\n"
-    script_content +=f"statcall=$(stat {settings.gkfs_mntdir})\n"
+    script_content += "myhostname=$(hostname)\n"
+    script_content += f"statcall=$(stat {settings.gkfs_mntdir})\n"
     if settings.app_nodes == 1:
-        script_content +=f"lscall=$(ls -lR {settings.gkfs_mntdir})\n"
+        script_content += f"lscall=$(ls -lR {settings.gkfs_mntdir})\n"
     else:
-        script_content +=f"lscall=$(ls {settings.gkfs_mntdir})\n"
+        script_content += f"lscall=$(ls {settings.gkfs_mntdir})\n"
     script_content += """
     echo -e "Hello I am ${myhostname} and stat output: \\n${statcall}\\n The directory contains:\\n${lscall}\\n"
     """

@@ -16,6 +16,12 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 import numpy as np
 import plotly.graph_objects as go
 from ftio.plot.helper import format_plot_and_ticks
+from rich.table import Table
+from rich.console import Console
+from rich.panel import Panel
+
+CONSOLE = Console()
+
 
 class JitResult:
     def __init__(self) -> None:
@@ -142,6 +148,7 @@ class JitResult:
             showlegend=False
         ))
 
+        stat(self.app, self.stage_out,self.stage_in,self.node)
         self.format_and_show(fig,title,False)
 
 
@@ -170,7 +177,7 @@ class JitResult:
             barmode= barmode,
             title_font_size=24,  # Increased title font size
             width=1000 + 100 * len(self.node),
-            height=600,
+            height=550,
             xaxis=dict(title_font=dict(size=24)),  # Increased x-axis title font size
             yaxis=dict(title_font=dict(size=24)),  # Increased y-axis title font size
             legend=dict(
@@ -183,13 +190,12 @@ class JitResult:
         fig.update_layout(legend=dict(
                 orientation="h",
                 yanchor="bottom",
-                y=0.9,
+                y=0.88,
                 xanchor="right",
                 # x=0.005#
-                x=.995
+                x=.997
             ))
     
-        # Display the plot
         fig.show()
 
 ######################
@@ -313,9 +319,9 @@ class JitResult:
                 stage_in_values.append(stage_in_mean)
 
                 # Calculate error bars (min-max) and add them to the lists
-                app_error_diff.append(app_max - app_min)
-                stage_out_error_diff.append(stage_out_max - stage_out_min)
-                stage_in_error_diff.append(stage_in_max - stage_in_min)
+                app_error_diff.append((app_max - app_min)/2)
+                stage_out_error_diff.append((stage_out_max - stage_out_min)/2)
+                stage_in_error_diff.append((stage_in_max - stage_in_min)/2)
         
         # Plot app mean with min-max error bars
         fig.add_trace(go.Bar(
@@ -353,10 +359,10 @@ class JitResult:
             )  # Min-max error bars
         ))
 
-
+        stat_with_min_max(app_values, stage_out_values,stage_in_values,self.node, app_error_diff, stage_out_error_diff,  stage_in_error_diff)
         self.format_and_show(fig,barmode="group",title=title)
-        
-#! helpers
+    
+
 
 def add_mode(list1, list2):
     """
@@ -429,4 +435,121 @@ def sort_data(data_list: list[dict], get_latest_timestamp: bool = False):
     return sorted_data
 
 
+def speed_up(arr, nodes):
+    # Ensure the array length is divisible by the number of nodes
+    assert len(arr) % len(nodes) == 0, "Array length must be divisible by the number of nodes"
+    
+    # Reshape the array into chunks based on the number of nodes
+    chunks = arr.reshape(-1, len(nodes))
+    first_chunk = chunks[0]
+    second_chunk = chunks[1]
+    last_chunk = chunks[-1]
 
+    # Calculate the speedups
+
+    glass_speedup = np.where(last_chunk != 0, last_chunk/first_chunk, 0)
+    gekko_lustre_speedup = np.where(last_chunk != 0, last_chunk/second_chunk, 0)
+    glass_vs_gekko_speedup = np.where(second_chunk != 0, second_chunk/first_chunk, 0)
+
+    # #this is improvment not sspeedup
+    # glass_speedup = np.where(last_chunk != 0, (last_chunk - first_chunk) / last_chunk, 0)*100
+    # gekko_lustre_speedup = np.where(last_chunk != 0, (last_chunk - second_chunk) / last_chunk, 0)*100
+    # glass_vs_gekko_speedup = np.where(second_chunk != 0, (second_chunk - first_chunk) / second_chunk, 0)*100
+
+    
+    return glass_speedup, gekko_lustre_speedup, glass_vs_gekko_speedup, first_chunk, second_chunk, last_chunk
+
+def apply_color_scale(value, min_val, max_val):
+    """Map the value to a color scale between red and green."""
+    # Normalize the value between 0 and 1
+    normalized_value = (value - min_val) / (max_val - min_val)
+    # Convert normalized value to a color on a red to green scale
+    red = int((1 - normalized_value) * 255)
+    green = int(normalized_value * 255)
+    return f"rgb({red},{green},0)"
+
+def highlight_row(values, chunks, min_value=None, max_value=None):
+    """Returns a list of strings with a color scale for the values."""
+    
+    result = []
+    for i, val in enumerate(values):
+        # Apply color scale from red to green
+        color = apply_color_scale(val, min_value, max_value)
+        
+        # Format the value with the calculated color
+        formatted = f"[{color}]{val:.2f}x[/]"
+        
+        # Add the division information (using correct chunks elements)
+        if i == 0:
+            formatted += f"[cyan] ({chunks[2]:.1f}/{chunks[0]:.1f} -- [{color}]{100*(chunks[2]-chunks[0])/chunks[2] if chunks[2] > 0 else 0:.2f}%[/])"
+        elif i == 1:
+            formatted += f"[cyan] ({chunks[2]:.1f}/{chunks[1]:.1f} -- [{color}]{100*(chunks[2]-chunks[1])/chunks[2] if chunks[2] > 0 else 0:.2f}%[/])"
+        elif i == 2:
+            formatted += f"[cyan] ({chunks[1]:.1f}/{chunks[0]:.1f} -- [{color}]{100*(chunks[1]-chunks[0])/chunks[1] if chunks[1] > 0 else 0:.2f}%[/])"
+        
+        result.append(formatted)
+    return result
+
+def print_table(title, lustre_vs_glass, lustre_vs_gekko, gekkos_vs_glass, nodes, first_chunk, second_chunk, last_chunk, panel = None):
+    table = Table(title=title)
+    table.add_column("Node", justify="right")
+    table.add_column("Lustre / GLASS", style="green")
+    table.add_column("Lustre / GekkoFS", style="cyan")
+    table.add_column("GekkoFS / GLASS", style="magenta")
+
+    # concat list and find max
+    min_value = min(np.concatenate([lustre_vs_glass,lustre_vs_gekko,gekkos_vs_glass]))
+    max_value = max(np.concatenate([lustre_vs_glass,lustre_vs_gekko,gekkos_vs_glass]))
+    
+    for i in range(len(nodes)):  # Use len(nodes) to iterate through the list of node names
+        row_values = [lustre_vs_glass[i], lustre_vs_gekko[i], gekkos_vs_glass[i]]
+        chunks = [first_chunk[i],second_chunk[i],last_chunk[i]]
+        highlighted = highlight_row(row_values, chunks,min_value, max_value)
+        table.add_row(nodes[i], *highlighted)  # Use the node name directly
+
+    if panel:
+        color = "red"
+        if "max" in panel.lower():
+            color = "green"
+        CONSOLE.print(Panel.fit(table, title=panel, border_style=color))
+    else:
+        CONSOLE.print(table)
+
+def stat(app, stage_out, stage_in, nodes, panel = ""):
+    # Convert lists to numpy arrays
+    app = np.array(app)
+    stage_out = np.array(stage_out)
+    stage_in = np.array(stage_in)
+
+    # Individual speedups
+    glass_app_speedup, gekko_lustre_app_speedup, glass_vs_gekko_app_speedup, first_chunk_app, second_chunk_app, last_chunk_app = speed_up(app, nodes)
+    glass_out_speedup, gekko_lustre_out_speedup, glass_vs_gekko_out_speedup, first_chunk_out, second_chunk_out, last_chunk_out = speed_up(stage_out, nodes)
+    glass_in_speedup, gekko_lustre_in_speedup, glass_vs_gekko_in_speedup, first_chunk_in, second_chunk_in, last_chunk_in = speed_up(stage_in, nodes)
+
+    # Combined array and speedups
+    combined = app + stage_out + stage_in
+    glass_comb_speedup, gekko_lustre_comb_speedup, glass_vs_gekko_comb_speedup, first_chunk_comb, second_chunk_comb, last_chunk_comb = speed_up(combined, nodes)
+
+    # Print all tables with the adjusted node list
+    print_table("App Speedup", glass_app_speedup, gekko_lustre_app_speedup, glass_vs_gekko_app_speedup, nodes, first_chunk_app, second_chunk_app, last_chunk_app, panel)
+    print_table("Stage Out Speedup", glass_out_speedup, gekko_lustre_out_speedup, glass_vs_gekko_out_speedup, nodes, first_chunk_out, second_chunk_out, last_chunk_out, panel)
+    print_table("Stage In Speedup", glass_in_speedup, gekko_lustre_in_speedup, glass_vs_gekko_in_speedup, nodes, first_chunk_in, second_chunk_in, last_chunk_in, panel)
+    print_table("Combined Speedup (App + Out + In)", glass_comb_speedup, gekko_lustre_comb_speedup, glass_vs_gekko_comb_speedup, nodes, first_chunk_comb, second_chunk_comb, last_chunk_comb, panel)
+
+
+def stat_with_min_max(app, stage_out,stage_in,node, app_error_diff, stage_out_error,  stage_in_error):
+    console = Console()
+    console.print("[bold blue]--- Average  Speed-up  ----[/]")
+    stat(app, stage_out,stage_in,node)
+    
+    if any(x != 0 for x in app_error_diff) or any(x != 0 for x in stage_in_error) or any(x != 0 for x in stage_out_error):
+        app = np.array(app)
+        stage_out = np.array(stage_out)
+        stage_in = np.array(stage_in)
+        app_error_diff = np.array(app_error_diff)
+        stage_out_error = np.array(stage_out_error)
+        stage_in_error = np.array(stage_in_error)        
+        console.print(Panel.fit("[bold blue]--- Max Speed-up  ----[/]",style="white",border_style="green"))
+        stat(app + app_error_diff , stage_out + stage_out_error,stage_in + stage_in_error,node, "Max")
+        console.print(Panel.fit("[bold blue]--- Min Speed-up  ----[/]",style="white",border_style="red"))
+        stat(app - app_error_diff , stage_out - stage_out_error,stage_in - stage_in_error,node, "Min")

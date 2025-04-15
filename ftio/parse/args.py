@@ -98,7 +98,7 @@ Full documentation:
         parser.set_defaults(n_freq =  0)
         parser.add_argument('-c', '--autocorrelation', dest='autocorrelation', action='store_true', help ='if set, autocorrelation is calculated in addition to DFT. The results are merged to a single prediction at the end')
         parser.set_defaults(autocorrelation=False)
-        parser.add_argument('-w', '--window_adaptation', dest='window_adaptation',type = str , help ='online time window adaptation. If set to frequency_hits, the time window is shifted on X frequency hits (a dominant frequency was found) to X times the last found period from the current instance. Alternatively it can be set to data to move the window to X times after data has been received')
+        parser.add_argument('-w', '--window_adaptation', dest='window_adaptation',type = str , choices = ['frequency_hits', 'data'], help ='online time window adaptation. If set to frequency_hits, the time window is shifted on X "frequency hits" (a dominant frequency was found) to X times the last found period from the current instance. Alternatively it can be set to "data" to move the window to X times after data has been received')
         parser.set_defaults(window_adaptation="")
         parser.add_argument('-hi', '--hits', dest= 'hits',   type = float, help ='specifies the number of hits needed to adapt the time window. A hit occurs once a dominant frequency is found')
         parser.set_defaults(hits =  3)

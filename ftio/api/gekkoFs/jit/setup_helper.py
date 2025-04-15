@@ -18,6 +18,7 @@ import argparse
 import os
 import signal
 import shutil
+from datetime import datetime
 import re
 from rich.console import Console
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
@@ -171,11 +172,29 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
     )
     parser.add_argument("--address", type=str, help="Address where FTIO is executed.")
     parser.add_argument("--port", type=str, help="Port for FTIO and GekkoFS.")
+
+    parser.add_argument(
+        "--gkfs_daemon",
+        type=str,
+        help="Absolute location to GekkoFS demon",
+    )
+    parser.add_argument(
+        "--gkfs_intercept",
+        type=str,
+        help="Absolute location to GekkoFS **syscall** intercept. If libc is used, the variable i internally changed",
+    )
     parser.add_argument(
         "--gkfs-daemon-protocol",
         type=str,
         choices=["ofi+verbs", "ofi+sockets"],
         help="Protocol for GekkoFS daemon (ofi+verbs or ofi+sockets).",
+    )
+    parser.add_argument(
+        "--adaptive",
+        type=str,
+        help="Adaptive flag for flushing",
+        default="cancel",
+        choices={"skip","cancel",""}
     )
     parser.add_argument(
         "-e",
@@ -219,6 +238,27 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         action="store_true",
         help="GekkoFS uses nodelocal space (default) or memory (is this flag is passed).",
     )
+    parser.add_argument(
+        "--ignore_mtime",
+        action = "store_true",
+        help="If set, mtime is ignored during flushing process"
+    )
+    parser.add_argument(
+        "--parallel_move",
+        action = "store_true",
+        help="If set, files are moved with multiples calls at the same time"
+    )
+    parser.add_argument(
+        "--lock_generator",
+        action = "store_true",
+        help="If set, at open/create we create an extra .lockgekko file with size = number of opens to that file (it is distributed). We decrease and delete the file on close"
+    )
+    parser.add_argument(
+        "--lock_consumer",
+        action = "store_true",
+        help="If set, At Open we wait until (40 seconds~) for the lock file to disappear. No modifications needed on the client, it is transparent."
+    )
+
 
     parsed_args = parser.parse_args(args)
 
@@ -279,7 +319,9 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         settings.port_ftio = parsed_args.port
     if parsed_args.gkfs_daemon_protocol:
         settings.gkfs_daemon_protocol = parsed_args.gkfs_daemon_protocol
-
+    if parsed_args.adaptive:
+        settings.adaptive = parsed_args.adaptive
+        
     if parsed_args.exclude:
         jit_print("[bold yellow]>> Excluding: [/]")
         excludes = parsed_args.exclude.split(",")
@@ -309,6 +351,10 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
                 jit_print(f"[bold red]>> Invalid exclude option: {exclude} [/]")
                 sys.exit(1)
 
+    if parsed_args.gkfs_daemon:
+        settings.parsed_gkfs_daemon = parsed_args.gkfs_daemon
+    if parsed_args.gkfs_intercept:
+        settings.parsed_gkfs_intercept = parsed_args.gkfs_intercept
     if parsed_args.exclude_all:
         settings.exclude_all = True
     if parsed_args.dry_run:
@@ -325,6 +371,14 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         settings.gkfs_use_syscall = True
     if parsed_args.use_mem:
         settings.node_local = False
+    if parsed_args.ignore_mtime:
+        settings.ignore_mtime = True
+    if parsed_args.parallel_move:
+        settings.parallel_move = True
+    if parsed_args.lock_generator:
+        settings.lock_generator = True
+    if parsed_args.lock_consumer:
+        settings.lock_consumer = True
 
     # Save the original call as a string
     settings.cmd_call = "jit " + " ".join(args)
@@ -780,7 +834,6 @@ def allocate(settings: JitSettings) -> None:
         settings (JitSettings): The JIT settings object.
     """
     settings.app_nodes = 1
-
     if settings.use_mpirun and settings.job_id == 0:
         jit_print(
             " [bold yellow]>> Warning, executing mpiexec on remote. We advice using using fixed allocation with mpirun\n"
@@ -810,12 +863,13 @@ def allocate(settings: JitSettings) -> None:
             except subprocess.CalledProcessError:
                 settings.job_id = 0
         else:
-            console.print(
+            jit_print(
                 f"[bold green]JIT [green] ####### Using allocation with id: {settings.job_id}[/]"
             )
 
         # Get NODES_ARR
         if settings.job_id:
+            settings.set_mpi_host_file(settings.job_id)
             try:
                 nodes_result = subprocess.run(
                     f"scontrol show hostname $(squeue -j {settings.job_id} -o '%N' | tail -n +2)",
@@ -824,23 +878,20 @@ def allocate(settings: JitSettings) -> None:
                     text=True,
                 )
                 nodes_arr = nodes_result.stdout.splitlines()
-                # console.print(f"[bold green] ## Node res {nodes_result}[/]")
-                # console.print(f"[bold green] ## Node res stdout{nodes_result.stdout}[/]")
-                # console.print(f"[bold green] ## Node arr {nodes_arr}[/]")
-                # console.print(f"[bold green] ## split{nodes_result.stdout.split()}[/]")
-                if nodes_arr:
-                    try:
-                        nodes_arr = nodes_arr[: int(settings.nodes)]
-                    except Exception as e:
-                        print(e)
-                        console.print(
-                            f"[bold green]JIT [red] >> Unable to decrease number of nodes. Using {settings.nodes}[/]"
-                        )
             except subprocess.CalledProcessError:
                 nodes_arr = []
 
-            # Write to hostfile_mpi
-            with open(f"{settings.dir}/hostfile_mpi", "w") as file:
+            if nodes_arr:
+                try:
+                    nodes_arr = nodes_arr[: int(settings.nodes)]
+                except Exception as e:
+                    print(e)
+                    jit_print(
+                        f"[bold green]JIT [red] >> Unable to decrease number of nodes. Using {settings.nodes}[/]"
+                    )
+                    
+            # Write to mpi_hostfile
+            with open(f"{settings.mpi_hostfile}", "w") as file:
                 file.write("\n".join(nodes_arr) + "\n")
 
             if nodes_arr:
@@ -874,14 +925,18 @@ def allocate(settings: JitSettings) -> None:
                     # print(nodes_arr)
                     # print(f"{','.join(n for n in nodes_arr if n != settings.ftio_node)}\n")
 
-                    # Remove FTIO node from hostfile_mpi
-                    with open(f"{settings.dir}/hostfile_mpi", "r") as file:
+                    # Remove FTIO node from mpi_hostfile
+                    with open(f"{settings.mpi_hostfile}", "r") as file:
                         lines = file.readlines()
-                    with open(f"{settings.dir}/hostfile_mpi", "w") as file:
-                        file.writelines(
-                            line for line in lines if line.strip() != settings.ftio_node
-                        )
 
+                    if any(line.strip() == settings.ftio_node for line in lines):
+                        new_lines = [line for line in lines if line.strip() != settings.ftio_node]
+                    else:
+                        new_lines = lines[:-1]  # fallback: remove last line
+
+                    with open(f"{settings.mpi_hostfile}", "w") as file:
+                        file.writelines(new_lines)
+    
                 jit_print(f"[green]>> JIT Job Id: {settings.job_id} [/]")
                 jit_print(f"[green]>> Allocated Nodes: {len(nodes_arr)} [/]")
                 jit_print(f"[green]>> FTIO Node: {settings.ftio_node} [/]")
@@ -892,14 +947,15 @@ def allocate(settings: JitSettings) -> None:
                     f"[green]>> FTIO Node command: {settings.ftio_node_command} [/]"
                 )
 
-                # Print contents of hostfile_mpi
-                with open(f"{settings.dir}/hostfile_mpi", "r") as file:
+                # Print contents of mpi_hostfile
+                with open(f"{settings.mpi_hostfile}", "r") as file:
                     hostfile_content = file.read()
                 jit_print(
-                    f"[cyan]>> content of {settings.dir}/hostfile_mpi: \n{hostfile_content} [/]"
+                    f"[cyan]>> content of {settings.mpi_hostfile}: \n{hostfile_content} [/]"
                 )
             settings.update_geko_files()
         else:
+            settings.set_mpi_host_file()
             jit_print("[bold red]>> JOB ID could not be retrieved[/]")
 
 
@@ -1216,7 +1272,7 @@ def set_dir_gekko(settings: JitSettings) -> None:
 
             # Single regex to replace both key-value pair and standalone path
             updated_content = re.sub(
-                r'(/[^"]*tarraf_gkfs_mountdir)(/[^"]*)',  # Match '/tarraf_gkfs_mountdir' and the following part of the path
+                r'(/[^"]*_gkfs_mountdir)(/[^"]*)',  # old: r'(/[^"]*tarraf_gkfs_mountdir)(/[^"]*)', 
                 lambda match: f"{settings.gkfs_mntdir}{match.group(2)}",  # Replace with 'settings.gkfs_mntdir' and preserve the rest
                 content,
             )
@@ -1229,6 +1285,41 @@ def set_dir_gekko(settings: JitSettings) -> None:
                     f">> |-> File updated: {file_path}",
                 )
 
+def save_hosts_file(settings: JitSettings):
+    """
+    Saves the hostfiles in log dir
+
+    Args:
+        settings (JitSettings): The JIT settings object.
+    """
+    if not settings.dry_run:
+        for hostfile in [settings.gkfs_hostfile, settings.mpi_hostfile]:
+            if hostfile:
+                try:
+                    shutil.move(hostfile, settings.log_dir)
+                except Exception as e:
+                    print(f"Could not move {hostfile} to {settings.log_dir}: {e}")
+
+
+def snapshot_directory(settings: JitSettings):
+    """
+    Runs 'ls -lahrt' in the current directory and writes the result to a file.
+    If no output file is given, a timestamped file is created.
+
+    Args:
+        settings (JitSettings): The JIT settings object.
+    """
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = f"{settings.log_dir}/snapshot_{timestamp}.txt"
+
+    try:
+        result = subprocess.run(["ls", "-lahrt"], check=True, capture_output=True, text=True)
+        with open(output_file, "w") as f:
+            f.write(result.stdout)
+        jit_print(f"Snapshot saved to {output_file}")
+    except subprocess.CalledProcessError as e:
+        jit_print(f"Error running ls: {e}")
+        
 
 def print_settings(settings: JitSettings) -> None:
     """
@@ -1365,6 +1456,9 @@ def print_settings(settings: JitSettings) -> None:
 |   └─ set 1      : {settings.task_set_1 if settings.set_tasks_affinity else "[yellow]none[/]"}
 ├─ debug level    : {settings.debug_lvl}
 ├─ use mpirun     : {settings.use_mpirun}
+├─ ignore mtime   : {settings.ignore_mtime}
+├─ parallel move  : {settings.parallel_move}
+├─ lock system    : {settings.lock_generator}
 └─ job id         : {settings.job_id}
 
 [bold green]ftio[/]{ftio_text}
@@ -1808,7 +1902,7 @@ def mpiexec_call(
         str: mpiexec command.
     """
     if not node_list:
-        node_list = f"--hostfile {settings.dir}/hostfile_mpi"
+        node_list = f"--hostfile {settings.mpi_hostfile}"
     else:
         if "--host" not in node_list:
             node_list = f"--host {node_list}"
@@ -1922,7 +2016,7 @@ def get_executable_realpath(executable_name: str, search_location: str = None) -
     return executable_name
 
 
-def update_hostfile_mpi(settings: JitSettings) -> None:
+def update_mpi_hostfile(settings: JitSettings) -> None:
     """
     Update the hostfile for MPI.
 
@@ -1939,7 +2033,7 @@ def update_hostfile_mpi(settings: JitSettings) -> None:
     )
 
     # Write the hostnames to the file, excluding the Ftio node
-    with open(f"{settings.dir}/hostfile_mpi", "w") as hostfile:
+    with open(f"{settings.mpi_hostfile}", "w") as hostfile:
         for hostname in hostnames:
             if hostname.strip() != settings.ftio_node:
                 hostfile.write(hostname + "\n")
@@ -1953,14 +2047,8 @@ def log_failed_jobs(settings: JitSettings, info: str) -> None:
         settings (JitSettings): The JIT settings object.
         info (str): Information about the failed job.
     """
-    """Add failed job to a file
-
-    Args:
-        settings (JitSettings): Jit settings
-        info (str): log text
-    """
     parent = os.path.dirname(settings.log_dir)
-    execution_path = os.path.join(parent, "execution.txt")
+    execution_path = os.path.join(parent, "failed_execution.txt")
     if settings.cmd_call:
         try:
             jit_print(
@@ -1969,8 +2057,67 @@ def log_failed_jobs(settings: JitSettings, info: str) -> None:
             with open(execution_path, "a") as file:
                 file.write(f"- {info}\n\t{settings.cmd_call}\n")
             settings.cmd_call = ""
-        except:
-            jit_print(f"[Red]>> Killing Job: {info}.\n Exiting script.[/]")
+        except Exception as e:
+            jit_print(f"[Red]>> Killing Job: {info}. No entry added to failed_execution due to {e}.\n Exiting script.[/]")
+
+def log_execution(settings: JitSettings) -> None:
+    """
+    Log job executions with their status. Update the status to 'complete' if the job call matches.
+
+    Args:
+        settings (JitSettings): The JIT settings object.
+    """
+    parent = os.path.dirname(settings.log_dir)
+    execution_path = os.path.join(parent, "executions.txt")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    info = (
+        f"(Log dir: {os.path.abspath(settings.log_dir)})"
+    )
+        
+    if settings.cmd_call:
+        try:
+            # Ensure the file exists before reading
+            if not os.path.exists(execution_path):
+                # If the file doesn't exist, create it and add an initial comment
+                with open(execution_path, "w") as file:
+                    file.write("# Execution log file\n")
+            
+            # Check if job is already in the log file
+            job_exists = False
+            updated_lines = []
+            with open(execution_path, "r") as file:
+                lines = file.readlines()
+                for line in lines:
+                    if info in line and settings.cmd_call in line:
+                        # If the job info and cmd_call match, replace status with complete and timestamp
+                        updated_lines.append(
+                            f"- [{timestamp}] Completed:  {settings.cmd_call} {info}\n"
+                        )
+                        job_exists = True
+                        jit_print(
+                            f"[yellow]>> Job marked as completed in {execution_path}.[/]"
+                        )
+                    else:
+                        updated_lines.append(line)
+            
+            # If the job does not exist, add it with the 'pending' status and timestamp
+            if not job_exists:
+                jit_print(
+                    f"[yellow]>> Adding execution to list of pending jobs in {execution_path}.[/]"
+                )
+                updated_lines.append(
+                    f"- [{timestamp}] Pending: {settings.cmd_call} {info}\n"
+                )
+            
+            # Write the updated lines back to the file
+            with open(execution_path, "w") as file:
+                file.writelines(updated_lines)
+        
+        except Exception as e:
+            jit_print(
+                f"[red]>> Error logging execution: {e}[/]"
+            )
+
 
 
 def set_env(settings: JitSettings) -> None:
