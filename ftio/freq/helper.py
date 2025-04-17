@@ -48,21 +48,27 @@ def get_sim(data, mode):
 
 
 def merge_results(
-    df0: tuple[list, list, list, list], df1: tuple[list, list, list, list]
-) -> tuple[list, list, list, list]:
-    """merges results for several files
+    predictions: list[dict], dfs: list[list], prediction: dict, df: list[list]
+):
+    """
+    Merges the results of two data frames (df0 and df1) and appends a new prediction to the list of predictions.
 
     Args:
-        df0 (list): _description_
-        df1 (list): _description_
+        predictions (list[dict]): A list of prediction dictionaries.
+        df0 (list[list]): List for plotting containing four lists.
+        prediction (dict): New prediction to be added to the predictions list.
+        df1 (list[list]): New list to be appended to the data for plotting.
 
     Returns:
-        list: _description_
+        None:
     """
-    for i in range(0, len(df0)):
-        df0[i].extend(df1[i])
 
-    return df0
+    # Merge data for plotting
+    for i in range(len(dfs)):
+        dfs[i].extend(df[i])
+
+    # Append the new prediction to the predictions list
+    predictions.append(prediction)
 
 
 class MyConsole(Console):
@@ -83,9 +89,9 @@ class MyConsole(Console):
         else:
             self.verbose = False
 
-    def print(self, *args,**kwargs):
+    def print(self, *args, **kwargs):
         if self.verbose:
-            super().print(*args,**kwargs)
+            super().print(*args, **kwargs)
 
     def info(self, s):
         Console.print(self, s)

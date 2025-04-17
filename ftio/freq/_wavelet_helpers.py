@@ -127,10 +127,10 @@ def upsample_coefficients(coeffs:list[np.ndarray], wavelet='db1', signal_length:
         # Extend the coefficients using pywt.upcoef
         if i == 0:
             # Approximation coefficients (cA)
-            reconstructed = pywt.upcoef('a', coeffs[0], wavelet, level=level-1, take=signal_length)
+            reconstructed = pywt.upcoef('a', coeffs[0], wavelet, level=level-1)[:signal_length]
         else:
             # Detail coefficients (cD)
-            reconstructed = pywt.upcoef('d', coeffs[i], wavelet, level=level-i, take=signal_length)
+            reconstructed = pywt.upcoef('d', coeffs[i], wavelet, level=level-i)[:signal_length]
         
         coeffs_stretched.append(reconstructed)
     

@@ -5,7 +5,7 @@ import ftio.prediction.monitor as pm
 from ftio.prediction.probability_analysis import find_probability
 from ftio.prediction.helper import print_data, export_extrap
 from ftio.prediction.analysis import ftio_process
-from ftio.prediction.async_process import handle_in_process
+from ftio.multiprocessing.async_process import handle_in_process
 
 # from ftio.prediction.async_process import handle_in_process
 

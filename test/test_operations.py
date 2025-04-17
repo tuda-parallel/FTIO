@@ -4,7 +4,8 @@ Functions for testing the API functionalities of the ftio package.
 
 import os
 from ftio.parse.bandwidth import overlap
-from ftio.processing.operations import quick_ftio
+from ftio.plot.freq_plot import convert_and_plot
+from ftio.processing.compact_operations import quick_ftio
 from ftio.processing.post_processing import label_phases
 from ftio.cli.ftio_core import main
 
@@ -67,10 +68,18 @@ def test_quick_ftio():
 
 
 
-def test_ftio_plot():
+def test_post_processing():
     """Test the plotting functionality of ftio."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no"]
     prediction, args = main(args)
-    _ = label_phases(prediction, args)
+    _ = label_phases(prediction[-1], args)
+    assert True 
+
+
+def test_ftio_multiple_files():
+    """Test the plotting functionality of ftio."""
+    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
+    args = ["ftio", file, file, "-e", "no"]
+    _, args = main(args)
     assert True 

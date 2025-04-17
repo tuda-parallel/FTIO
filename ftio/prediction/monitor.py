@@ -4,7 +4,7 @@ import fcntl
 import signal
 from time import sleep
 from rich.console import Console
-from ftio.prediction.async_process import join_procs
+from ftio.multiprocessing.async_process import join_procs
 from time import sleep
 
 CONSOLE = Console()

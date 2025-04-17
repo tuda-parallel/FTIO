@@ -53,6 +53,7 @@
 
 - When your thesis is complete, create a **pull request (PR)** to merge your branch into the `development` branch.  
 - Include a summary of your work and link the pull request to your issue for reference.
+- Don't forget to add yourself to the [list of contributors](/docs/contributing.md#list-of-contributors).
 
 ---
 
@@ -120,11 +121,11 @@
 
 5. **Gender-Neutral and Inclusive Language**:  
    - Ensure that all language used in the project, including commit messages, documentation, and communication, is gender-neutral and inclusive. Avoid using gendered pronouns or assumptions, and instead use terms that are respectful and inclusive of all genders. This helps create a welcoming environment for everyone involved in the project.
-
 ---
 
 ## Best Practices
 
+- **External dependencies**: Some features in the project rely on optional external dependencies (e.g., `fastdtw`, `dash`, `dash-extensions`), that are not essential, but provide optimized version or additional functionalities. If these dependencies are not available, the code should fall back and continue to function without those specific features as described [here]
 - **Stay Updated**: Regularly pull changes from `development` to avoid large merge conflicts. Also, keep the issue updated.  
 - **Communicate**: Reach out if you encounter issues or need clarification.  
 - **Test Thoroughly**: Ensure your work doesn’t break existing functionality. Do **not** rename or reformat entire documents, except if you created them from scratch. Regularly test your code with your [test case](/docs/students_contribute.md#instructions-for-adding-a-test-case).
@@ -132,6 +133,86 @@
 
 ---
 
+## Instructions for External Dependencies:
+Some features in the project rely on optional external dependencies (e.g., `fastdtw`). If these dependencies are not available, and if they are not essential, the code should fall back and continue to function without those specific features.
+
+Example of how to handle optional dependencies:
+
+```python
+import numpy as np
+import importlib.util
+from scipy.spatial.distance import euclidean
+
+# Check if fastdtw is available
+FASTDTW_AVAILABLE = importlib.util.find_spec("fastdtw") is not None
+if FASTDTW_AVAILABLE:
+    from fastdtw import fastdtw
+
+## Call DTW function
+def fdtw(s1, s2):
+    if FASTDTW_AVAILABLE:
+        return fastdtw(s1, s2, dist=euclidean)
+    else:
+        return fill_dtw_cost_matrix(s1, s2)
+
+## Fill DTW Cost Matrix using NumPy
+def fill_dtw_cost_matrix(s1, s2):
+    ...
+```
+
+> [!note]
+> External dependencies should be avoided as much as possible, as each additional dependency introduces a potential risk for the code to break. Only include dependencies that are essential for the core functionality of the project. Optional dependencies should be handled in a way that the code can continue functioning without them, using fallbacks where possible.
+
+
+## Creating New Files and Modules
+
+To keep the codebase maintainable and collaboration-friendly, we recommend organizing your work into **cohesive modules** rather than placing everything into a single file or a monolithic script.
+
+### ✅ Why modularize?
+
+- **Avoid merge conflicts**: Isolating related functionality into separate files reduces the chances of developers working on the same file at the same time.
+- **Improve readability**: Smaller, focused modules are easier to read, understand, and review.
+- **Enhance reusability**: Modular code is easier to reuse across different parts of the project.
+- **Enable testing**: Individual modules and their functions can be unit tested more effectively.
+
+---
+
+### ⚠️ But don’t go overboard
+
+While modularization is good, **creating too many small or overly granular files** can:
+
+- Make the project harder to navigate.
+- Introduce unnecessary complexity in the import structure.
+- Obscure the overall logic of the system.
+
+**Guideline**: Group logically related functions or classes into a single module. Avoid creating new files for each utility or tiny helper unless it serves a clear organizational purpose.
+
+---
+
+### 🧾 Module Documentation and Licensing
+
+Every new module should start with a module-level docstring to explain its purpose, authorship, and license. Below is a template you should use:
+
+```python
+"""
+Example Description: 
+This module provides helper functions for setting up and managing the JIT environment.
+It includes utilities for checking ports, parsing options, allocating resources,
+handling signals, and managing components like FTIO, GekkoFS, and Cargo.
+
+Author: Your Name  
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: <Month Year>
+
+Licensed under the BSD 3-Clause License.  
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
+```
+
+
+---
 ## Instructions for Adding an Example
 
 To demonstrate how to use `FTIO` with you new feature, you should add a relevant example under the `examples` directory:
@@ -182,7 +263,7 @@ To ensure proper documentation for your work, follow these steps:
     git commit -m "FTIO: Add documentation for feature XXX"
     ```
 
-4. if you made changes to the command line arguments, please update the usage section in the [readme](/README.md#usage).
+4. If you made changes to the command line arguments, please update the usage section in the [readme](/README.md#usage).
 
 ---
 

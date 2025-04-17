@@ -1,9 +1,16 @@
 """
-------------------------------
-Outlier detection methods
-------------------------------
+This file provides functions for detecting anomalies in frequency data using various methods,
+including Z-Score, DBSCAN, Isolation Forest, Local Outlier Factor, and peak detection. It also
+includes utilities for removing harmonics and visualizing outliers.
+
+Author: Ahmad Tarraf
+Copyright (c) 2025 TU Darmstadt, Germany
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
-# DB-scan
 from __future__ import annotations
 from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestNeighbors

@@ -1,6 +1,6 @@
 from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
-from ftio.freq._dft import display_prediction
+from ftio.processing.print_output import display_prediction
 from ftio.plot.freq_plot import convert_and_plot
 from ftio.api.metric_proxy.parse_proxy import parse
 from ftio.processing.post_processing import label_phases
@@ -28,11 +28,11 @@ data = {"time": t, "bandwidth": b, "total_bytes": 0, "ranks": ranks}
 args = parse_args(argv, "ftio")
 
 # perform prediction
-prediction, dfs = core([data], args)
+prediction, dfs = core(data, args)
 
 # plot and print info
 convert_and_plot(args, dfs)
-display_prediction("ftio", prediction)
+display_prediction(args, prediction)
 
 # ------------------ 
 

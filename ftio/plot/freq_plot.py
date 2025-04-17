@@ -35,7 +35,7 @@ class FreqPlot:
         self.transform = "dft"
         self.dtw = True
         self.dominant = []
-        self.recon = False
+        self.recon = []
         self.psd = False
         self.name = ""
         if not isinstance(argv, bool):
@@ -219,7 +219,7 @@ class FreqPlot:
             elif prop in "dtw":
                 self.dtw = value
             elif prop in "reconstruction":
-                self.recon = value
+                self.recon = value 
             elif prop in "psd":
                 self.psd = value
             elif prop in "transform":
@@ -331,6 +331,7 @@ class FreqPlot:
             f"[cyan]DTW calculation:[/] {self.dtw}\n"
         )
         all_or_10 = False
+        sum_top = {}
         
         for r in ranks:
             index_set = self.D.settings_df["ranks"].isin([r])
@@ -402,10 +403,11 @@ class FreqPlot:
                     sum_dominant = np.zeros(x.size)
                     # recon with DC offset
                     if self.recon:
-                        sum_top_2 = x
-                        sum_top_3 = x
-                        sum_top_5 = x
-                        sum_top_10 = x
+                        for top_index in self.recon:
+                            sum_top[top_index] =  np.zeros_like(x)
+                            sum_top[top_index] +=  x
+                            
+                    
                     dominant_X1 = x
                     dominant_X2 = x
                     dominant_k1 = top_3[-2]
@@ -416,15 +418,11 @@ class FreqPlot:
                     if k in dominant:
                         sum_dominant = sum_dominant + x
                         found = True
+        
                     if self.recon:
-                        if k in sorted_ref.tail(3).index:
-                            sum_top_2 = sum_top_2 + x
-                        if k in sorted_ref.tail(5).index:
-                            sum_top_3 = sum_top_3 + x
-                        if k in sorted_ref.tail(9).index:
-                            sum_top_5 = sum_top_5 + x
-                        if k in sorted_ref.tail(19).index:
-                            sum_top_10 = sum_top_10 + x
+                        for top_index in self.recon:
+                            if k in sorted_ref.tail(1 + (top_index-1)*2).index:
+                                sum_top[top_index] += x
 
                     if k == dominant_k1:
                         dominant_X1 = (
@@ -561,7 +559,7 @@ class FreqPlot:
                     time,
                     0,
                     self.D.data_df[index_data]["b_sampled"] * order,
-                    label="Discrete signal",
+                    label="Sampled signal",
                     alpha=0.6,
                     step="post",
                     color="red",
@@ -588,58 +586,31 @@ class FreqPlot:
                         drawstyle="steps-post",
                         color="limegreen",
                     )
+                colors = [
+                    "gold", "cyan", "purple", "slategrey", "darkorange", "green", 
+                    "blue", "red", "magenta", "brown", "pink", "yellowgreen", 
+                    "lightblue", "indigo", "teal", "orchid", "crimson"
+                ]
+
                 if self.recon:
-                    plt.fill_between(
-                        time,
-                        0,
-                        y2=sum_top_2 * order,
-                        label="Recon. top 2 signal",
-                        alpha=0.6,
-                        step="post",
-                        color="gold",
-                    )
-                    plt.plot(
-                        time, sum_top_2 * order, drawstyle="steps-post", color="gold"
-                    )
-                    plt.fill_between(
-                        time,
-                        0,
-                        y2=sum_top_3 * order,
-                        label="Recon. top 3 signal",
-                        alpha=0.6,
-                        step="post",
-                        color="cyan",
-                    )
-                    plt.plot(
-                        time, sum_top_3 * order, drawstyle="steps-post", color="cyan"
-                    )
-                    plt.fill_between(
-                        time,
-                        0,
-                        y2=sum_top_5 * order,
-                        label="Recon. top 5 signal",
-                        alpha=0.6,
-                        step="post",
-                        color="purple",
-                    )
-                    plt.plot(
-                        time, sum_top_5 * order, drawstyle="steps-post", color="purple"
-                    )
-                    plt.fill_between(
-                        time,
-                        0,
-                        y2=sum_top_10 * order,
-                        label="Recon. top 10 signal",
-                        alpha=0.6,
-                        step="post",
-                        color="slategrey",
-                    )
-                    plt.plot(
-                        time,
-                        sum_top_10 * order,
-                        drawstyle="steps-post",
-                        color="slategrey",
-                    )
+                    for i, top_index in enumerate(self.recon):
+                        color = colors[i % len(colors)]  # Cycles through the colors list
+
+                        # Fill the area between the curve and the x-axis
+                        plt.fill_between(
+                            time,
+                            0,
+                            y2=sum_top[top_index] * order,
+                            label=f"Recon. top {top_index} signal",
+                            alpha=0.6,
+                            step="post",
+                            color=color,
+                        )
+                        
+                        # Plot the line on top of the fill
+                        plt.plot(
+                            time, sum_top[top_index] * order, drawstyle="steps-post", color=color
+                        )
                 plt.xlim(time[0], time[-1])
                 plt.ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
                 plt.ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
@@ -701,7 +672,7 @@ class FreqPlot:
                         x=time,
                         y=sum_all_components * order,
                         mode="lines+markers",
-                        name="Discrete signal",
+                        name="Sampled signal",
                         line={"shape": "hv"},
                         marker_color="rgb(180,30,30)",
                     )
@@ -761,7 +732,7 @@ class FreqPlot:
                         x=time,
                         y=self.D.data_df[index_data]["b_sampled"] * order,
                         mode="lines+markers",
-                        name="Discrete signal",
+                        name="Sampled signal",
                         fill=fill,
                         line={"shape": "hv"},
                         marker_color="rgb(180,30,30)",
@@ -782,50 +753,19 @@ class FreqPlot:
                         )
                     )
                 if self.recon:
-                    f[-1].add_trace(
-                        trace=Scatter(
-                            x=time,
-                            y=sum_top_2 * order,
-                            mode="lines+markers",
-                            name="Recon. top 2 signal",
-                            fill=fill,
-                            line={"shape": "hv"},
-                            visible="legendonly",
+                    for top_index in self.recon:
+                        f[-1].add_trace(
+                            trace=Scatter(
+                                x=time,
+                                y=sum_top[top_index] * order,
+                                mode="lines+markers",
+                                name=f"Recon. top {top_index} signal",
+                                fill=fill,
+                                line={"shape": "hv"},
+                                visible="legendonly",
+                            )
                         )
-                    )
-                    f[-1].add_trace(
-                        Scatter(
-                            x=time,
-                            y=sum_top_3 * order,
-                            mode="lines+markers",
-                            name="Recon. top 3 signal",
-                            fill=fill,
-                            line={"shape": "hv"},
-                            visible="legendonly",
-                        )
-                    )
-                    f[-1].add_trace(
-                        Scatter(
-                            x=time,
-                            y=sum_top_5 * order,
-                            mode="lines+markers",
-                            name="Recon. top 5 signal",
-                            fill=fill,
-                            line={"shape": "hv"},
-                            visible="legendonly",
-                        )
-                    )
-                    f[-1].add_trace(
-                        Scatter(
-                            x=time,
-                            y=sum_top_10 * order,
-                            mode="lines+markers",
-                            name="Recon. top 10 signal",
-                            fill=fill,
-                            line={"shape": "hv"},
-                            visible="legendonly",
-                        )
-                    )
+                
                 rangeslider(
                     f[-1],
                     time,
@@ -983,6 +923,14 @@ def convert_and_plot(args:Namespace, dfs: list, n:int = 1 ) -> None:
 
     if "plot_name" not in args:
         args.plot_name = "ftio_dft_result"
+
+
+    if args.reconstruction:
+        args.reconstruction = [int(x) for val in args.reconstruction for x in val.split(',')]
+
+    if args.n_freq:
+        if args.reconstruction and args.n_freq not in args.reconstruction:
+            args.reconstruction.append(int(args.n_freq))
     
     freq_plot.set(
         {

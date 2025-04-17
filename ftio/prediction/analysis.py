@@ -29,16 +29,27 @@ def ftio_process(shared_resources: SharedResources, args: list[str], msgs = None
         console.print(f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/]  Stopped')
         exit(0)
 
+    if not isinstance(prediction, list) or len(prediction) != 1:
+        raise ValueError("[red][PREDICTOR] (#{shared_resources.count.value}):[/]  predictor should be called on exactly on file")
+
+    # get the prediction
+    prediction = prediction[0]
+
     # abstract plot prediction 
     # plot_bar_with_rich(shared_resources.t_app,shared_resources.b_app, width_percentage=0.9)
+
     # get data
     freq = get_dominant(prediction) #just get a single dominant value
+
     # save prediction results
     save_data( prediction, shared_resources)
+
     # display results
     text = display_result(freq ,prediction ,shared_resources)
+
     # data analysis to decrease window thus change start_time
     text += window_adaptation(parsed_args, prediction, freq, shared_resources)
+
     # print text
     console.print(text)
 

@@ -5,7 +5,7 @@ import json
 import numpy as np
 from ftio.parse.csv_reader import read_csv_file
 # from ftio.api.trace_analysis.helper import quick_plot
-from ftio.processing.operations import quick_ftio
+from ftio.processing.compact_operations import quick_ftio
 from rich.console import Console
 
 console = Console()

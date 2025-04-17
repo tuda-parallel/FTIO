@@ -190,9 +190,10 @@ def plot_outliers(
         fig.update_layout(width=1300, height=400)
 
     configuration = {"toImageButtonOptions": {"format": "png", "scale": 4}}
-    plot_name =  "anaomality"
+    plot_name =  "anomaly"
     if "plot_name" in args:
         plot_name +=  "_" + args.plot_name 
+
     create_html(figs, args.render, configuration, plot_name)
 
 

@@ -110,7 +110,7 @@ parallel_trace_analysis  . -j -p 30 -f 10 -o ~/tmp -n intrepid
 
 
 ### For Blue waters
-accuire the data from: [https://bluewaters.ncsa.illinois.edu/data-sets](https://bluewaters.ncsa.illinois.edu/data-sets)
+You can acquire the data from: [https://bluewaters.ncsa.illinois.edu/data-sets](https://bluewaters.ncsa.illinois.edu/data-sets). Afterward simply executed: 
 ```bash
 parallel_trace_analysis  . -j -p 30 -f 10 -n blue_waters
 ```

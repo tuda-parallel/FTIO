@@ -1,26 +1,77 @@
-"""Contains DFT methods and accuracy calculation 
-"""
+"""Contains DFT methods and accuracy calculation"""
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from ftio.prediction.unify_predictions import color_pred
-from ftio.prediction.helper import get_dominant_and_conf
-from ftio.freq.helper import MyConsole
 
-CONSOLE = MyConsole()
+
+#!################
+#! DFT amplitude and phase
+#!################
+def compute_dft_spectrum(b: np.ndarray, fs: float):
+    """
+    Compute the amplitude and phase of the Discrete Fourier Transform (DFT) of the signal.
+
+    Parameters:
+    - b: np.ndarray, input signal in the time domain.
+    - fs: float, sampling frequency.
+
+    Returns:
+    - amp: np.ndarray, amplitudes of the frequency components.
+    - phi: np.ndarray, phases of the frequency components.
+    - freqs: np.ndarray, corresponding frequency bins.
+    """
+    # Compute DFT of the signal
+    X = dft(b)
+    n = len(X)
+
+    # Calculate the amplitude (magnitude) of the frequency components
+    amp = np.abs(X)
+
+    # Calculate the phase (angle) of the frequency components
+    phi = np.angle(X)
+
+    # Compute the frequencies
+    freqs = fs * np.arange(0, n) / n
+
+    # Only keep the positive frequencies (half of the DFT result)
+    indices = np.arange(0, int(len(amp) / 2) + 1)
+    amp = amp[indices]  # Keep the amplitude
+    amp[1:] *= 2  # Double the amplitude for the positive frequencies (except the DC component)
+    phi = phi[indices]  # Keep the corresponding phase values
+    freqs = freqs[indices]
+
+    return amp, phi, freqs  # Return the amplitude, phase, and corresponding frequencies
 
 
 #!################
 #! DFT flavors
 #!################
-# Wrapper
-def dft(b: np.ndarray):
+#! Wrapper
+def dft(b: np.ndarray) -> np.ndarray:
+    """
+    Wrapper function to compute the DFT using numpy's FFT implementation.
+
+    Parameters:
+    - b: np.ndarray, input signal in the time domain.
+
+    Returns:
+    - np.ndarray, DFT of the input signal.
+    """
     return numpy_dft(b)
 
 
-# 1) Custom implementation
-def dft_fast(b: np.ndarray):
+#! 1) Custom implementation
+def dft_fast(b: np.ndarray) -> np.ndarray:
+    """
+    Custom implementation of the Discrete Fourier Transform (DFT).
+
+    Parameters:
+    - b: np.ndarray, input signal in the time domain.
+
+    Returns:
+    - np.ndarray, DFT of the input signal.
+    """
     N = len(b)
     X = np.repeat(complex(0, 0), N)  # np.zeros(N)
     for k in range(0, N):
@@ -30,13 +81,31 @@ def dft_fast(b: np.ndarray):
     return X
 
 
-# 2) numpy DFT
-def numpy_dft(b: np.ndarray):
+#! 2) numpy DFT
+def numpy_dft(b: np.ndarray) -> np.ndarray:
+    """
+    Compute the Discrete Fourier Transform (DFT) using numpy's FFT implementation.
+
+    Parameters:
+    - b: np.ndarray, input signal in the time domain.
+
+    Returns:
+    - np.ndarray, DFT of the input signal.
+    """
     return np.fft.fft(b)
 
 
-# 3) DFT with complex
-def dft_slow(b: np.ndarray):
+#! 3) DFT with complex
+def dft_slow(b: np.ndarray) -> np.ndarray:
+    """
+    Compute the Discrete Fourier Transform (DFT) using a slower, more explicit method.
+
+    Parameters:
+    - b: np.ndarray, input signal in the time domain.
+
+    Returns:
+    - np.ndarray, DFT of the input signal.
+    """
     N = len(b)
     n = np.arange(N)
     k = n.reshape((N, 1))
@@ -113,14 +182,14 @@ def precision_dft(
 
 
 def prepare_plot_dft(
-    freq_arr:np.ndarray,
-    conf:np.ndarray,
-    dominant_index:list[float],
-    amp:np.ndarray,
-    phi:np.ndarray,
-    b_sampled:np.ndarray,
-    ranks:int,
-) ->  tuple[list[pd.DataFrame], list[pd.DataFrame]]:
+    freq_arr: np.ndarray,
+    conf: np.ndarray,
+    dominant_index: list[float],
+    amp: np.ndarray,
+    phi: np.ndarray,
+    b_sampled: np.ndarray,
+    ranks: int,
+) -> tuple[list[pd.DataFrame], list[pd.DataFrame]]:
     """
     Prepares data for plotting the Discrete Fourier Transform (DFT) by creating two DataFrames.
 
@@ -135,7 +204,7 @@ def prepare_plot_dft(
 
     Returns:
         tuple[list[pd.DataFrame], list[pd.DataFrame]]: A tuple containing two lists of DataFrames:
-            - The first list contains a DataFrame with amplitude (A), phase (phi), sampled bandwidth (b_sampled), ranks, frequency (freq), 
+            - The first list contains a DataFrame with amplitude (A), phase (phi), sampled bandwidth (b_sampled), ranks, frequency (freq),
             period (T), and confidence (conf) values.
             - The second list contains a DataFrame with the dominant frequency, its index (k), its confidence, and the ranks.
     """
@@ -168,32 +237,3 @@ def prepare_plot_dft(
     )
     return df0, df1
 
-
-def display_prediction(argv: list[str], prediction: dict) -> None:
-    """Displays the result of the prediction from ftio
-
-    Args:
-        argv (list[str]|str): command line arguments
-        prediction (dict): the result from ftio
-    """
-
-    if isinstance(argv, list):
-        func_name = argv[0][argv[0].rfind("/") + 1 :]
-    else:
-        func_name = argv
-
-    if "ftio" in func_name:
-        if prediction:
-            freq, conf = get_dominant_and_conf(prediction)
-            if not np.isnan(freq):
-                CONSOLE.info(
-                    f"[cyan underline]Prediction results:[/]\n[cyan]Frequency:[/] {freq:.3e} Hz"
-                    f"[cyan] ->[/] {np.round(1/freq,4)} s\n"
-                    f"[cyan]Confidence:[/] {color_pred(conf)}"
-                    f"{np.round(conf*100,2)}[/] %\n"
-                )
-            else:
-                CONSOLE.info(
-                    "[cyan underline]Prediction results:[/]\n"
-                    "[red]No dominant frequency found[/]\n"
-                )

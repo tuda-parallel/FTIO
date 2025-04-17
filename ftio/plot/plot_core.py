@@ -2,12 +2,10 @@ import os
 import socket
 from multiprocessing import Process
 from threading import Thread
-
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-
 from ftio.parse.metrics import Metrics
 from ftio.parse.scales import Scales
 from ftio.plot.dash_files.dash_app import IOAnalysisApp
@@ -470,12 +468,19 @@ class PlotCore:
                     f.append(go.Figure())
                     index2 = df_t[1]["file_index"][index].isin([j])
                     index2_ind = df_t[3]["file_index"][index_ind].isin([j])
-                    # finder the order and unit of the plots on y-axis
+                    # find the order and unit of the plots on y-axis
                     unit, order = find_unit(df_t,index,index2,index_ind,index2_ind,args)
                     # # compatibility mode with earlier version
                     # CONSOLE.info(f"[yellow]WARNING:[/] Compatibility Mode")
                     # unit, order = find_unit(df_t,index,index2,index_ind,index2_ind,args,pow(10,6)) 
                     # order = order*pow(10,6)
+
+                    # if no async, show only T instead of T_A
+
+                    T_name = "$T_A$"
+                    if not df_b:
+                        T_name = "$T$"
+
                     # ? Avr plot
                     if args.avr:
                         if df_t:
@@ -484,7 +489,7 @@ class PlotCore:
                                     x=df_t[1]["t_overlap"][index][index2],
                                     y=df_t[1]["b_overlap_avr"][index][index2]*order,
                                     mode="lines",
-                                    name="$T_A$", #name="$T$", # For BW limit paper
+                                    name= T_name, #name="$T$", # For BW limit paper
                                     line={"shape": "hv"},
                                     fill="tozeroy",
                                 )
@@ -504,7 +509,7 @@ class PlotCore:
 
                     # ? Sum plot
                     if args.sum:
-                        if df_t:
+                        if df_t and  df_b: # shows this only in async mode
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_t[1]["t_overlap"][index][index2],
@@ -566,8 +571,9 @@ class PlotCore:
                     f[-1] = format_plot(f[-1],17)
                     
                     if self.names and (args.avr or args.sum or args.ind):
+                        run_index = ranks.index[ranks.astype(int) == i].tolist()[j]
                         f[-1].update_layout(
-                            title=f"{i} Ranks (Run {j}: {self.names[j]})",
+                            title=f"{i} Ranks (Run {run_index}: {self.names[run_index]})",
                         )
 
                     if args.avr or args.sum or args.ind:

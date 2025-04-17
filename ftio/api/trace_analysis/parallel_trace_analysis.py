@@ -1,3 +1,15 @@
+"""
+Parallel Trace Analysis Module
+
+Author: Ahmad Tarraf  
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: Aug 2024
+
+Licensed under the BSD 3-Clause License. 
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import os
 import sys
 import time
@@ -26,7 +38,19 @@ from ftio.api.trace_analysis.trace_analysis import (
 console = Console()
 
 
-def process_file(file_path, argv, settings, index=0):
+def process_file(file_path: str, argv: list, settings: dict, index: int = 0) -> tuple:
+    """
+    Process a single file using the trace_ftio function and save the results.
+
+    Args:
+        file_path (str): Path to the file to be processed.
+        argv (list): List of additional arguments.
+        settings (dict): Dictionary containing settings for processing.
+        index (int): Index of the file in the list of files.
+
+    Returns:
+        tuple: A tuple containing the flattened result (dict or None), index (int), file path (str), and error message (str).
+    """
     error = ""
     try:
         # Call your trace_ftio function (adjust the import and call as necessary)
@@ -66,7 +90,13 @@ def process_file(file_path, argv, settings, index=0):
     return flat_res, index, file_path, error
 
 
-def main(argv=sys.argv[1:]) -> None:
+def main(argv: list = sys.argv[1:]) -> None:
+    """
+    Main function to process multiple files in parallel using multiprocessing.
+
+    Args:
+        argv (list): List of command-line arguments.
+    """
     settings={
         "verbose": False,
         "json": False,
@@ -269,4 +299,7 @@ def main(argv=sys.argv[1:]) -> None:
 
 
 if __name__ == "__main__":
+    """
+    Entry point for the script. Processes command-line arguments and calls the main function.
+    """
     main(sys.argv[1:])

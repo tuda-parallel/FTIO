@@ -1,10 +1,10 @@
 import numpy as np
+from scipy.cluster.hierarchy import linkage
 import pandas as pd
 import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-import fastcluster
 
 from ftio.plot.helper import format_plot_and_ticks
 
@@ -235,9 +235,11 @@ def heatmap_2(data):
 
     heatmap_diff = heatmap_diff.fillna(0)  # Replace NaN with 0 or another strategy
     # Apply hierarchical clustering using fastcluster
-    linkage_matrix = fastcluster.linkage(
-        heatmap_diff, method="average", metric="euclidean"
-    )
+    # linkage_matrix = fastcluster.linkage(
+    #     heatmap_diff, method="average", metric="euclidean"
+    # )
+    linkage_matrix = linkage(heatmap_diff, method="average", metric="euclidean")
+
 
     sns.clustermap(
         heatmap_diff,

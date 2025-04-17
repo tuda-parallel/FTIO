@@ -2,6 +2,14 @@
 This file provides various functions to execute shell commands and monitor their execution.
 It includes functions to execute commands in blocking and non-blocking modes, log outputs,
 monitor log files, and wait for specific lines or files to appear.
+
+Author: Ahmad Tarraf  
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: Aug 2024
+
+Licensed under the BSD 3-Clause License. 
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 from datetime import datetime
@@ -531,20 +539,18 @@ def get_files(settings: JitSettings, verbose=True):
         list[str]: list of files to be monitored
     """
     monitored_files = []
-    files = ""
+    files = []
     try:
-        try:
-            command_ls = flaged_call(settings, f" find {settings.gkfs_mntdir}", exclude=["ftio"])
-            files = subprocess.check_output(command_ls, shell=True, text=True)
-        except subprocess.CalledProcessError as e:
-            if settings.debug_lvl > 1:
-                console.print(f"[red] >> Error using find, trying ls:\n{e}[/]")
-            else:
-                console.print("[red] >> Error using find, trying ls[/]")
-
-            command_ls = flaged_call(settings, f" ls -R {settings.gkfs_mntdir}", exclude=["ftio"])
-            # command_ls = flaged_call(settings, f" ls -l {settings.gkfs_mntdir}", exclude=["ftio"])
-            files = subprocess.check_output(command_ls, shell=True, text=True)
+        # try:
+        #     command_ls = flaged_call(settings, f" find {settings.gkfs_mntdir}", exclude=["ftio"])
+        #     files = subprocess.check_output(command_ls, shell=True, text=True)
+        # except subprocess.CalledProcessError as e:
+        #     if settings.debug_lvl > 1:
+        #         console.print(f"[red] >> Error using find, trying ls:\n{e}[/]")
+        #     else:
+        #         console.print("[red] >> Error using find, trying ls[/]"
+        command_ls = flaged_call(settings, f" ls -R {settings.gkfs_mntdir}", exclude=["ftio"])
+        files = subprocess.check_output(command_ls, shell=True, text=True)
         if files:
             files = files.splitlines()
             files = [f for f in files if "LIBGKFS" not in f]
@@ -630,10 +636,10 @@ def print_file(file, src=""):
     wait_time = 0.05
     if src:
         if "daemon" in src.lower():
-            color = "[purple4]"
+            color = "[deep_pink1]"
             wait_time = 0.1
         elif "proxy" in src.lower():
-            color = "[deep_pink1]"
+            color = "[purple4]"
             wait_time = 0.1
         elif any(keyword in src.lower() for keyword in ["dlio", "lammp"]):
             color = "[gold3]"
