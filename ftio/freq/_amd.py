@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from vmdpy import VMD
 
 from ftio.freq.denoise import tfpf_wvd
+from ftio.freq.frq_verification import pcc, scc
 from scipy.signal import hilbert
 
 def amd(b_sampled, freq, bandwidth, time_b, method="vmd"):
@@ -40,6 +41,8 @@ def vmd(signal, t, fs, denoise=False):
 
     center_freqs = omega[-1] * fs
     u_periodic = rm_nonperiodic(u, center_freqs, t)
+
+    rel = imf_select_msm(signal, u_periodic)
 
 def plot_imfs(signal, t, u, K, denoised=None):
     fig, ax = plt.subplots(K+1)
@@ -85,3 +88,29 @@ def rm_nonperiodic(u, center_freqs, t):
     u_periodic = u[i:]
 
     return u_periodic
+
+# most significant mode
+def imf_select_msm(signal, u_per):
+    corr_stats = np.empty(u_per.shape[0])
+    for i in range(0, u_per.shape[0]):
+        corr_stats[i] = scc(signal, u_per[i]).statistic
+
+    print(corr_stats)
+
+    best = np.max(corr_stats)
+    if best > 0.6:
+        ind = np.argmax(corr_stats)
+        return u_per[ind]
+
+    """
+    else: non-stationary, but possibly stationary in smaller segments
+    """
+
+#def imf_select_multiple(signal, u_per):
+    # TODO
+
+#def imf_select_windowed(signal, u_per):
+    # TODO
+
+#def imf_select_change_point(signal, u_per):
+    # TODO
