@@ -28,11 +28,20 @@ def vmd(signal, t, fs, denoise=False):
         signal_hat = tfpf_wvd(signal, fs, t)
         signal_hat = tfpf_wvd(signal_hat, fs, t)
         u, u_hat, omega = VMD(signal_hat, alpha, tau, K, DC, init, tol)
+
+        plot_imfs(signal, t, u, K, signal_hat)
     else:
         u, u_hat, omega = VMD(signal, alpha, tau, K, DC, init, tol)
 
+        plot_imfs(signal, t, u, K)
+
+def plot_imfs(signal, t, u, K, denoised=None):
     fig, ax = plt.subplots(K+1)
     ax[0].plot(t, signal)
+
+    if denoised is not None:
+        ax[0].plot(t, denoised)
+
     for i in range(1,K+1):
         if len(t) % 2 == 1:
             ax[i].plot(t[:-1], u[i-1])
