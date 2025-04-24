@@ -80,7 +80,7 @@ def tfpf_wvd(x, fs, time):
     # endpoint removal
     x_rem = x_hat[p:-p]
 
-    tfpf_wvd_plot(x, x_rem, time)
+    tfpf_wvd_plot(x, x_rem, ts)
 
     return x_rem
 
@@ -112,14 +112,8 @@ def recover_signal(x, x_c_hat):
 
     return recovered
 
-def tfpf_wvd_plot(x, x_hat, time_b):
+def tfpf_wvd_plot(x, x_hat, t):
     fig, ax = plt.subplots(2)
-
-    t_start = time_b[0]
-    t_end = time_b[-1]
-
-    N = len(x)
-    t = np.arange(t_start, t_end, (t_end-t_start)/N, dtype=float)
 
     ax[0].plot(t, x)
     ax[1].plot(t, x_hat)
