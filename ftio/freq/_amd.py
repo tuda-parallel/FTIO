@@ -38,6 +38,9 @@ def vmd(signal, t, fs, denoise=False):
 
     plot_imf_char(signal, t, fs, u, K)
 
+    center_freqs = omega[-1] * fs
+    u_periodic = rm_nonperiodic(u, center_freqs, t)
+
 def plot_imfs(signal, t, u, K, denoised=None):
     fig, ax = plt.subplots(K+1)
     ax[0].plot(t, signal)
@@ -69,3 +72,16 @@ def plot_imf_char(signal, t, fs, u, K, denoised=None):
 
     plt.legend()
     plt.show()
+
+def rm_nonperiodic(u, center_freqs, t):
+    duration = t[-1] - t[0]
+
+    min_period = duration / 2
+    min_frq = (1 / min_period)
+
+    i = 0
+    while(center_freqs[i] < min_frq):
+        i += 1
+    u_periodic = u[i:]
+
+    return u_periodic
