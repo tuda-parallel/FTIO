@@ -115,7 +115,12 @@ def recover_signal(x, x_c_hat):
 def tfpf_wvd_plot(x, x_hat, t):
     fig, ax = plt.subplots(2)
 
-    ax[0].plot(t, x)
-    ax[1].plot(t, x_hat)
+    if len(x) < len(x_hat):
+        end = len(x)
+    else:
+        end = len(x_hat)
+
+    ax[0].plot(t[:end], x[:end])
+    ax[1].plot(t[:end], x_hat[:end])
 
     plt.show()
