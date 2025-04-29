@@ -29,6 +29,8 @@ dependencies = [
 	"fastcluster",
 	"opencv-contrib-python",
 	"tftb",
+	"vmdpy",
+	"ruptures",
 ]
 
 requires-python = ">=3.8"
