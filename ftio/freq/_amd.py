@@ -40,9 +40,14 @@ def vmd(signal, t, fs, denoise=False):
     plot_imf_char(signal, t, fs, u, K)
 
     center_freqs = omega[-1] * fs
-    u_periodic = rm_nonperiodic(u, center_freqs, t)
+    u_periodic, cen_freq_per = rm_nonperiodic(u, center_freqs, t)
 
-    rel = imf_select_msm(signal, u_periodic)
+    #rel = imf_select_msm(signal, u_periodic)
+
+    #analytic_signal = hilbert(u[1])
+    #amplitude_envelope = np.abs(analytic_signal)
+
+    imf_select_change_point(signal_hat, u_periodic, t, cen_freq_per)
 
 def plot_imfs(signal, t, u, K, denoised=None):
     fig, ax = plt.subplots(K+1)
@@ -69,9 +74,14 @@ def plot_imf_char(signal, t, fs, u, K, denoised=None):
         instantaneous_phase = np.unwrap(np.angle(analytic_signal))
         instantaneous_frequency = np.diff(instantaneous_phase) / (2.0*np.pi) * fs
 
-        ax[i].plot(t[:-1], u[i])
-        ax[i].plot(t[1:-1], instantaneous_frequency, label="inst freq")
-        ax[i].plot(t[:-1], amplitude_envelope, label="amp")
+        if len(u[i]) < len(t):
+            end = len(u[i])
+        else:
+            end = len(t)
+
+        ax[i].plot(t[:end], u[i])
+        ax[i].plot(t[1:end], instantaneous_frequency, label="inst freq")
+        ax[i].plot(t[:end], amplitude_envelope, label="amp")
 
     plt.legend()
     plt.show()
@@ -87,7 +97,7 @@ def rm_nonperiodic(u, center_freqs, t):
         i += 1
     u_periodic = u[i:]
 
-    return u_periodic
+    return u_periodic, center_freqs[i:]
 
 # most significant mode
 def imf_select_msm(signal, u_per):
@@ -110,7 +120,89 @@ def imf_select_msm(signal, u_per):
     # TODO
 
 #def imf_select_windowed(signal, u_per):
-    # TODO
+    # window length
+    # stationary subsignal: imf either ~constant or periodic
 
-#def imf_select_change_point(signal, u_per):
-    # TODO
+import ruptures as rpt
+
+def imf_select_change_point(signal, u_per, t, center_freqs): #, u_per):
+    # change point detection
+    #model = "l1"
+    #model = "l2"
+    #model = "normal"
+    model = "rbf"
+    #model = "cosine"
+    #model = "linear"
+    #model = "clinear"
+    #model = "rank"
+    #model = "ml"
+    #model = "ar"
+    #model = "l1"
+
+    per_segments = []
+
+    for j in range(0, u_per.shape[0]):
+        imf = u_per[j]
+
+        corr = pcc(signal.astype(float), imf).statistic
+        if corr > 0.7:
+            start = 0
+            end = len(imf)
+            time = start, end
+
+            comp = time, j
+            per_segments.append(comp)
+
+            # good enough, no change point detection required
+            # single imf describes whole signal
+            break
+
+        algo = rpt.Binseg(model=model).fit(imf)
+        #result = algo.predict(pen=5)
+        result = algo.predict(n_bkps=3)
+
+        #rpt.display(imf, result)
+        #plt.show()
+
+        if result[-1] == len(u_per[j]):
+            result = np.pad(result, (1,0), constant_values=(0,))
+            result[-1] = len(u_per[j])-1
+        else:
+            result = np.pad(result, (1,1), constant_values=(0, len(u_per[j])-1))
+        min_length = (1 / center_freqs[j]) * 2
+
+        for i in range(0, len(result)-1):
+            start = result[i]
+            end = result[i+1]
+
+            if (t[end] - t[start] < min_length):
+                continue
+
+            window = signal[start:end]
+            segment = imf[start:end]
+
+            #corr = scc(window, segment).statistic
+            corr = pcc(window.astype(float), segment.astype(float)).statistic
+            if corr > 0.6:
+                time = start, end
+
+                comp = time, j
+                per_segments.append(comp)
+
+    if per_segments:
+        plt.plot(t, signal)
+
+        for p in per_segments:
+            start = p[0][0]
+            end = p[0][1]
+            imf = u_per[p[1]]
+
+            plt.plot(t[start:end], imf[start:end], label=center_freqs[p[1]])
+
+        plt.legend()
+        plt.show()
+
+
+
+
+

@@ -4,16 +4,16 @@ import numpy as np
 
 from scipy.stats import pearsonr, spearmanr
 
-# pearson correllation coefficient
+# pearson correlation coefficient
 def pcc(signal, test):
     if len(signal) < len(test):
         length = len(signal)
     else:
         length = len(test)
 
-    coeff, = pearsonr(signal[:length], test[:length])
+    res = pearsonr(signal[:length], test[:length])
 
-    return coeff
+    return res
 
 # spearman correlation coeffient
 def scc(signal, test):
