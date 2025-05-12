@@ -5,7 +5,7 @@ import datetime
 import json
 import numpy as np
 import pandas as pd
-
+from argparse import Namespace
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
@@ -35,8 +35,9 @@ class FreqPlot:
         self.transform = "dft"
         self.dtw = True
         self.dominant = []
-        self.recon = False
+        self.recon = []
         self.psd = False
+        self.name = ""
         if not isinstance(argv, bool):
             D1 = []
             D2 = []
@@ -218,11 +219,13 @@ class FreqPlot:
             elif prop in "dtw":
                 self.dtw = value
             elif prop in "reconstruction":
-                self.recon = value
+                self.recon = value 
             elif prop in "psd":
                 self.psd = value
             elif prop in "transform":
                 self.transform = value
+            elif prop in "name":
+                self.name = value
 
     def check_mode(self, data, mode):
         if self.check == 0:
@@ -280,8 +283,8 @@ class FreqPlot:
         else:
             pass
 
-        if "plotly" == self.plot_engine:
-            create_html(f, self.render, conf, "freq")
+        if "plotly" in self.plot_engine:
+            create_html(f, self.render, conf, self.name)
         else:
             input()
 
@@ -295,6 +298,10 @@ class FreqPlot:
         bar_plot = go.Figure()
         color_counter = 0
         template = "plotly"
+
+        paper = True
+        if "no_paper" in self.plot_engine:
+            paper = False
         # template = "plotly_dark"
         
         # For faster scatteer plot
@@ -324,6 +331,7 @@ class FreqPlot:
             f"[cyan]DTW calculation:[/] {self.dtw}\n"
         )
         all_or_10 = False
+        sum_top = {}
         
         for r in ranks:
             index_set = self.D.settings_df["ranks"].isin([r])
@@ -343,7 +351,7 @@ class FreqPlot:
                 + samples * self.D.settings_df[index_set]["T_s"].values
             )
 
-            if self.plot_engine == "plotly":
+            if  "plotly" in  self.plot_engine:
                 f.append(go.Figure())
             else:
                 bar_plot = plt.figure(figsize=(10, 4))
@@ -395,10 +403,11 @@ class FreqPlot:
                     sum_dominant = np.zeros(x.size)
                     # recon with DC offset
                     if self.recon:
-                        sum_top_2 = x
-                        sum_top_3 = x
-                        sum_top_5 = x
-                        sum_top_10 = x
+                        for top_index in self.recon:
+                            sum_top[top_index] =  np.zeros_like(x)
+                            sum_top[top_index] +=  x
+                            
+                    
                     dominant_X1 = x
                     dominant_X2 = x
                     dominant_k1 = top_3[-2]
@@ -409,15 +418,11 @@ class FreqPlot:
                     if k in dominant:
                         sum_dominant = sum_dominant + x
                         found = True
+        
                     if self.recon:
-                        if k in sorted_ref.tail(3).index:
-                            sum_top_2 = sum_top_2 + x
-                        if k in sorted_ref.tail(5).index:
-                            sum_top_3 = sum_top_3 + x
-                        if k in sorted_ref.tail(9).index:
-                            sum_top_5 = sum_top_5 + x
-                        if k in sorted_ref.tail(19).index:
-                            sum_top_10 = sum_top_10 + x
+                        for top_index in self.recon:
+                            if k in sorted_ref.tail(1 + (top_index-1)*2).index:
+                                sum_top[top_index] += x
 
                     if k == dominant_k1:
                         dominant_X1 = (
@@ -554,7 +559,7 @@ class FreqPlot:
                     time,
                     0,
                     self.D.data_df[index_data]["b_sampled"] * order,
-                    label="Discrete signal",
+                    label="Sampled signal",
                     alpha=0.6,
                     step="post",
                     color="red",
@@ -581,58 +586,31 @@ class FreqPlot:
                         drawstyle="steps-post",
                         color="limegreen",
                     )
+                colors = [
+                    "gold", "cyan", "purple", "slategrey", "darkorange", "green", 
+                    "blue", "red", "magenta", "brown", "pink", "yellowgreen", 
+                    "lightblue", "indigo", "teal", "orchid", "crimson"
+                ]
+
                 if self.recon:
-                    plt.fill_between(
-                        time,
-                        0,
-                        y2=sum_top_2 * order,
-                        label="Recon. top 2 signal",
-                        alpha=0.6,
-                        step="post",
-                        color="gold",
-                    )
-                    plt.plot(
-                        time, sum_top_2 * order, drawstyle="steps-post", color="gold"
-                    )
-                    plt.fill_between(
-                        time,
-                        0,
-                        y2=sum_top_3 * order,
-                        label="Recon. top 3 signal",
-                        alpha=0.6,
-                        step="post",
-                        color="cyan",
-                    )
-                    plt.plot(
-                        time, sum_top_3 * order, drawstyle="steps-post", color="cyan"
-                    )
-                    plt.fill_between(
-                        time,
-                        0,
-                        y2=sum_top_5 * order,
-                        label="Recon. top 5 signal",
-                        alpha=0.6,
-                        step="post",
-                        color="purple",
-                    )
-                    plt.plot(
-                        time, sum_top_5 * order, drawstyle="steps-post", color="purple"
-                    )
-                    plt.fill_between(
-                        time,
-                        0,
-                        y2=sum_top_10 * order,
-                        label="Recon. top 10 signal",
-                        alpha=0.6,
-                        step="post",
-                        color="slategrey",
-                    )
-                    plt.plot(
-                        time,
-                        sum_top_10 * order,
-                        drawstyle="steps-post",
-                        color="slategrey",
-                    )
+                    for i, top_index in enumerate(self.recon):
+                        color = colors[i % len(colors)]  # Cycles through the colors list
+
+                        # Fill the area between the curve and the x-axis
+                        plt.fill_between(
+                            time,
+                            0,
+                            y2=sum_top[top_index] * order,
+                            label=f"Recon. top {top_index} signal",
+                            alpha=0.6,
+                            step="post",
+                            color=color,
+                        )
+                        
+                        # Plot the line on top of the fill
+                        plt.plot(
+                            time, sum_top[top_index] * order, drawstyle="steps-post", color=color
+                        )
                 plt.xlim(time[0], time[-1])
                 plt.ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
                 plt.ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
@@ -694,7 +672,7 @@ class FreqPlot:
                         x=time,
                         y=sum_all_components * order,
                         mode="lines+markers",
-                        name="Discrete signal",
+                        name="Sampled signal",
                         line={"shape": "hv"},
                         marker_color="rgb(180,30,30)",
                     )
@@ -702,16 +680,20 @@ class FreqPlot:
                 f[-1].update_layout(
                     xaxis_title="Time (s)",
                     yaxis_title=f"Bandwidth ({unit})",
-                    width=width,
+                    width=width if paper else 1.5*width,
                     height=height / 1.1,
                     template=template,
                 )
-                f[-1].update_layout(
-                    legend=dict(
-                        orientation="h", yanchor="top", y=0.99, xanchor="left", x=0.01
+
+                if paper:
+                    f[-1].update_layout(
+                        legend=dict(
+                            orientation="h", yanchor="top", y=0.99, xanchor="left", x=0.01
+                        )
                     )
-                )
-                # f[-1].update_layout(legend=dict(orientation="h", yanchor="bottom",y=1.02, xanchor="right", x=1))
+                # else:
+                #     f[-1].update_layout(legend=dict(orientation="h", yanchor="bottom",y=1.02, xanchor="right", x=1))
+                    
                 f[-1].update_xaxes(range=[time[0], time[-1]])
                 f[-1] = format_plot(f[-1])
                 f[-1].show(config=conf)
@@ -750,7 +732,7 @@ class FreqPlot:
                         x=time,
                         y=self.D.data_df[index_data]["b_sampled"] * order,
                         mode="lines+markers",
-                        name="Discrete signal",
+                        name="Sampled signal",
                         fill=fill,
                         line={"shape": "hv"},
                         marker_color="rgb(180,30,30)",
@@ -771,50 +753,19 @@ class FreqPlot:
                         )
                     )
                 if self.recon:
-                    f[-1].add_trace(
-                        Scatter(
-                            x=time,
-                            y=sum_top_2 * order,
-                            mode="lines+markers",
-                            name="Recon. top 2 signal",
-                            fill=fill,
-                            line={"shape": "hv"},
-                            visible="legendonly",
+                    for top_index in self.recon:
+                        f[-1].add_trace(
+                            trace=Scatter(
+                                x=time,
+                                y=sum_top[top_index] * order,
+                                mode="lines+markers",
+                                name=f"Recon. top {top_index} signal",
+                                fill=fill,
+                                line={"shape": "hv"},
+                                visible="legendonly",
+                            )
                         )
-                    )
-                    f[-1].add_trace(
-                        Scatter(
-                            x=time,
-                            y=sum_top_3 * order,
-                            mode="lines+markers",
-                            name="Recon. top 3 signal",
-                            fill=fill,
-                            line={"shape": "hv"},
-                            visible="legendonly",
-                        )
-                    )
-                    f[-1].add_trace(
-                        Scatter(
-                            x=time,
-                            y=sum_top_5 * order,
-                            mode="lines+markers",
-                            name="Recon. top 5 signal",
-                            fill=fill,
-                            line={"shape": "hv"},
-                            visible="legendonly",
-                        )
-                    )
-                    f[-1].add_trace(
-                        Scatter(
-                            x=time,
-                            y=sum_top_10 * order,
-                            mode="lines+markers",
-                            name="Recon. top 10 signal",
-                            fill=fill,
-                            line={"shape": "hv"},
-                            visible="legendonly",
-                        )
-                    )
+                
                 rangeslider(
                     f[-1],
                     time,
@@ -826,15 +777,19 @@ class FreqPlot:
                     yaxis_title=f"Bandwidth ({unit})",
                     font=font_settings,
                     # width=1.05*width,
-                    width=width,
+                    width=width if paper else 1.5*width,
                     height=height / 1.1,
                     # title="Time Plot (Ranks %i)" % r,
                     template=template,
                 )
-                f[-1].update_layout(
-                    legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
-                    # legend=dict(yanchor="top", y=0.99, xanchor="right", x=.99)
-                )
+                if paper:
+                    f[-1].update_layout(
+                        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
+                    )
+                # else:
+                #     f[-1].update_layout(
+                #         legend=dict(yanchor="top", y=0.99, xanchor="right", x=.99)
+                #     )
 
                 f[-1].update_xaxes(range=[time[0], time[-1]])
                 if isinstance(sum_dominant, list):
@@ -873,7 +828,7 @@ class FreqPlot:
             # f[-1].add_trace(go.Bar(x=samples,y=amp,marker_color='rgb(26, 118, 255)',marker_line=dict(width=1, color=color_bar), hovertemplate ='<br><b>k</b>: %{x}<br>' + '<b>Amplitude</b>: %{y:.2e}' +'<br><b>Frequency</b>: %{text} Hz<br>',text = ['%.2f'%i for i in freq]))
             # rangeslider(f[-1],samples,int(len(samples)/5),len(samples) > 1e3 and True)
             # f[-1].update_layout(xaxis_title='Frequency bins', yaxis_title='Amplitude',font=font_settings, width=width, height=height, title = 'Frequency Plot (Ranks %i)'%r, coloraxis_colorbar=dict(yanchor="top", y=1, x=0,ticks="outside"), template = template)
-            if "plotly" == self.plot_engine:
+            if "plotly" in self.plot_engine:
                     fig_tmp = plot_one_spectrum(self.psd, freq, amp, True)
                     fig_tmp.update_traces(
                         marker_line=dict(width=0.1, color=color_bar))
@@ -954,17 +909,29 @@ def rangeslider(f, arr, limit, cond="", point_limit=2.5e3):
 
 
 
-def convert_and_plot(data, dfs: list, args) -> None:
-    """convert from ftio and plot
+def convert_and_plot(args:Namespace, dfs: list, n:int = 1 ) -> None:
+    """Convert data from ftio and plot the results.
 
     Args:
-        data (_type_): _description_
-        dfs (list): _description_
-        args (argparse): _description_
+        args (Namespace): Command line arguments.
+        dfs (list): List of dataframes containing the data to plot.
+        n (int, optional): Number of dataframes. Defaults to 1.
     """
     freq_plot = FreqPlot(True)
     if any(x in args.engine for x in ["mat", "plot"]):
-        freq_plot.add_df(len(data), dfs[0], dfs[1], dfs[2], dfs[3])
+        freq_plot.add_df(n, dfs[0], dfs[1], dfs[2], dfs[3])
+
+    if "plot_name" not in args:
+        args.plot_name = "ftio_dft_result"
+
+
+    if args.reconstruction:
+        args.reconstruction = [int(x) for val in args.reconstruction for x in val.split(',')]
+
+    if args.n_freq:
+        if args.reconstruction and args.n_freq not in args.reconstruction:
+            args.reconstruction.append(int(args.n_freq))
+    
     freq_plot.set(
         {
             "render": args.render,
@@ -973,6 +940,7 @@ def convert_and_plot(data, dfs: list, args) -> None:
             "recon": args.reconstruction,
             "psd": args.psd,
             "transform": args.transformation,
+            "name": args.plot_name
         }
     )
     freq_plot.plot()

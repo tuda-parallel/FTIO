@@ -2,23 +2,28 @@
 """
 
 import time
+import copy
 from argparse import Namespace
 import numpy as np
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from ftio.processing.print_output import display_prediction
 from ftio.freq._wavelet import wavelet_disc
 from ftio.freq._wavelet_helpers import (
     wavelet_freq_bands,
     decomposition_level,
     upsample_coefficients,
 )
+from ftio.freq.autocorrelation import find_fd_autocorrelation
 from ftio.freq.discretize import sample_data_and_prepare_plots
 from ftio.freq.helper import MyConsole
+from ftio.plot.freq_plot import convert_and_plot
 from ftio.plot.plot_wavelet_disc import (
     plot_coeffs_reconst_signal,
     plot_wavelet_disc_spectrum,
 )
 from ftio.freq._dft_workflow import ftio_dft
 
-# from ftio.prediction.helper import get_dominant_and_conf
+# from ftio.prediction.helper import[] get_dominant_and_conf
 
 
 def ftio_wavelet_disc(
@@ -74,12 +79,11 @@ def ftio_wavelet_disc(
         args.level = decomposition_level(args, len(b_sampled))
 
     #! calculate the coefficients using the discrete wavelet
+    # args.wavelet = "db8"
     # coefficients ->  [cA_n, cD_n, cD_n-1, …, cD2, cD1]
     coefficients = wavelet_disc(b_sampled, args.wavelet, args.level)
     # compute the frequency ranges
     freq_ranges = wavelet_freq_bands(f_s, args.level)
-    # make the coefficients length equal
-
     # Upsample coefficients for equal length
     t_sampled = time_b[0] + np.arange(0, len(b_sampled)) * 1 / f_s
     coefficients_upsampled = upsample_coefficients(
@@ -108,17 +112,58 @@ def ftio_wavelet_disc(
         # for fig in f:
         #     fig.show()
 
-    #? Option 1: Execute  DFT on approx. coefficients from DWT
-    ## Option 1: Execute  DFT on approx. coefficients from DWT
-    #! Option 1: Execute  DFT on approx. coefficients from DWT
-    cont = input("\nContinue with the DFT? [y/n]")
-    if len(cont) == 0 or "y" in cont.lower():
+
+    analysis = "dft_on_all" 
+    # analysis = "dft_on_approx_coeff" 
+    analysis = "dft_x_dwt" 
+    # analysis = "dwt_x_autocorrelation" 
+    if len(coefficients) <= 2:
+        analysis = "dft_on_all" 
+        console.print(f"[green]Setting analysis to {analysis}")
+
+    #? Option 1 ("dft_on_approx_coeff"): Execute  DFT on approx. coefficients from DWT
+    # cont = input("\nContinue with the DFT? [y/n]")
+    # if len(cont) == 0 or "y" in cont.lower():
+    if "dft_on_approx_coeff" in analysis:
         args.transformation = "dft"
         # Option 1: Filter using wavelet and call DFT on lowest last coefficient
         prediction, df_out, share = ftio_dft(
             args, coefficients_upsampled[0], t_sampled, total_bytes, ranks
         )
         
-    # TODO: Option 2: Find intersection between DWT and DFT
+    #? Option 2: Find intersection between DWT and DFT
+    elif "dft_on_all" in analysis:
+        args.transformation = "dft"
+        # TODO: For this to be parallel, the generated HTML files need different names as they are overwritten
+        with ProcessPoolExecutor(max_workers=4) as executor:
+            # submit futures
+            futures = {}
+            for i, coeffs in enumerate(coefficients_upsampled):
+                tmp_args = copy.deepcopy(args)
+                tmp_args.plot_name = f"ftio_dwt{i}_result"
+                future = executor.submit(ftio_dft, tmp_args, coeffs, t_sampled, total_bytes, ranks)
+                futures[future] = i
 
+            # Process futures as they complete 
+            for future in as_completed(futures):
+                prediction, df_out, _ = future.result()
+                convert_and_plot(args, df_out)
+                display_prediction(["ftio"], prediction)
+                index = futures[future]
+                console.print(f"[green] {index} completed[/]")
+            exit()
+
+    #? Option 3: Find intersection between DWT and DFT
+    elif "dft_x_dwt" in analysis:
+        args.transformation = "dft"
+        # Option 1: Filter using wavelet and call DFT on lowest last coefficient
+        prediction, df_out, share = ftio_dft(
+            args, b_sampled, t_sampled, total_bytes, ranks
+        )
+        display_prediction(args, prediction)
+
+    #? Option 4: Apply autocorrelation on low
+    elif "dwt_x_autocorrelation" in analysis:
+        res = find_fd_autocorrelation(args, coefficients_upsampled[0],args.freq)
+        exit()
     return prediction, df_out, share

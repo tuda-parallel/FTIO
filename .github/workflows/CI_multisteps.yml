@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - 'main'  # Run tests on pull requests targeting the main branch
+  workflow_dispatch:
 
 jobs:
   build:
@@ -37,7 +38,9 @@ jobs:
           fi
           source .venv/bin/activate
           pip install --upgrade pip
-          pip install .  # Ensure FTIO is installed and dependencies are up to date
+          pip install .[external-libs] || \
+            { echo "::error::External dependencies installation failed, falling back to standard install."; \
+              pip install . --no-cache-dir; }
 
   test:
     runs-on: ubuntu-latest

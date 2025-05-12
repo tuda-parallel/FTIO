@@ -57,7 +57,9 @@ Other tools:
       <a href="#installation">Installation</a>
       <ul>
         <li><a href="#automated-installation">Automated installation</a></li>
+        <li><a href="#automated-installation-from-pypi">Automated installation from PYPI</a></li>
         <li><a href="#manual-installation">Manual installation</a></li>
+		<li><a href="#automated-installation-developer-environment-setup">Automated installation: Developer Environment Setup</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
@@ -75,14 +77,14 @@ Join the [Slack channel](https://join.slack.com/t/ftioworkspace/shared_invite/zt
 
 ## Installation
 
-FTIO is available on PYPI and can be easily installed via [pip](#automated-installation-from-pypi). For the latest GitHub version, FTIO can be installed either [automatically](#automated-installation) or [manually](#manual-installation). As a prerequisite,
-for the virtual environment, `python3.11-venv` is needed, which can be installed on Ubuntu, for example, with:
+FTIO is available on PYPI and can be easily installed via [pip](#automated-installation-from-pypi). For the most recent stable GitHub version, FTIO can be installed either [automatically](#automated-installation) or [manually](#manual-installation). For the development version with the latest code functionalities, FTIO can be installed in the [development](#automated-installation-developer-environment-setup) mode.
+As a prerequisite, for the virtual environment, `python3.11-venv` is needed, which can be installed on Ubuntu, for example, with:
 
 ```sh
 apt install python3.11-venv
 ```
 
-If you want to contribute to the code, we advise that you install FTIO as mentioned under [contributing](#contributing).
+If you want to contribute to the code, we advise that you install FTIO as mentioned under [contributing](#contributing). 
 ### Automated installation from GitHub
 
 FTIO is installed by default in a virtual environment. For the automated installation, simply execute the command:
@@ -97,6 +99,9 @@ make install
 # or using a specific python version,
 # which is often needed on a cluster 
 make install PYTHON=python3.12
+
+# or additionally install all optional packages
+make full PYTHON=python3.12
 ```
 
 This generates a virtual environment in the current directory, sources `.venv/bin/activate`, and installs FTIO as a module.
@@ -107,6 +112,17 @@ If you don't need a dedicated environment, just call:
 ```sh
 make ftio PYTHON=python3
 ```
+
+### Automated installation from PYPI
+FTIO is available on PYPI and can be easily installed via pip:
+
+```sh
+pip install ftio-hpc
+```
+This instals FTIO in the most recently stable version (`main` branch).
+> [!note]
+> Note there are currently issues with pyDarshan on Mac and windows, that can be solved as mentioned [here](https://github.com/darshan-hpc/darshan/issues/930)
+
 
 ### Manual installation from GitHub
 
@@ -137,16 +153,31 @@ pip install .
 
 <p align="right"><a href="#ftio">⬆</a></p>
 
-### Automated installation from PYPI
-FTIO is available on PYPI and can be easily installed via pip:
 
-```sh
-pip install ftio-hpc
+### Automated Installation: Developer Environment Setup
+
+By default, FTIO installs into an isolated virtual environment. The following steps guide you through retrieving and configuring the latest development version with debug symbols and editable instal using the `make debug` target:
+
+```bash
+# 1. Clone the FTIO repository
+git clone https://github.com/tuda-parallel/FTIO.git
+cd FTIO
+
+# 2. Switch to the development branch
+git checkout development
+
+# 3. Install in editable/debug mode (defaults to current python)
+make debug
+
+# To specify a different Python interpreter (e.g., on an HPC cluster):
+make debug PYTHON=python3.12
 ```
 
-> [!note]
-> Note there are currently issues with pyDarshan on Mac and windows, that can be solved as mentioned [here](https://github.com/darshan-hpc/darshan/issues/930)
+This process establishes a development environment that:
 
+- Instantiates a virtual environment (`.venv/`) in the project directory.  
+- Activates the environment by sourcing the `.venv/bin/activate` script (i.e., `source .venv/bin/activate`).  
+- Installs FTIO in “editable” mode, ensuring that any modifications to the source code are immediately reflected upon import.  
 
 ## Usage
 
@@ -239,83 +270,11 @@ For an online example with `predictor`, you can follow the instructions here for
 
 <!-- CONTRIBUTING -->
 ## Contributing
+Kindly see the instructions provided under [docs/contributing.md](/docs/contributing.md).
+
 > [!note] 
 > If you are a student from TU Darmstadt, kindly see these [instructions](/docs/students_contribute.md).
 
-### Step 1: Fork the Repository
-1. Visit the [FTIO GitHub repository](https://github.com/tuda-parallel/FTIO).
-2. Click the **Fork** button in the top-right corner to create a copy of the repository under your GitHub account.
-
-### Step 2: Clone Your Fork
-Clone the forked repository to your local machine:
-```bash
-git clone https://github.com/<your-username>/FTIO.git
-```
-
-Replace `<your-username>` with your GitHub username.
-
-### Step 3: Navigate to the Project Directory
-```bash
-cd FTIO
-```
-
-### Step 4: Build the Project in Debug Mode
-Compile the project using the `make debug` command:
-```bash
-# allows to directly test the changes made
-make debug 
-```
-
-This will generate a debug build of the project, useful for development and troubleshooting.
-
-### Step 5: Sync with the Original Repository (Optional)
-To stay up-to-date with the latest changes from the main repository:
-```bash
-git remote add upstream https://github.com/tuda-parallel/FTIO.git
-git fetch upstream
-git merge upstream/main
-```
-
-### Step 6: Create an Issue for Your Contribution
-Before starting your work, create an issue on the repository to describe the feature, bug fix, or enhancement you plan to implement. This helps us track contributions and avoids duplicate work.
-
-1. Go to the **Issues** tab in the [FTIO repository](https://github.com/tuda-parallel/FTIO).
-2. Click **New Issue** and provide a clear title and description.
-3. Label the issue appropriately (e.g., `enhancement`, `bug`, or `question`).
-
-### Step 7: Make Your Changes
-1. Create a new branch for your changes:
-   ```bash
-   git checkout -b <your-feature-branch>
-   ```
-   Replace `<your-feature-branch>` with a descriptive name for your branch.
-   
-2. Make your desired changes and commit them:
-   ```bash
-   git add .
-   git commit -m "Description of your changes"
-   ```
-
-### Step 8: Push Your Changes
-Push your changes to your forked repository:
-```bash
-git push origin <your-feature-branch>
-```
-
-
-### Step 9: Create a Pull Request to the `development` Branch
-1. Navigate to the original FTIO repository on GitHub.
-2. Click the **Pull Requests** tab, then click **New Pull Request**.
-3. Set the target branch to `development`:
-   - **Base Repository:** `tuda-parallel/FTIO`
-   - **Base Branch:** `development`
-   - **Compare Branch:** `<your-feature-branch>`
-4. Provide a detailed description of your changes, referencing the issue you created earlier (e.g., `Fixes #123`).
-5. Submit your pull request and wait for feedback from the maintainers.
-
-We look forward to your contributions! 🎉
-
-<p align="right"><a href="#ftio">⬆</a></p>
 
 <!-- CONTACT -->
 ## Contact

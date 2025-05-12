@@ -16,22 +16,19 @@ dependencies = [
 	"pyzmq",
 	"numba",
 	"darshan",
-	"fastdtw",
 	"scipy",
 	"pandas",
+	"orjson",
 	"jsonlines",
 	"plotly",
-	"dash",
 	"kneed",
 	"PyWavelets",
-	"trace_updater",
-	"plotly_resampler",
 	"msgpack",
 	"rich",
-	"dash_extensions",
 	"pytest",
 	"fastcluster",
 ]
+
 requires-python = ">=3.8"
 authors = [{ name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de" }]
 maintainers = [
@@ -82,16 +79,21 @@ parallel_trace_analysis = "ftio.api.trace_analysis.parallel_trace_analysis:main"
 proxy_ftio = "ftio.api.metric_proxy.parallel_proxy:main"
 
 # Debug-Specific Scripts
-plot_bandwdith="ftio.util.plot_bandwidth:main" 
+plot_bandwdith="ftio.plot.plot_bandwidth:main" 
 convert_trace = "ftio.util.convert_old_trace:main" 
 trace_ftio = "ftio.api.trace_analysis.trace_ftio_v2:main" 
 trace_analysis = "ftio.api.trace_analysis.trace_analysis:main" 
 admire_proxy_invoke_ftio = "ftio.api.metric_proxy.proxy_invoke_ftio:main"
-
-
+jit_plot = "ftio.api.gekkoFs.jit.jit_plot:main"
 
 [project.optional-dependencies]
-debug = []  # Optional, if there are no additional dependencies for debug mode
+external-libs = [
+	"fastdtw",
+	"dash",
+	"dash_extensions",
+	"plotly_resampler",
+	"trace_updater",
+]
 
 
 [project.gui-scripts]

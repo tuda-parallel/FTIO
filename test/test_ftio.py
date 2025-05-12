@@ -5,23 +5,36 @@ Functions for testing the core functionalities of the ftio package.
 import os
 from ftio.cli.ftio_core import main, core
 from ftio.parse.args import parse_args
-from ftio.freq._dft import display_prediction
-from ftio.post.processing import label_phases
+from ftio.processing.print_output import display_prediction
 
-def test_ftio():
-    """Test the core functionality of ftio with no extra options."""
+def test_ftio_core_no_input():
+    """Test the core functionality of ftio with no input and no extra options."""
     args = parse_args(["-e", "no"], "ftio")
-    _ = core([], args)
+    _ = core({}, args)
     assert True
 
-def test_ftio_autocorrelation():
-    """Test the core functionality of ftio with autocorrelation option."""
+def test_ftio_core_no_input_autocorrelation():
+    """Test the core functionality of ftio with no input and autocorrelation."""
     args = parse_args(["-e", "no", "-c"], "ftio")
-    _ = core([], args)
+    _ = core({}, args)
     assert True
 
+def test_ftio_core():
+    """Test the core functionality of ftio with no extra options."""
+    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
+    args = ["ftio", file, "-e", "no", ]
+    _ = core({}, args)
+    assert True
+
+def test_ftio_core_autocorrelation():
+    """Test the core functionality of ftio with autocorrelation."""
+    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
+    args = ["ftio", file, "-e", "no", "-c"]
+    _ = core({}, args)
+    assert True
+    
 def test_ftio_n_freq():
-    """Test the core functionality of ftio with frequency option."""
+    """Test the core functionality of ftio with obtaining n frequencies."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no", "-n", "5"]
     _, args = main(args)
@@ -32,34 +45,34 @@ def test_ftio_zscore():
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no"]
     prediction, args = main(args)
-    assert prediction["t_start"] == 0.05309
+    assert prediction[-1]["t_start"] == 0.05309
 
 def test_ftio_dbscan():
     """Test the DBSCAN clustering option of ftio."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no", "-o", "dbscan"]
     prediction, args = main(args)
-    assert prediction["t_start"] == 0.05309
+    assert prediction[-1]["t_start"] == 0.05309
 
 def test_ftio_lof():
     """Test the LOF clustering option of ftio."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no", "-o", "lof"]
     prediction, args = main(args)
-    assert prediction["t_start"] == 0.05309
+    assert prediction[-1]["t_start"] == 0.05309
 
-def test_ftio_plot():
-    """Test the plotting functionality of ftio."""
+def test_ftio_dtw():
+    """Test DTW option of ftio."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
-    args = ["ftio", file, "-e", "no"]
+    args = ["ftio", file, "-e", "no", "-d"]
     prediction, args = main(args)
-    _ = label_phases(prediction, args)
-    assert True 
+    assert prediction[-1]["t_start"] == 0.05309
+
 
 def test_ftio_display_prediction():
     """Test the display prediction functionality of ftio."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no"]
     prediction, args = main(args)
-    display_prediction("ftio", prediction)
+    display_prediction(args, prediction)
     assert True

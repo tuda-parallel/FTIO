@@ -1,15 +1,32 @@
+"""
+This file provides functionality to plot results from JSON files
+containing experimental data for JIT, JIT no FTIO, and Pure modes. It includes
+functions to extract data, process it, and generate visualizations.
+
+Author: Ahmad Tarraf  
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: Dec 2024
+
+Licensed under the BSD 3-Clause License. 
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import argparse
 import json
 import os
-import plotly.graph_objects as go
-import numpy as np
-from ftio.plot.helper import format_plot_and_ticks
+from pathlib import Path
+from ftio.api.gekkoFs.jit.jit_result import JitResult
 
+def plot_results(args):
+    """
+    Plot results from the given JSON files. If no filenames are provided,
+    default data is used.
 
-
-
-def main(filenames):
-    if not filenames:
+    Args:
+        filenames (list): List of JSON file paths.
+    """
+    if not args:
         results = JitResult()
         # # run with x nodes  128 procs [jit | jit_no_ftio | pure] (now in old folder)
         # ################ Edit area ############################
@@ -70,138 +87,52 @@ def main(filenames):
         
         extract_and_plot(results,json_file_path,title)
     else:
-        for filename in filenames:
+        for filename in args.filenames:
+            filename = str(Path(filename).resolve())
             print(f"Processing file: {filename}")
             results = JitResult()
             title = filename
+            # title = ""
             current_directory = os.getcwd()
             json_file_path = os.path.join(current_directory, filename)
-            extract_and_plot(results,json_file_path,title)
+            extract_and_plot(results,json_file_path,title, no_diff = args.no_diff)
         
 
-def extract_and_plot(results,json_file_path:str, title:str):
+def extract_and_plot(results: JitResult, json_file_path: str, title: str, no_diff:bool = True):
+    """
+    Extract data from a JSON file and plot the results.
+
+    Args:
+        results (JitResult): The JitResult object to store the extracted data.
+        json_file_path (str): Path to the JSON file.
+        title (str): Title for the plot.
+        all (bool): Flag to control whether to call add_dict or add_all (default is False).
+    """
+    # Open the file and load the JSON data
     with open(json_file_path, "r") as json_file:
         data = json.load(json_file)
-        data = sorted(data, key=lambda x: x['nodes'])
+    
+    # Sort the data by 'nodes'
+    data = sorted(data, key=lambda x: x['nodes'])
+
+
+    # Depending on the 'all' flag, process the data differently
+    if no_diff:
         for d in data:
             results.add_dict(d)
-    
-    results.plot(title)
-
-
-def add_mode(list1, list2):
-    # Create a new list to store the result
-    result = []
-    step = int(len(list1)/3)
-    
-    # Iterate over the range of the lists' lengths
-    for i in range(len(list2)):
-        # Add the current element from each list    
-        for j in range(step):
-            result.append(list1[i*step+j])
-        result.append(list2[i])
-    
-    return result
-
-
-
-class JitResult:
-    def __init__(self) -> None:
-        self.app       = []
-        self.stage_out = []
-        self.stage_in  = []
-        self.node = []
-
-    def add_experiment(self,tmp_app:list[float],tmp_stage_out:list[float],tmp_stage_in:list[float],run:str):
-        self.app = add_mode(self.app,tmp_app)
-        self.stage_out = add_mode(self.stage_out,tmp_stage_out)
-        self.stage_in = add_mode(self.stage_in,tmp_stage_in)
-        self.node.append(run)
-
-
-    def add_dict(self, data_list:list[dict]):
-        tmp_app       = [0.0,0.0,0.0]
-        tmp_stage_out = [0.0,0.0,0.0]
-        tmp_stage_in  = [0.0,0.0,0.0]
-
-        for i in data_list["data"]:
-            if i["mode"] in {"DPCF","DCF"}:
-                index = 0
-            elif i["mode"] in {"DC","DPC"}:
-                index = 1
-            else:
-                index = 2
-            tmp_app[index] = i["app"]
-            tmp_stage_out[index] = i["stage_out"]
-            tmp_stage_in[index] = i["stage_in"]
-                
-        self.add_experiment(tmp_app,tmp_stage_out,tmp_stage_in,f"# {data_list["nodes"]}")
-        
-
-    def plot(self,title=""):
-        # Sample data for the stacked plot
-        categories = ['JIT', 'JIT no FTIO', 'Pure']
-        repeated_strings = [s for s in categories for _ in self.node]
-        repeated_numbers = self.node * len(categories)
-        categories = [repeated_strings, repeated_numbers]
-
-        fig = go.Figure()
-        
-
-        fig.add_bar(x=categories, y=self.app, text=self.app,  name="App")
-        fig.add_bar(x=categories, y=self.stage_out, text=self.stage_out,  name="Stage out")
-        fig.add_bar(x=categories, y=self.stage_in, text=self.stage_in,  name="Stage in")
-
-        # text 
-        # Update the layout to stack the bars
-        fig.update_traces(textposition='inside', texttemplate = "%{text:.2f}", textfont_size=14, textangle=0, textfont=dict(
-            # family="sans serif",
-            color="white"
-        ))
-        # comment out to see all text
-        fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-        # sum total
-        total = list(np.round(np.array(self.app) + np.array(self.stage_out) + np.array(self.stage_in),2))
-        # plot total
-        fig.add_trace(go.Scatter(
-            x=categories, 
-            y=total,
-            text=total,
-            mode='text',
-            textposition='top center',
-            textfont=dict(
-                size=14,
-            ),
-            showlegend=False
-        ))
-
-        
-        fig.update_layout(
-            yaxis_title="Time (s)",
-            xaxis_title=f"Experimental Runs with # Nodes",
-            showlegend=True,
-            title=title,
-            barmode="relative",
-            width=1500,
-            height=600,
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=0.9,
-                xanchor="right",
-                x=0.995
-                )
-            )
-
-        
-        format_plot_and_ticks(fig, x_minor=False)
-        # Display the plot
-        fig.show()
+        results.plot(title)
+    else:
+        for d in data:
+            results.add_all(d)
+        results.plot_all(title)
 
 
 
 
-if __name__ == "__main__":
+def main():
+    """
+    Main function to parse command-line arguments and plot results.
+    """
     parser = argparse.ArgumentParser(description="Load JSON data from files and plot.")
     parser.add_argument(
         'filenames',
@@ -210,7 +141,17 @@ if __name__ == "__main__":
         default=[],
         help="The paths to the JSON file(s) to plot."
     )
+    # Boolean argument to determine whether to use the diff data
+    parser.add_argument(
+        '-n', 
+        '--no_diff', 
+        action='store_true',  # This stores True if the argument is provided, False otherwise
+        help="Use the latest data based on the timestamp. Otherwise all data are plotted with error bars",
+        default = False
+    )
     args = parser.parse_args()
-    
-    main(args.filenames)
-    
+    plot_results(args)
+
+
+if __name__ == "__main__":
+    main()

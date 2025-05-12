@@ -1,6 +1,5 @@
 """ Function to plot the bandwidth from the JIT
 """
-
 import json
 import os
 import argparse
@@ -40,6 +39,17 @@ def load_json_and_plot(filenames):
         b = np.array(data.get("b", []))
         t = np.array(data.get("t", []))
 
+        # If both b and t are empty, proceed to extract from sync types
+        if b.size == 0 and t.size == 0:
+            # Search for the 'bandwidth' key in all sync types (write_sync, read_sync, etc.)
+            for sync_type, sync_data in data.items():
+                if "bandwidth" in sync_data:
+                    print(f"found type:{sync_type}")
+                    b = np.array(sync_data["bandwidth"].get("b_overlap_avr", []))
+                    t = np.array(sync_data["bandwidth"].get("t_overlap", []))  
+                    break
+                    
+
         if filenames.index(filename) == 0:
             unit, order = set_unit(b)
 
@@ -68,7 +78,7 @@ def load_json_and_plot(filenames):
         yaxis_title=f"Bandwidth ({unit})",
         showlegend=True,
     )
-    fig = format_plot_and_ticks(fig)
+    fig = format_plot_and_ticks(fig, font_size=27,n_ticks=10)
 
     # Show the plot
     pio.show(fig)

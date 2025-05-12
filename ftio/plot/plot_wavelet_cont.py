@@ -76,7 +76,7 @@ def matplot_dominant_scale(
 
     Args:
         t (np.ndarray): Time array.
-        power (np.ndarray): Power array.
+        dominant_power (np.ndarray): Power array.
         label (str): Label for the plot.
         peaks (np.ndarray): Detected peaks.
         subplot: Subplot configuration.
@@ -221,14 +221,55 @@ def matplot_plot_scales(
     
     # Plot the power spectrum at each scale
     for i, scale in enumerate(scales):
-        axes[i + 2].plot(t, power_spectrum[i, :], label=f"Scale {scale} (Frequency {frequencies[i]:.3f})")
+        axes[i + 2].plot(t, power_spectrum[i, :], label=f"Scale {scale:.3e} (Frequency {frequencies[i]:.3e})")
         axes[i + 2].set_xlabel("Time")
         axes[i + 2].set_ylabel("Power")
         axes[i + 2].legend()
-        axes[i + 2].set_title(f"Power at Scale {scale} (Frequency {frequencies[i]:.3f})")
+        axes[i + 2].set_title(f"Power at Scale {scale:.3e} (Frequency {frequencies[i]:.3e})")
 
     # Adjust layout to avoid overlapping
     # plt.tight_layout()
+
+    return fig
+
+def matplotlib_plot_scales_all_in_one(
+    t: np.ndarray,
+    b: np.ndarray,
+    power_spectrum: np.ndarray,
+    frequencies: np.ndarray,
+    scales: np.ndarray
+) -> plt.Figure:
+    """
+    Creates a Matplotlib figure showing the bandwidth over time and the power spectrum
+    at different scales.
+
+    Parameters:
+    - t: np.ndarray
+        Time array.
+    - b: np.ndarray
+        Bandwidth or signal values over time.
+    - power_spectrum: np.ndarray
+        2D array where each row corresponds to the power spectrum at a given scale.
+    - frequencies: np.ndarray
+        Array of frequencies corresponding to the scales.
+    - scales: np.ndarray
+        Array of scales used for the wavelet transform.
+
+    Returns:
+        plt.Figure: Matplotlib figure object.
+    """
+    fig, ax = plt.subplots()
+    ax.plot(t, b, label="Bandwidth over time", color="blue")
+    
+    for i, scale in enumerate(scales):
+        label = f"Power at Scale {scale:.3e} (freq. {frequencies[i]:.3e} -- period {1/frequencies[i] if frequencies[i] > 0 else 0:.3e})"
+        ax.plot(t, power_spectrum[i, :], label=label)
+    
+    ax.set_title("Wavelet Power Spectrum and Time Series")
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Amplitude / Power")
+    ax.legend()
+    plt.show()
 
     return fig
 
@@ -249,7 +290,7 @@ def plotly_dominant_scale(
 
     Args:
         t (np.ndarray): Time array.
-        power (np.ndarray): Power array.
+        dominant_power (np.ndarray): Power array.
         label (str): Label for the plot.
         peaks (np.ndarray): Detected peaks.
         subplot: Subplot configuration.
@@ -353,9 +394,9 @@ def plotly_wave_cont_and_spectrum(
 
     Args:
         t (np.ndarray): Time array.
-        f (np.ndarray): frequencies array.
+        frequencies (np.ndarray): Frequencies array.
         power_spectrum (np.ndarray): Power spectrum array.
-        dominant_power_spectrum (np.ndarray): Dominant power spectrum array.
+        dominant_power (np.ndarray): Dominant power spectrum array.
         label (str): Label for the plot.
         peaks (np.ndarray): Detected peaks.
 
@@ -405,8 +446,8 @@ def plotly_plot_scales(
         b (np.ndarray): Original signal.
         power_spectrum (np.ndarray): Power spectrum array.
         frequencies (np.ndarray): Frequencies array.
-        scales (np.ndarray): scale array. matching the frequencies
-        common_axis (bool): If True, enables a common x-axis for zooming.
+        scales (np.ndarray): Scale array matching the frequencies.
+        common_xaxis (bool): If True, enables a common x-axis for zooming.
 
     Returns:
         go.Figure: Plotly figure object.
@@ -415,7 +456,7 @@ def plotly_plot_scales(
     names = ["bandwidth over time", "Wavelet Power Spectrum (All Scales)"]
     names.extend(
         [
-            f"Power at Scale {scale} (freq. {frequencies[i]:.3f} -- period {1/frequencies[i] if frequencies[i] > 0 else 0:.3f})"
+            f"Power at Scale {scale:.3e} (freq. {frequencies[i]:.3e} -- period {1/frequencies[i] if frequencies[i] > 0 else 0:.3e})"
             for i, scale in enumerate(scales)
         ]
     )
@@ -432,7 +473,7 @@ def plotly_plot_scales(
         fig = plotly_dominant_scale(
             t,
             power_spectrum[i, :],
-            f"Scale {scale} (Frequency {frequencies[i]:.3f})",
+            f"Scale {scale} (Frequency {frequencies[i]:.3e})",
             subplot=[i + 3, 1],
             fig=fig,
         )
@@ -448,6 +489,73 @@ def plotly_plot_scales(
         yaxis_title="Amplitude",
     )
 
+    return fig
+
+
+def plotly_plot_scales_all_in_one(
+    t: np.ndarray,
+    b: np.ndarray,
+    power_spectrum: np.ndarray,
+    frequencies: np.ndarray,
+    scales: np.ndarray,
+    peaks: np.ndarray = np.array([])
+)-> go.Figure:
+    """
+    Creates a Plotly figure showing the bandwidth over time and the power spectrum
+    at different scales.
+
+    Parameters:
+    - t: np.ndarray
+        Time array.
+    - b: np.ndarray
+        Bandwidth or signal values over time.
+    - power_spectrum: np.ndarray
+        2D array where each row corresponds to the power spectrum at a given scale.
+    - frequencies: np.ndarray
+        Array of frequencies corresponding to the scales.
+    - scales: np.ndarray
+        Array of scales used for the wavelet transform.
+
+    Returns:
+        go.Figure: Plotly figure object.
+    """
+    names = ["bandwidth over time",]
+    names.extend(
+        [
+            f"Power at Scale {scale:.3e} (freq. {frequencies[i]:.3e} -- period {1/frequencies[i] if frequencies[i] > 0 else 0:.3e})"
+            for i, scale in enumerate(scales)
+        ]
+    )
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(x=t, y=b, mode="lines", name=names[0], line=dict(color="blue"))
+    )
+    for i, scale in enumerate(scales):
+        fig.add_trace(
+            go.Scatter(
+                x=t,
+                y=power_spectrum[i, :],
+                mode="lines",
+                name=names[i+1],
+            )
+            )
+        if len(peaks) > 0 :
+            fig.add_trace(
+            go.Scatter(
+                x=t[peaks[i]],
+                y=power_spectrum[i, peaks[i]],
+                mode="markers",
+                marker=dict(color="red"),
+                name=names[i+1].replace("Power","Peaks"),
+            )
+            )
+    
+    fig.update_layout(
+        title="Wavelet Power Spectrum and Time Series",
+        xaxis_title="Time",
+        yaxis_title="Amplitude / Power",
+        showlegend=True,
+    )
     return fig
 
 
@@ -469,7 +577,8 @@ def plot_wave_cont_and_spectrum(
     Args:
         args (Namespace): Arguments containing the plotting engine.
         t (np.ndarray): Time array.
-        power_spectrum (np.ndarray): Power spectrum array.
+        frequencies (np.ndarray): Frequencies array.
+        power_spectrum_all_scales (np.ndarray): Power spectrum array.
         dominant_power_spectrum (np.ndarray): Dominant power spectrum array.
         label (str): Label for the plot.
         peaks (np.ndarray): Detected peaks.
@@ -510,6 +619,7 @@ def plot_wave_cont_spectrum(
     Args:
         args (Namespace): Arguments containing the plotting engine.
         t (np.ndarray): Time array.
+        frequencies (np.ndarray): Frequencies array.
         power_spectrum_all_scales (np.ndarray): Power spectrum array.
 
     Returns:
@@ -540,7 +650,7 @@ def plot_dominant_scale(
     Args:
         args (Namespace): Arguments containing the plotting engine.
         t (np.ndarray): Time array.
-        power_spectrum (np.ndarray): Power spectrum array for a specific scale.
+        dominant_power_spectrum (np.ndarray): Dominant power spectrum array.
         label (str): Label for the plot.
         peaks (np.ndarray): Detected peaks.
 
@@ -585,3 +695,36 @@ def plot_scales(
         fig = matplot_plot_scales(t, b, power_spectrum, frequencies, scales, common_xaxis)
 
     return fig
+
+
+
+def plot_scales_all_in_one(
+    args: Namespace, 
+    t: np.ndarray,
+    b: np.ndarray,
+    power_spectrum: np.ndarray,
+    frequencies: np.ndarray,
+    scales: np.ndarray,
+    peaks: np.ndarray = np.array([]),
+) -> plt.Figure:
+    """
+    Plots the wavelet scales using either Plotly or Matplotlib based on the specified engine.
+
+    Args:
+        args (Namespace): Arguments containing the plotting engine information.
+        t (np.ndarray): Time array.
+        b (np.ndarray): Data array.
+        power_spectrum (np.ndarray): Power spectrum array.
+        frequencies (np.ndarray): Frequencies array.
+        scales (np.ndarray): Scales array.
+
+    Returns:
+        plt.Figure: Matplotlib or Plotly figure object.
+    """
+    if "plotly" in args.engine:
+        fig = plotly_plot_scales_all_in_one(t, b, power_spectrum, frequencies, scales, peaks)
+    else:
+        fig = matplotlib_plot_scales_all_in_one(t, b, power_spectrum, frequencies, scales)
+
+    return fig
+

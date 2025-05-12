@@ -1,3 +1,17 @@
+"""
+This file provides functions to execute the JIT script, including setting up the environment,
+allocating resources, starting necessary services, and managing the workflow from staging
+data in to staging out. It also handles pre- and post-application calls.
+
+Author: Ahmad Tarraf  
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: Aug 2024
+
+Licensed under the BSD 3-Clause License.  
+For more information, see the LICENSE file in the project root:  
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import sys
 import signal
 from rich.console import Console
@@ -19,6 +33,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     get_address_ftio,
     handle_sigint,
     hard_kill,
+    log_execution,
     parse_options,
     cancel_jit_jobs,
     allocate,
@@ -26,7 +41,9 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     log_dir,
     print_settings,
     save_bandwidth,
+    save_hosts_file,
     set_dir_gekko,
+    snapshot_directory,
     soft_kill,
 )
 
@@ -35,7 +52,9 @@ console = Console()
 
 
 def main() -> None:
-    """Executes the jit script
+    """Executes the JIT script by setting up the environment, 
+    allocating resources, starting necessary services, 
+    and managing the workflow from staging in to staging out.
     """
 
     console.print("\n\n[bold green]################ JIT ################[/]\n")
@@ -50,7 +69,7 @@ def main() -> None:
 
     # Clean other jobs
     cancel_jit_jobs(settings)
-
+    
     # # 1.0 set env variables
     # set_env(settings)
 
@@ -59,17 +78,20 @@ def main() -> None:
 
     # 1.2 Create folder for logs
     log_dir(settings)
+
+    # 1.3 Mark execution as pending
+    log_execution(settings)    
     
-    # 1.3 Get the address
+    # 1.4 Get the address
     get_address_ftio(settings)
 
-    # 1.4 Get address carg
+    # 1.5 Get address carg
     get_address_cargo(settings)
 
-    # 1.5 Set Gekko Root dir
+    # 1.6 Set Gekko Root dir
     set_dir_gekko(settings)
 
-    # 1.6 Print settings
+    # 1.7 Print settings
     print_settings(settings)
 
     # 2.0 Start Gekko Server (Daemon)
@@ -104,6 +126,15 @@ def main() -> None:
     # save_bandwidth
     save_bandwidth(settings)
 
+    # mark execution as completed
+    log_execution(settings)
+
+    # save the host files
+    save_hosts_file(settings)
+
+    # save the host files
+    snapshot_directory(settings)
+    
     # 11.0 Soft kill
     soft_kill(settings)
 

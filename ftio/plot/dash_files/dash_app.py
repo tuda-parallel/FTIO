@@ -1,9 +1,15 @@
-from dash import dcc, html
-from dash_extensions.enrich import DashProxy, ServersideOutputTransform, TriggerTransform
-
+import sys
+import importlib.util
 import ftio.plot.dash_files.constants.id as id
 import ftio.plot.dash_files.constants.io_mode as io_mode
 from ftio.plot.dash_files.callback_files.callbacks import get_callbacks
+
+DASH_AVAILABLE = importlib.util.find_spec("dash") is not None
+if not DASH_AVAILABLE:
+    sys.exit("Dash module not found. Please install it using 'make full' or 'pip install dash dash-extensions'.")
+else:
+    from dash import dcc, html
+    from dash_extensions.enrich import DashProxy, ServersideOutputTransform, TriggerTransform
 
 
 class IOAnalysisApp(DashProxy):

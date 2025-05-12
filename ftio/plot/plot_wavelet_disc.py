@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+from ftio.freq.freq_html import create_html
+
 
 ####################################################################################################
 #! Deprecated functions
@@ -172,11 +174,11 @@ def get_names(freq_bands: np.ndarray, n: int):
         list: List of subplot names.
     """
     names = ["Application Bandwidth"] + [
-        f"RS{n-i} from CD (Freq: [{freq_bands[i, 0]:.3f} Hz - {freq_bands[i, 1]:.3f}] Hz)"
+        f"RS{n-i} from CD (Freq: [{freq_bands[i, 0]:.3e} Hz - {freq_bands[i, 1]:.3e}] Hz)"
         for i in range(n)
     ]
     names[1] = (
-        f"RS{n - 1} from CA (Freq: [{freq_bands[0, 0]:.3f} Hz - {freq_bands[0, 1]:.3f}] Hz)"
+        f"RS{n - 1} from CA (Freq: [{freq_bands[0, 0]:.3e} Hz - {freq_bands[0, 1]:.3e}] Hz)"
     )
 
     return names
@@ -380,7 +382,7 @@ def plotly_wavelet_disc_spectrum(
     coeffs_magnitude = np.abs(coeffs)
 
     # Reverse the frequency order
-    freq_labels = [f"{low:.3f} - {high:.3f} Hz" for low, high in freq_ranges]
+    freq_labels = [f"{low:.3e} - {high:.3e} Hz" for low, high in freq_ranges]
     # coeffs_magnitude = np.flipud(coeffs_magnitude)  # Flip data to match reversed y-axis
 
     fig = go.Figure()
@@ -448,6 +450,8 @@ def plot_coeffs_reconst_signal(
         fig = ploty_coeffs_reconst_signal(
             t, b,  t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis
         )
+        create_html([fig], args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, "freq")
+
     else:
         fig = matplot_coeffs_reconst_signal(
             t, b,  t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis

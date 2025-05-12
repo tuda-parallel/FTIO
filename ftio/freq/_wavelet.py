@@ -8,14 +8,14 @@ import matplotlib.pyplot as plt
 # from ftio.freq.helper import MyConsole
 
 
-def wavelet_cont(b_sampled: np.ndarray, wavelet: str, scale:np.ndarray, freq: float) -> tuple[np.ndarray, np.ndarray]:
+def wavelet_cont(b_sampled: np.ndarray, wavelet: str, scales:np.ndarray, freq: float) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform continuous wavelet transformation on a given signal.
 
     Args:
         b_sampled (np.ndarray): The input signal to be transformed.
         wavelet (str): The type of wavelet to use. E.g., 'morlet', 'cmor', etc.
-        level (np.ndarray): array of scales
+        scales (np.ndarray): Array of scales
         freq (float): The sampling frequency of the input signal in Hz.
 
     Returns:
@@ -28,7 +28,7 @@ def wavelet_cont(b_sampled: np.ndarray, wavelet: str, scale:np.ndarray, freq: fl
     # console = MyConsole(True)
     # console.print(pywt.scale2frequency(wavelet, scale) / sampling_period)
     coefficients, frequencies = pywt.cwt(
-        b_sampled, scale, wavelet,sampling_period
+        b_sampled, scales, wavelet,sampling_period
     )
 
     return coefficients, frequencies

@@ -145,38 +145,38 @@ class Simrun:
         self.io_time       = Time({}, self.ranks, args)
 
 
-    def get_rank(self,ext:str) -> int:
-        """Get rank name from extension
-
+    def get_rank(self, ext: str) -> int:
+        """Extracts the rank number from a filename.
+        
         Args:
-            ext (str): extension type
-
+            ext (str): The expected file extension.
+        
         Returns:
-            int: number of ranks that did I/O
+            int: The rank number extracted from the filename, or -1 if not found.
         """
-        out = -1
-        if isinstance(self.name,int):
-            out = self.name
-        elif isinstance(self.name,str) and '.' not in self.name and '/' not in self.name:
-            out = int(self.name)
+        rank = -1
+        
+        if isinstance(self.name, int):
+            rank = self.name
+        elif isinstance(self.name, str) and not any(sep in self.name for sep in ['.', '/']):
+            rank = int(self.name)
         else:
             try:
-                name_s = self.name.rfind("/")
-                if name_s < 0:
-                    name_s = self.name.rfind("\\") # for windows
-                name_e = self.name.rfind(f".{ext}")
-                rank = self.name[name_s+1:name_e]
-                strs = ["_","-"," "]
-                if any(x in rank for x in strs):
-                    for x in strs:
-                        if x in rank:
-                            name_e = rank.rfind(x)
-                            rank = rank[:name_e]
-                out = int(rank)
+                # Extract filename from path
+                filename = self.name.replace("\\", "/").split("/")[-1]  # Normalize for Windows
+                
+                # Remove the extension
+                if filename.endswith(f".{ext}"):
+                    filename = filename[: -len(f".{ext}")]
+                
+                # Extract the last number in the filename
+                numbers = re.findall(r'\d+', filename)
+                if numbers:
+                    rank = int(numbers[-1])  # Last number is the rank
             except ValueError:
-                rank = re.findall(r'\d+', "hello 42 I'm a 32 string 30")
-                out = int(rank[-1])
-        return out
+                pass
+        
+        return rank
 
 
     def print_rank(self,file):
