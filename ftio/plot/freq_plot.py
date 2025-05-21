@@ -46,7 +46,7 @@ class FreqPlot:
             "size": 24,
             "color": "black",
         }
-        self.colors = px.colors.qualitative.Plotly
+        self.colors = list(px.colors.qualitative.Plotly)
         self.colors.pop(1)
         
         if not isinstance(argv, bool):

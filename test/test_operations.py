@@ -82,4 +82,4 @@ def test_ftio_multiple_files():
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, file, "-e", "no"]
     _, args = main(args)
-    assert True 
+    assert True

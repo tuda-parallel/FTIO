@@ -708,9 +708,11 @@ class PlotCore:
     def plot_time(self):
         # ? Init
         CONSOLE.print(f"│   ├── [green]Creating plot I/O time [/]")
-        colors = px.colors.qualitative.Plotly
         self.nRun = len(pd.unique(self.data.df_time["file_index"]))
-        colors = px.colors.qualitative.Plotly
+        colors = (
+            px.colors.qualitative.Plotly +
+            px.colors.qualitative.D3 
+            )
         symbols = [
             "square",
             "circle",
@@ -1262,7 +1264,10 @@ class PlotCore:
         )
 
         self.f_t.append(go.Figure())
-        colors = px.colors.qualitative.Plotly
+        colors = (
+            px.colors.qualitative.Plotly +
+            px.colors.qualitative.D3 
+            )
         y = (
             self.data.df_time["delta_t_com"]
             - (self.data.df_time["delta_t_ara"] - self.data.df_time["delta_t_ar_lost"])
