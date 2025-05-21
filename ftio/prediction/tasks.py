@@ -2,6 +2,7 @@
 import numpy as np
 from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
+from ftio.plot.freq_plot import convert_and_plot
 from ftio.processing.print_output import display_prediction
 # from ftio.prediction.helper import get_dominant
 # from ftio.plot.freq_plot import convert_and_plot
@@ -12,7 +13,7 @@ CONSOLE.set(True)
 
 #TODO: extend this similar to ftio/prediction/analysis.py
 
-def ftio_metric_task(metric:str, arrays:np.ndarray, argv:list, ranks:int, show:bool=True) -> dict:
+def ftio_metric_task(metric:str, arrays:np.ndarray, argv:list, ranks:int = 0, show:bool=True) -> dict:
     """generate FTIO prediction from 2d np array
 
     Args:
@@ -41,6 +42,9 @@ def ftio_metric_task(metric:str, arrays:np.ndarray, argv:list, ranks:int, show:b
             CONSOLE.info(f"\n[green underline]Metric: {metric}[/]")
             display_prediction(args, prediction)
 
+        if any(x in args.engine for x in ["mat", "plot"]):
+            convert_and_plot(args, dfs)
+        
         return prediction
 
 

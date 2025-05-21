@@ -38,6 +38,17 @@ class FreqPlot:
         self.recon = []
         self.psd = False
         self.name = ""
+        self.conf = {"toImageButtonOptions": {"format": "png", "scale": 4}}
+        self.width = 1100
+        self.height = 500  # 600
+        self.font_settings = {
+            "family": "Courier New, monospace",
+            "size": 24,
+            "color": "black",
+        }
+        self.colors = px.colors.qualitative.Plotly
+        self.colors.pop(1)
+        
         if not isinstance(argv, bool):
             D1 = []
             D2 = []
@@ -200,6 +211,7 @@ class FreqPlot:
                 pd.concat(D3, ignore_index=True),
             )
 
+
     def add_df(self, n, D1, D2, D3, D4=[]):
         self.n = n
         self.D = FreqData(
@@ -226,6 +238,12 @@ class FreqPlot:
                 self.transform = value
             elif prop in "name":
                 self.name = value
+            elif prop == "width":
+                self.width = value
+            elif prop == "height":
+                self.height = value
+            elif prop == "font_settings":
+                self.font_settings.update(value)  # expects a dict with partial update
 
     def check_mode(self, data, mode):
         if self.check == 0:
@@ -261,35 +279,20 @@ class FreqPlot:
     def plot(self):
         if "mat" not in self.plot_engine and "plotly" not in self.plot_engine:
             return
-
-        # Settings
-        # conf = {"toImageButtonOptions": {"format": "svg", "scale": 1}}
-        conf = {"toImageButtonOptions": {"format": "png", "scale": 4}}
-        width = 1100
-        height = 500  # 600
-        font_settings = {
-            "family": "Courier New, monospace",
-            "size": 24,
-            "color": "black",
-        }
-        colors = px.colors.qualitative.Plotly
-        colors.pop(1)
-        f = []
         
-
-        ranks = np.sort(pd.unique(self.D.settings_df["ranks"]))
         if self.transform == "dft":
-            f = self.plot_dft(f, ranks, width,height, font_settings, conf,colors)
+            f = self.plot_dft()
         else:
-            pass
+            f = []
+
 
         if "plotly" in self.plot_engine:
-            create_html(f, self.render, conf, self.name)
+            create_html(f, self.render, self.conf, self.name)
         else:
             input()
 
 
-    def plot_dft(self,f,ranks,width, height, font_settings, conf, colors):
+    def plot_dft(self):
         # settings
         # Init
         top = []
@@ -304,7 +307,7 @@ class FreqPlot:
             paper = False
         # template = "plotly_dark"
         
-        # For faster scatteer plot
+        # For faster scatter plot
         def Scatter(**kwargs):
             if self.render == "dynamic":
                 return go.Scatter(kwargs)
@@ -332,7 +335,8 @@ class FreqPlot:
         )
         all_or_10 = False
         sum_top = {}
-        
+
+        ranks = np.sort(pd.unique(self.D.settings_df["ranks"]))        
         for r in ranks:
             index_set = self.D.settings_df["ranks"].isin([r])
             index_data = self.D.data_df["ranks"].isin([r])
@@ -362,7 +366,7 @@ class FreqPlot:
                 + self.D.settings_df[index_set]["N"].values / 2
             )
             if "conf" in self.D.data_df:
-                sorted_ref = self.D.data_df[index_data].sort_values("conf")
+                sorted_ref = self.D.data_df[index_data].sort_values(by=["conf","A"])
                 dominant = self.dominant[self.dominant["ranks"].isin([r])]["k"].values
                 # dominant=[0,7,14, 21, 28, 35,42,49, 56]
                 if all_or_10:
@@ -371,6 +375,9 @@ class FreqPlot:
                 sorted_ref = self.D.data_df[index_data].sort_values("A")
                 dominant = sorted_ref.tail(3).index
 
+            # pd.set_option('display.max_rows', None)
+            # print(sorted_ref)
+            # print(top_3)
             top_3 = sorted_ref.tail(7).index
             top_3 = top_3[top_3 < limit[0]]
             top.append(top_3[-2:-1][0])
@@ -485,7 +492,7 @@ class FreqPlot:
                                 text=len(samples)
                                 * [f"{self.D.data_df[index_data]['T'].values[k]:.2f}"],
                                 marker_color=(
-                                    colors[color_counter]
+                                    self.colors[color_counter]
                                     if color_counter != 1
                                     else "rgb(70,220,70)"
                                 ),
@@ -586,7 +593,7 @@ class FreqPlot:
                         drawstyle="steps-post",
                         color="limegreen",
                     )
-                colors = [
+                self.colors = [
                     "gold", "cyan", "purple", "slategrey", "darkorange", "green", 
                     "blue", "red", "magenta", "brown", "pink", "yellowgreen", 
                     "lightblue", "indigo", "teal", "orchid", "crimson"
@@ -594,7 +601,7 @@ class FreqPlot:
 
                 if self.recon:
                     for i, top_index in enumerate(self.recon):
-                        color = colors[i % len(colors)]  # Cycles through the colors list
+                        color = self.colors[i % len(self.colors)]  # Cycles through the colors list
 
                         # Fill the area between the curve and the x-axis
                         plt.fill_between(
@@ -665,7 +672,7 @@ class FreqPlot:
             else:  # pltoly
                 #! Reconstructed plot
                 #!######################
-                colors = px.colors.qualitative.Plotly
+                self.colors = px.colors.qualitative.Plotly
 
                 f[-1].add_trace(
                     Scatter(
@@ -680,8 +687,8 @@ class FreqPlot:
                 f[-1].update_layout(
                     xaxis_title="Time (s)",
                     yaxis_title=f"Bandwidth ({unit})",
-                    width=width if paper else 1.5*width,
-                    height=height / 1.1,
+                    width=self.width if paper else 1.5*self.width,
+                    height=self.height / 1.1,
                     template=template,
                 )
 
@@ -696,7 +703,7 @@ class FreqPlot:
                     
                 f[-1].update_xaxes(range=[time[0], time[-1]])
                 f[-1] = format_plot(f[-1])
-                f[-1].show(config=conf)
+                f[-1].show(config=self.conf)
 
                 f.append(go.Figure())
                 fill = "tozeroy"
@@ -775,10 +782,10 @@ class FreqPlot:
                 f[-1].update_layout(
                     xaxis_title="Time (s)",
                     yaxis_title=f"Bandwidth ({unit})",
-                    font=font_settings,
+                    font=self.font_settings,
                     # width=1.05*width,
-                    width=width if paper else 1.5*width,
-                    height=height / 1.1,
+                    width=self.width if paper else 1.5*self.width,
+                    height=self.height / 1.1,
                     # title="Time Plot (Ranks %i)" % r,
                     template=template,
                 )
@@ -808,9 +815,9 @@ class FreqPlot:
                 #!######################
                 fig_tmp = plot_one_spectrum(self.psd, freq, amp, False, True)
                 fig_tmp.update_layout(
-                    font=font_settings,
-                    width=width,
-                    height=height / 1.3,
+                    font=self.font_settings,
+                    width=self.width,
+                    height=self.height / 1.3,
                     coloraxis_colorbar=dict(
                         yanchor="top", y=1, x=1, ticks="outside", title=""
                     ),
@@ -833,9 +840,9 @@ class FreqPlot:
                     fig_tmp.update_traces(
                         marker_line=dict(width=0.1, color=color_bar))
                     fig_tmp.update_layout(
-                        font=font_settings,
-                        width=width,
-                        height=height / 1.3,
+                        font=self.font_settings,
+                        width=self.width,
+                        height=self.height / 1.3,
                         # title="Full Spectrum (Ranks %i)" % r,
                         coloraxis_colorbar=dict(
                             yanchor="top", y=1, x=1, ticks="outside", title=""
@@ -909,14 +916,7 @@ def rangeslider(f, arr, limit, cond="", point_limit=2.5e3):
 
 
 
-def convert_and_plot(args:Namespace, dfs: list, n:int = 1 ) -> None:
-    """Convert data from ftio and plot the results.
-
-    Args:
-        args (Namespace): Command line arguments.
-        dfs (list): List of dataframes containing the data to plot.
-        n (int, optional): Number of dataframes. Defaults to 1.
-    """
+def set_plot_args(args:Namespace, dfs: list, n:int = 1 ):
     freq_plot = FreqPlot(True)
     if any(x in args.engine for x in ["mat", "plot"]):
         freq_plot.add_df(n, dfs[0], dfs[1], dfs[2], dfs[3])
@@ -929,7 +929,7 @@ def convert_and_plot(args:Namespace, dfs: list, n:int = 1 ) -> None:
         args.reconstruction = [int(x) for val in args.reconstruction for x in val.split(',')]
 
     if args.n_freq:
-        if args.reconstruction and args.n_freq not in args.reconstruction:
+        if args.n_freq not in args.reconstruction:
             args.reconstruction.append(int(args.n_freq))
     
     freq_plot.set(
@@ -943,4 +943,40 @@ def convert_and_plot(args:Namespace, dfs: list, n:int = 1 ) -> None:
             "name": args.plot_name
         }
     )
+    return freq_plot
+
+def convert_and_plot(args:Namespace, dfs: list, n:int = 1 ) -> None:
+    """Convert data from ftio and plot the results.
+
+    Args:
+        args (Namespace): Command line arguments.
+        dfs (list): List of dataframes containing the data to plot.
+        n (int, optional): Number of dataframes. Defaults to 1.
+    """
+    freq_plot = set_plot_args(args, dfs, n)
     freq_plot.plot()
+
+
+def convert_and_get_figs(args:Namespace, dfs: list, n:int = 1, additional_settings={} ) -> None:
+    """Convert data from ftio and plot the results.
+
+    Args:
+        args (Namespace): Command line arguments.
+        dfs (list): List of dataframes containing the data to plot.
+        n (int, optional): Number of dataframes. Defaults to 1.
+    """
+    freq_plot = set_plot_args(args, dfs, n)
+    
+    if "mat" not in freq_plot.plot_engine and "plotly" not in freq_plot.plot_engine:
+        return
+
+    if additional_settings:
+        for prop, value in additional_settings.items():
+            freq_plot.set({prop: value})
+        
+    if freq_plot.transform == "dft":
+        f = freq_plot.plot_dft()
+    else:
+        f = []
+
+    return f

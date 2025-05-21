@@ -139,6 +139,9 @@ Install all tools provided in this repository simply by using pip:
 
 ```sh
 pip install .
+
+#Or with external dependencies for improved performance
+pip install '.[external-libs]'
 ```
 
 > [!note]

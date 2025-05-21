@@ -114,8 +114,8 @@ def ftio_wavelet_disc(
 
 
     analysis = "dft_on_all" 
-    # analysis = "dft_on_approx_coeff" 
-    analysis = "dft_x_dwt" 
+    analysis = "dft_on_approx_coeff"
+    # analysis = "dft_x_dwt"
     # analysis = "dwt_x_autocorrelation" 
     if len(coefficients) <= 2:
         analysis = "dft_on_all" 

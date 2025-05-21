@@ -5,6 +5,7 @@ from plotly.offline import get_plotlyjs
 from rich.console import Console
 
 def create_html(figs:list,render :str,configuration:dict,name:str="freq") -> None:
+    console = Console()
     if platform == "linux" or platform == "linux2":
         os.system(f"rm -f ./{name}.html || true")
         os.system("rm -rf io_anomality_freq_images || true ")
@@ -26,18 +27,19 @@ def create_html(figs:list,render :str,configuration:dict,name:str="freq") -> Non
         for fig in figs:
             # s = s + fig.to_html(include_plotlyjs=False) + "\n"
             s= s + fig.to_html(config=configuration,include_plotlyjs=False) + "\n"
-        template = template.format(
-            plotly=get_plotlyjs(), plots=s
-        )
+
+        template = template.format(plotly=get_plotlyjs(), plots=s)
         with open(f"{name}.html", "a") as file:
             file.write(template)
+
         os.system(f"open ./{name}.html &\n")
+        console.print(f"[cyan]{name}.html created[/cyan]")
     else:
         os.mkdir("io_predicition_anomality_images")
         # extension='jpg'
         extension='svg'
         # extension = "png"
-        print("-> Generating %s figures" % extension.upper())
+        console.print(f"-> Generating {extension.upper()} figures")
         threads = []
         length = len(figs)
         plotly.io.json.config.default_engine = "orjson"
@@ -52,8 +54,11 @@ def create_html(figs:list,render :str,configuration:dict,name:str="freq") -> Non
 
         for thread in threads:
             thread.start()
+
         for thread in threads:
             thread.join()
+
+        console.print(f"[cyan]{name}.html created[/cyan]")
         os.system("open . &")
 
 

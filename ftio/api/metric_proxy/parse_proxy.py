@@ -64,7 +64,7 @@ def filter_metrics(json_data,filter_deriv:bool=True, exclude=None, scale_t:float
     out = {}
     t = process_time()
     metrics = json_data['metrics'].keys()
-    # extract either derive or all but not all
+    # extract either derive or all 
     if filter_deriv:
         metrics = clean_metrics(metrics)
 
