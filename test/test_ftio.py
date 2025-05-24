@@ -45,28 +45,28 @@ def test_ftio_zscore():
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no"]
     prediction, args = main(args)
-    assert prediction[-1]["t_start"] == 0.05309
+    assert prediction[-1].t_start == 0.05309
 
 def test_ftio_dbscan():
     """Test the DBSCAN clustering option of ftio."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no", "-o", "dbscan"]
     prediction, args = main(args)
-    assert prediction[-1]["t_start"] == 0.05309
+    assert prediction[-1].t_start == 0.05309
 
 def test_ftio_lof():
     """Test the LOF clustering option of ftio."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no", "-o", "lof"]
     prediction, args = main(args)
-    assert prediction[-1]["t_start"] == 0.05309
+    assert prediction[-1].t_start == 0.05309
 
 def test_ftio_dtw():
     """Test DTW option of ftio."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no", "-d"]
     prediction, args = main(args)
-    assert prediction[-1]["t_start"] == 0.05309
+    assert prediction[-1].t_start == 0.05309
 
 
 def test_ftio_display_prediction():

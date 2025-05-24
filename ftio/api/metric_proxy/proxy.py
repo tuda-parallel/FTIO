@@ -28,11 +28,11 @@ data = {"time": t, "bandwidth": b, "total_bytes": 0, "ranks": ranks}
 args = parse_args(argv, "ftio")
 
 # perform prediction
-prediction, dfs = core(data, args)
+prediction, analysis_figures = core(data, args)
 
 # plot and print info
-convert_and_plot(args, dfs)
 display_prediction(args, prediction)
+analysis_figures.show()
 
 # ------------------ 
 

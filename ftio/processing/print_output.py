@@ -10,7 +10,7 @@ from rich.table import Table
 from ftio.prediction.unify_predictions import color_pred
 from ftio.prediction.helper import get_dominant_and_conf
 from ftio.freq.helper import MyConsole
-from ftio.freq._prediction import Prediction
+from ftio.freq.prediction import Prediction
 
 
 def display_prediction(

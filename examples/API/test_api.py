@@ -35,9 +35,9 @@ data = {
 args = parse_args(argv,"ftio")
 
 # perform prediction
-prediction, dfs = core(data, args)
+prediction, analysis_figures = core(data, args)
 
 
 # plot and print info
-convert_and_plot(args, dfs)
+analysis_figures.show()
 display_prediction(args, prediction)

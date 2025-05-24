@@ -1,7 +1,8 @@
 import numpy as np
 from argparse import Namespace
 from ftio.freq.freq_html import create_html
-
+import matplotlib.pyplot as plt
+import matplotlib.figure  # to check type
 
 class AnalysisFigures:
     def __init__(self, args:Namespace=None, b=None, t=None, b_sampled=None, t_sampled=None,
@@ -12,30 +13,18 @@ class AnalysisFigures:
 
     def set_bulk(self, args:Namespace=None, b=None, t=None, b_sampled=None, t_sampled=None,
                  freqs=None, amp=None, phi=None, conf=None, ranks=None, scales = None, coefficients=None):
-        if args is not None:
-            self.args = args
-        if b is not None:
-            self.b = b
-        if t is not None:
-            self.t = t
-        if b_sampled is not None:
-            self.b_sampled = b_sampled
-        if t_sampled is not None:
-            self.t_sampled = t_sampled
-        if freqs is not None:
-            self.freqs = freqs
-        if amp is not None:
-            self.amp = amp
-        if phi is not None:
-            self.phi = phi
-        if conf is not None:
-            self.conf = conf
-        if ranks is not None:
-            self.ranks = ranks
-        if scales is not None:
-            self.scales = scales
-        if coefficients is not None:
-            self.coefficients = coefficients
+        self.args = args
+        self.b = b
+        self.t = t
+        self.b_sampled = b_sampled
+        self.t_sampled = t_sampled
+        self.freqs = freqs
+        self.amp = amp
+        self.phi = phi
+        self.conf = conf
+        self.ranks = ranks
+        self.scales = scales
+        self.coefficients = coefficients
 
     def sort(self):
         """
@@ -92,22 +81,36 @@ class AnalysisFigures:
     def __bool__(self):
         return self.is_empty()
 
-    def add_figure(self, fig=None, source: str = ""):
-        if fig is not None:
-            self.figures.append(fig)
+    def add_figure(self, fig_list=None, source: str = ""):
+        if fig_list is not None:
+            self.figures.append(fig_list)
             self.figure_titles.append(source)
 
-    def add_figure_and_show(self, fig:list, source: str = ""):
-        self.add_figure(fig,source)
+    def add_figure_and_show(self, fig_list:list, source: str = ""):
+        self.add_figure(fig_list, source)
+        self.show_figs(fig_list, source)
 
-        if "mat" in self.args.engine:
-            for i, fig in enumerate(fig):
-                fig.show()
-            input()
-        else:
-            conf = {"toImageButtonOptions": {"format": "png", "scale": 4}}
-            create_html(fig, self.args.render, conf, source)
-            # fig.show(config=conf)
+
+    def show_figs(self, fig_list, name, condition = None):
+        if condition is None:
+            condition = self.args.runtime_plots or "mat" in self.args.engine
+        if condition:
+            if "mat" in self.args.engine:
+                for fig in fig_list:
+                    if isinstance(fig, matplotlib.figure.Figure):
+                        plt.figure(fig.number)
+
+                plt.show()
+            else:
+                conf = {"toImageButtonOptions": {"format": "png", "scale": 4}}
+                create_html(fig_list, self.args.render, conf, name)
+
+    def show(self):
+        if self.args is not None:
+            condition = "plot" in self.args.engine and not self.args.runtime_plots
+            for i, fig_list in enumerate(self.figures):
+                self.show_figs(fig_list, self.figure_titles[i], condition)
+
 
 
     def __str__(self):
@@ -118,7 +121,7 @@ class AnalysisFigures:
     def __add__(self, other):
         """
         Add two AnalysisFigures instances.
-        - Appends the list of figures and figure titles.
+        - extends the list of figures and figure titles.
         - Overwrites all other attributes with those from `other`.
 
         Args:
@@ -132,9 +135,13 @@ class AnalysisFigures:
 
         result = AnalysisFigures()
 
+        # Initialize with copies of self's lists
+        result.figures = self.figures
+        result.figure_titles = self.figure_titles
+
         # Append lists
-        result.figures = self.figures + other.figures
-        result.figure_titles = self.figure_titles + other.figure_titles
+        result.figures.extend(other.figures)
+        result.figure_titles.extend(other.figure_titles)
 
         for attr, value in other.__dict__.items():
             if attr in ["figures", "figure_titles"]:

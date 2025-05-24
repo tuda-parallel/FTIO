@@ -49,7 +49,7 @@ def plot_filter_results_matplotlib(args, b, filtered_signal):
     plt.subplots_adjust(top=0.92)
 
     # Show the plot
-    plt.show()
+    # plt.show()
 
 
 def plot_filter_results_plotly(args, b, filtered_signal):
@@ -128,12 +128,12 @@ def plot_filter_results_plotly(args, b, filtered_signal):
     )
     figs.append(fig_freq)
 
-    # Save figures
-    plot_name = "filter"
-    if "plot_name" in args:
-        plot_name += "_" + args.plot_name
-
-    create_html(figs, args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, plot_name)
+    # # Save figures
+    # plot_name = "filter"
+    # if "plot_name" in args:
+    #     plot_name += "_" + args.plot_name
+    #
+    # create_html(figs, args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, plot_name)
 
 
 def plot_filter_results(args, b, filtered_signal):

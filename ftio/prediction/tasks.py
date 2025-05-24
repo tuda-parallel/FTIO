@@ -34,7 +34,7 @@ def ftio_metric_task(metric:str, arrays:np.ndarray, argv:list, ranks:int = 0, sh
         args = parse_args(argv, "ftio")
 
         # perform prediction
-        prediction, dfs = core(data, args)
+        prediction, analysis_figures = core(data, args)
 
         # # plot and print info
         # convert_and_plot(args, dfs, len(data))
@@ -43,7 +43,7 @@ def ftio_metric_task(metric:str, arrays:np.ndarray, argv:list, ranks:int = 0, sh
             display_prediction(args, prediction)
 
         if any(x in args.engine for x in ["mat", "plot"]):
-            convert_and_plot(args, dfs)
+            analysis_figures.show()
         
         return prediction
 

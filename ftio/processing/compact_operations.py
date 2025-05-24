@@ -7,6 +7,7 @@ from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
 from ftio.processing.print_output import display_prediction
 from ftio.plot.freq_plot import convert_and_plot
+from ftio.freq.prediction import Prediction
 
 console = Console()
 
@@ -19,7 +20,7 @@ def quick_ftio(
     ranks: int,
     msg: str = "",
     verbose: bool = True,
-) -> dict:
+) -> Prediction:
     """Quickly process and plot data using ftio.
 
     Args:
@@ -41,11 +42,10 @@ def quick_ftio(
     args = parse_args(argv, "ftio")
 
     # perform prediction
-    prediction, dfs = core(data, args)
+    prediction, analysis_figures = core(data, args)
 
     # plot and print info
-    convert_and_plot(args, dfs, len(data))
-
+    analysis_figures.show()
     if verbose and len(msg) > 0:
         console.print(f"[green]>> Prediction for {msg}[/]")
         display_prediction(args, prediction)

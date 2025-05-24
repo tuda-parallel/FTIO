@@ -15,7 +15,7 @@ from ftio.plot.plot_wavelet_cont import  plot_wave_cont_and_spectrum, plot_scale
 from ftio.freq._dft_workflow import ftio_dft
 from ftio.prediction.helper import get_dominant_and_conf
 from ftio.freq._share_signal_data import SharedSignalData
-from ftio.freq._prediction import Prediction
+from ftio.freq.prediction import Prediction
 from ftio.freq._analysis_figures import AnalysisFigures
 # from ftio.freq._logicize import logicize
 
@@ -92,7 +92,7 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_stamps: np.nda
             scales = frequency2scale(args.wavelet, np.array([dominant_freq]))*args.freq
         # use the top frequencies
         elif not use_dominant_only:
-            top_freqs = prediction['top_freq']['freq'] if 'freq' in prediction['top_freq'] else []
+            top_freqs = prediction.top_freqs
             top_freqs = np.delete(top_freqs, np.where(top_freqs == 0))
             if len(top_freqs) > 0:
                 if mw_central_frequency == 1:
@@ -166,7 +166,11 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_stamps: np.nda
         if "ploty" in args.engine:
             f.append(plot_scales_all_in_one(args, t_sampled, b_sampled, coefficients, frequencies, scales, all_peaks))
 
-        analysis_figures.add_figure(f,"wavelet_cont")
+        for i, fig  in enumerate(f):
+            analysis_figures.add_figure([fig],f"wavelet_cont_{i}")
+        console.print(f" --- Done --- \n")
+    else:
+        analysis_figures = AnalysisFigures()
 
     # Calculate the period (time difference between consecutive peaks)
     if len(peak_times) > 1:
@@ -179,5 +183,6 @@ def ftio_wavelet_cont(args:Namespace, bandwidth: np.ndarray, time_stamps: np.nda
     console.print(
         f"\n[cyan]{args.transformation.upper()} + {args.outlier} finished:[/] {time.time() - tik:.3f} s"
     )
-    return prediction, df_out , share
+
+    return prediction, analysis_figures , share
 

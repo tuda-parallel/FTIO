@@ -13,7 +13,7 @@ from ftio.plot.spectrum import plot_one_spectrum
 from ftio.plot.units import set_unit
 from ftio.freq.freq_html import create_html
 from ftio.freq._analysis_figures import AnalysisFigures
-from ftio.freq._prediction import Prediction
+from ftio.freq.prediction import Prediction
 # import plotly.io as pio
 matplotlib.rcParams["backend"] = "TkAgg"
 
@@ -105,9 +105,6 @@ def plot_dft(args: Namespace, prediction: Prediction = None, analysis_figures:An
             plot_dft_matplotlib_dominant(args, order, unit, b_sampled, t_sampled, b, t, dominant_signal, dominant_name, sum_top),
             plot_dft_matplotlib_spectrum(args, freq, amp)
         ]
-        for fig in f:
-            plt.figure(fig.number)
-        plt.show()
 
     else:
         f = [
@@ -116,9 +113,9 @@ def plot_dft(args: Namespace, prediction: Prediction = None, analysis_figures:An
             plot_dft_plotly_spectrum(args, freq, amp)
         ]
 
-        create_html(f, args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, args.transformation)
+        # create_html(f, args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, args.transformation)
 
-    analysis_figures.add_figure(f, f"dft")
+    analysis_figures.add_figure_and_show(f, f"dft")
 
 
 
@@ -366,7 +363,7 @@ def plot_dft_plotly_top(args,order, unit, b_sampled, t_sampled, b, t, sum_all_co
                 orientation="h", yanchor="top", y=0.99, xanchor="left", x=0.01
             )
         )
-    f.update_xaxes(range=[t_sampled[0], t_sampled])
+    f.update_xaxes(range=[t_sampled[0], t_sampled[-1]])
     f = format_plot(f)
     return f
 

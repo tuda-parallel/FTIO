@@ -1,4 +1,5 @@
 import numpy as np
+from ftio.freq.prediction import Prediction
 
 
 class PhaseMode:
@@ -49,20 +50,20 @@ class PhaseMode:
 
 
 
-def calculate_wave(prediction:dict, t:np.ndarray = np.array([]))  :# -> tuple[NDArray[Any] | Any, str | LiteralString]:# -> tuple[NDArray[Any] | Any, str | LiteralString]:# -> tuple[NDArray[Any] | Any, str | LiteralString]:
+def calculate_wave(prediction:Prediction, t:np.ndarray = np.array([]))  :# -> tuple[NDArray[Any] | Any, str | LiteralString]:# -> tuple[NDArray[Any] | Any, str | LiteralString]:# -> tuple[NDArray[Any] | Any, str | LiteralString]:
     wave = np.array([])
     name = ""
     if prediction:
-        n = int(np.floor((prediction["t_end"] - prediction["t_start"]) * prediction["freq"]))
+        n = int(np.floor((prediction.t_end - prediction.t_start) * prediction.freq))
         if t.size == 0:
-            t = np.arange(prediction["t_start"], prediction["t_end"], 1 / prediction["freq"])
+            t = np.arange(prediction.t_start, prediction.t_end, 1 / prediction.freq)
 
         if 'top_freq' in prediction:
             wave = np.zeros_like(t)
-            for j in range(0, len(prediction['top_freq']['freq'])):
-                amp  = prediction['top_freq']['amp'][j]
-                freq = prediction['top_freq']['freq'][j]
-                phi  =  prediction['top_freq']['phi'][j]
+            for j in range(0, len(prediction.top_freqs['freq'])):
+                amp  = prediction.top_freqs['amp'][j]
+                freq = prediction.top_freqs['freq'][j]
+                phi  =  prediction.top_freqs['phi'][j]
                 wave = wave +  2 / n *amp * np.cos(2 * np.pi * freq * t+ phi)
                 if j < 3:
                     name += f"{2 / n *amp:.1e}*cos(2\u03C0*{freq:.2e}*t+{phi:.2e})"

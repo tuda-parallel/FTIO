@@ -75,8 +75,8 @@ def test_api():
     # parse args
     args = parse_args(argv, "ftio")
     # perform prediction
-    prediction, dfs = core(data, args)
+    prediction, analysis_figures = core(data, args)
     # plot and print info
-    convert_and_plot(args, dfs, len(data))
     display_prediction(args, prediction)
+    analysis_figures.show()
     assert True

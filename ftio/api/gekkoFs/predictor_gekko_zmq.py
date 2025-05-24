@@ -148,8 +148,8 @@ def prediction_zmq_process(
     shared_resources.sync_trigger.put(
         {
     't_wait':  time.time() ,
-    't_end':  prediction['t_end'],
-    't_start':  prediction['t_start'],
+    't_end':  prediction.t_end,
+    't_start':  prediction.t_start,
     't_flush': t_flush + (t_prediction - time.time()),
     'freq': freq,
     'conf': conf,

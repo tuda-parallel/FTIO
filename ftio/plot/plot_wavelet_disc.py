@@ -450,7 +450,7 @@ def plot_coeffs_reconst_signal(
         fig = ploty_coeffs_reconst_signal(
             t, b,  t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis
         )
-        create_html([fig], args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, args.transformation)
+        # create_html([fig], args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, args.transformation)
 
     else:
         fig = matplot_coeffs_reconst_signal(

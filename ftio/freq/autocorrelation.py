@@ -14,7 +14,7 @@ import ftio.freq.discretize as dis
 from ftio.freq.helper import MyConsole
 from ftio.plot.plot_autocorrelation import plot_autocorr_results
 from ftio.freq._share_signal_data import SharedSignalData
-from ftio.freq._prediction import Prediction
+from ftio.freq.prediction import Prediction
 from ftio.freq._analysis_figures import AnalysisFigures
 
 
@@ -216,6 +216,7 @@ def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float,
         console.print(f"Generating Autocorrelation Plot\n")
         fig = plot_autocorr_results(args, acorr, peaks, outliers, len(candidates) > 0)
         analysis_figures.add_figure([fig], "Autocorrelation")
+        console.print(f" --- Done --- \n")
 
     return {"autocorrelation": acorr, "candidates": candidates, "peaks": peaks, "outliers": outliers, "weights": weights, "periodicity": periodicity, "conf": conf}
 

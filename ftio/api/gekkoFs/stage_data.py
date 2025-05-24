@@ -27,16 +27,16 @@ CONSOLE = MyConsole()
 CONSOLE.set(True)
 
 
-def stage_files(args: argparse.Namespace, prediction: dict) -> None:
+def stage_files(args: argparse.Namespace, latest_prediction: dict) -> None:
     """
     Stages the files based on the provided prediction.
 
     Args:
         args (Namespace): Parsed command line arguments.
-        prediction (dict): Result from FTIO containing prediction details.
+        latest_prediction (dict): Result from FTIO containing prediction details.
     """
-    period = 1 / prediction["freq"] if prediction["freq"] > 0 else 0
-    text = f"frequency: {prediction['freq']}\nperiod: {period} \nconfidence: {prediction['conf']}\nprobability: {prediction['probability']}\n"
+    period = 1 / latest_prediction["freq"] if latest_prediction["freq"] > 0 else 0
+    text = f"frequency: {latest_prediction['freq']}\nperiod: {period} \nconfidence: {latest_prediction['conf']}\nprobability: {latest_prediction['probability']}\n"
     CONSOLE.print(f"[bold green][Trigger][/][green] {text}\n")
     if args.cargo:
         move_files_cargo(args, period=period)
@@ -80,9 +80,9 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
         args (Namespace): Parsed command line arguments.
     """
 
-    # if set to skip, the trigger will skip the prediction if a new one is available
-    # if set to cancel, the latest prediction is canaled
-    # if empty, cargo is triggered with each prediction
+    # if set to skip, the trigger will skip the latest_prediction if a new one is available
+    # if set to cancel, the latest latest_prediction is canaled
+    # if empty, cargo is triggered with each latest_prediction
     # adaptive = ""
     # adaptive = "skip"
     adaptive = "cancel"
@@ -93,25 +93,25 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
         while True:
             try:
                 if not sync_trigger.empty():
-                    prediction = sync_trigger.get()
-                    t = time.time() - prediction["t_wait"]  # time waiting so far
+                    latest_prediction = sync_trigger.get()
+                    t = time.time() - latest_prediction["t_wait"]  # time waiting so far
                     # CONSOLE.print(f"[bold green][Trigger] queue wait time = {t:.3f} s[/]\n")
-                    if not np.isnan(prediction["freq"]):
+                    if not np.isnan(latest_prediction["freq"]):
                         # ? 1) Find estimated number of phases and skip in case less than 1
-                        # n_phases = (prediction['t_end']- prediction['t_start'])*prediction['freq']
+                        # n_phases = (latest_prediction['t_end']- latest_prediction['t_start'])*latest_prediction['freq']
                         # if n_phases <= 1:
-                        #     CONSOLE.print(f"[bold green][Trigger] Skipping this prediction[/]\n")
+                        #     CONSOLE.print(f"[bold green][Trigger] Skipping this latest_prediction[/]\n")
                         #     continue
 
                         # ? 2) Time analysis to find the right instance when to send the data
-                        target_time = prediction["t_end"] + 1 / prediction["freq"]
+                        target_time = latest_prediction["t_end"] + 1 / latest_prediction["freq"]
                         gkfs_elapsed_time = (
-                            prediction["t_flush"] + t
+                            latest_prediction["t_flush"] + t
                         )  # t  is the waiting time in this function. t_flush contains the overhead of ftio + when the data was flushed from gekko
                         remaining_time = target_time - gkfs_elapsed_time
                         CONSOLE.print(
-                            f"[bold green][Trigger {prediction['source']}][/][green]\n"
-                            f"Probability   : {prediction['probability']*100:.0f}%\n"
+                            f"[bold green][Trigger {latest_prediction['source']}][/][green]\n"
+                            f"Probability   : {latest_prediction['probability']*100:.0f}%\n"
                             f"Elapsed time  : {gkfs_elapsed_time:.3f} s\n"
                             f"Target time   : {target_time:.3f} s\n"
                             f"--> trigger in {remaining_time:.3f} s[/]\n"
@@ -120,7 +120,7 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                             countdown = time.time() + remaining_time
                             # wait till the time elapses:
                             while time.time() < countdown:
-                                # ? 3) While waiting cancel new prediction is available
+                                # ? 3) While waiting cancel new latest_prediction is available
                                 condition = True
                                 if adaptive:
                                     if not sync_trigger.empty():
@@ -136,22 +136,22 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                                                     )
                                             else:
                                                 CONSOLE.print(
-                                                    f"[bold green][Trigger][/][yellow] Skipping, new prediction is ready (skipped: {skipped})[/]\n"
+                                                    f"[bold green][Trigger][/][yellow] Skipping, new latest_prediction is ready (skipped: {skipped})[/]\n"
                                                 )
                                                 break  # no need to wait
                                     else:
-                                        # remove the new prediction from the queue
+                                        # remove the new latest_prediction from the queue
                                         _ = sync_trigger.get()
                                         # used only for counting
                                         cancel_counter += 1
                                         CONSOLE.print(
-                                            f"[bold green][Trigger][/][yellow] Canceled incoming prediction {cancel_counter}[/]\n"
+                                            f"[bold green][Trigger][/][yellow] Canceled incoming latest_prediction {cancel_counter}[/]\n"
                                         )
                                 time.sleep(0.01)
 
-                            if condition and prediction["probability"] > 0.5:
-                                _ = executor.submit(stage_files, args, prediction)
-                                # stage_files(args, prediction)
+                            if condition and latest_prediction["probability"] > 0.5:
+                                _ = executor.submit(stage_files, args, latest_prediction)
+                                # stage_files(args, latest_prediction)
                                 skipped = 0
                                 cancel_counter = 0
                             else:
@@ -164,7 +164,7 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                                 CONSOLE.print(
                                     "[bold green][Trigger][/][yellow] Not in time 3 times, triggering flush[/]\n"
                                 )
-                                stage_files(args, prediction)
+                                stage_files(args, latest_prediction)
                                 not_in_time = 0
                             else:
                                 CONSOLE.print(

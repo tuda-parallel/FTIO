@@ -4,10 +4,10 @@ import json
 import os
 import numpy as np
 from rich.console import Console
-from ftio.freq._prediction import Prediction
+from ftio.freq.prediction import Prediction
 
 
-def get_dominant(prediction: dict) -> float:
+def get_dominant(prediction: Prediction) -> float:
     """Gets the dominant frequency based on the confidence
 
     Args:
@@ -16,15 +16,7 @@ def get_dominant(prediction: dict) -> float:
     Returns:
         float: dominant frequency (only one value!)
     """
-    dominant_freq = prediction["dominant_freq"]
-    conf = prediction["conf"]
-    dominant_index = -1
-    out = np.nan
-    if len(dominant_freq) != 0:
-        dominant_index = np.argmax(conf)
-        out = dominant_freq[dominant_index]
-
-    return out
+    return prediction.get_dominant_freq()
 
 
 def get_dominant_and_conf(prediction: Prediction) -> tuple[float, float]:

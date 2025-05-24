@@ -32,7 +32,7 @@ from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
 from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
 from ftio.freq._dft_workflow import ftio_dft
 from ftio.freq._share_signal_data import SharedSignalData
-from ftio.freq._prediction import Prediction
+from ftio.freq.prediction import Prediction
 from ftio.freq._analysis_figures import AnalysisFigures
 
 def main(cmd_input: list[str], msgs = None) ->tuple[list[Prediction], Namespace]:  # -> dict[Any, Any]:
@@ -102,7 +102,7 @@ def core(sim: dict, args:Namespace) -> tuple[Prediction, AnalysisFigures]:
     Returns:
         tuple[dict, list]: A tuple where:
             - The first element is a dictionary with the obtained predictions (key-value pairs).
-            - The second is element is used for storing dataframes for plotting.
+            - The second element is used for storing dataframes for plotting.
     """
     if not sim:
         return Prediction(), AnalysisFigures()

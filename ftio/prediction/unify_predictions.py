@@ -8,7 +8,7 @@ from rich.panel import Panel
 from argparse import Namespace
 
 from ftio.freq.helper import MyConsole
-from ftio.freq._prediction import Prediction
+from ftio.freq.prediction import Prediction
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.plot.plot_dft import plot_dft
 
@@ -66,6 +66,7 @@ def merge_core(pred_dft:Prediction, pred_auto:Prediction ,freq:float, text:str) 
     out_freq, out_conf = [],[]
     method = "hits"
     method2 = "cov" # ratio or cov for method hits
+
     if len(pred_dft.dominant_freq) >= 1:
         if "alike" in method:
             alike = (pred_auto.dominant_freq - abs(pred_dft.dominant_freq - pred_auto.dominant_freq))/pred_auto.dominant_freq
@@ -130,7 +131,7 @@ def merge_core(pred_dft:Prediction, pred_auto:Prediction ,freq:float, text:str) 
         dominant_freq = pred_auto.dominant_freq
         conf = pred_auto.conf/3
         text += "Confidence: [red] Warning! Low confidence! [/]\n"
-        out_freq, out_conf = [dominant_freq], [conf]
+        out_freq, out_conf = dominant_freq, conf
 
     pred_merged = pred_dft
     pred_merged.dominant_freq = out_freq

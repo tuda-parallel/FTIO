@@ -1,7 +1,7 @@
 from argparse import Namespace
 import numpy as np
 from scipy.optimize import curve_fit
-from ftio.freq._prediction import Prediction
+from ftio.freq.prediction import Prediction
 import matplotlib.pyplot as plt
 import plotly.graph_objs as go
 from ftio.freq.helper import MyConsole
@@ -79,6 +79,7 @@ def fourier_fit(args:Namespace, prediction:Prediction, analysis_figures:Analysis
         console.print(f"Generating Fourier Fit Plot\n")
         fig = plot_fourier_fit(args, t, b_sampled, fourier_sum(t, *params_opt))
         analysis_figures.add_figure([fig], "Fourier Fit")
+        console.print(f" --- Done --- \n")
 
     opt_amp  = params_opt[0::3]
     opt_freq = params_opt[1::3]

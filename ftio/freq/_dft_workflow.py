@@ -13,7 +13,7 @@ from ftio.freq.anomaly_detection import outlier_detection
 from ftio.freq.helper import MyConsole
 from ftio.freq._filter import filter_signal
 from ftio.freq._share_signal_data import SharedSignalData
-from ftio.freq._prediction import Prediction
+from ftio.freq.prediction import Prediction
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.plot.plot_dft import plot_dft
 
@@ -77,7 +77,7 @@ def ftio_dft(
     (
         dominant_index,
         conf[1 : int(n / 2) + 1],
-        outlier_text,
+        outlier_text
     ) = outlier_detection(amp, frequencies, args)
 
     #  Ignore DC offset
@@ -120,6 +120,7 @@ def ftio_dft(
                                            frequencies, amp, phi, conf, ranks)
         if not args.autocorrelation:
             plot_dft(args, prediction, analysis_figures)
+        console.print(f" --- Done --- \n")
     else:
         analysis_figures = AnalysisFigures()
 

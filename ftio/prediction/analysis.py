@@ -7,6 +7,7 @@ from ftio.prediction.shared_resources import SharedResources
 from ftio.cli import ftio_core
 from ftio.prediction.helper import get_dominant
 from ftio.plot.units import set_unit
+from ftio.freq.prediction import Prediction
 
 
 def ftio_process(shared_resources: SharedResources, args: list[str], msgs = None) -> None:
@@ -33,9 +34,7 @@ def ftio_process(shared_resources: SharedResources, args: list[str], msgs = None
         raise ValueError("[red][PREDICTOR] (#{shared_resources.count.value}):[/]  predictor should be called on exactly on file")
 
     # get the prediction
-    prediction = prediction[0]
-
-    # abstract plot prediction 
+    prediction = prediction.]    # abstract plot prediction
     # plot_bar_with_rich(shared_resources.t_app,shared_resources.b_app, width_percentage=0.9)
 
     # get data
@@ -59,7 +58,7 @@ def window_adaptation(args, prediction:dict, freq:float, shared_resources: Share
 
     Args:
         args (argparse): command line arguments
-        prediction (dict): result from FTIO
+        prediction (Prediction): result from FTIO
         freq (float|Nan): dominant frequency
         shared_resources (SharedResources): shared resources among processes
         text (str): text to display
@@ -69,9 +68,9 @@ def window_adaptation(args, prediction:dict, freq:float, shared_resources: Share
     '''
     # average data/data processing
     text = ''
-    t_s = prediction['t_start']
-    t_e = prediction['t_end']
-    total_bytes = prediction['total_bytes']
+    t_s = prediction.t_start
+    t_e = prediction.t_end
+    total_bytes = prediction.total_bytes
 
     # Hits
     text += hits(args, prediction, shared_resources)
@@ -127,32 +126,32 @@ def save_data(prediction, shared_resources) -> None:
         shared_resources (SharedResources): shared resources among processes
     '''
     # safe total transferred bytes
-    shared_resources.aggregated_bytes.value += prediction['total_bytes']
+    shared_resources.aggregated_bytes.value += prediction.total_bytes
     
     # save data
     shared_resources.queue.put(
         {
             'phase': shared_resources.count.value,
-            'dominant_freq': prediction['dominant_freq'],
-            'conf': prediction['conf'],
-            'amp': prediction['amp'],
-            'phi': prediction['phi'],
-            't_start': prediction['t_start'],
-            't_end': prediction['t_end'],
-            'total_bytes': prediction['total_bytes'],
-            'ranks': prediction['ranks'],
-            'freq': prediction['freq'],
+            'dominant_freq': prediction.dominant_freq,
+            'conf': prediction.conf,
+            'amp': prediction.amp,
+            'phi': prediction.phi,
+            't_start': prediction.t_start,
+            't_end': prediction.t_end,
+            'total_bytes': prediction.total_bytes,
+            'ranks': prediction.ranks,
+            'freq': prediction.freq,
             # 'hits': shared_resources.hits.value,
         }
     )
 
 
-def display_result(freq: float ,prediction: dict, shared_resources: SharedResources) -> str:
+def display_result(freq: float, prediction: Prediction, shared_resources: SharedResources) -> str:
     ''' Displays the results from FTIO
 
     Args:
         freq (float): dominant frequency
-        prediction (dict): prediction setting from FTIO
+        prediction (Prediction): prediction setting from FTIO
         shared_resources (SharedResources): shared resources among processes
 
     Returns:
@@ -165,26 +164,26 @@ def display_result(freq: float ,prediction: dict, shared_resources: SharedResour
 
     # Candidates
     text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Freq candidates: \n'
-    for i in range(0,len(prediction['dominant_freq'])):
+    for i in range(0,len(prediction.dominant_freq)):
         text += (
             f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/]    {i}) '
-            f'{prediction["dominant_freq"][i]:.2f} Hz -- conf {prediction["conf"][i]:.2f}\n'
+            f'{prediction.dominant_freq[i]:.2f} Hz -- conf {prediction.conf[i]:.2f}\n'
         )
         
     # time window
     text += (
-        f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Time window {prediction["t_end"]-prediction["t_start"]:.3f} sec ([{prediction["t_start"]:.3f},{prediction["t_end"]:.3f}] sec)\n')
+        f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Time window {prediction.t_end-prediction.t_start:.3f} sec ([{prediction.t_start:.3f},{prediction.t_end:.3f}] sec)\n')
 
     # total bytes
     total_bytes = shared_resources.aggregated_bytes.value
-    # total_bytes =  prediction["total_bytes"]
+    # total_bytes =  prediction.total_bytes
     unit, order = set_unit(total_bytes,'B')
     total_bytes = order*total_bytes
     text += (
         f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Total bytes {total_bytes:.0f} {unit}\n')
 
     # Bytes since last time
-    # tmp = abs(prediction["total_bytes"] -shared_resources.aggregated_bytes.value)
+    # tmp = abs(prediction.total_bytes -shared_resources.aggregated_bytes.value)
     tmp = abs(shared_resources.aggregated_bytes.value)
     unit, order = set_unit(tmp,'B')
     tmp = order *tmp
@@ -199,7 +198,7 @@ def display_result(freq: float ,prediction: dict, shared_resources: SharedResour
 def hits(args, prediction, shared_resources):
     text = ""
     if "frequency_hits" in args.window_adaptation:
-        if  len(prediction["dominant_freq"]) == 1:
+        if  len(prediction.dominant_freq) == 1:
             shared_resources.hits.value += 1
             text += f'[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Current hits {shared_resources.hits.value}\n'
         else:

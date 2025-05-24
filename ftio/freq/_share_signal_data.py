@@ -12,7 +12,7 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-from ftio.freq._prediction import Prediction
+from ftio.freq.prediction import Prediction
 
 
 class SharedSignalData:

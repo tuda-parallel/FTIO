@@ -14,7 +14,7 @@ from ftio.freq._wavelet_helpers import (
     upsample_coefficients,
 )
 from ftio.freq.autocorrelation import find_fd_autocorrelation
-from ftio.freq.discretize import sample_data_and_prepare_plots
+from ftio.freq.discretize import sample_data
 from ftio.freq.helper import MyConsole
 from ftio.plot.freq_plot import convert_and_plot
 from ftio.plot.plot_wavelet_disc import (
@@ -31,7 +31,7 @@ from ftio.freq._analysis_figures import AnalysisFigures
 def ftio_wavelet_disc(
     args: Namespace,
     bandwidth: np.ndarray,
-    time_b: np.ndarray,
+    time_stamps: np.ndarray,
     ranks: int = 0,
     total_bytes: int = 0,
 ):
@@ -41,7 +41,7 @@ def ftio_wavelet_disc(
     Args:
         args: The Namespace object containing configuration options.
         bandwidth (np.ndarray): The bandwidth data to process.
-        time_b (np.ndarray): The corresponding time points for the bandwidth data.
+        time_stamps (np.ndarray): The corresponding time points for the bandwidth data.
         ranks (int): The rank value (default is 0).
         total_bytes (int): total transferred bytes (default is 0).
     """
@@ -63,9 +63,7 @@ def ftio_wavelet_disc(
     #! Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
-    b_sampled, f_s, [df_out[1], df_out[2]] = sample_data_and_prepare_plots(
-        args, bandwidth, time_b, ranks
-    )
+    b_sampled, args.freq =  sample_data(bandwidth, time_stamps, args.freq, args.verbose)
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
     tik = time.time()
@@ -85,9 +83,9 @@ def ftio_wavelet_disc(
     # coefficients ->  [cA_n, cD_n, cD_n-1, …, cD2, cD1]
     coefficients = wavelet_disc(b_sampled, args.wavelet, args.level)
     # compute the frequency ranges
-    freq_ranges = wavelet_freq_bands(f_s, args.level)
+    freq_ranges = wavelet_freq_bands(args.freq, args.level)
     # Upsample coefficients for equal length
-    t_sampled = time_b[0] + np.arange(0, len(b_sampled)) * 1 / f_s
+    t_sampled = time_stamps[0] + np.arange(0, len(b_sampled)) * 1 / args.freq
     coefficients_upsampled = upsample_coefficients(
         coefficients, args.wavelet, len(b_sampled)
     )
@@ -95,11 +93,13 @@ def ftio_wavelet_disc(
     if any(x in args.engine for x in ["mat", "plot"]):
         console.print(f"Generating {args.transformation.upper()} Plot\n")
         analysis_figures_wavelet = AnalysisFigures(args, coefficients=coefficients_upsampled)
-        f =[ plot_coeffs_reconst_signal( args, time_b, bandwidth, t_sampled, b_sampled, coefficients_upsampled,
-                                         freq_ranges),
-             plot_wavelet_disc_spectrum(args, t_sampled, coefficients_upsampled, freq_ranges)
-             ]
-        analysis_figures_wavelet.add_figure(f, f"wavelet_disc")
+        f1 =  plot_coeffs_reconst_signal(args, time_stamps, bandwidth, t_sampled, b_sampled, coefficients_upsampled,
+                                          freq_ranges)
+        f2 = plot_wavelet_disc_spectrum(args, t_sampled, coefficients_upsampled, freq_ranges)
+
+        analysis_figures_wavelet.add_figure([f1], f"wavelet_disc")
+        analysis_figures_wavelet.add_figure([f2], f"wavelet_disc_spectrum")
+        console.print(f" --- Done --- \n")
         # # old
         # cc, f = plot_wave_disc(
         #     b_sampled, coefficients, time_b, args.freq, args.level, args.wavelet, bandwidth
@@ -118,7 +118,7 @@ def ftio_wavelet_disc(
         analysis = "dft_on_all" 
         console.print(f"[green]Setting analysis to {analysis}")
 
-    #? Option 1 ("dft_on_approx_coeff"): Execute  DFT on approx. coefficients from DWT
+    #? Option 1 ("dft_on_approx_coeff"): Execute DFT on approx. coefficients from DWT
     # cont = input("\nContinue with the DFT? [y/n]")
     # if len(cont) == 0 or "y" in cont.lower():
     if "dft_on_approx_coeff" in analysis:

@@ -112,13 +112,13 @@ def run(files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app = [], t_a
     }
 
     # 8) perform prediction
-    prediction, dfs = core(data, args)
+    prediction, analysis_figures = core(data, args)
 
     # 9) plot and print info
     # if args.verbose:
     display_prediction(args, prediction)
 
-    convert_and_plot(args, dfs)
+    analysis_figures.show()
     process.join()
     
     return prediction, args, data_rank["flush_t"]
