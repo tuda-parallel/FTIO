@@ -13,95 +13,90 @@ from argparse import Namespace
 import ftio.freq.discretize as dis
 from ftio.freq.helper import MyConsole
 from ftio.plot.plot_autocorrelation import plot_autocorr_results
+from ftio.freq._share_signal_data import SharedSignalData
+from ftio.freq._prediction import Prediction
+from ftio.freq._analysis_figures import AnalysisFigures
 
 
 
-
-def find_autocorrelation(args, data: dict, share:dict) -> dict:
+def find_autocorrelation(args:Namespace, data: dict, analysis_figures:AnalysisFigures, share:SharedSignalData) -> Prediction:
     """Finds the period using autocorreleation
 
     Args:
-        args (argparse): command line arguments
-        data (dict): sampled data
+        args (argparse.Namespace): Command line arguments
+        data (dict): Sampled data
+        share (SharedSignalData): shared signal data from freq analysis like DFT:
+        analysis_figures (AnalysisFigures): Data and plot figures.
 
     Returns:
-        dict: predictions containing 4 fields: 
-            1. bandwidth (np.array): bandwidth array
-            2. time (np.array): time array indicating when bandwidth time points changed
-            3. total_bytes (int): total transferred bytes
-            4. ranks: number of ranks that did I/O
+        tuple:
+            - prediction (Prediction): Contains prediction results including dominant frequency, confidence, amplitude, etc.
     """
-    prediction = {}
+    prediction = Prediction("")
     candidates = np.array([])
     console = MyConsole()
     console.set(args.verbose)
     tik = time.time()
     if args.autocorrelation:
         console.print("[cyan]Executing:[/] Autocorrelation\n")
-        prediction = {
+        prediction.set_from_dict({
         "source":"autocorrelation",
-        "dominant_freq": [],
-        "conf": [],
+        "dominant_freq": np.array([]),
+        "conf": np.array([]),
         "t_start": 0,
         "t_end": 0,
         "total_bytes": 0,
-        }
-        # print("    '-> \033[1;32mExecuting Autocorrelation")
-        b_sampled = np.array([])
-        freq = np.nan
-        t_s = np.nan
-        t_e = np.nan
-        total_bytes = np.nan
+        })
 
 
-        # Take data if already avilable from previous step
-        if share:
-            b_sampled = share["b_sampled"]
-            freq = share["freq"]
-            t_s = share["t_start"]
-            t_e = share["t_end"]
-            total_bytes = share["total_bytes"]
+        # Take data if already aviable from previous step
+        if not share.is_empty():
+            b_sampled = share.get("b_sampled")
+            freq = share.get("freq")
+            t_s = share.get("t_start")
+            t_e = share.get("t_end")
+            total_bytes = share.get("total_bytes")
         else:
             total_bytes = 0
             bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
-            time_b = data["time"] if "time" in data else np.array([])
-            t_s = time_b[0]
-            t_e = time_b[-1]
+            time_stamps = data["time"] if "time" in data else np.array([])
+            t_s = time_stamps[0]
+            t_e = time_stamps[-1]
             if args.ts:  # shorten data
-                time_b = time_b[time_b >= args.ts]
-                t_s = time_b[0]
-                bandwidth = bandwidth[len(bandwidth) - len(time_b) :]
+                time_stamps = time_stamps[time_stamps >= args.ts]
+                t_s = time_stamps[0]
+                bandwidth = bandwidth[len(bandwidth) - len(time_stamps) :]
                 total_bytes = np.sum(
-                    bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b)
+                    bandwidth * (np.concatenate([time_stamps[1:], time_stamps[-1:]]) - time_stamps)
                 )
                 console.print(f"[purple]Start time set to {args.ts:.2f}")
             else:
-                console.print(f"[purple]Start time: {time_b[0]:.2f}")
+                console.print(f"[purple]Start time: {time_stamps[0]:.2f}")
 
             if args.te:  # shorten data
-                time_b = time_b[time_b <= args.te]
-                t_s = time_b[-1]
-                bandwidth = bandwidth[len(bandwidth) - len(time_b) :]
+                time_stamps = time_stamps[time_stamps <= args.te]
+                t_s = time_stamps[-1]
+                bandwidth = bandwidth[len(bandwidth) - len(time_stamps) :]
                 total_bytes = np.sum(
-                    bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b)
+                    bandwidth * (np.concatenate([time_stamps[1:], time_stamps[-1:]]) - time_stamps)
                 )
                 console.print(f"[purple]End time set to {args.te:.2f}")
             else:
-                console.print(f"[purple]End time: {time_b[-1]:.2f}")
+                console.print(f"[purple]End time: {time_stamps[-1]:.2f}")
 
-            # sample the bandwidth bandwidth
-            b_sampled, freq = dis.sample_data(bandwidth, time_b, args.freq, args.verbose) 
+            # sample the bandwidth
+            b_sampled, freq = dis.sample_data(bandwidth, time_stamps, args.freq, args.verbose)
 
-        res = find_fd_autocorrelation(args, b_sampled, freq)
+        res = find_fd_autocorrelation(args, b_sampled, freq, analysis_figures)
 
         #save the results
-        prediction["dominant_freq"] = 1/res["periodicity"]  if res["periodicity"] > 0 else np.nan
-        prediction["conf"] = res["conf"]
-        prediction["t_start"] = t_s
-        prediction["t_end"] = t_e
-        prediction["total_bytes"] = total_bytes
-        prediction["freq"] = freq
-        prediction["candidates"] = candidates
+        prediction.dominant_freq =  1/res["periodicity"]  if res["periodicity"] > 0 else np.nan
+        prediction.conf =  res["conf"]
+        prediction.t_start =  t_s
+        prediction.t_end =  t_e
+        prediction.total_bytes =  total_bytes
+        prediction.freq =  freq
+        prediction.candidates =  candidates
         console.print(f"\n[cyan]Autocorrelation finished:[/] {time.time() - tik:.3f} s")
         
     return prediction
@@ -160,7 +155,7 @@ def filter_outliers(freq: float, candidates: np.ndarray, weights: np.ndarray) ->
     return outliers, text
 
 
-def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float) -> dict:
+def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float, analysis_figures:AnalysisFigures) -> dict:
     """
     Computes the autocorrelation of a sampled signal, detects peaks, and calculates periodicity and confidence
     based on the detected periods.
@@ -169,6 +164,7 @@ def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float)
         args (Namespace): Command line arguments.
         b_sampled (np.ndarray): The sampled input signal.
         freq (float): The frequency at which the signal is sampled.
+        analysis_figures (AnalysisFigures): Data and plot figures.
 
     Returns:
         dict: A dictionary containing the autocorrelation, peak locations, weights, 
@@ -216,7 +212,10 @@ def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float)
     console.print(Panel.fit(text[:-1], style="white", border_style="purple", title="Autocorrelation", title_align="left"))
 
     # plot
-    plot_autocorr_results(args, acorr, peaks, outliers, len(candidates) > 0)
+    if any(x in args.engine for x in ["mat", "plot"]):
+        console.print(f"Generating Autocorrelation Plot\n")
+        fig = plot_autocorr_results(args, acorr, peaks, outliers, len(candidates) > 0)
+        analysis_figures.add_figure([fig], "Autocorrelation")
 
     return {"autocorrelation": acorr, "candidates": candidates, "peaks": peaks, "outliers": outliers, "weights": weights, "periodicity": periodicity, "conf": conf}
 

@@ -22,6 +22,8 @@ from ftio.plot.plot_wavelet_disc import (
     plot_wavelet_disc_spectrum,
 )
 from ftio.freq._dft_workflow import ftio_dft
+from ftio.freq._share_signal_data import SharedSignalData
+from ftio.freq._analysis_figures import AnalysisFigures
 
 # from ftio.prediction.helper import[] get_dominant_and_conf
 
@@ -44,7 +46,7 @@ def ftio_wavelet_disc(
         total_bytes (int): total transferred bytes (default is 0).
     """
     # Default values for variables
-    share = {}
+    share = SharedSignalData()
     df_out = [[], [], [], []]
     prediction = {
         "source": {args.transformation},
@@ -58,7 +60,7 @@ def ftio_wavelet_disc(
     }
     console = MyConsole(verbose=args.verbose)
 
-    # Sample the bandwidth evenly spaced in time
+    #! Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
     b_sampled, f_s, [df_out[1], df_out[2]] = sample_data_and_prepare_plots(
@@ -71,7 +73,7 @@ def ftio_wavelet_disc(
         f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
     )
 
-    # discrete wavelet decomposition:
+    #! Find the level for the discrete wavelet
     # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1-Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20-%202010%20-%20Rede_AIASYB2.pdf
     # https://www.youtube.com/watch?v=hAQQwvKsWCY&ab_channel=NathanKutz
     console.print("[green]Performing discrete wavelet decomposition[/]")
@@ -91,20 +93,13 @@ def ftio_wavelet_disc(
     )
     # plot functions
     if any(x in args.engine for x in ["mat", "plot"]):
-        fig = plot_coeffs_reconst_signal(
-            args,
-            time_b,
-            bandwidth,
-            t_sampled,
-            b_sampled,
-            coefficients_upsampled,
-            freq_ranges,
-        )
-        fig.show()
-        fig = plot_wavelet_disc_spectrum(
-            args, t_sampled, coefficients_upsampled, freq_ranges
-        )
-        fig.show()
+        console.print(f"Generating {args.transformation.upper()} Plot\n")
+        analysis_figures_wavelet = AnalysisFigures(args, coefficients=coefficients_upsampled)
+        f =[ plot_coeffs_reconst_signal( args, time_b, bandwidth, t_sampled, b_sampled, coefficients_upsampled,
+                                         freq_ranges),
+             plot_wavelet_disc_spectrum(args, t_sampled, coefficients_upsampled, freq_ranges)
+             ]
+        analysis_figures_wavelet.add_figure(f, f"wavelet_disc")
         # # old
         # cc, f = plot_wave_disc(
         #     b_sampled, coefficients, time_b, args.freq, args.level, args.wavelet, bandwidth
@@ -113,10 +108,12 @@ def ftio_wavelet_disc(
         #     fig.show()
 
 
-    analysis = "dft_on_all" 
+    #! Perform analysis on the result from the DWT
+    # analysis = "dft_on_all"
     analysis = "dft_on_approx_coeff"
     # analysis = "dft_x_dwt"
-    # analysis = "dwt_x_autocorrelation" 
+    # analysis = "dwt_x_autocorrelation"
+
     if len(coefficients) <= 2:
         analysis = "dft_on_all" 
         console.print(f"[green]Setting analysis to {analysis}")
@@ -127,9 +124,10 @@ def ftio_wavelet_disc(
     if "dft_on_approx_coeff" in analysis:
         args.transformation = "dft"
         # Option 1: Filter using wavelet and call DFT on lowest last coefficient
-        prediction, df_out, share = ftio_dft(
+        prediction, analysis_figures_dft, share = ftio_dft(
             args, coefficients_upsampled[0], t_sampled, total_bytes, ranks
         )
+        analysis_figures_wavelet += analysis_figures_dft
         
     #? Option 2: Find intersection between DWT and DFT
     elif "dft_on_all" in analysis:
@@ -146,8 +144,8 @@ def ftio_wavelet_disc(
 
             # Process futures as they complete 
             for future in as_completed(futures):
-                prediction, df_out, _ = future.result()
-                convert_and_plot(args, df_out)
+                prediction, analysis_figures_dft, _ = future.result()
+                convert_and_plot(args, analysis_figures_dft)
                 display_prediction(["ftio"], prediction)
                 index = futures[future]
                 console.print(f"[green] {index} completed[/]")
@@ -156,14 +154,18 @@ def ftio_wavelet_disc(
     #? Option 3: Find intersection between DWT and DFT
     elif "dft_x_dwt" in analysis:
         args.transformation = "dft"
-        # Option 1: Filter using wavelet and call DFT on lowest last coefficient
-        prediction, df_out, share = ftio_dft(
+        #Filter using wavelet and call DFT on lowest last coefficient
+        prediction, analysis_figures_dft, share = ftio_dft(
             args, b_sampled, t_sampled, total_bytes, ranks
         )
+        analysis_figures_wavelet += analysis_figures_dft
         display_prediction(args, prediction)
 
     #? Option 4: Apply autocorrelation on low
     elif "dwt_x_autocorrelation" in analysis:
-        res = find_fd_autocorrelation(args, coefficients_upsampled[0],args.freq)
+        res = find_fd_autocorrelation(args, coefficients_upsampled[0],args.freq, analysis_figures_wavelet)
         exit()
-    return prediction, df_out, share
+
+
+
+    return prediction, analysis_figures_wavelet, share

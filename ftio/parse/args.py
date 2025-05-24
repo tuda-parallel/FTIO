@@ -94,8 +94,11 @@ Full documentation:
         parser.add_argument('-re', '--reconstruction', action='store', nargs='*', default=[], help='plots reconstruction of top 10 signals on figure')
         parser.add_argument('-np','--no-psd', dest='psd', action='store_false', help='if set, replace the power density spectrum (a*a/N) with the amplitude spectrum (a)')
         parser.set_defaults(psd=True)
-        parser.add_argument('-n', '--n_freq', dest= 'n_freq',   type = float, help ='number of frequencies to extract. By default FTIO finds the dominant frequency. With this flag, up to "n_freq" can be extracted from FTIO')
+        parser.add_argument('-n', '--n_freq', dest= 'n_freq',   type = int, help ='number of frequencies to extract. By default FTIO finds the dominant frequency. With this flag, up to "n_freq" can be extracted from FTIO')
         parser.set_defaults(n_freq =  0)
+        parser.add_argument('--fourier_fit', dest='fourier_fit', action='store_true',
+                            help='If set, performs Fourier basis fitting on the signal by extracting multiple dominant frequencies via DFT and fitting sinusoidal components with optimized amplitudes and phases. The number of fitting sinusoidal components is set via `--n_freq')
+        parser.set_defaults(fourier_fit=False)
         parser.add_argument('-c', '--autocorrelation', dest='autocorrelation', action='store_true', help ='if set, autocorrelation is calculated in addition to DFT. The results are merged to a single prediction at the end')
         parser.set_defaults(autocorrelation=False)
         parser.add_argument('-w', '--window_adaptation', dest='window_adaptation',type = str , choices = ['frequency_hits', 'data'], help ='online time window adaptation. If set to frequency_hits, the time window is shifted on X "frequency hits" (a dominant frequency was found) to X times the last found period from the current instance. Alternatively it can be set to "data" to move the window to X times after data has been received')
@@ -166,5 +169,14 @@ Full documentation:
                 args.wavelet = 'morl'
             else:
                 args.wavelet = "db1"
+
+        recon = []
+        if args.reconstruction:
+            recon = [int(x) for val in args.reconstruction for x in val.split(',')]
+        if args.n_freq:
+            if args.n_freq not in recon:
+                recon.append(int(args.n_freq))
+        args.reconstruction = recon
+
 
     return args

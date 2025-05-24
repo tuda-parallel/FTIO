@@ -159,53 +159,6 @@ def find_lowest_time_change(t:np.ndarray)-> float:
 
     return t_rec
 
-
-def prepare_plot_sample(
-    bandwidth: np.ndarray,
-    time_b: np.ndarray,
-    freq: float,
-    n: int = 0,
-    ranks: int = 0
-) -> tuple[list[pd.DataFrame], list[pd.DataFrame]]:
-    """
-    Prepares data for plotting by creating two DataFrames.
-
-    Args:
-        bandwidth (np.ndarray): A numpy array of bandwidth values corresponding to the time.
-        time_b (np.ndarray): A numpy array of time values.
-        freq (float): The frequency value used to calculate the sampling period (T_s).
-        n (int, optional): The number of samples. Defaults to 0.
-        ranks (int, optional): The number of ranks. Defaults to 0.
-
-    Returns:
-        Tuple[list[pd.DataFrame], list[pd.DataFrame]]: A tuple containing two lists of DataFrames:
-            - The first list contains a DataFrame with start and end times, the sampling period (T_s), the number of samples (N), and the ranks.
-            - The second list contains a DataFrame with bandwidth, time, and ranks.
-    """
-    df0 = []
-    df1 = []
-
-    df0.append(
-        pd.DataFrame(
-            {
-                "t_start": time_b[0],
-                "t_end": time_b[-1],
-                "T_s": 1 / freq,
-                "N": n,
-                "ranks": ranks,
-            },
-            index=[0],
-        )
-    )
-    df1.append(
-        pd.DataFrame(
-            {"b": bandwidth, "t": time_b, "ranks": np.repeat(ranks, len(time_b))}
-        )
-    )
-
-    return df0, df1
-
-
 def sample_data_and_prepare_plots(args:Namespace, bandwidth:np.ndarray, time_b:np.ndarray, ranks:int)-> tuple[np.ndarray, float, list[list[pd.DataFrame]]]:
     """
     Samples the data and prepares plots if required.
@@ -223,16 +176,15 @@ def sample_data_and_prepare_plots(args:Namespace, bandwidth:np.ndarray, time_b:n
             - A list of DataFrames (df_sample) for plotting.
     """
     # sample the data
-    b_sampled, freq = sample_data(bandwidth, time_b, args.freq,args.verbose)
+    b_sampled, freq = sample_data(bandwidth, time_b, args.freq, args.verbose)
 
     #prepare data for plotting
+    figures_data = AnalysisFigures()
     if any(x in args.engine for x in ["mat", "plot"]):
-        df_sample = prepare_plot_sample(bandwidth, time_b, freq, len(b_sampled), ranks)
-    else:
-        df_sample = [[],[]]
+        figures_data = prepare_plot_sample(bandwidth, time_b, freq, len(b_sampled), ranks)
 
 
-    return b_sampled, freq, df_sample
+    return b_sampled, freq, figures_data
 
 
     

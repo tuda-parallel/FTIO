@@ -3,7 +3,8 @@ import numpy as np
 import plotly.graph_objects as go
 from ftio.plot.helper import format_plot
 
-def plot_autocorr_results(args: Namespace, acorr: np.ndarray, peaks: np.ndarray, outliers: np.ndarray, flag: bool = False) -> None:
+def plot_autocorr_results(args: Namespace, acorr: np.ndarray, peaks: np.ndarray, outliers: np.ndarray,
+                          flag: bool = False):
     """
     Plots the autocorrelation results using Plotly.
 
@@ -13,7 +14,11 @@ def plot_autocorr_results(args: Namespace, acorr: np.ndarray, peaks: np.ndarray,
         peaks (np.ndarray): Indices of the peaks in the autocorrelation.
         outliers (np.ndarray): Indices of the outliers in the peaks.
         flag (bool, optional): Flag to indicate whether to plot relevant peaks. Defaults to False.
+
+    Retrurns:
+        Figure: Plotly or matplotlib figure.
     """
+    fig = None
     if any(x in args.engine for x in ["mat", "plot"]):
         fig = go.Figure()
         fig.add_scatter(
@@ -77,4 +82,5 @@ def plot_autocorr_results(args: Namespace, acorr: np.ndarray, peaks: np.ndarray,
             )
 
         fig = format_plot(fig)
-        fig.show(config={"toImageButtonOptions": {"format": "png", "scale": 5}})
+
+    return fig

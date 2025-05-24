@@ -78,7 +78,7 @@ def filter_signal(args: Namespace, b: np.ndarray) -> np.ndarray:
         )
     )
 
-    plot_filter_results(args,b,filtered_signal)
+    plot_filter_results(args, b, filtered_signal)
 
     return filtered_signal
 
