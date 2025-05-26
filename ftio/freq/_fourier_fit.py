@@ -128,39 +128,38 @@ def plot_fourier_fit(args: Namespace, t: np.ndarray, b_sampled: np.ndarray,predi
             Figure object for further manipulation or display.
     """
 
+    components = []
+    if show_top:
+        N = len(prediction.top_freqs["freq"])
+        for k in range(N):
+            a = prediction.top_freqs["amp"][k] / N
+            if k != 0 and not (N % 2 != 0 and k == N - 1):
+                a *= 2
+                f = prediction.top_freqs["freq"][k]
+                phi = prediction.top_freqs["phi"][k]
+                trace = a * np.cos(2 * np.pi * f * t + phi)
+                label = f"{a:.1e}*cos(2\u03C0*{f:.2e}*t+{phi:.2e})"
+                components.append((trace, label))
+
     if "mat" in args.engine.lower():
         # Matplotlib plotting
         fig, ax = plt.subplots()
         ax.plot(t, b_sampled, linestyle='--', label='sampled signal')
         ax.plot(t, cA_fourier_fit, label='Fourier Sum')
         if show_top:
-            N = len(prediction.top_freqs["freq"])
-            for k in range(N):
-                a = prediction.top_freqs["amp"][k] / N
-                if k != 0 and not (N % 2 != 0 and k == N - 1):
-                    a *= 2
-                    ax.plot(
-                        t,
-                        a * np.cos(2 * np.pi * prediction.top_freqs["freq"][k] * t + prediction.top_freqs["phi"][k]),
-                        label=f"{a:.1e}*cos(2\u03C0*{prediction.top_freqs['freq'][k]:.2e}*t+{prediction.top_freqs['phi'][k]:.2e})"
-                    )
-        ax.legend()
+            for wave, label in components:
+                ax.plot(t, wave, label=label)
     else:
         # Plotly plotting
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=t, y=b_sampled, mode='lines', name='sampled signal', line=dict(dash='dash')))
         fig.add_trace(go.Scatter(x=t, y=cA_fourier_fit, mode='lines', name='Fourier Sum'))
         if show_top:
-            N = len(prediction.top_freqs["freq"])
-            for k in range(N):
-                a = prediction.top_freqs["amp"][k] / N
-                if k != 0 and not (N % 2 != 0 and k == N - 1):
-                    a *= 2
-                    fig.add_trace(go.Scatter(
-                        x=t,
-                        y=a * np.cos(2 * np.pi * prediction.top_freqs["freq"][k] * t + prediction.top_freqs["phi"][k]),
-                        mode = 'lines',
-                        name=f"{a:.1e}*cos(2\u03C0*{prediction.top_freqs["freq"][k]:.2e}*t+{prediction.top_freqs["phi"][k]:.2e})"
+            for wave, label in components:
+                fig.add_trace(go.Scatter(
+                    x=t,
+                    y=wave,
+                    mode = 'lines',
+                    name=label
                     ))
-
     return fig
