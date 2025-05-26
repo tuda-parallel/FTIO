@@ -4,8 +4,9 @@ from rich.panel import Panel
 from scipy.signal import butter, filtfilt, lfilter
 from ftio.freq.helper import MyConsole
 from ftio.plot.plot_filter import plot_filter_results
+from ftio.freq._analysis_figures import AnalysisFigures
 
-def filter_signal(args: Namespace, b: np.ndarray) -> np.ndarray:
+def filter_signal(args: Namespace, b: np.ndarray, analysis_figures:AnalysisFigures=None) -> np.ndarray:
     """
     Applies a filter (low-pass, high-pass, or band-pass) to the input signal `b` based on `args`.
     
@@ -15,6 +16,7 @@ def filter_signal(args: Namespace, b: np.ndarray) -> np.ndarray:
         - args.filter_cutoff: float or tuple, cutoff frequency for low/high-pass filters, or (low, high) for bandpass
         - args.filter_order: int, order of Butterworth filter (default: 4)
     - b: np.ndarray, input signal.
+    - analysis_figures (AnalysisFigures): Data and plot figures.
     
     Returns:
     - np.ndarray, filtered signal.
@@ -78,7 +80,9 @@ def filter_signal(args: Namespace, b: np.ndarray) -> np.ndarray:
         )
     )
 
-    plot_filter_results(args, b, filtered_signal)
+    if any(x in args.engine for x in ["mat", "plot"]):
+        f = plot_filter_results(args, b, filtered_signal)
+        analysis_figures.add_figure_and_show(f,"filter")
 
     return filtered_signal
 

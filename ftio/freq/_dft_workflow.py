@@ -47,6 +47,7 @@ def ftio_dft(
     #! Default values for variables
     share = SharedSignalData()
     prediction = Prediction(args.transformation)
+    analysis_figures = AnalysisFigures(args)
     console = MyConsole(verbose=args.verbose)
 
     #!  Sample the bandwidth evenly spaced in time
@@ -57,7 +58,7 @@ def ftio_dft(
 
     #! Apply filter if specified
     if args.filter_type:
-        b_sampled  = filter_signal(args, b_sampled)
+        b_sampled  = filter_signal(args, b_sampled, analysis_figures)
 
     #!  Perform DFT
     tik = time.time()
@@ -112,22 +113,18 @@ def ftio_dft(
         }
 
     t_sampled = time_stamps[0] + np.arange(0, n) * 1 / args.freq
-
-    #! Plot
-    if any(x in args.engine for x in ["mat", "plot"]):
-        console.print(f"Generating {args.transformation.upper()} Plot\n")
-        analysis_figures = AnalysisFigures(args, bandwidth, time_stamps, b_sampled, t_sampled,
-                                           frequencies, amp, phi, conf, ranks)
-        if not args.autocorrelation:
-            plot_dft(args, prediction, analysis_figures)
-        console.print(f" --- Done --- \n")
-    else:
-        analysis_figures = AnalysisFigures()
-
     #! Fourier fit if set
     if args.fourier_fit:
         fourier_fit(args, prediction, analysis_figures, b_sampled, t_sampled)
 
+    #! Set plot parameters and plot
+    if any(x in args.engine for x in ["mat", "plot"]):
+        console.print(f"Generating {args.transformation.upper()} Plot\n")
+        analysis_figures += AnalysisFigures(args, bandwidth, time_stamps, b_sampled, t_sampled,
+                                           frequencies, amp, phi, conf, ranks)
+        if not args.autocorrelation:
+            plot_dft(args, prediction, analysis_figures)
+        console.print(f" --- Done --- \n")
 
     if args.autocorrelation:
         share.set_data_from_predicition(b_sampled,prediction)

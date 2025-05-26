@@ -79,7 +79,10 @@ class AnalysisFigures:
         return len(self.figures) == 0
 
     def __bool__(self):
-        return self.is_empty()
+        return self.is_empty() or any(x in self.args.engine for x in ["mat", "plot"])
+
+    def __len__(self):
+        return len(self.figures)
 
     def add_figure(self, fig_list=None, source: str = ""):
         if fig_list is not None:
@@ -114,9 +117,9 @@ class AnalysisFigures:
 
 
     def __str__(self):
-        attrs = ["b", "t", "b_sampled", "t_sampled", "freqs", "amp", "phi", "conf","scales", "coefficients", "ranks"]
-        shapes = {attr: getattr(self, attr).shape for attr in attrs}
-        return f"AnalysisFigures with data shapes: {shapes}"
+        attrs = ["b", "t", "b_sampled", "t_sampled", "freqs", "amp", "phi", "conf", "scales", "coefficients", "ranks"]
+        lines = [f"{attr}: {getattr(self, attr)}" for attr in attrs]
+        return "AnalysisFigures with data:\n" + "\n".join(lines)
 
     def __add__(self, other):
         """
@@ -165,4 +168,10 @@ class AnalysisFigures:
 
     def __iadd__(self, other):
         return self.__add__(other)
+
+    def __repr__(self):
+        s = f"AnalysisFigures Class containing the following elements:{self.figure_titles}\n"
+        attrs = ["b", "t", "b_sampled", "t_sampled", "freqs", "amp", "phi", "conf", "scales", "coefficients", "ranks"]
+        lines = [f"{attr}: {type(getattr(self, attr)).__name__}" for attr in attrs]
+        return s + "AnalysisFigures with fields and types:\n" + "\n".join(lines)
 
