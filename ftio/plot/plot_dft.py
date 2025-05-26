@@ -71,7 +71,7 @@ def plot_dft(
             a *= 2
         x = a * np.cos(2 * np.pi * dominant_freq * t_sampled + dominant_phi)
         if not dominant_name:
-            dominant_name = f"{ a:.1e}*cos(2\u03c0*{dominant_freq:.2e}*t={dominant_phi:.2e})"
+            dominant_name = f"{ a:.1e}*cos(2\u03c0*{dominant_freq:.2e}*t+{dominant_phi:.2e})"
             dominant_signal = x
         else:
             dominant_name += (

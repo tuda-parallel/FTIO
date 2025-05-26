@@ -7,6 +7,11 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 
+from ftio.analysis._correlation import (
+    extract_correlation_ranges,
+    plot_correlation,
+    sliding_correlation,
+)
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft_workflow import ftio_dft
 from ftio.freq._share_signal_data import SharedSignalData
@@ -80,8 +85,24 @@ def ftio_wavelet_disc(
     # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1-Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20-%202010%20-%20Rede_AIASYB2.pdf
     # https://www.youtube.com/watch?v=hAQQwvKsWCY&ab_channel=NathanKutz
     console.print("[green]Performing discrete wavelet decomposition[/]")
+    # Max level or use DFT
+    method = "dft"
     if args.level == 0:
-        args.level = decomposition_level(args, len(b_sampled))
+        if method == "dft":
+            args.transformation = "dft"
+            prediction, _, _ = ftio_dft(
+                args, bandwidth, time_stamps, total_bytes, ranks
+            )
+            if len(prediction.dominant_freq) > 0:
+                args.level = int(1 / (5 * prediction.get_dominant_freq()))
+                console.print(
+                    f"[green]Decomposition level adjusted to {args.level}[/]"
+                )
+                args.transformation = "wave_disc"
+            else:
+                args.level = decomposition_level(args, len(b_sampled))
+        else:
+            args.level = decomposition_level(args, len(b_sampled))
 
     #! calculate the coefficients using the discrete wavelet
     # args.wavelet = "db8"
@@ -125,8 +146,8 @@ def ftio_wavelet_disc(
 
     #! Perform analysis on the result from the DWT
     # analysis = "dft_on_all"
-    analysis = "dft_on_approx_coeff"
-    # analysis = "dft_x_dwt"
+    # analysis = "dft_on_approx_coeff"
+    analysis = "dft_x_dwt"
     # analysis = "dwt_x_autocorrelation"
 
     if len(coefficients) <= 2:
@@ -171,10 +192,33 @@ def ftio_wavelet_disc(
     # ? Option 3: Find intersection between DWT and DFT
     elif "dft_x_dwt" in analysis:
         args.transformation = "dft"
-        # Filter using wavelet and call DFT on lowest last coefficient
+        # 1): compute DFT on lowest last coefficient
         prediction, analysis_figures_dft, share = ftio_dft(
-            args, b_sampled, t_sampled, total_bytes, ranks
+            args, coefficients_upsampled[0], t_sampled, total_bytes, ranks
         )
+        # 2) compare the results
+        if len(prediction.dominant_freq) > 0:
+            signal_1 = prediction.get_dominant_wave()
+            signal_2 = coefficients_upsampled[
+                0
+            ]  # max(coefficients_upsampled[0])*logicize(coefficients_upsampled[0])
+            window_duration = 1 / prediction.get_dominant_freq()
+            window_size = int(
+                (t_sampled[-1] - t_sampled[0])
+                * prediction.get_dominant_freq()
+                * prediction.freq
+            )
+            corr = sliding_correlation(signal_1, signal_2, window_size)
+            plot_correlation(
+                t_sampled, signal_1, signal_2, corr, window_duration
+            )
+
+            # 3) Extract valid ranges
+            t_corr = t_sampled[: min(len(signal_1), len(signal_2), len(corr))]
+            ranges = extract_correlation_ranges(
+                t_corr, corr, min_duration=window_duration
+            )
+
         analysis_figures_wavelet += analysis_figures_dft
         display_prediction(args, prediction)
 

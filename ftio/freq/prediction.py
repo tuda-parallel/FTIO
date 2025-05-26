@@ -14,7 +14,7 @@ class Prediction:
         t_start (float): Start time index or timestamp for the prediction interval.
         t_end (float): End time index or timestamp for the prediction interval.
         total_bytes (int): Total number of bytes processed or considered.
-        sampled_freq (float): Sampling frequency (samples per unit time) used for the data.
+        freq (float): Sampling frequency (samples per unit time) used for the data.
         ranks (int): Number of ranks or parallel processes involved.
         n_samples (int): Number of samples used in the prediction.
         top_freqs (dict): Dictionary storing top frequencies and associated metadata.
@@ -27,7 +27,7 @@ class Prediction:
         t_start: float = 0,
         t_end: float = 0,
         total_bytes: int = 0,
-        sampled_freq: float = 0,
+        freq: float = 0,
         ranks: int = 0,
         n_samples=0,
     ):
@@ -39,7 +39,7 @@ class Prediction:
         self._t_start = t_start
         self._t_end = t_end
         self._total_bytes = total_bytes
-        self._freq = sampled_freq
+        self._freq = freq
         self._ranks = ranks
         self._n_samples = n_samples
         self._top_freqs = {}
@@ -146,13 +146,13 @@ class Prediction:
         self._total_bytes = value
 
     @property
-    def sampled_freq(self):
+    def freq(self):
         return self._freq
 
-    @sampled_freq.setter
-    def sampled_freq(self, value):
+    @freq.setter
+    def freq(self, value):
         if not isinstance(value, (int, float)):
-            raise TypeError("sampled_freq must be a number")
+            raise TypeError("freq must be a number")
         self._freq = value
 
     @property
@@ -337,12 +337,43 @@ class Prediction:
             "t_start": self.t_start,
             "t_end": self._t_end,
             "total_bytes": self._total_bytes,
-            "sampled_freq": self._freq,
+            "freq": self._freq,
             "ranks": self._ranks,
             "n_samples": self._n_samples,
             "top_freqs": self._top_freqs,
             "candidates": self._candidates,
         }
+
+    def get_dominant_wave(self):
+        if len(self._dominant_freq) > 0:
+            return self.get_wave(*self.get_dominant_freq_amp_phi())
+        else:
+            return np.array([])
+
+    def get_wave(self, freq: float, amp: float, phi: float) -> np.ndarray:
+        """
+        Generate a cosine wave using the given frequency, amplitude, and phase.
+
+        Args:
+            freq (float): Frequency of the cosine wave in Hz.
+            amp (float): Amplitude of the wave.
+            phi (float): Phase of the wave in radians.
+
+        Returns:
+            np.ndarray: Array of sampled cosine wave values. Returns an empty array
+            if the frequency is NaN or sampling is invalid.
+        """
+        if not np.isnan(freq) and self._n_samples != 0:
+            t_sampled = (
+                self._t_start + np.arange(0, self._n_samples) * 1 / self._freq
+            )
+            if freq != 0:
+                amp *= 2 / self._n_samples
+            else:
+                amp *= 1 / self._n_samples
+            return amp * np.cos(2 * np.pi * freq * t_sampled + phi)
+        else:
+            return np.array([])
 
     def __repr__(self):
         return str(self.to_dict())

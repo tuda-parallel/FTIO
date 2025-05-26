@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def sliding_correlation(x, y, window_size):
     """
     Compute Pearson correlation in a sliding window.

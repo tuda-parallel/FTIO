@@ -25,7 +25,8 @@ def logicize(b: np.ndarray, verbose: bool = False) -> np.ndarray:
     #     else:
     #         b_logic[i] = 0
     # vectorize
-    b_logic = (b != 0).astype(int)
+    # b_logic = (b != 0).astype(int)
+    b_logic = (np.abs(b) > 1e-8).astype(int)
 
     text = f"{np.count_nonzero(b_logic)}/{len(b_logic)} non-zero values found"
     console = MyConsole(verbose)
