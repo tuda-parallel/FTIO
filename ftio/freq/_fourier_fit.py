@@ -142,7 +142,7 @@ def plot_fourier_fit(args: Namespace, t: np.ndarray, b_sampled: np.ndarray,predi
                     ax.plot(
                         t,
                         a * np.cos(2 * np.pi * prediction.top_freqs["freq"][k] * t + prediction.top_freqs["phi"][k]),
-                        label=f"{a:.1e}*cos(2\u03C0*{prediction.top_freqs["freq"][k]:.2e}*t+{prediction.top_freqs["phi"][k]:.2e})"
+                        label=f"{a:.1e}*cos(2\u03C0*{prediction.top_freqs['freq'][k]:.2e}*t+{prediction.top_freqs['phi'][k]:.2e})"
                     )
         ax.legend()
     else:

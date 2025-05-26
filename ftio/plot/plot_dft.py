@@ -97,7 +97,8 @@ def plot_dft(args: Namespace, prediction: Prediction = None, analysis_figures:An
             if k != 0 and not (N % 2 != 0 and k == N - 1):
                 a *= 2
             top_signals.append(a * np.cos(2 * np.pi * top_freqs["freq"][k] * t_sampled + top_freqs["phi"][k]))
-            top_names.append(f"{a:.1e}*cos(2\u03C0*{top_freqs["freq"][k]:.2e}*t+{top_freqs["phi"][k]:.2e})")
+            top_names.append(f"{a:.1e}*cos(2\u03C0*{top_freqs['freq'][k]:.2e}*t+{top_freqs['phi'][k]:.2e})")
+
 
     if "mat" in args.engine:
         f = [
