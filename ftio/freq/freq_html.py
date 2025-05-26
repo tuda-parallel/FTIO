@@ -4,7 +4,8 @@ from threading import Thread
 from plotly.offline import get_plotlyjs
 from rich.console import Console
 
-def create_html(figs:list,render :str,configuration:dict,name:str="freq") -> None:
+
+def create_html(figs: list, render: str, configuration: dict, name: str = "freq") -> None:
     console = Console()
     if platform == "linux" or platform == "linux2":
         os.system(f"rm -f ./{name}.html || true")
@@ -26,7 +27,7 @@ def create_html(figs:list,render :str,configuration:dict,name:str="freq") -> Non
         s = ""
         for fig in figs:
             # s = s + fig.to_html(include_plotlyjs=False) + "\n"
-            s= s + fig.to_html(config=configuration,include_plotlyjs=False) + "\n"
+            s = s + fig.to_html(config=configuration, include_plotlyjs=False) + "\n"
 
         template = template.format(plotly=get_plotlyjs(), plots=s)
         with open(f"{name}.html", "a") as file:
@@ -37,7 +38,7 @@ def create_html(figs:list,render :str,configuration:dict,name:str="freq") -> Non
     else:
         os.mkdir("io_predicition_anomality_images")
         # extension='jpg'
-        extension='svg'
+        extension = "svg"
         # extension = "png"
         console.print(f"-> Generating {extension.upper()} figures")
         threads = []
@@ -62,7 +63,7 @@ def create_html(figs:list,render :str,configuration:dict,name:str="freq") -> Non
         os.system("open . &")
 
 
-def create_static_figure(fig, index:int, length:int, extension:str)-> None:
+def create_static_figure(fig, index: int, length: int, extension: str) -> None:
     """Creates static HTML figures
 
     Args:
@@ -84,7 +85,6 @@ def create_static_figure(fig, index:int, length:int, extension:str)-> None:
 
     fig.write_image(file_name, scale=scale)
     if index == 0:
-            os.system(f"open {file_name} || true ")
+        os.system(f"open {file_name} || true ")
 
     console.print(f"[cyan]figure ({index + 1}/{length}) [/]created")
-

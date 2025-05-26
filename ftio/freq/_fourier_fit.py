@@ -8,7 +8,7 @@ from ftio.freq.prediction import Prediction
 from ftio.freq._analysis_figures import AnalysisFigures
 
 
-def fourier_sum(t:np.ndarray, *params) -> np.ndarray:
+def fourier_sum(t: np.ndarray, *params) -> np.ndarray:
     """
     Computes the sum of multiple cosine functions (Fourier components) with given amplitudes, frequencies, and phases.
 
@@ -22,16 +22,23 @@ def fourier_sum(t:np.ndarray, *params) -> np.ndarray:
             Array of the same shape as `t`, containing the sum of the cosine components evaluated at each value of `t`.
     """
     out = np.zeros_like(t)
-    n = len(params)//3
+    n = len(params) // 3
     for i in range(n):
-        amp = params[3*i]
-        freq = params[3*i+1]
-        phi = params[3*i+2]
+        amp = params[3 * i]
+        freq = params[3 * i + 1]
+        phi = params[3 * i + 2]
         out += amp * np.cos(2 * np.pi * freq * t + phi)
     return out
 
 
-def fourier_fit(args:Namespace, prediction:Prediction, analysis_figures:AnalysisFigures, b_sampled:np.ndarray, t:np.ndarray, maxfev:int = 10000) -> None:
+def fourier_fit(
+    args: Namespace,
+    prediction: Prediction,
+    analysis_figures: AnalysisFigures,
+    b_sampled: np.ndarray,
+    t: np.ndarray,
+    maxfev: int = 10000,
+) -> None:
     """
     Fits a sum of Fourier components to sampled data using non-linear least squares.
     Parameters. Finds the best frequencies (and other params) by minimizing error, starting from initial guess
@@ -70,37 +77,38 @@ def fourier_fit(args:Namespace, prediction:Prediction, analysis_figures:Analysis
             scale = 2 / n
 
         p0 += [
-            scale*prediction.top_freqs["amp"][i],
+            scale * prediction.top_freqs["amp"][i],
             prediction.top_freqs["freq"][i],
-            prediction.top_freqs["phi"][i]
-               ]
+            prediction.top_freqs["phi"][i],
+        ]
 
     # Fit Fourier sum model
     # params_opt, _ = curve_fit(fourier_sum, x, cA, p0=p0, maxfev=10000)
-    params_opt, _ = curve_fit(fourier_sum, t, b_sampled, p0=p0,maxfev=maxfev)
+    params_opt, _ = curve_fit(fourier_sum, t, b_sampled, p0=p0, maxfev=maxfev)
 
-
-    opt_mag  = params_opt[0::3] # Magnitude is 2*amp/n
+    opt_mag = params_opt[0::3]  # Magnitude is 2*amp/n
     opt_amp = np.zeros_like(opt_mag)
     opt_freq = params_opt[1::3]
-    opt_phi  =  params_opt[2::3]
+    opt_phi = params_opt[2::3]
     for i, freq in enumerate(opt_freq):
         if freq == 0:
-            opt_amp[i] = n*opt_mag[i]
+            opt_amp[i] = n * opt_mag[i]
         else:
-            opt_amp[i] = n*opt_mag[i]/2
-
+            opt_amp[i] = n * opt_mag[i] / 2
 
     #  Adapt negative freq, as these require flipping phi:
-    opt_phi  = np.where(opt_freq < 0, -opt_phi, opt_phi)
+    opt_phi = np.where(opt_freq < 0, -opt_phi, opt_phi)
     opt_freq = np.abs(opt_freq)
 
-    prediction.set("top_freqs",{
-        "conf": np.repeat(1,args.n_freq),
-        "amp":  opt_amp,
-        "freq": opt_freq,
-        "phi":  opt_phi,
-    })
+    prediction.set(
+        "top_freqs",
+        {
+            "conf": np.repeat(1, args.n_freq),
+            "amp": opt_amp,
+            "freq": opt_freq,
+            "phi": opt_phi,
+        },
+    )
 
     if any(x in args.engine for x in ["mat", "plot"]):
         console = MyConsole()
@@ -110,7 +118,15 @@ def fourier_fit(args:Namespace, prediction:Prediction, analysis_figures:Analysis
         analysis_figures.add_figure_and_show([fig], "fourier_fit")
         console.print(f" --- Done --- \n")
 
-def plot_fourier_fit(args: Namespace, t: np.ndarray, b_sampled: np.ndarray,prediction:Prediction, cA_fourier_fit, show_top=False):
+
+def plot_fourier_fit(
+    args: Namespace,
+    t: np.ndarray,
+    b_sampled: np.ndarray,
+    prediction: Prediction,
+    cA_fourier_fit,
+    show_top=False,
+):
     """
     Plot sampled signal and Fourier sum using either matplotlib or plotly
     depending on args.engine content.
@@ -138,28 +154,27 @@ def plot_fourier_fit(args: Namespace, t: np.ndarray, b_sampled: np.ndarray,predi
                 f = prediction.top_freqs["freq"][k]
                 phi = prediction.top_freqs["phi"][k]
                 trace = a * np.cos(2 * np.pi * f * t + phi)
-                label = f"{a:.1e}*cos(2\u03C0*{f:.2e}*t+{phi:.2e})"
+                label = f"{a:.1e}*cos(2\u03c0*{f:.2e}*t+{phi:.2e})"
                 components.append((trace, label))
 
     if "mat" in args.engine.lower():
         # Matplotlib plotting
         fig, ax = plt.subplots()
-        ax.plot(t, b_sampled, linestyle='--', label='sampled signal')
-        ax.plot(t, cA_fourier_fit, label='Fourier Sum')
+        ax.plot(t, b_sampled, linestyle="--", label="sampled signal")
+        ax.plot(t, cA_fourier_fit, label="Fourier Sum")
         if show_top:
             for wave, label in components:
                 ax.plot(t, wave, label=label)
     else:
         # Plotly plotting
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=t, y=b_sampled, mode='lines', name='sampled signal', line=dict(dash='dash')))
-        fig.add_trace(go.Scatter(x=t, y=cA_fourier_fit, mode='lines', name='Fourier Sum'))
+        fig.add_trace(
+            go.Scatter(
+                x=t, y=b_sampled, mode="lines", name="sampled signal", line=dict(dash="dash")
+            )
+        )
+        fig.add_trace(go.Scatter(x=t, y=cA_fourier_fit, mode="lines", name="Fourier Sum"))
         if show_top:
             for wave, label in components:
-                fig.add_trace(go.Scatter(
-                    x=t,
-                    y=wave,
-                    mode = 'lines',
-                    name=label
-                    ))
+                fig.add_trace(go.Scatter(x=t, y=wave, mode="lines", name=label))
     return fig

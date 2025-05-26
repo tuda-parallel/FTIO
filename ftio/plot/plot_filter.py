@@ -2,9 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from ftio.freq._dft import  compute_dft_spectrum
+from ftio.freq._dft import compute_dft_spectrum
 from ftio.freq.freq_html import create_html
-
 
 
 def plot_filter_results_matplotlib(args, b, filtered_signal):
@@ -27,21 +26,21 @@ def plot_filter_results_matplotlib(args, b, filtered_signal):
     fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=False)
 
     # Time-domain signal plot (Original vs Filtered)
-    axs[0].plot(t, b, label='Original Signal', linestyle='-', marker='o')
-    axs[0].plot(t, filtered_signal, label='Filtered Signal', linestyle='-', marker='.')
+    axs[0].plot(t, b, label="Original Signal", linestyle="-", marker="o")
+    axs[0].plot(t, filtered_signal, label="Filtered Signal", linestyle="-", marker=".")
     axs[0].set_title("Time-Domain Signal")
     axs[0].set_xlabel("Time [s]")
     axs[0].set_ylabel("Amplitude")
-    axs[0].legend(loc='best')
+    axs[0].legend(loc="best")
 
     # Frequency response plot (Magnitude Response)
     step = args.freq / (2 * len(freqs))
-    axs[1].bar(freqs, amp, width=step, color='green', alpha=0.6, label="Original")
-    axs[1].bar(freqs, amp_filtered, width=step, color='red', alpha=0.6, label="Filtered")
+    axs[1].bar(freqs, amp, width=step, color="green", alpha=0.6, label="Original")
+    axs[1].bar(freqs, amp_filtered, width=step, color="red", alpha=0.6, label="Filtered")
     axs[1].set_title("Frequency Response")
     axs[1].set_xlabel("Frequency [Hz]")
     axs[1].set_ylabel("Amplitude")
-    axs[1].legend(loc='best')
+    axs[1].legend(loc="best")
 
     # Adjust layout to prevent overlap
     plt.tight_layout()
@@ -78,29 +77,38 @@ def plot_filter_results_plotly(args, b, filtered_signal, as_subplots=True):
     if as_subplots:
         # Create subplots: Time-Domain (row 1), Frequency-Domain (row 2)
         fig = make_subplots(
-            rows=2, cols=1,
+            rows=2,
+            cols=1,
             subplot_titles=("Time-Domain Signal", "Magnitude Response"),
-            sharedx=False
+            sharedx=False,
         )
 
         # Time-Domain traces
         fig.add_trace(
-            go.Scatter(x=t, y=b, mode="lines+markers", line={"shape": "hv"}, name="Original Signal"),
-            row=1, col=1
+            go.Scatter(
+                x=t, y=b, mode="lines+markers", line={"shape": "hv"}, name="Original Signal"
+            ),
+            row=1,
+            col=1,
         )
         fig.add_trace(
-            go.Scatter(x=t, y=filtered_signal, mode="lines+markers", line={"shape": "hv"}, name="Filtered Signal"),
-            row=1, col=1
+            go.Scatter(
+                x=t,
+                y=filtered_signal,
+                mode="lines+markers",
+                line={"shape": "hv"},
+                name="Filtered Signal",
+            ),
+            row=1,
+            col=1,
         )
 
         # Frequency-Domain traces
         fig.add_trace(
-            go.Bar(x=freqs, y=amp, name="Original", marker=dict(color="green")),
-            row=2, col=1
+            go.Bar(x=freqs, y=amp, name="Original", marker=dict(color="green")), row=2, col=1
         )
         fig.add_trace(
-            go.Bar(x=freqs, y=amp_filtered, name="Filtered", marker=dict(color="red")),
-            row=2, col=1
+            go.Bar(x=freqs, y=amp_filtered, name="Filtered", marker=dict(color="red")), row=2, col=1
         )
 
         # Layout settings
@@ -111,7 +119,7 @@ def plot_filter_results_plotly(args, b, filtered_signal, as_subplots=True):
             yaxis=dict(title="Amplitude"),
             xaxis2=dict(title="Frequency [Hz]"),
             yaxis2=dict(title="Amplitude"),
-            showlegend=True
+            showlegend=True,
         )
         fig = [fig]
     else:
@@ -122,7 +130,13 @@ def plot_filter_results_plotly(args, b, filtered_signal, as_subplots=True):
             go.Scatter(x=t, y=b, mode="lines+markers", line={"shape": "hv"}, name="Original Signal")
         )
         fig_time.add_trace(
-            go.Scatter(x=t, y=filtered_signal, mode="lines+markers", line={"shape": "hv"}, name="Filtered Signal")
+            go.Scatter(
+                x=t,
+                y=filtered_signal,
+                mode="lines+markers",
+                line={"shape": "hv"},
+                name="Filtered Signal",
+            )
         )
         fig_time.update_layout(
             title="Time-Domain Signal",
@@ -131,12 +145,9 @@ def plot_filter_results_plotly(args, b, filtered_signal, as_subplots=True):
             showlegend=True,
         )
 
-
         # Separate Frequency-Domain figure
         fig_freq = go.Figure()
-        fig_freq.add_trace(
-            go.Bar(x=freqs, y=amp, name="Original", marker=dict(color="green"))
-        )
+        fig_freq.add_trace(go.Bar(x=freqs, y=amp, name="Original", marker=dict(color="green")))
         fig_freq.add_trace(
             go.Bar(x=freqs, y=amp_filtered, name="Filtered", marker=dict(color="red"))
         )
@@ -152,7 +163,7 @@ def plot_filter_results_plotly(args, b, filtered_signal, as_subplots=True):
     return fig
 
 
-def plot_filter_results(args, b, filtered_signal)-> list:
+def plot_filter_results(args, b, filtered_signal) -> list:
     """
     Selects the appropriate plotting function based on `args.engine` ('mat' for matplotlib, 'plotly' for Plotly).
 

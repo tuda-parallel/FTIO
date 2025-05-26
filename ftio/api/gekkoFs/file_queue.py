@@ -5,12 +5,12 @@ ensuring that files are processed exactly once across multiple worker processes.
 The FileQueue class uses shared memory data structures to enable safe concurrent access
 and includes methods for adding, retrieving, and marking files as processed or failed.
 
-Author: Ahmad Tarraf  
-Copyright (c) 2025 TU Darmstadt, Germany  
-Date: Apr 2025  
+Author: Ahmad Tarraf
+Copyright (c) 2025 TU Darmstadt, Germany
+Date: Apr 2025
 
-Licensed under the BSD 3-Clause License.  
-For more information, see the LICENSE file in the project root:  
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 

@@ -1,5 +1,4 @@
-"""Helper function for frequency techniques    
-"""
+"""Helper function for frequency techniques"""
 
 from rich.console import Console
 

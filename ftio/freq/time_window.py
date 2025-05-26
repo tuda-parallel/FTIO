@@ -29,9 +29,7 @@ def data_in_time_window(
         indices = np.where(time_b >= args.ts)
         time_b = time_b[indices]
         bandwidth = bandwidth[indices]
-        total_bytes = int(
-            np.sum(bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b))
-        )
+        total_bytes = int(np.sum(bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b)))
         text += f"[green]Start time set to {args.ts:.2f}[/] s\n"
     else:
         text += f"Start time: [cyan]{time_b[0]:.2f}[/] s \n"
@@ -41,9 +39,7 @@ def data_in_time_window(
         indices = np.where(time_b <= args.te)
         time_b = time_b[indices]
         bandwidth = bandwidth[indices]
-        total_bytes = int(
-            np.sum(bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b))
-        )
+        total_bytes = int(np.sum(bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b)))
         text += f"[green]End time set to {args.te:.2f}[/] s\n"
     else:
         text += f"End time: [cyan]{time_b[-1]:.2f}[/] s\n"

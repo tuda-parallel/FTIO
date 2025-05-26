@@ -1,4 +1,5 @@
-""" Helper functions"""
+"""Helper functions"""
+
 from __future__ import annotations
 import json
 import os
@@ -26,7 +27,7 @@ def get_dominant_and_conf(prediction: Prediction) -> tuple[float, float]:
         prediction (Prediction): prediction contacting the dominant frequencies and their confidence
 
     Returns:
-        tuple[float, float]: dominant frequency (only one value!) and corresponding confidence 
+        tuple[float, float]: dominant frequency (only one value!) and corresponding confidence
     """
 
     return prediction.get_dominant_freq_and_conf()
@@ -49,8 +50,8 @@ def print_data(data: list[dict]) -> None:
         print("{" + string[:-2] + "}")
 
 
-def export_extrap(data: list[dict], name:str="./freq.jsonl"):
-    """Generates measurement points for Extra-p out of the frequency 
+def export_extrap(data: list[dict], name: str = "./freq.jsonl"):
+    """Generates measurement points for Extra-p out of the frequency
     collected at different phases
 
     Args:
@@ -61,11 +62,11 @@ def export_extrap(data: list[dict], name:str="./freq.jsonl"):
 
     if not np.isnan(ranks):
         name = f"./freq_{ranks}.jsonl"
-    file = open(name, "w",encoding="utf-8")
+    file = open(name, "w", encoding="utf-8")
     file.write(extrap_string)
 
 
-def format_jsonl(data: list[dict]) -> tuple[str,str]:
+def format_jsonl(data: list[dict]) -> tuple[str, str]:
     """Formats the metric as in the JSONL format for Extra-P
 
     Args:
@@ -73,7 +74,7 @@ def format_jsonl(data: list[dict]) -> tuple[str,str]:
 
     Returns:
         tuple[str, str]: formatted string and number of ranks
-        
+
     """
     string = ""
     out_ranks = np.nan
@@ -83,25 +84,22 @@ def format_jsonl(data: list[dict]) -> tuple[str,str]:
         dominant_freq = np.nan
         for keys, values in pred.items():
             if "dominant_freq" in keys:
-                dominant_freq,_ = get_dominant_and_conf(pred)
+                dominant_freq, _ = get_dominant_and_conf(pred)
             if "ranks" in keys:
                 ranks = values
             if not np.isnan(dominant_freq) and not np.isnan(ranks):
-                string +=f'{{"params":{{"Processes":{ranks}}},"callpath":"{call_path}","metric":"Frequency (Hz)","value":{dominant_freq:e} }}\n'
+                string += f'{{"params":{{"Processes":{ranks}}},"callpath":"{call_path}","metric":"Frequency (Hz)","value":{dominant_freq:e} }}\n'
                 out_ranks = ranks
                 if dominant_freq > 0:
-                    string +=f'{{"params":{{"Processes":{ranks}}},"callpath":"{call_path}","metric":"Period (s)","value":{1/dominant_freq:e} }}\n'
+                    string += f'{{"params":{{"Processes":{ranks}}},"callpath":"{call_path}","metric":"Period (s)","value":{1/dominant_freq:e} }}\n'
                 break
 
-    return string,out_ranks
+    return string, out_ranks
 
 
-def dump_json(b:np.ndarray,t:np.ndarray, filename:str="bandwidth.json") -> None:
+def dump_json(b: np.ndarray, t: np.ndarray, filename: str = "bandwidth.json") -> None:
 
-    data = {
-        "b": b.tolist(),
-        "t": t.tolist()
-    }
+    data = {"b": b.tolist(), "t": t.tolist()}
     json_file_path = os.path.join(os.getcwd(), filename)
 
     # Dump the dictionary to a JSON file in the current directory

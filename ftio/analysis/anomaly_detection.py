@@ -11,29 +11,36 @@ Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
+
 from __future__ import annotations
 from sklearn.cluster import DBSCAN
 from sklearn.neighbors import NearestNeighbors
 from kneed import KneeLocator
 from rich.panel import Panel
+
 # Isolation forest
 from sklearn.ensemble import IsolationForest
+
 # Lof
 from sklearn.neighbors import LocalOutlierFactor
+
 # find_peaks
 from scipy.signal import find_peaks
+
 # all
 import numpy as np
-from ftio.plot.anomaly_plot import  plot_outliers, plot_decision_boundaries
+from ftio.plot.anomaly_plot import plot_outliers, plot_decision_boundaries
 
 
-def outlier_detection(amp:np.ndarray, freq_arr:np.ndarray, args) -> tuple[list[float], np.ndarray, Panel]:
+def outlier_detection(
+    amp: np.ndarray, freq_arr: np.ndarray, args
+) -> tuple[list[float], np.ndarray, Panel]:
     """Find the outliers in the samples
 
     Args:
         A (list[float]): Amplitudes array
         freq_arr (list[float]): frequency array
-        args (object, optional): arguments containing: outlier detection method (Z-Score, DB-Scan). 
+        args (object, optional): arguments containing: outlier detection method (Z-Score, DB-Scan).
         Defaults to 'Z-score'.
 
     Returns:
@@ -42,7 +49,7 @@ def outlier_detection(amp:np.ndarray, freq_arr:np.ndarray, args) -> tuple[list[f
         Panel: text to display using rich
     """
     methode = args.outlier
-    text = ""    
+    text = ""
     if methode.lower() in ["z-score", "zscore"]:
         dominant_index, conf, text = z_score(amp, freq_arr, args)
         title = "Z-score"
@@ -59,7 +66,7 @@ def outlier_detection(amp:np.ndarray, freq_arr:np.ndarray, args) -> tuple[list[f
         dominant_index, conf, text = peaks(amp, freq_arr, args)
         title = "Find Peaks"
     else:
-        dominant_index, conf = [],np.array([])
+        dominant_index, conf = [], np.array([])
         raise NotImplementedError("Unsupported method selected")
     # sort dominant index according to confidence
     # if len(dominant_index) > 1:
@@ -67,7 +74,9 @@ def outlier_detection(amp:np.ndarray, freq_arr:np.ndarray, args) -> tuple[list[f
     #     tmp = conf[dominant_index]
     #     dominant_index = np.array(dominant_index)
     #     dominant_index = list(dominant_index[np.argsort(tmp)])
-    text = Panel.fit(text[:-1], style="white", border_style='green', title=title, title_align='left')
+    text = Panel.fit(
+        text[:-1], style="white", border_style="green", title=title, title_align="left"
+    )
 
     return dominant_index, conf, text
 
@@ -75,9 +84,7 @@ def outlier_detection(amp:np.ndarray, freq_arr:np.ndarray, args) -> tuple[list[f
 # ?#################################
 # ? Z-score
 # ?#################################
-def z_score(
-    amp: np.ndarray, freq_arr: np.ndarray, args
-) -> tuple[list[float], np.ndarray, str]:
+def z_score(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.ndarray, str]:
     """calculates the outliers using zscore
 
     Args:
@@ -90,14 +97,14 @@ def z_score(
     """
     text = "[green]Spectrum[/]: Amplitude spectrum\n"
     if args.psd:
-        amp = amp*amp/len(amp)
+        amp = amp * amp / len(amp)
         text = "[green]Spectrum[/]: Power spectrum\n"
 
     indices = np.arange(1, int(len(amp) / 2) + 1)
     amp_tmp = np.array(2 * amp[indices])
     # norm the data
-    amp_tmp = amp_tmp/ amp_tmp.sum() if amp_tmp.sum() > 0 else amp_tmp
-    
+    amp_tmp = amp_tmp / amp_tmp.sum() if amp_tmp.sum() > 0 else amp_tmp
+
     tol = args.tol
     dominant_index = []
     mean = np.mean(amp_tmp)
@@ -105,7 +112,11 @@ def z_score(
     z_k = abs(amp_tmp - mean) / std if std > 0 else np.zeros(len(amp_tmp))
     conf = np.zeros(len(z_k))
     # find outliers
-    index = np.where((z_k/np.max(z_k) > tol) & (z_k > 3)) if len(z_k) > 0 and np.max(z_k) > 0 else  (np.array([], dtype=np.int64),)
+    index = (
+        np.where((z_k / np.max(z_k) > tol) & (z_k > 3))
+        if len(z_k) > 0 and np.max(z_k) > 0
+        else (np.array([], dtype=np.int64),)
+    )
     text += f"[green]mean[/]: {mean/np.sum(amp_tmp) if np.sum(amp_tmp) else 0:.3e}\n[green]std[/]: {std:.3e}\n"
     text += f"Frequencies with Z-score > 3 -> [green]{len(z_k[z_k>3])}[/] candidates\n"
     text += f"         + Z > Z_max*{tol*100}% > 3 -> [green]{len(index[0])}[/] candidates\n"
@@ -113,39 +124,40 @@ def z_score(
         counter = 0
         for i in index[0]:
             counter += 1
-            text += f"           {counter}) {1/freq_arr[i+1]:.3f} s: z_k = {z_k[i]/np.max(z_k):.2f}\n"
-    
-    index, removed_index, msg = remove_harmonics(freq_arr, amp_tmp,  indices[index[0]])
-    text+= msg
-    
+            text += (
+                f"           {counter}) {1/freq_arr[i+1]:.3f} s: z_k = {z_k[i]/np.max(z_k):.2f}\n"
+            )
+
+    index, removed_index, msg = remove_harmonics(freq_arr, amp_tmp, indices[index[0]])
+    text += msg
+
     if len(index) == 0:
         text += "[red]No dominant frequency -> Signal might be not periodic[/]\n"
     else:
-        removed_index = [i-1 for i in removed_index] #tmp starts at 1
+        removed_index = [i - 1 for i in removed_index]  # tmp starts at 1
         # conf[index] = (z_k[index]/max_z  + z_k[index]/np.sum(z_k[index]) + 1/np.sum(z_k > 3))/3
         # calculate the confidence:
         # 1) check z_k/max_zk > tol
-        tmp = z_k/np.max(z_k) > tol
+        tmp = z_k / np.max(z_k) > tol
         tmp[removed_index] = False
-        conf[tmp] += z_k[tmp]/np.sum(z_k[tmp])
-        
+        conf[tmp] += z_k[tmp] / np.sum(z_k[tmp])
+
         # 2) check z_k > 0
         tmp = z_k > 3
         tmp[removed_index] = False
-        conf[tmp] += z_k[tmp]/np.sum(z_k[tmp])
-        conf = conf/2
+        conf[tmp] += z_k[tmp] / np.sum(z_k[tmp])
+        conf = conf / 2
         conf = np.array(conf)
-        
 
         # get dominant index
         dominant_index, msg = dominant(index, freq_arr, conf)
-        text+= msg
-        
+        text += msg
+
     if "plotly" in args.engine:
         i = np.repeat(1, len(indices))
         if len(dominant_index) != 0:
             i[np.array(dominant_index) - 1] = -1
-        plot_outliers(args,freq_arr, amp, indices, conf, i)
+        plot_outliers(args, freq_arr, amp, indices, conf, i)
 
     return dominant_index, conf, text
 
@@ -153,9 +165,7 @@ def z_score(
 # ?#################################
 # ? DB-Scan
 # ?#################################
-def db_scan(
-    amp: np.ndarray, freq_arr: np.ndarray, args
-) -> tuple[list[float], np.ndarray, str]:
+def db_scan(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.ndarray, str]:
     """calculates the outliers using dbscan
 
     Args:
@@ -166,11 +176,11 @@ def db_scan(
     Returns:
         tuple[list[float], np.ndarray, str]: [dominant frequency/ies, confidence]
     """
-    text = "[green]Spectrum[/]: Amplitude spectrum\n" 
+    text = "[green]Spectrum[/]: Amplitude spectrum\n"
     if args.psd:
-        amp = amp*amp/len(amp)
+        amp = amp * amp / len(amp)
         text = "[green]Spectrum[/]: Power spectrum\n"
-        
+
     indecies = np.arange(1, int(len(amp) / 2) + 1)
     amp_tmp = np.array(2 * amp[indecies])
     freq_arr_tmp = np.array(freq_arr[indecies])
@@ -178,7 +188,7 @@ def db_scan(
 
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
-    #! norm over sum for amplitude with power spectrum 
+    #! norm over sum for amplitude with power spectrum
     d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
 
     eps_mode = "range"
@@ -196,7 +206,7 @@ def db_scan(
     elif eps_mode == "range":
         text += "Calculating eps using range\n"
         eps = np.sqrt(
-            pow((d[:, 1].max() - d[:, 1].min())*(1-args.tol), 2) + pow(d[1, 0] - d[0, 0], 2)
+            pow((d[:, 1].max() - d[:, 1].min()) * (1 - args.tol), 2) + pow(d[1, 0] - d[0, 0], 2)
         )
         conf = d[:, 1] / d[:, 1].max()
     else:  # find distance using knee method
@@ -227,17 +237,17 @@ def db_scan(
     model = DBSCAN(eps=eps, min_samples=min_pts)
     model.fit(d)
     dominant_index = model.labels_
-    #normalize like the remaing methods
-    dominant_index[dominant_index==-1] = dominant_index[dominant_index==-1] - 1 
-    dominant_index =  dominant_index + 1 
+    # normalize like the remaing methods
+    dominant_index[dominant_index == -1] = dominant_index[dominant_index == -1] - 1
+    dominant_index = dominant_index + 1
 
     if "plotly" in args.engine:
         plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d, eps)
 
-    clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp,  indecies[dominant_index == -1])
-    dominant_index,text_d = dominant(clean_index, freq_arr, conf)
-    
-    return dominant_index, conf,  text+msg+text_d
+    clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp, indecies[dominant_index == -1])
+    dominant_index, text_d = dominant(clean_index, freq_arr, conf)
+
+    return dominant_index, conf, text + msg + text_d
 
 
 # ?#################################
@@ -256,9 +266,9 @@ def isolation_forest(
     Returns:
         tuple[list[float], np.ndarray, str]: [dominant frequency/ies, confidence]
     """
-    text = "[green]Spectrum[/]: Amplitude spectrum\n" 
+    text = "[green]Spectrum[/]: Amplitude spectrum\n"
     if args.psd:
-        amp = amp*amp/len(amp)
+        amp = amp * amp / len(amp)
         text = "[green]Spectrum[/]: Power spectrum\n"
 
     indecies = np.arange(1, int(len(amp) / 2) + 1)
@@ -266,7 +276,7 @@ def isolation_forest(
     freq_arr_tmp = np.array(freq_arr[indecies])
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
-    #! norm over sum for amplitude with power spectrum 
+    #! norm over sum for amplitude with power spectrum
     d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
 
     model = IsolationForest(contamination=0.001, warm_start=True)
@@ -278,12 +288,12 @@ def isolation_forest(
 
     if "plotly" in args.engine:
         plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d)
-        plot_decision_boundaries(model,d, conf)
+        plot_decision_boundaries(model, d, conf)
 
-    clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp,  indecies[dominant_index == -1])
-    dominant_index,text_d = dominant(clean_index, freq_arr, conf)
-    
-    return dominant_index, abs(conf), text+msg+text_d
+    clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp, indecies[dominant_index == -1])
+    dominant_index, text_d = dominant(clean_index, freq_arr, conf)
+
+    return dominant_index, abs(conf), text + msg + text_d
 
 
 # ?#################################
@@ -300,9 +310,9 @@ def lof(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.nd
     Returns:
         tuple[list[float], np.ndarray, str]: [dominant frequency/ies, confidence]
     """
-    text = "[green]Spectrum[/]: Amplitude spectrum\n" 
+    text = "[green]Spectrum[/]: Amplitude spectrum\n"
     if args.psd:
-        amp = amp*amp/len(amp)
+        amp = amp * amp / len(amp)
         text = "[green]Spectrum[/]: Power spectrum\n"
 
     indecies = np.arange(1, int(len(amp) / 2) + 1)
@@ -311,7 +321,7 @@ def lof(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.nd
 
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
-    #! norm over sum for amplitude with power spectrum 
+    #! norm over sum for amplitude with power spectrum
     d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
 
     model = LocalOutlierFactor(contamination=0.001, novelty=True)
@@ -319,16 +329,16 @@ def lof(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.nd
     conf = model.decision_function(d)
     dominant_index = model.predict(d)
     # conf is between [-1,1]. Scale this to [0,1]
-    conf = -1*(conf-1)/2
+    conf = -1 * (conf - 1) / 2
 
     # plot
     if "plotly" in args.engine:
         plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d)
 
-    clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp,  indecies[dominant_index == -1])
-    dominant_index,text_d = dominant(clean_index, freq_arr, conf)
-    
-    return dominant_index, abs(conf), text+msg+text_d
+    clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp, indecies[dominant_index == -1])
+    dominant_index, text_d = dominant(clean_index, freq_arr, conf)
+
+    return dominant_index, abs(conf), text + msg + text_d
 
 
 # ?#################################
@@ -345,40 +355,40 @@ def peaks(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.
     Returns:
         tuple[list[float], np.ndarray, str]: [dominant frequency/ies, confidence]
     """
-    text = "[green]Spectrum[/]: Amplitude spectrum\n" 
+    text = "[green]Spectrum[/]: Amplitude spectrum\n"
     if args.psd:
-        amp = amp*amp/len(amp)
+        amp = amp * amp / len(amp)
         text = "[green]Spectrum[/]: Power spectrum\n"
 
     indecies = np.arange(1, int(len(amp) / 2) + 1)
     amp_tmp = np.array(2 * amp[indecies])
     freq_arr_tmp = np.array(freq_arr[indecies])
-    
+
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
-    #! norm over sum for amplitude with power spectrum 
+    #! norm over sum for amplitude with power spectrum
     d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
 
-    limit = 1.2*np.mean(d[:,1])
-    found_peaks, _ = find_peaks(d[:,1], height= limit if limit > 0.2 else 0.2)
-    conf = np.zeros(len(d[:,1]))
+    limit = 1.2 * np.mean(d[:, 1])
+    found_peaks, _ = find_peaks(d[:, 1], height=limit if limit > 0.2 else 0.2)
+    conf = np.zeros(len(d[:, 1]))
     conf[found_peaks] = 1
-    dominant_index = np.zeros(len(d[:,1]))
+    dominant_index = np.zeros(len(d[:, 1]))
     dominant_index[found_peaks] = -1
 
     # plot
     if "plotly" in args.engine:
         plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d)
 
-    clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp,  indecies[dominant_index == -1])
-    dominant_index,text_d = dominant(clean_index, freq_arr, conf)
-    
-    return dominant_index, abs(conf), text+msg+text_d
+    clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp, indecies[dominant_index == -1])
+    dominant_index, text_d = dominant(clean_index, freq_arr, conf)
+
+    return dominant_index, abs(conf), text + msg + text_d
 
 
 def dominant(
     dominant_index: np.ndarray, freq_arr: np.ndarray, conf: np.ndarray
-) -> tuple[list[float],str]:
+) -> tuple[list[float], str]:
     """_summary_
 
     Args:
@@ -403,9 +413,9 @@ def dominant(
                 text = "[red]Too many dominant frequencies -> Signal might be not periodic[/]\n"
                 out = []
                 break
-    else: 
+    else:
         text = "[red]No dominant frequencies found -> Signal might be not periodic[/]\n"
-    
+
     return out, text
 
 
@@ -436,7 +446,7 @@ def remove_harmonics(freq_arr, amp_tmp, index_list) -> tuple[np.ndarray, list, s
                     msg += (
                         f"[yellow]Ignoring harmonic at: {freq_arr[ind]:.3e} Hz "
                         f"(T = {1/freq_arr[ind] if freq_arr[ind] > 0 else 0:.3f} s, k = {ind})[/]\n"
-                        )
+                    )
                     removed.append(ind)
                     flag = False
                     break

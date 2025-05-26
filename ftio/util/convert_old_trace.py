@@ -5,12 +5,8 @@ import numpy as np
 
 
 def parse_options():
-    parser = argparse.ArgumentParser(
-        description="Converts old traces by scaling them 10^6."
-    )
-    parser.add_argument(
-        "filename", type=str, help="The paths and name to the JSON file to convert"
-    )
+    parser = argparse.ArgumentParser(description="Converts old traces by scaling them 10^6.")
+    parser.add_argument("filename", type=str, help="The paths and name to the JSON file to convert")
     parser.add_argument(
         "--outfile",
         "-o",
@@ -57,17 +53,12 @@ def main(args=parse_options()):
                         if metric in data[mode]:
                             scale(data[mode], metric)
                     for metric in fields_bandwidth:
-                        if (
-                            "bandwidth" in data[mode]
-                            and metric in data[mode]["bandwidth"]
-                        ):
+                        if "bandwidth" in data[mode] and metric in data[mode]["bandwidth"]:
                             scale(data[mode]["bandwidth"], metric)
 
     # json.dump(data,out_file)
     with open(args.outfile, "w") as out_file:
-        out_file.write(
-            "{" + ",\n".join(f'"{i}":' + json.dumps(data[i]) for i in data) + "}\n"
-        )
+        out_file.write("{" + ",\n".join(f'"{i}":' + json.dumps(data[i]) for i in data) + "}\n")
 
 
 def scale(data_dict: dict, field: str, value: int = 1000000):

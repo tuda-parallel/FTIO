@@ -58,9 +58,9 @@ def heatmap(data):
     )
 
     # Convert Interval bins to strings for Plotly
-    heatmap_data["Dominant Frequency Binned"] = heatmap_data[
-        "Dominant Frequency Binned"
-    ].astype(str)
+    heatmap_data["Dominant Frequency Binned"] = heatmap_data["Dominant Frequency Binned"].astype(
+        str
+    )
     heatmap_data.sort_values(by="Dominant Frequency", inplace=True, ignore_index=True)
 
     # Pivot the DataFrame to switch x and y axes
@@ -96,24 +96,20 @@ def heatmap(data):
             # len=200,
         ),
     )
-    fig = format_plot_and_ticks(fig,False, True,False,False)
+    fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()
 
 
 def scatter(df, x, y, color, symbol) -> None:
     # Create the scatter plot
-    fig = px.scatter(
-        df, x=x, y=y, color=color, symbol=symbol, color_continuous_scale="Viridis"
-    )
+    fig = px.scatter(df, x=x, y=y, color=color, symbol=symbol, color_continuous_scale="Viridis")
     # Display the plot
     fig.update_layout(
         xaxis_title=x,
         yaxis_title=y,
         xaxis_tickangle=-45,
         margin=dict(l=100, r=100, t=50, b=150),
-        coloraxis_colorbar=dict(
-            orientation="h", ticks="outside", ticksuffix=" %", title=""
-        ),
+        coloraxis_colorbar=dict(orientation="h", ticks="outside", ticksuffix=" %", title=""),
     )
     fig.show()
 
@@ -140,7 +136,7 @@ def scatter2D(df) -> None:
         margin=dict(l=100, r=100, t=50, b=150),
         coloraxis_colorbar=dict(yanchor="top", y=1, ticks="outside", ticksuffix=" %"),
     )
-    fig = format_plot_and_ticks(fig,False, True,False,False)
+    fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()
 
 
@@ -181,9 +177,7 @@ def heatmap_2(data):
     dominant_freq_per_metric = heatmap_data.loc[
         heatmap_data.groupby("Metric")["Confidence"].idxmax()
     ]
-    dominant_freq_per_metric.sort_values(
-        "Dominant Frequency", ignore_index=True, inplace=True
-    )
+    dominant_freq_per_metric.sort_values("Dominant Frequency", ignore_index=True, inplace=True)
 
     # Create a DataFrame for the differences in Dominant Frequency
     # metrics_unique = sorted(dominant_freq_per_metric['Metric'].unique())
@@ -209,11 +203,7 @@ def heatmap_2(data):
                         Z_j = (freq_j[0] - mu) / sigma
                         diff = abs(Z_i - Z_j) * 100
                     else:
-                        diff = (
-                            abs(freq_i[0] - freq_j[0])
-                            / ((freq_i[0] + freq_j[0]) / 2)
-                            * 100
-                        )
+                        diff = abs(freq_i[0] - freq_j[0]) / ((freq_i[0] + freq_j[0]) / 2) * 100
                         # diff = abs(freq_i[0] - freq_j[0]) * 100
                 else:
                     diff = -1
@@ -239,7 +229,6 @@ def heatmap_2(data):
     #     heatmap_diff, method="average", metric="euclidean"
     # )
     linkage_matrix = linkage(heatmap_diff, method="average", metric="euclidean")
-
 
     sns.clustermap(
         heatmap_diff,
@@ -276,9 +265,7 @@ def density_heatmap(data) -> None:
             continue
 
     # Create a DataFrame for the plot
-    df = pd.DataFrame(
-        data_points, columns=["Metric", "Dominant Frequency", "Confidence"]
-    )
+    df = pd.DataFrame(data_points, columns=["Metric", "Dominant Frequency", "Confidence"])
 
     # Create the density heatmap
     fig = px.density_heatmap(
@@ -351,7 +338,7 @@ def plot_heatmap(heatmap_diff):
         ),
         margin=dict(l=100, r=100, t=50, b=150),  # Adjust margins to give more space
     )
-    fig = format_plot_and_ticks(fig,False, True,False,False)
+    fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()
 
 
@@ -359,9 +346,7 @@ def plot_timeseries_metrics(metrics, width=None, height=None):
     fig = go.Figure()
     for metric, arrays in metrics.items():
         if len(arrays[0]) > 1:
-            fig.add_trace(
-                go.Scatter(x=arrays[1], y=arrays[0], mode="lines+markers", name=metric)
-            )
+            fig.add_trace(go.Scatter(x=arrays[1], y=arrays[0], mode="lines+markers", name=metric))
 
     fig.update_layout(
         xaxis_title="Time (s)",

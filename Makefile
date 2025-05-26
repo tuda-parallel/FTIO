@@ -114,6 +114,17 @@ test_all:
 test:
 	cd test && python3 -m pytest && make clean
 
+check_style: check_tools
+	black .
+	isort .
+	flake8 .
+
+check_tools:
+	@command -v black >/dev/null 2>&1 || (echo "black not found, installing..." && pip install black)
+	@command -v isort >/dev/null 2>&1 || (echo "isort not found, installing..." && pip install isort)
+	@command -v flake8 >/dev/null 2>&1 || (echo "flake8 not found, installing..." && pip install flake8)
+
+
 quick_test:
 	$(PWD)/.venv/bin/ftio -e no -h 
 

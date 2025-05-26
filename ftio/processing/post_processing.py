@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 from ftio.plot.helper import format_plot
 from ftio.freq.prediction import Prediction
 
+
 def label_phases(
     prediction: Prediction, args, b0: np.ndarray = np.array([]), t0: np.ndarray = np.array([])
 ):
@@ -49,24 +50,14 @@ def label_phases(
                 if args.n_freq == 0
                 else prediction.top_freqs["freq"][index]
             )
-            amp = (
-                prediction.amp[index]
-                if args.n_freq == 0
-                else prediction.top_freqs["amp"][index]
-            )
-            phi = (
-                prediction.phi[index]
-                if args.n_freq == 0
-                else prediction.top_freqs["phi"][index]
-            )
-            n = np.floor(
-                (prediction.t_end - prediction.t_start) * prediction.freq
-            )
+            amp = prediction.amp[index] if args.n_freq == 0 else prediction.top_freqs["amp"][index]
+            phi = prediction.phi[index] if args.n_freq == 0 else prediction.top_freqs["phi"][index]
+            n = np.floor((prediction.t_end - prediction.t_start) * prediction.freq)
 
-            #skip frequency at 0
+            # skip frequency at 0
             if f == 0 and args.n_freq != 0:
                 continue
-            
+
             ## create cosine wave
             cosine_wave = cosine_wave + 2 * amp / n * np.cos(2 * np.pi * f * t + phi)
 
@@ -110,19 +101,19 @@ def label_phases(
     return phases, time
 
 
-def plot_classification(args, cosine_wave, t, time, n_waves = 0, b0 =np.array([]), t0=np.array([])) -> go.Figure | None:
+def plot_classification(
+    args, cosine_wave, t, time, n_waves=0, b0=np.array([]), t0=np.array([])
+) -> go.Figure | None:
     fig = None
     if any(x in args.engine for x in ["mat", "plot"]):
         fig = go.Figure()
         if n_waves == 1:
-            name = "Dominant wave" 
+            name = "Dominant wave"
         elif args.n_freq == 0:
             name = "Dominant waves"
         else:
             name = f"{n_waves} superposed <br>cosine waves"
-        fig.add_trace(
-            go.Scatter(x=t, y=cosine_wave, name=name, marker_color="red")
-        )
+        fig.add_trace(go.Scatter(x=t, y=cosine_wave, name=name, marker_color="red"))
         # fig.add_trace(go.Scatter(x=t, y=square_wave, name="square wave"))
         fig.add_hline(y=0, line_width=1, line_color="gray")
         colors = px.colors.qualitative.Plotly + px.colors.qualitative.G10

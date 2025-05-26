@@ -109,10 +109,8 @@ def prediction_process(
     while not shared_resources.queue.empty():
         shared_resources.data.append(shared_resources.queue.get())
 
-    _ = find_probability(shared_resources.data, counter = shared_resources.count.value)
+    _ = find_probability(shared_resources.data, counter=shared_resources.count.value)
     shared_resources.count.value += 1
-
-
 
 
 if __name__ == "__main__":

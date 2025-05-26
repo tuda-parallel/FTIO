@@ -3,12 +3,12 @@ This file provides functions to check the setup for the JIT script, including ve
 configuration files, generating test scripts, and executing them to ensure the environment
 is correctly configured.
 
-Author: Ahmad Tarraf  
-Copyright (c) 2025 TU Darmstadt, Germany  
+Author: Ahmad Tarraf
+Copyright (c) 2025 TU Darmstadt, Germany
 Date: Aug 2024
 
-Licensed under the BSD 3-Clause License.  
-For more information, see the LICENSE file in the project root:  
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
@@ -64,9 +64,7 @@ def check_setup(settings: JitSettings):
                 # if not settings.exclude_ftio:
                 #     additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} -x LIBGKFS_ENABLE_METRICS=on "
                 if not settings.exclude_proxy:
-                    additional_arguments += (
-                        f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
-                    )
+                    additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
                 if not settings.exclude_daemon:
                     additional_arguments += (
                         f"-x LIBGKFS_LOG=info,warnings,errors "
@@ -85,9 +83,7 @@ def check_setup(settings: JitSettings):
                 # if not settings.exclude_ftio:
                 #     additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},"
                 if not settings.exclude_proxy:
-                    additional_arguments += (
-                        f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
-                    )
+                    additional_arguments += f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
                 if not settings.exclude_daemon:
                     additional_arguments += (
                         f"LIBGKFS_LOG=info,warnings,errors,"

@@ -3,11 +3,11 @@ This file provides various functions to execute shell commands and monitor their
 It includes functions to execute commands in blocking and non-blocking modes, log outputs,
 monitor log files, and wait for specific lines or files to appear.
 
-Author: Ahmad Tarraf  
-Copyright (c) 2025 TU Darmstadt, Germany  
+Author: Ahmad Tarraf
+Copyright (c) 2025 TU Darmstadt, Germany
 Date: Aug 2024
 
-Licensed under the BSD 3-Clause License. 
+Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
@@ -31,7 +31,8 @@ from ftio.api.gekkoFs.jit.setup_helper import (
 )
 
 console = Console()
-TERMINAL_WIDTH = console.size.width 
+TERMINAL_WIDTH = console.size.width
+
 
 def execute_block(call: str, raise_exception: bool = True, dry_run=False) -> str:
     """Executes a call and blocks till it is finished
@@ -149,9 +150,7 @@ def execute_block_and_monitor(
             err.terminate()
 
 
-def execute_background(
-    call: str, log_file: str = "", log_err_file: str = "", dry_run=False
-):
+def execute_background(call: str, log_file: str = "", log_err_file: str = "", dry_run=False):
     """Executes a call in the background and sets up a log directory.
 
     Args:
@@ -421,9 +420,7 @@ def end_of_transfer(
                         if hits > 4:
                             if stuck:
                                 jit_print("[cyan]>> Stuck? Triggering cargo again\n")
-                                _ = execute_background(
-                                    call, settings.cargo_log, settings.cargo_err
-                                )
+                                _ = execute_background(call, settings.cargo_log, settings.cargo_err)
                                 stuck = False
                         if hits > limit:
                             jit_print("[cyan]>> Stopping stage out\n")
@@ -433,14 +430,10 @@ def end_of_transfer(
                 status.update(
                     f"\n[bold green]JIT [cyan]>> finished moving all files at  [{timestamp}]"
                 )
-                jit_print(
-                    f"\n[cyan]>> finished moving all files at [{timestamp}]", True
-                )
+                jit_print(f"\n[cyan]>> finished moving all files at [{timestamp}]", True)
 
 
-def end_of_transfer_online(
-    settings: JitSettings, log_file: str, call: str, timeout=240
-) -> None:
+def end_of_transfer_online(settings: JitSettings, log_file: str, call: str, timeout=240) -> None:
     """Monitors the end of a transfer process by checking log files with a timeout.
 
     Args:
@@ -477,11 +470,11 @@ def end_of_transfer_online(
                 time.sleep(0.1)  # Short sleep interval to quickly catch new lines
 
                 if n < 10:
-                    status.update(
-                        f"Waiting for {len(monitored_files)} files: {monitored_files}"
-                    )
+                    status.update(f"Waiting for {len(monitored_files)} files: {monitored_files}")
                 else:
-                    status.update(f"Waiting for {len(monitored_files)} files ({time.time() - start:.2f} sec)")
+                    status.update(
+                        f"Waiting for {len(monitored_files)} files ({time.time() - start:.2f} sec)"
+                    )
 
                 passed_time = int(time.time() - start_time)
                 time_since_last_cargo = int(time.time() - last_cargo_time)
@@ -493,15 +486,11 @@ def end_of_transfer_online(
                 if repeated_trigger:
                     hit += 1
                     # jit_print(f"{time_since_last_cargo} >= {stuck_time} and {stuck_files} == {len(monitored_files)}")
-                    if time_since_last_cargo >= stuck_time and stuck_files == len(
-                        monitored_files
-                    ):
+                    if time_since_last_cargo >= stuck_time and stuck_files == len(monitored_files):
                         jit_print(
                             f"[cyan]>> Stucked for {stuck_time} sec. Triggering cargo again\n"
                         )
-                        _ = execute_background(
-                            call, settings.cargo_log, settings.cargo_err
-                        )
+                        _ = execute_background(call, settings.cargo_log, settings.cargo_err)
                         last_cargo_time = time.time()
                         stuck_time = stuck_time * 2
                         jit_print(f"[cyan]>> Stucked increased to {stuck_time}\n")
@@ -525,7 +514,10 @@ def end_of_transfer_online(
             status.update(
                 f"\n[bold green]JIT [cyan]>> finished moving all files at [{timestamp}] after {time.time() - start:.2f} seconds"
             )
-            jit_print(f"\n[cyan]>> finished moving all files at [{timestamp}] after {time.time() - start:.2f} seconds", True)
+            jit_print(
+                f"\n[cyan]>> finished moving all files at [{timestamp}] after {time.time() - start:.2f} seconds",
+                True,
+            )
 
 
 def get_files(settings: JitSettings, verbose=True):
@@ -562,7 +554,6 @@ def get_files(settings: JitSettings, verbose=True):
             # remove directories
             files = [item for item in files if "." in item]
 
-
         # find monitored files
         monitored_files = files_filtered(files, settings.regex_match, verbose)
         if settings.debug_lvl > 1:
@@ -576,7 +567,7 @@ def get_files(settings: JitSettings, verbose=True):
         if verbose or settings.debug_lvl > 2:
             timestamp = get_time()
             console.print(f"[cyan]>> Files that need to be stage out: [{timestamp}][/]")
-            for i,f in enumerate(monitored_files):
+            for i, f in enumerate(monitored_files):
                 console.print(f"[cyan]{i}. {f}[/]")
 
     except Exception as e:
@@ -632,7 +623,7 @@ def print_file(file, src=""):
     """
     color = ""
     close = ""
-    newline =True
+    newline = True
     wait_time = 0.05
     if src:
         if "daemon" in src.lower():
@@ -653,15 +644,13 @@ def print_file(file, src=""):
 
         if color:
             close = "[/]"
-            newline = "\n" 
+            newline = "\n"
 
     while not os.path.exists(file):
         if "error" in src.lower():
             time.sleep(0.1)
         else:
-            with console.status(
-                f"[bold green]Waiting for {file} to appear ..."
-            ) as status:
+            with console.status(f"[bold green]Waiting for {file} to appear ...") as status:
                 time.sleep(0.1)
 
     with open(file, "r") as file:
@@ -690,8 +679,8 @@ def print_file(file, src=""):
                     print(content)
                 else:
                     if newline:
-                        console.print("\n",end="")
-                    # console.print( 
+                        console.print("\n", end="")
+                    # console.print(
                     #     Panel(
                     #         color  + escape(content) + close,
                     #         title= color + src.capitalize() + close,
@@ -703,8 +692,8 @@ def print_file(file, src=""):
                     # )
                     console.print(
                         Panel.fit(
-                        color  + escape(content) + close,
-                            title= color + src.upper() + close,
+                            color + escape(content) + close,
+                            title=color + src.upper() + close,
                             style="white",
                             border_style="white",
                             title_align="left",
@@ -724,9 +713,7 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
         return
 
     start_time = time.time()
-    with Status(
-        f"[cyan]Waiting for {filename} to be created...\n", console=console
-    ) as status:
+    with Status(f"[cyan]Waiting for {filename} to be created...\n", console=console) as status:
         while not os.path.isfile(filename):
             passed_time = int(time.time() - start_time)
             if passed_time >= timeout:
@@ -767,9 +754,7 @@ def wait_for_line(
         msg = "Waiting for line to appear..."
 
     while not os.path.exists(filename):
-        with console.status(
-            f"[bold green]Waiting for {filename} to appear ..."
-        ) as status:
+        with console.status(f"[bold green]Waiting for {filename} to appear ...") as status:
             time.sleep(0.1)
 
     with open(filename, "r") as file:

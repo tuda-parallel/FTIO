@@ -236,4 +236,3 @@ def prepare_plot_dft(
         )
     )
     return df0, df1
-

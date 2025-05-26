@@ -61,9 +61,7 @@ class DataControl:
             if socket in events and events[socket] == zmq.POLLIN:
                 # If there is an event (message), receive it
                 signal = socket.recv_string()
-                self.console.print(
-                    f"[DataControl] Received signal: {signal}", style="bold yellow"
-                )
+                self.console.print(f"[DataControl] Received signal: {signal}", style="bold yellow")
 
                 if signal == "START":
                     # If the signal is "START", process files in the directory
@@ -86,15 +84,17 @@ class DataControl:
             full_path = os.path.join(self.settings.gkfs_mntdir, file)
             # Prepare the command for moving the file
             # 1) get time now:
-            now = gkfs_call(self.settings,f"date +%s")  
+            now = gkfs_call(self.settings, f"date +%s")
 
             # 2) check the time:
-            out_time = gkfs_call(self.settings,f"stat -c %Y {full_path}")  
+            out_time = gkfs_call(self.settings, f"stat -c %Y {full_path}")
 
             # 3) move the file
             if int(out_time) - int(now) > 5:
-                _ = gkfs_call(self.settings,f"mv  {full_path} {self.settings.stage_out_path}/file", )
-        
+                _ = gkfs_call(
+                    self.settings,
+                    f"mv  {full_path} {self.settings.stage_out_path}/file",
+                )
 
             counter += 1
             self.console.print(
@@ -102,9 +102,7 @@ class DataControl:
             )
 
         except Exception as e:
-            self.console.print(
-                f"[Error] Error moving file {file}: {e}", style="bold red"
-            )
+            self.console.print(f"[Error] Error moving file {file}: {e}", style="bold red")
 
     def process_files(self) -> None:
         """
@@ -129,7 +127,6 @@ class DataControl:
 
         except Exception as e:
             self.console.print(f"[Error] Error processing files: {e}", style="bold red")
-
 
     def __del__(self) -> None:
         """
@@ -160,14 +157,12 @@ def trigger_data_controller(address: str = "127.0.0.1", port: str = "65432") -> 
 # data_control = DataControl(address, port, settings)
 
 
-def gkfs_call(settings: JitSettings, call:str):
+def gkfs_call(settings: JitSettings, call: str):
     call = flaged_call(
         settings,
         call,
         exclude=["ftio", "cargo"],
-        )
+    )
     out = execute_block(call, dry_run=settings.dry_run)
 
     return out
-
-

@@ -1,5 +1,5 @@
-"""This functions plots error bars (normed and not normed)
-"""
+"""This functions plots error bars (normed and not normed)"""
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -54,12 +54,8 @@ def plot_error_bar(df, s, f=[]):
                 y_plus[modes.index(j), k] = abs(max(tmp))
                 y_minus[modes.index(j), k] = abs(min(tmp))
             if y[modes.index(j), k] != 0:
-                y_plus_normed[modes.index(j), k] = (
-                    abs(max(tmp)) / y[modes.index(j), k] * 100
-                )
-                y_minus_normed[modes.index(j), k] = (
-                    abs(min(tmp)) / y[modes.index(j), k] * 100
-                )
+                y_plus_normed[modes.index(j), k] = abs(max(tmp)) / y[modes.index(j), k] * 100
+                y_minus_normed[modes.index(j), k] = abs(min(tmp)) / y[modes.index(j), k] * 100
             else:
                 y_plus_normed[modes.index(j), k] = 0
                 y_minus_normed[modes.index(j), k] = 0
@@ -128,9 +124,7 @@ def plot_error_bar(df, s, f=[]):
         type="log", title_text="Ranks", row=2, col=1, showspikes=True
     )  # ,tickmode = 'array', tickvals = x_unqiue, ticktext = x_unqiue.astype(str))
     f.update_yaxes(title_text="Rel.<br>dev. (%)", row=2, col=1)
-    f.update_yaxes(
-        minor=dict(ticklen=4, tickcolor="black", showgrid=True, ticks="inside")
-    )
+    f.update_yaxes(minor=dict(ticklen=4, tickcolor="black", showgrid=True, ticks="inside"))
     f.update_layout(
         hovermode="x",
         legend_tracegroupgap=1,
@@ -152,7 +146,7 @@ def plot_error_bar(df, s, f=[]):
         width=900,
         height=560,
     )
-    f = format_plot(f,17)
+    f = format_plot(f, 17)
     # if 'B' in s and 'E' in s:
     # 	f[-1].show()
     # 	f[-1].write_image("%s.pdf"%s)
@@ -185,10 +179,7 @@ def plot_time_error_bar(df_time, modes, names, colors, symbols, markeredgecolor)
                     if values.index(q) == 0:
                         data = df_time[df_time["number_of_ranks"] == x_unqiue[count]][q]
                     else:
-                        data = (
-                            data
-                            + df_time[df_time["number_of_ranks"] == x_unqiue[count]][q]
-                        )
+                        data = data + df_time[df_time["number_of_ranks"] == x_unqiue[count]][q]
             elif "/" in j:
                 values = j.split("/")
                 values = [x.strip() for x in values]
@@ -196,10 +187,7 @@ def plot_time_error_bar(df_time, modes, names, colors, symbols, markeredgecolor)
                     if values.index(q) == 0:
                         data = df_time[df_time["number_of_ranks"] == x_unqiue[count]][q]
                     else:
-                        data = (
-                            data
-                            / df_time[df_time["number_of_ranks"] == x_unqiue[count]][q]
-                        )
+                        data = data / df_time[df_time["number_of_ranks"] == x_unqiue[count]][q]
             else:
                 data = df_time[df_time["number_of_ranks"] == x_unqiue[count]][j]
             data = data[data != 0]
@@ -288,5 +276,5 @@ def plot_time_error_bar(df_time, modes, names, colors, symbols, markeredgecolor)
         height=640,
         title="I/O time with error bars (normed)",
     )
-    f = format_plot(f,17)
+    f = format_plot(f, 17)
     return f

@@ -3,12 +3,12 @@ This file provides functions to execute the JIT script, including setting up the
 allocating resources, starting necessary services, and managing the workflow from staging
 data in to staging out. It also handles pre- and post-application calls.
 
-Author: Ahmad Tarraf  
-Copyright (c) 2025 TU Darmstadt, Germany  
+Author: Ahmad Tarraf
+Copyright (c) 2025 TU Darmstadt, Germany
 Date: Aug 2024
 
-Licensed under the BSD 3-Clause License.  
-For more information, see the LICENSE file in the project root:  
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
@@ -52,8 +52,8 @@ console = Console()
 
 
 def main() -> None:
-    """Executes the JIT script by setting up the environment, 
-    allocating resources, starting necessary services, 
+    """Executes the JIT script by setting up the environment,
+    allocating resources, starting necessary services,
     and managing the workflow from staging in to staging out.
     """
 
@@ -69,7 +69,7 @@ def main() -> None:
 
     # Clean other jobs
     cancel_jit_jobs(settings)
-    
+
     # # 1.0 set env variables
     # set_env(settings)
 
@@ -80,8 +80,8 @@ def main() -> None:
     log_dir(settings)
 
     # 1.3 Mark execution as pending
-    log_execution(settings)    
-    
+    log_execution(settings)
+
     # 1.4 Get the address
     get_address_ftio(settings)
 
@@ -134,7 +134,7 @@ def main() -> None:
 
     # save the host files
     snapshot_directory(settings)
-    
+
     # 11.0 Soft kill
     soft_kill(settings)
 

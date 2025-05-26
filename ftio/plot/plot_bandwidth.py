@@ -1,5 +1,5 @@
-""" Function to plot the bandwidth from the JIT
-"""
+"""Function to plot the bandwidth from the JIT"""
+
 import json
 import os
 import argparse
@@ -46,9 +46,8 @@ def load_json_and_plot(filenames):
                 if "bandwidth" in sync_data:
                     print(f"found type:{sync_type}")
                     b = np.array(sync_data["bandwidth"].get("b_overlap_avr", []))
-                    t = np.array(sync_data["bandwidth"].get("t_overlap", []))  
+                    t = np.array(sync_data["bandwidth"].get("t_overlap", []))
                     break
-                    
 
         if filenames.index(filename) == 0:
             unit, order = set_unit(b)
@@ -78,7 +77,7 @@ def load_json_and_plot(filenames):
         yaxis_title=f"Bandwidth ({unit})",
         showlegend=True,
     )
-    fig = format_plot_and_ticks(fig, font_size=27,n_ticks=10)
+    fig = format_plot_and_ticks(fig, font_size=27, n_ticks=10)
 
     # Show the plot
     pio.show(fig)
@@ -108,9 +107,7 @@ def plot_bar_with_rich(
     terminal_width = terminal_width or int(
         0.95 * console.size.width
     )  # Detect terminal width if not provided
-    plot_width = int(
-        terminal_width * (width_percentage - 0.05)
-    )  # Width for the plot area
+    plot_width = int(terminal_width * (width_percentage - 0.05))  # Width for the plot area
 
     x = np.array(x[:])
     y = np.array(y[:])
@@ -128,9 +125,7 @@ def plot_bar_with_rich(
     # Normalize x to fit within the plot width
     x_min = min(x)
     x_max = max(x)
-    x_scaled = np.interp(x, (x_min, x_max), (0, plot_width - label_offset - 1)).astype(
-        int
-    )
+    x_scaled = np.interp(x, (x_min, x_max), (0, plot_width - label_offset - 1)).astype(int)
 
     # Create the plot grid ensuring no row exceeds plot width
 
@@ -173,15 +168,11 @@ def plot_bar_with_rich(
     # Adjust the alignment of the x-axis line and labels to account for the label_offset
 
     plot_str += f"\n{' ' * new_label_offset}└{'─' * (plot_width - len('└')-len(y_unit) -1)}>"  # Adjusted x-axis line
-    plot_str += (
-        f"\n{' ' * new_label_offset}{''.join(label_line)}"  # Adjusted x-axis label
-    )
+    plot_str += f"\n{' ' * new_label_offset}{''.join(label_line)}"  # Adjusted x-axis label
     plot_str = f" " * (label_offset + 2 + len(y_unit)) + "^\n" + plot_str
 
     # Create a panel with the plot
-    panel = Panel(
-        plot_str, title="Bandwidth Plot", border_style="bold cyan", width=terminal_width
-    )
+    panel = Panel(plot_str, title="Bandwidth Plot", border_style="bold cyan", width=terminal_width)
 
     # Display the plot
     console.print(panel)

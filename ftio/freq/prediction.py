@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Prediction:
     """
     A class to store and manipulate prediction data related to frequency analysis.
@@ -20,8 +21,16 @@ class Prediction:
         candidates (np.ndarray): Array of candidates used in autocorrelation or other analysis.
     """
 
-    def __init__(self, transformation: str = "", t_start: float = 0, t_end: float = 0, total_bytes: int = 0,
-                 sampled_freq: float = 0, ranks: int = 0, n_samples=0):
+    def __init__(
+        self,
+        transformation: str = "",
+        t_start: float = 0,
+        t_end: float = 0,
+        total_bytes: int = 0,
+        sampled_freq: float = 0,
+        ranks: int = 0,
+        n_samples=0,
+    ):
         self._source = transformation
         self._dominant_freq = np.array([])
         self._conf = np.array([])
@@ -35,7 +44,6 @@ class Prediction:
         self._n_samples = n_samples
         self._top_freqs = {}
         self._candidates = np.array([])
-
 
     @property
     def source(self):
@@ -52,12 +60,14 @@ class Prediction:
     @dominant_freq.setter
     def dominant_freq(self, value):
         # if single numeric, convert to np.array([value])
-        if  np.isscalar(value):
+        if np.isscalar(value):
             value = np.array([value])
         elif isinstance(value, list):
             value = np.array(value)
         if not isinstance(value, np.ndarray):
-            raise TypeError("dominant_freq must be a numpy ndarray, list convertible to ndarray, or a numeric scalar")
+            raise TypeError(
+                "dominant_freq must be a numpy ndarray, list convertible to ndarray, or a numeric scalar"
+            )
         self._dominant_freq = value
 
     @property
@@ -67,12 +77,14 @@ class Prediction:
     @conf.setter
     def conf(self, value):
         # same logic as dominant_freq
-        if  np.isscalar(value):
+        if np.isscalar(value):
             value = np.array([value])
         elif isinstance(value, list):
             value = np.array(value)
         if not isinstance(value, np.ndarray):
-            raise TypeError("conf must be a numpy ndarray, list convertible to ndarray, or a numeric scalar")
+            raise TypeError(
+                "conf must be a numpy ndarray, list convertible to ndarray, or a numeric scalar"
+            )
         self._conf = value
 
     @property
@@ -181,7 +193,6 @@ class Prediction:
             raise TypeError("candidates must be a numpy ndarray or list convertible to ndarray")
         self._candidates = value
 
-
     def get(self, key: str):
         """
         Retrieve the value for a given attribute.
@@ -275,14 +286,13 @@ class Prediction:
                 out_freq = self._dominant_freq[dominant_index]
         return out_freq, dominant_index
 
-
     def get_dominant_freq_amp_phi(self):
         dominant_index = self.get_dominant_index()
         if dominant_index is not None:
             return (
                 self._dominant_freq[dominant_index],
                 self._amp[dominant_index],
-                self._phi[dominant_index]
+                self._phi[dominant_index],
             )
         else:
             return np.nan, np.nan, np.nan
@@ -310,19 +320,19 @@ class Prediction:
             dict: A copy of all relevant instance attributes.
         """
         return {
-            'source': self._source,
-            'dominant_freq': self._dominant_freq,
-            'conf': self._conf,
-            'amp': self._amp,
-            'phi': self._phi,
-            't_start': self.t_start,
-            't_end': self._t_end,
-            'total_bytes': self._total_bytes,
-            'sampled_freq': self._freq,
-            'ranks': self._ranks,
-            'n_samples': self._n_samples,
-            'top_freqs': self._top_freqs,
-            'candidates': self._candidates
+            "source": self._source,
+            "dominant_freq": self._dominant_freq,
+            "conf": self._conf,
+            "amp": self._amp,
+            "phi": self._phi,
+            "t_start": self.t_start,
+            "t_end": self._t_end,
+            "total_bytes": self._total_bytes,
+            "sampled_freq": self._freq,
+            "ranks": self._ranks,
+            "n_samples": self._n_samples,
+            "top_freqs": self._top_freqs,
+            "candidates": self._candidates,
         }
 
     def __repr__(self):
@@ -349,7 +359,9 @@ class Prediction:
         elif isinstance(other, list):
             return other + [self.to_dict()]
         else:
-            raise TypeError(f"Unsupported operand type(s) for +: 'Prediction' and '{type(other).__name__}'")
+            raise TypeError(
+                f"Unsupported operand type(s) for +: 'Prediction' and '{type(other).__name__}'"
+            )
 
     def __bool__(self):
         """

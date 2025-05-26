@@ -1,6 +1,15 @@
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import Pool, cpu_count
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    BarColumn,
+    TaskProgressColumn,
+    TimeRemainingColumn,
+    TimeElapsedColumn,
+)
+
 
 def submit_tasks(worker_func, args_list, num_procs, use_futures):
     """
@@ -18,6 +27,7 @@ def submit_tasks(worker_func, args_list, num_procs, use_futures):
     else:
         with Pool(processes=num_procs) as pool:
             return [pool.apply_async(worker_func, args) for args in args_list]
+
 
 def receive_results(task_results, total_tasks, progress, task, use_futures):
     """
@@ -42,12 +52,12 @@ def receive_results(task_results, total_tasks, progress, task, use_futures):
                 result = future.result(timeout=120)
             except TimeoutError:
                 result = (None, *args, "[red bold] Timeout reached")
-            
+
             if result[0]:
                 processed_results.append(result)
             else:
                 failed_results.append(result)
-            
+
             counter += 1
             progress.console.print(f"Processed ({counter}/{total_tasks})")
             progress.update(task, completed=counter)
@@ -55,22 +65,23 @@ def receive_results(task_results, total_tasks, progress, task, use_futures):
         # Handle async results (multiprocessing.Pool)
         for async_result in task_results:
             result = async_result.get()
-            
+
             if result[0]:
                 processed_results.append(result)
             else:
                 failed_results.append(result)
-            
+
             counter += 1
             progress.console.print(f"Processed ({counter}/{total_tasks})")
             progress.update(task, completed=counter)
-    
+
     return processed_results, failed_results
+
 
 def parallel_processing(worker_func, args_list, num_procs=-1, use_futures=True):
     """
     Process tasks in parallel using either multiprocessing.Pool or ProcessPoolExecutor.
-    
+
     :param worker_func: Function to be executed in parallel.
     :param args_list: List of tuples containing arguments for worker_func.
     :param num_procs: Number of processes to use. Defaults to half of available CPUs.
@@ -79,7 +90,7 @@ def parallel_processing(worker_func, args_list, num_procs=-1, use_futures=True):
     """
     if num_procs == -1:
         num_procs = max(1, cpu_count() // 2)
-    
+
     total_tasks = len(args_list)
     processed_results = []
     failed_results = []
@@ -93,14 +104,16 @@ def parallel_processing(worker_func, args_list, num_procs=-1, use_futures=True):
         "[yellow]-- runtime",
         TimeElapsedColumn(),
     )
-    
+
     with progress:
         task = progress.add_task("[green]Processing tasks", total=total_tasks)
 
         # Step 1: Submit tasks
         task_results = submit_tasks(worker_func, args_list, num_procs, use_futures)
-        
+
         # Step 2: Receive results as they are completed
-        processed_results, failed_results = receive_results(task_results, total_tasks, progress, task, use_futures)
-    
+        processed_results, failed_results = receive_results(
+            task_results, total_tasks, progress, task, use_futures
+        )
+
     return processed_results, failed_results

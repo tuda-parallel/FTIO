@@ -1,31 +1,33 @@
 # import json
 import requests
 
+
 class MetricProxy:
     def __init__(self, url="http://localhost:1337"):
         self.url = url
 
     def jobs(self) -> dict:
-        return requests.get(f'{self.url}/profiles').json()
+        return requests.get(f"{self.url}/profiles").json()
 
-    def profile(self,jobid) -> dict:
-        return requests.get(f'{self.url}/profiles/get?jobid={jobid}').json()
+    def profile(self, jobid) -> dict:
+        return requests.get(f"{self.url}/profiles/get?jobid={jobid}").json()
 
-    def metric(self,jobid) -> dict:
-        return requests.get(f'{self.url}/trace/metrics/?job={jobid}').json()
+    def metric(self, jobid) -> dict:
+        return requests.get(f"{self.url}/trace/metrics/?job={jobid}").json()
 
-    def trace(self,jobid) -> dict:
-        return requests.get(f'{self.url}/trace/json?jobid={jobid}').json()
+    def trace(self, jobid) -> dict:
+        return requests.get(f"{self.url}/trace/json?jobid={jobid}").json()
 
-
-    def trace_metric(self,jobid,metric) -> dict:
-        return requests.get(f'{self.url}/trace/plot/?jobid={jobid}&filter={requests.utils.quote(metric)}').json()
+    def trace_metric(self, jobid, metric) -> dict:
+        return requests.get(
+            f"{self.url}/trace/plot/?jobid={jobid}&filter={requests.utils.quote(metric)}"
+        ).json()
 
     def jsonl(self, jobid) -> str:
-        return requests.get(f'{self.url}/model/download?jobid={jobid}').text
+        return requests.get(f"{self.url}/model/download?jobid={jobid}").text
 
     def models(self, jobid) -> dict:
-        return requests.get(f'{self.url}/model/get?jobid={jobid}').json()
+        return requests.get(f"{self.url}/model/get?jobid={jobid}").json()
 
     def online_models(self, jobid) -> dict:
         """Get models during runtime
@@ -36,11 +38,12 @@ class MetricProxy:
         Returns:
             dict: json file
         """
-        return requests.get(f'{self.url}/model/ftio?jobid={jobid}').json()
+        return requests.get(f"{self.url}/model/ftio?jobid={jobid}").json()
 
-    def plotmodel(self, jobid, metric, end, start=0, step=1) :
-        return requests.get(f'{self.url}/model/plot?jobid={jobid}&metric={requests.utils.quote(metric)}&start={start}&end={end}&step={step}').json()
-
+    def plotmodel(self, jobid, metric, end, start=0, step=1):
+        return requests.get(
+            f"{self.url}/model/plot?jobid={jobid}&metric={requests.utils.quote(metric)}&start={start}&end={end}&step={step}"
+        ).json()
 
 
 # # Client OBJECT
@@ -63,11 +66,10 @@ class MetricProxy:
 # profile = mp.profile(id_of_first_job)
 # #print(json.dumps(profile, indent=4))
 
-# #trace for cpu 
+# #trace for cpu
 # proxy_cpu_load_average_percent =mp.trace_metric(id_of_first_job,"proxy_cpu_load_average_percent")
 
 # first_counter_name = profile["counters"][0]["name"]
 
 # plot = mp.plotmodel(id_of_first_job, first_counter_name, 64)
 # print(json.dumps(plot, indent=4))
-

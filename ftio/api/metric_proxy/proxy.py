@@ -18,7 +18,9 @@ ranks = 32
 
 # command line arguments
 argv = ["-e", "plotly"]  # ["-e", "no"] to disable the plot
-argv.extend(["-n","2"]) # finds up to n frequencies. Comment this out to go back to the default version
+argv.extend(
+    ["-n", "2"]
+)  # finds up to n frequencies. Comment this out to go back to the default version
 # ---------------------------------
 
 # set up data
@@ -34,7 +36,7 @@ prediction, analysis_figures = core(data, args)
 display_prediction(args, prediction)
 analysis_figures.show()
 
-# ------------------ 
+# ------------------
 
 # Post processing
 if prediction and len(prediction["dominant_freq"]) != 0:

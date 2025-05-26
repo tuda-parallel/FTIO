@@ -9,6 +9,7 @@ import numpy as np
 from scipy.signal import find_peaks
 from rich.panel import Panel
 from argparse import Namespace
+
 # from rich.padding import Padding
 import ftio.freq.discretize as dis
 from ftio.freq.helper import MyConsole
@@ -18,8 +19,9 @@ from ftio.freq.prediction import Prediction
 from ftio.freq._analysis_figures import AnalysisFigures
 
 
-
-def find_autocorrelation(args:Namespace, data: dict, analysis_figures:AnalysisFigures, share:SharedSignalData) -> Prediction:
+def find_autocorrelation(
+    args: Namespace, data: dict, analysis_figures: AnalysisFigures, share: SharedSignalData
+) -> Prediction:
     """Finds the period using autocorreleation
 
     Args:
@@ -39,15 +41,16 @@ def find_autocorrelation(args:Namespace, data: dict, analysis_figures:AnalysisFi
     tik = time.time()
     if args.autocorrelation:
         console.print("[cyan]Executing:[/] Autocorrelation\n")
-        prediction.set_from_dict({
-        "source":"autocorrelation",
-        "dominant_freq": np.array([]),
-        "conf": np.array([]),
-        "t_start": 0,
-        "t_end": 0,
-        "total_bytes": 0,
-        })
-
+        prediction.set_from_dict(
+            {
+                "source": "autocorrelation",
+                "dominant_freq": np.array([]),
+                "conf": np.array([]),
+                "t_start": 0,
+                "t_end": 0,
+                "total_bytes": 0,
+            }
+        )
 
         # Take data if already aviable from previous step
         if not share.is_empty():
@@ -89,20 +92,22 @@ def find_autocorrelation(args:Namespace, data: dict, analysis_figures:AnalysisFi
 
         res = find_fd_autocorrelation(args, b_sampled, freq, analysis_figures)
 
-        #save the results
-        prediction.dominant_freq =  1/res["periodicity"]  if res["periodicity"] > 0 else np.nan
-        prediction.conf =  res["conf"]
-        prediction.t_start =  t_s
-        prediction.t_end =  t_e
-        prediction.total_bytes =  total_bytes
-        prediction.freq =  freq
-        prediction.candidates =  candidates
+        # save the results
+        prediction.dominant_freq = 1 / res["periodicity"] if res["periodicity"] > 0 else np.nan
+        prediction.conf = res["conf"]
+        prediction.t_start = t_s
+        prediction.t_end = t_e
+        prediction.total_bytes = total_bytes
+        prediction.freq = freq
+        prediction.candidates = candidates
         console.print(f"\n[cyan]Autocorrelation finished:[/] {time.time() - tik:.3f} s")
-        
+
     return prediction
 
 
-def filter_outliers(freq: float, candidates: np.ndarray, weights: np.ndarray) -> tuple[np.ndarray, str]:
+def filter_outliers(
+    freq: float, candidates: np.ndarray, weights: np.ndarray
+) -> tuple[np.ndarray, str]:
     """removes outliers using either qunatil method or Z-score
 
     Args:
@@ -117,8 +122,8 @@ def filter_outliers(freq: float, candidates: np.ndarray, weights: np.ndarray) ->
     outliers = np.array([])
     # remove outliers:
     if len(candidates) > 0 and any(candidates > 0):
-        ind = np.where(candidates > 1/freq)
-        candidates = candidates[ind] # remove everythin above 10 Hz
+        ind = np.where(candidates > 1 / freq)
+        candidates = candidates[ind]  # remove everythin above 10 Hz
         if len(weights > 0):
             weights = weights[ind]
         method = "z"
@@ -130,20 +135,24 @@ def filter_outliers(freq: float, candidates: np.ndarray, weights: np.ndarray) ->
             q3 = np.percentile(candidates, 75)
             iqr = q3 - q1
             threshold = 1.5 * iqr
-            outliers = np.where(
-                (candidates < q1 - threshold) | (candidates > q3 + threshold)
-            )
+            outliers = np.where((candidates < q1 - threshold) | (candidates > q3 + threshold))
         elif "z" in method:
             text += "Filtering method: [purple]Z-score with weighteed mean[/]\n"
             # With Zscore:
             mean = np.average(candidates, weights=weights) if len(weights) > 0 else 0
             # std = np.std(candidates)
-            std =  np.sqrt(np.abs(np.average((candidates-mean)**2, weights=weights))) if len(weights) > 0 else 0
-            text += f"Wighted mean is [purple]{mean:.3f}[/] and weighted std. is [purple]{std:.3f}[/]\n"
-            z_score = np.abs((candidates - mean) / std) if std != 0  else np.array([])
+            std = (
+                np.sqrt(np.abs(np.average((candidates - mean) ** 2, weights=weights)))
+                if len(weights) > 0
+                else 0
+            )
+            text += (
+                f"Wighted mean is [purple]{mean:.3f}[/] and weighted std. is [purple]{std:.3f}[/]\n"
+            )
+            z_score = np.abs((candidates - mean) / std) if std != 0 else np.array([])
             outliers = np.where(z_score > 1)
             text += f"Z-score is [purple]{print_array(z_score)}[/]\n"
-        
+
         text += (
             f"[purple]{len(candidates)}[/] period candidates found:\n"
             f"[purple]{print_array(candidates)}[/]\n\n"
@@ -155,7 +164,9 @@ def filter_outliers(freq: float, candidates: np.ndarray, weights: np.ndarray) ->
     return outliers, text
 
 
-def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float, analysis_figures:AnalysisFigures) -> dict:
+def find_fd_autocorrelation(
+    args: Namespace, b_sampled: np.ndarray, freq: float, analysis_figures: AnalysisFigures
+) -> dict:
     """
     Computes the autocorrelation of a sampled signal, detects peaks, and calculates periodicity and confidence
     based on the detected periods.
@@ -167,7 +178,7 @@ def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float,
         analysis_figures (AnalysisFigures): Data and plot figures.
 
     Returns:
-        dict: A dictionary containing the autocorrelation, peak locations, weights, 
+        dict: A dictionary containing the autocorrelation, peak locations, weights,
                 calculated periodicity, and confidence level.
     """
     # Compute autocorrelation of the sampled signal
@@ -176,14 +187,14 @@ def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float,
     # Finding peak locations and calculating the average time differences between them
     peaks, prop = find_peaks(acorr, height=0.15)
     candidates = np.diff(peaks) / freq
-    weights = np.diff(prop['peak_heights'])
+    weights = np.diff(prop["peak_heights"])
 
     # Removing outliers
     outliers, text = filter_outliers(freq, candidates, weights)
     if outliers:
         candidates = np.delete(candidates, outliers)
         weights = np.delete(weights, outliers)
-        
+
     # Calculating period and its statistics
     if candidates.size > 0:
         mean = np.average(candidates, weights=weights)
@@ -209,7 +220,15 @@ def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float,
     )
     console = MyConsole()
     console.set(args.verbose)
-    console.print(Panel.fit(text[:-1], style="white", border_style="purple", title="Autocorrelation", title_align="left"))
+    console.print(
+        Panel.fit(
+            text[:-1],
+            style="white",
+            border_style="purple",
+            title="Autocorrelation",
+            title_align="left",
+        )
+    )
 
     # plot
     if any(x in args.engine for x in ["mat", "plot"]):
@@ -218,7 +237,15 @@ def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float,
         analysis_figures.add_figure([fig], "Autocorrelation")
         console.print(f" --- Done --- \n")
 
-    return {"autocorrelation": acorr, "candidates": candidates, "peaks": peaks, "outliers": outliers, "weights": weights, "periodicity": periodicity, "conf": conf}
+    return {
+        "autocorrelation": acorr,
+        "candidates": candidates,
+        "peaks": peaks,
+        "outliers": outliers,
+        "weights": weights,
+        "periodicity": periodicity,
+        "conf": conf,
+    }
 
 
 def autocorrelation(arr: np.ndarray) -> np.ndarray:
@@ -248,11 +275,11 @@ def autocorrelation(arr: np.ndarray) -> np.ndarray:
     return acorr
 
 
-def print_array(array:np.ndarray) -> str:
+def print_array(array: np.ndarray) -> str:
     out = ""
     if len(array) == 0:
-        out =" "
+        out = " "
     for i in array:
         out += f" {i:.2f}"
 
-    return "["+out[1:]+"]"
+    return "[" + out[1:] + "]"

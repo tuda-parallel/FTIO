@@ -14,7 +14,8 @@ from ftio.freq.prediction import Prediction
 
 
 def display_prediction(
-    argv: str | Namespace = "ftio", prediction: Prediction | list[Prediction] = Prediction(),
+    argv: str | Namespace = "ftio",
+    prediction: Prediction | list[Prediction] = Prediction(),
 ) -> None:
     """
     Displays the result of the prediction from ftio.
@@ -43,15 +44,18 @@ def display_prediction(
             )
         else:
             console.info(
-                "[cyan underline]Prediction results:[/]\n"
-                "[red]No dominant frequency found[/]\n"
+                "[cyan underline]Prediction results:[/]\n" "[red]No dominant frequency found[/]\n"
             )
     # If -n is provided, print the top frequencies with their confidence and amplitude in a table
     if isinstance(argv, Namespace) and argv.n_freq > 0:
         console.info(f"[cyan underline]Top {int(argv.n_freq)} Frequencies:[/]")
         if prediction.top_freqs:
             freq_array = prediction.top_freqs["freq"]
-            conf_array = np.round(np.where(np.isinf(prediction.top_freqs["conf"]), 1, prediction.top_freqs["conf"]) * 100, 2)
+            conf_array = np.round(
+                np.where(np.isinf(prediction.top_freqs["conf"]), 1, prediction.top_freqs["conf"])
+                * 100,
+                2,
+            )
             amp_array = prediction.top_freqs["amp"]
             phi_array = prediction.top_freqs["phi"]
 
@@ -66,10 +70,16 @@ def display_prediction(
             # Add frequency data
             for i, freq in enumerate(freq_array):
                 if freq == 0 or freq == prediction.freq / 2:
-                    cosine_wave = f"{1 / prediction.n_samples * amp_array[i]:.3e}*cos(2\u03C0*{freq:.3e}*t{' +' if phi_array[i] >= 0 else ' -'}{abs(phi_array[i]):.3e})"
+                    cosine_wave = f"{1 / prediction.n_samples * amp_array[i]:.3e}*cos(2\u03c0*{freq:.3e}*t{' +' if phi_array[i] >= 0 else ' -'}{abs(phi_array[i]):.3e})"
                 else:
-                    cosine_wave = f"{2 / prediction.n_samples * amp_array[i]:.3e}*cos(2\u03C0*{freq:.3e}*t{' +' if phi_array[i] >= 0 else ' -'}{abs(phi_array[i]):.3e})"
-                table.add_row(f"{freq:.3e}", f"{conf_array[i]:.2f}", f"{amp_array[i]:.3e}",f"{phi_array[i]:.3e}",cosine_wave)
+                    cosine_wave = f"{2 / prediction.n_samples * amp_array[i]:.3e}*cos(2\u03c0*{freq:.3e}*t{' +' if phi_array[i] >= 0 else ' -'}{abs(phi_array[i]):.3e})"
+                table.add_row(
+                    f"{freq:.3e}",
+                    f"{conf_array[i]:.2f}",
+                    f"{amp_array[i]:.3e}",
+                    f"{phi_array[i]:.3e}",
+                    cosine_wave,
+                )
                 if i == 0:
                     description = cosine_wave
                 else:

@@ -2,6 +2,7 @@ from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.setup_helper import flaged_call, jit_print, create_hostfile
 from ftio.api.gekkoFs.jit.execute_and_wait import execute_block
 
+
 def init_gekko(settings: JitSettings) -> None:
     """Creates GekkoFs hostfile and directories (root and mount)
 
@@ -10,7 +11,7 @@ def init_gekko(settings: JitSettings) -> None:
     """
     if not settings.exclude_daemon:
         create_hostfile(settings)
-        calls =[]
+        calls = []
         # set debug flag
         # if settings.cluster:
         #     # Create directories
@@ -31,7 +32,11 @@ def init_gekko(settings: JitSettings) -> None:
         calls.append(f"mkdir -p {settings.gkfs_rootdir}")
         jit_print("[cyan]>> Creating directories[/]")
         for call in calls:
-            tmp = flaged_call(settings, call, nodes=settings.app_nodes, procs_per_node=1, exclude=["ftio","demon", "proxy","cargo"])
+            tmp = flaged_call(
+                settings,
+                call,
+                nodes=settings.app_nodes,
+                procs_per_node=1,
+                exclude=["ftio", "demon", "proxy", "cargo"],
+            )
             _ = execute_block(tmp)
-
-

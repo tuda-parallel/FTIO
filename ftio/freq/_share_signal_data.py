@@ -26,7 +26,6 @@ class SharedSignalData:
     def __init__(self):
         self.data = {}
 
-
     def set_data(self, b_sampled=None, freq=None, t_start=None, t_end=None, total_bytes=None):
         """
         Set shared signal analysis data.
@@ -88,7 +87,6 @@ class SharedSignalData:
         """
         return len(self.data) == 0
 
-
     def has_key(self, key):
         """
         Check if a specific key exists in the shared data.
@@ -100,7 +98,6 @@ class SharedSignalData:
             bool: True if the key exists, False otherwise.
         """
         return key in self.data
-
 
     def __str__(self):
         """

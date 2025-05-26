@@ -7,15 +7,19 @@ import plotly.graph_objects as go
 import plotly.subplots as sp
 import numpy as np
 
+
 def main(argv=sys.argv[1:]):
     # Parse command-line arguments for file paths
     if not argv:
-        argv=["/d/traces/traces_from_plafrim/ftio_flat.csv"]
-        
+        argv = ["/d/traces/traces_from_plafrim/ftio_flat.csv"]
+
     parser = argparse.ArgumentParser(description="Process some CSV files.")
     parser.add_argument(
-        "file_paths", metavar="F", type=str, nargs="+", help="Paths to the CSV files",
-        
+        "file_paths",
+        metavar="F",
+        type=str,
+        nargs="+",
+        help="Paths to the CSV files",
     )
     args = parser.parse_args(argv)
 
@@ -41,7 +45,7 @@ def main(argv=sys.argv[1:]):
         combined_df, id_vars=["Source File"], var_name="Metric", value_name="Value"
     )
 
-    # plot 
+    # plot
     # single_plot(combined_df_long)
     sub_plots(combined_df_long)
 
@@ -74,23 +78,23 @@ def sub_plots(df):
     # Get unique metrics
     metrics = df["Metric"].unique()
     n = len(df["Source File"].unique())
-    metrics = metrics[:-2] #remove jobid and file name
+    metrics = metrics[:-2]  # remove jobid and file name
     num_metrics = len(metrics)
 
     order = []
     subplot_titles = []
-    fields = ["read","write","both"]
+    fields = ["read", "write", "both"]
     for i, field in enumerate(fields):
         row = 0
-        for j,metric in enumerate(metrics):
+        for j, metric in enumerate(metrics):
             if field in metric:
-                row  += 1 
+                row += 1
                 subplot_titles.append(metric)
-                order.append([i+1,row])
+                order.append([i + 1, row])
 
     suffixes = []
     for title in subplot_titles:
-        suffix = title.split('_', 1)[1]  # Split only at the first underscore
+        suffix = title.split("_", 1)[1]  # Split only at the first underscore
         if suffix not in suffixes:
             suffixes.append(suffix)
 
@@ -104,14 +108,12 @@ def sub_plots(df):
 
     col = 0
     for i in order:
-        col = max(i[0],col)
+        col = max(i[0], col)
 
-    row = int(np.ceil(num_metrics/(col)))
+    row = int(np.ceil(num_metrics / (col)))
 
     # Create subplots with each row representing a metric
-    fig = sp.make_subplots(
-        rows=row, cols=col, subplot_titles=subplot_titles
-    )
+    fig = sp.make_subplots(rows=row, cols=col, subplot_titles=subplot_titles)
 
     # Loop through each metric and add a box plot to the corresponding subplot
     for i, metric in enumerate(metrics):
@@ -120,18 +122,20 @@ def sub_plots(df):
 
         # Create a box plot for the current metric
         box_trace = go.Box(
-            x=metric_df["Source File"], y=metric_df["Value"], name=metric,
+            x=metric_df["Source File"],
+            y=metric_df["Value"],
+            name=metric,
             # hide points
-            boxpoints=False, 
+            boxpoints=False,
             # std and mean
-            boxmean='sd'
+            boxmean="sd",
         )
         # Clean the 'Value' column: Convert to numeric, coerce errors to NaN
         # metric_df['Value'] = pd.to_numeric(metric_df['Value'], errors='coerce')
-        metric_df.loc[:, 'Value'] = pd.to_numeric(metric_df['Value'], errors='coerce')
-        
+        metric_df.loc[:, "Value"] = pd.to_numeric(metric_df["Value"], errors="coerce")
+
         # Drop rows where 'Value' could not be converted to numeric (i.e., NaN)
-        metric_df = metric_df.dropna(subset=['Value'])
+        metric_df = metric_df.dropna(subset=["Value"])
 
         # Add the box plot to the appropriate subplot
         fig.add_trace(box_trace, row=order[i][1], col=order[i][0])
@@ -143,14 +147,14 @@ def sub_plots(df):
                 yshift=10,
                 showarrow=False,
                 col=order[i][0],
-                row=order[i][1]
+                row=order[i][1],
             )
 
     # Update layout for the entire figure
     fig.update_layout(
         title="Box Plots by Metric",
         height=400 * row,  # Adjust height for number of metrics
-        width=300 +80*col*n,  # Adjust width for visibility
+        width=300 + 80 * col * n,  # Adjust width for visibility
         xaxis_title="Source File",
         yaxis_title="Values",
         showlegend=False,  # Hide legend to reduce clutter

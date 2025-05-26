@@ -1,5 +1,4 @@
-""" Wavelet plot methods 
-"""
+"""Wavelet plot methods"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,6 +10,7 @@ from argparse import Namespace
 ####################################################################################################
 # Deprecated functions
 ####################################################################################################
+
 
 def plot_wave_cont(
     b_sampled: np.ndarray,
@@ -60,6 +60,7 @@ def plot_wave_cont(
     fig.tight_layout()
     plt.show()
     return fig
+
 
 ####################################################################################################
 # Matplotlib plotting functions
@@ -214,14 +215,21 @@ def matplot_plot_scales(
 
     # Plot the wavelet power spectrum (all scales)
     # Make sure the power_spectrum has the correct shape: [num_scales, num_time_points]
-    axes[1].imshow(power_spectrum, aspect='auto', extent=[t[0], t[-1], frequencies[-1], frequencies[0]], cmap='jet')
+    axes[1].imshow(
+        power_spectrum,
+        aspect="auto",
+        extent=[t[0], t[-1], frequencies[-1], frequencies[0]],
+        cmap="jet",
+    )
     axes[1].set_xlabel("Time")
     axes[1].set_ylabel("Frequency")
     axes[1].set_title("Wavelet Power Spectrum (All Scales)")
-    
+
     # Plot the power spectrum at each scale
     for i, scale in enumerate(scales):
-        axes[i + 2].plot(t, power_spectrum[i, :], label=f"Scale {scale:.3e} (Frequency {frequencies[i]:.3e})")
+        axes[i + 2].plot(
+            t, power_spectrum[i, :], label=f"Scale {scale:.3e} (Frequency {frequencies[i]:.3e})"
+        )
         axes[i + 2].set_xlabel("Time")
         axes[i + 2].set_ylabel("Power")
         axes[i + 2].legend()
@@ -232,12 +240,13 @@ def matplot_plot_scales(
 
     return fig
 
+
 def matplotlib_plot_scales_all_in_one(
     t: np.ndarray,
     b: np.ndarray,
     power_spectrum: np.ndarray,
     frequencies: np.ndarray,
-    scales: np.ndarray
+    scales: np.ndarray,
 ) -> plt.Figure:
     """
     Creates a Matplotlib figure showing the bandwidth over time and the power spectrum
@@ -260,11 +269,11 @@ def matplotlib_plot_scales_all_in_one(
     """
     fig, ax = plt.subplots()
     ax.plot(t, b, label="Bandwidth over time", color="blue")
-    
+
     for i, scale in enumerate(scales):
         label = f"Power at Scale {scale:.3e} (freq. {frequencies[i]:.3e} -- period {1/frequencies[i] if frequencies[i] > 0 else 0:.3e})"
         ax.plot(t, power_spectrum[i, :], label=label)
-    
+
     ax.set_title("Wavelet Power Spectrum and Time Series")
     ax.set_xlabel("Time")
     ax.set_ylabel("Amplitude / Power")
@@ -366,7 +375,7 @@ def plotly_wave_cont_spectrum(
 
     heatmap = go.Heatmap(x=t, y=frequencies, z=power_spectrum, colorscale="viridis")
     if subplot:
-        fig.add_trace(heatmap, row=subplot[0], col=subplot[1]) 
+        fig.add_trace(heatmap, row=subplot[0], col=subplot[1])
         fig.update_xaxes(title_text="Time (seconds)", row=subplot[0], col=subplot[1])
         fig.update_yaxes(title_text="Frequencies (Hz)", row=subplot[0], col=subplot[1])
     else:
@@ -378,7 +387,6 @@ def plotly_wave_cont_spectrum(
         )
 
     return fig
-
 
 
 def plotly_wave_cont_and_spectrum(
@@ -416,9 +424,7 @@ def plotly_wave_cont_and_spectrum(
     )
 
     fig = plotly_wave_cont_spectrum(t, frequencies, power_spectrum, subplot=[1, 1], fig=fig)
-    fig = plotly_dominant_scale(
-        t, dominant_power, label, peaks, subplot=[2, 1], fig=fig
-    )
+    fig = plotly_dominant_scale(t, dominant_power, label, peaks, subplot=[2, 1], fig=fig)
 
     for i in range(1, rows):
         fig.update_xaxes(showticklabels=True, row=i, col=1)
@@ -498,8 +504,8 @@ def plotly_plot_scales_all_in_one(
     power_spectrum: np.ndarray,
     frequencies: np.ndarray,
     scales: np.ndarray,
-    peaks: np.ndarray = np.array([])
-)-> go.Figure:
+    peaks: np.ndarray = np.array([]),
+) -> go.Figure:
     """
     Creates a Plotly figure showing the bandwidth over time and the power spectrum
     at different scales.
@@ -519,7 +525,9 @@ def plotly_plot_scales_all_in_one(
     Returns:
         go.Figure: Plotly figure object.
     """
-    names = ["bandwidth over time",]
+    names = [
+        "bandwidth over time",
+    ]
     names.extend(
         [
             f"Power at Scale {scale:.3e} (freq. {frequencies[i]:.3e} -- period {1/frequencies[i] if frequencies[i] > 0 else 0:.3e})"
@@ -527,29 +535,27 @@ def plotly_plot_scales_all_in_one(
         ]
     )
     fig = go.Figure()
-    fig.add_trace(
-        go.Scatter(x=t, y=b, mode="lines", name=names[0], line=dict(color="blue"))
-    )
+    fig.add_trace(go.Scatter(x=t, y=b, mode="lines", name=names[0], line=dict(color="blue")))
     for i, scale in enumerate(scales):
         fig.add_trace(
             go.Scatter(
                 x=t,
                 y=power_spectrum[i, :],
                 mode="lines",
-                name=names[i+1],
+                name=names[i + 1],
             )
-            )
-        if len(peaks) > 0 :
+        )
+        if len(peaks) > 0:
             fig.add_trace(
-            go.Scatter(
-                x=t[peaks[i]],
-                y=power_spectrum[i, peaks[i]],
-                mode="markers",
-                marker=dict(color="red"),
-                name=names[i+1].replace("Power","Peaks"),
+                go.Scatter(
+                    x=t[peaks[i]],
+                    y=power_spectrum[i, peaks[i]],
+                    mode="markers",
+                    marker=dict(color="red"),
+                    name=names[i + 1].replace("Power", "Peaks"),
+                )
             )
-            )
-    
+
     fig.update_layout(
         title="Wavelet Power Spectrum and Time Series",
         xaxis_title="Time",
@@ -607,6 +613,7 @@ def plot_wave_cont_and_spectrum(
 
     return fig
 
+
 def plot_wave_cont_spectrum(
     args: Namespace,
     t: np.ndarray,
@@ -628,11 +635,7 @@ def plot_wave_cont_spectrum(
     if "plotly" in args.engine:
         fig = plotly_wave_cont_spectrum(t, frequencies, power_spectrum_all_scales)
     else:
-        fig = matplot_wave_cont_spectrum(
-            t,
-            frequencies,
-            power_spectrum_all_scales
-        )
+        fig = matplot_wave_cont_spectrum(t, frequencies, power_spectrum_all_scales)
 
     return fig
 
@@ -666,7 +669,7 @@ def plot_dominant_scale(
 
 
 def plot_scales(
-    args: Namespace, 
+    args: Namespace,
     t: np.ndarray,
     b: np.ndarray,
     power_spectrum: np.ndarray,
@@ -697,9 +700,8 @@ def plot_scales(
     return fig
 
 
-
 def plot_scales_all_in_one(
-    args: Namespace, 
+    args: Namespace,
     t: np.ndarray,
     b: np.ndarray,
     power_spectrum: np.ndarray,
@@ -727,4 +729,3 @@ def plot_scales_all_in_one(
         fig = matplotlib_plot_scales_all_in_one(t, b, power_spectrum, frequencies, scales)
 
     return fig
-

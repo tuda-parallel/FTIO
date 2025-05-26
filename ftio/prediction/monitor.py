@@ -53,9 +53,7 @@ def monitor_stat(name: str, _cached_stamp: str, procs: list) -> tuple[str, list]
             stream = os.popen(f"stat -c %z {name} 2>&1")
             stamp = stream.read()
             if stamp != _cached_stamp:
-                CONSOLE.print(
-                    f"[purple][PREDICTOR][/][green bold] Stamp changed[/] to {stamp}"
-                )
+                CONSOLE.print(f"[purple][PREDICTOR][/][green bold] Stamp changed[/] to {stamp}")
                 sleep(0.2)
                 return stamp, procs
 
@@ -158,6 +156,4 @@ class watcher:
         stamp = os.stat(self.absolute_name).st_mtime
         if self.stamp != stamp:
             self.flag = False
-            CONSOLE.print(
-                f"[purple][PREDICTOR][/][green bold] Stamp changed[/] to {stamp}"
-            )
+            CONSOLE.print(f"[purple][PREDICTOR][/][green bold] Stamp changed[/] to {stamp}")

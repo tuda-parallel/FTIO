@@ -44,13 +44,13 @@ def decomposition_level(args: Namespace, n: int) -> int:
     level = args.level
     console = MyConsole(True)
     console.print(f"[green]Decomposition level is {level}[/]")
-    
+
     if args.level == 0:
         if "wave_cont" in args.transformation:
             level = 10
             console.print(f"[green]Decomposition level set to {level}[/]")
         else:
-            level = pywt.dwt_max_level(n, args.wavelet)  
+            level = pywt.dwt_max_level(n, args.wavelet)
             console.print(f"[green]Decomposition level optimally adjusted to {level}[/]")
 
     if "wave_cont" in args.transformation:
@@ -87,7 +87,6 @@ def check_wavelet(wavelet: str, mode: str = "discrete") -> None:
         return
 
 
-
 def wavelet_freq_bands(f_s: float, levels: int):
     """
     Compute frequency ranges for each wavelet decomposition level.
@@ -95,29 +94,29 @@ def wavelet_freq_bands(f_s: float, levels: int):
     Parameters:
         f_ (float): Sampling frequency (Hz)
         levels (int): Number of decomposition levels
-    
+
     Returns:
         np.ndarray: 2D array with low and high frequency ranges for each level.
     """
-    
-    low_freq = f_s/ 2 ** (np.arange(start=levels, stop=0, step=-1) + 1)
-    high_freq  = f_s/ 2**np.arange(start=levels, stop=0, step=-1)
-    if len(low_freq) > 0 :
-        high_freq = np.insert(high_freq,0,low_freq[0])
-        low_freq = np.insert(low_freq,0,0)
-    
-    return np.column_stack((low_freq, high_freq ))  # High frequencies are higher at finer levels
+
+    low_freq = f_s / 2 ** (np.arange(start=levels, stop=0, step=-1) + 1)
+    high_freq = f_s / 2 ** np.arange(start=levels, stop=0, step=-1)
+    if len(low_freq) > 0:
+        high_freq = np.insert(high_freq, 0, low_freq[0])
+        low_freq = np.insert(low_freq, 0, 0)
+
+    return np.column_stack((low_freq, high_freq))  # High frequencies are higher at finer levels
 
 
-def upsample_coefficients(coeffs:list[np.ndarray], wavelet='db1', signal_length:int = 0):
+def upsample_coefficients(coeffs: list[np.ndarray], wavelet="db1", signal_length: int = 0):
     """
     Extend wavelet coefficients to the same length as the original signal using upcoef.
-    
+
     Parameters:
         coeffs (list): List of wavelet coefficients (approximations and details) for each level.
         wavelet (str): The type of wavelet used (default is 'db1').
         signal_length (int): The length of the original signal to extend the coefficients to.
-    
+
     Returns:
         list: List of coefficients extended to the length of the original signal.
     """
@@ -127,11 +126,11 @@ def upsample_coefficients(coeffs:list[np.ndarray], wavelet='db1', signal_length:
         # Extend the coefficients using pywt.upcoef
         if i == 0:
             # Approximation coefficients (cA)
-            reconstructed = pywt.upcoef('a', coeffs[0], wavelet, level=level-1)[:signal_length]
+            reconstructed = pywt.upcoef("a", coeffs[0], wavelet, level=level - 1)[:signal_length]
         else:
             # Detail coefficients (cD)
-            reconstructed = pywt.upcoef('d', coeffs[i], wavelet, level=level-i)[:signal_length]
-        
+            reconstructed = pywt.upcoef("d", coeffs[i], wavelet, level=level - i)[:signal_length]
+
         coeffs_stretched.append(reconstructed)
-    
+
     return np.array(coeffs_stretched)

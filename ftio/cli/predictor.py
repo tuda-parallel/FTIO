@@ -1,5 +1,4 @@
-"""This functions performs the prediction with the the help of ftio.py
-"""
+"""This functions performs the prediction with the the help of ftio.py"""
 
 from __future__ import annotations
 import sys
@@ -20,7 +19,6 @@ def main(args: list[str] = sys.argv) -> None:
     print_info("Predictor", False)
     shared_resources = SharedResources()
     mode = "procs"  # "procs" or "pool"
-
 
     if "pool" in mode.lower():
         # prediction with a Pool of process and a callback mechanism

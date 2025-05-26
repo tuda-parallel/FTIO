@@ -28,30 +28,41 @@ def parse_args():
     # file = '/d/sim/metric_proxy/traces/Mixed_1x8_5.json'file = /d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json'
     # file = '/d/github/FTIO/ftio/api/metric_proxy/new_traces/imbio.json'
     # file = '/d/github/FTIO/ftio/api/metric_proxy/new_traces/wacom.json'
-    file = '/d/github/FTIO/ftio/api/metric_proxy/new_traces/wacoml.json'
+    file = "/d/github/FTIO/ftio/api/metric_proxy/new_traces/wacoml.json"
     # file = '/d/github/FTIO/ftio/api/metric_proxy/new_traces/lulesh_8_procs.json'
     # file = '/d/github/FTIO/ftio/api/metric_proxy/new_traces/lulesh_27_procs.json'
 
     parser = argparse.ArgumentParser(
-        description='Executes FTIO in parallel on a JSON file from the proxy or by directly communicating with the proxy')
+        description="Executes FTIO in parallel on a JSON file from the proxy or by directly communicating with the proxy"
+    )
     # settings in case the proxy is not running an an JSON file has been created
     parser.add_argument(
-        '--file',
+        "--file",
         type=str,
-        nargs='?',  # '*' allows zero or more filenames
+        nargs="?",  # '*' allows zero or more filenames
         default=file,
-        help='The paths to the JSON file from the proxy'
+        help="The paths to the JSON file from the proxy",
     )
 
     # Settings in case the Proxy is running
-    parser.add_argument('--proxy', action='store_true', default=False,
-                        help='Weather to use the proxy HTTP endpoints or not')
-    parser.add_argument('-j', '--job_id', type=str, default='', help='Job ID to use with the proxy')
-    parser.add_argument('-m', '--metric', type=str, default='', help='applies FTIO to a specific metric')
+    parser.add_argument(
+        "--proxy",
+        action="store_true",
+        default=False,
+        help="Weather to use the proxy HTTP endpoints or not",
+    )
+    parser.add_argument("-j", "--job_id", type=str, default="", help="Job ID to use with the proxy")
+    parser.add_argument(
+        "-m", "--metric", type=str, default="", help="applies FTIO to a specific metric"
+    )
 
-    # Other settings 
-    parser.add_argument('--disable_parallel', action='store_true', default=False, help='parallel or not')
-    parser.add_argument('-S', '--sample_freq_proxy', type=float, default=1e3, help='Sample rate used in proxy')
+    # Other settings
+    parser.add_argument(
+        "--disable_parallel", action="store_true", default=False, help="parallel or not"
+    )
+    parser.add_argument(
+        "-S", "--sample_freq_proxy", type=float, default=1e3, help="Sample rate used in proxy"
+    )
     parsed_args, unknown = parser.parse_known_args()
     parsed_args.ftio_args = unknown
     return parsed_args
@@ -62,15 +73,15 @@ def main(args: argparse.Namespace = parse_args()) -> None:
     show = False  # shows the results from FTIO
     pools = False  # pools or future
     if args.metric:
-        exclude = ['time', 'hits', 'proxy']
+        exclude = ["time", "hits", "proxy"]
     else:
-        exclude = ['size', 'hits', 'proxy']
+        exclude = ["size", "hits", "proxy"]
 
-    if ftio_args and '-e' not in ftio_args:
+    if ftio_args and "-e" not in ftio_args:
         if args.metric:
-            ftio_args.extend(['-e', 'plotly'])
+            ftio_args.extend(["-e", "plotly"])
         else:
-            ftio_args.extend(['-e', 'no'])
+            ftio_args.extend(["-e", "no"])
 
     # finds up to n frequencies. Comment this out to go back to the default version
     # ftio_args.extend(['-n', '10'])
@@ -80,24 +91,28 @@ def main(args: argparse.Namespace = parse_args()) -> None:
         mp = MetricProxy()
         if not args.job_id:
             jobs = mp.jobs()
-            job_id = jobs[0]['jobid']
+            job_id = jobs[0]["jobid"]
         else:
             job_id = args.job_id
 
         jsonl = mp.trace(job_id)
-        metrics = filter_metrics(jsonl, filter_deriv=True, exclude=[], scale_t=1 / args.sample_freq_proxy)
+        metrics = filter_metrics(
+            jsonl, filter_deriv=True, exclude=[], scale_t=1 / args.sample_freq_proxy
+        )
 
     else:
-        metrics = parse_all(args.file, filter_deriv=True, exclude=exclude, scale_t=1 / args.sample_freq_proxy)  # 'mpi'
+        metrics = parse_all(
+            args.file, filter_deriv=True, exclude=exclude, scale_t=1 / args.sample_freq_proxy
+        )  # 'mpi'
         # metrics = parse_all(args.file , filter_deriv=True,exclude=['size','hits','proxy'], scale_t=1/args.sample_freq_proxy) # 'mpi'
 
     console = MyConsole()
     console.set(True)
     console.print(
-        '[blue]\nSettings:\n---------[/]\n'
-        f'[blue] - parallel: {not args.disable_parallel}[/]\n'
-        f'[blue] - future: {not pools}[/]\n'
-        f'[blue] - proxy: {args.proxy}[/]\n\n'
+        "[blue]\nSettings:\n---------[/]\n"
+        f"[blue] - parallel: {not args.disable_parallel}[/]\n"
+        f"[blue] - future: {not pools}[/]\n"
+        f"[blue] - proxy: {args.proxy}[/]\n\n"
     )
     ranks = 32
 
@@ -126,7 +141,7 @@ def main(args: argparse.Namespace = parse_args()) -> None:
 
 
 def execute_parallel(
-        metrics: dict, argv: list, ranks: int, show: bool = False, pools: bool = False
+    metrics: dict, argv: list, ranks: int, show: bool = False, pools: bool = False
 ):
     # parallel
     manager = Manager()
@@ -134,7 +149,7 @@ def execute_parallel(
     counter = 0
     total_metrics = len(metrics)
     progress = create_process_bar(total_metrics)
-    task = progress.add_task('[green]Processing metrics', total=total_metrics)
+    task = progress.add_task("[green]Processing metrics", total=total_metrics)
     with progress:
         try:
             if pools:
@@ -153,7 +168,8 @@ def execute_parallel(
                 with ProcessPoolExecutor(max_workers=cpu_count() - 2) as executor:
                     futures = {
                         executor.submit(
-                            ftio_metric_task_save, data, metric, arrays, argv, ranks, show): metric
+                            ftio_metric_task_save, data, metric, arrays, argv, ranks, show
+                        ): metric
                         for metric, arrays in metrics.items()
                     }
                     for future in as_completed(futures):
@@ -161,7 +177,7 @@ def execute_parallel(
                         progress.update(task, completed=counter)
         except KeyboardInterrupt:
             print_data(data)
-            print('-- done -- ')
+            print("-- done -- ")
             exit()
 
     return data
@@ -177,7 +193,7 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
     progress = create_process_bar(total_files)
 
     with progress:
-        task = progress.add_task('[green]Processing metrics', total=total_files)
+        task = progress.add_task("[green]Processing metrics", total=total_files)
         for metric, arrays in metrics.items():
             if check:
                 decreasing_order = np.all(arrays[1][-1] >= arrays[1][1])
@@ -185,10 +201,10 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
                 if not decreasing_order:  # or not  negative:
                     error_counter += 1
                     # err = '[bold red] Negative metric' if not negative else '[bold yellow] time not decreasing'
-                    err = '[bold yellow] time not decreasing'
+                    err = "[bold yellow] time not decreasing"
                     console = MyConsole()
                     console.set(True)
-                    console.print(f'[bold red]- {error_counter}. Error in {metric}:{err}[/]')
+                    console.print(f"[bold red]- {error_counter}. Error in {metric}:{err}[/]")
                     continue
             if save:
                 # save stuff in queue, data is non empty
@@ -209,19 +225,17 @@ def post(data, metrics, argv):
         df = extract_data(data)
         heatmap(data)
         scatter2D(df)
-        scatter(
-            df, x='Phi', y='Dominant Frequency', color='Confidence', symbol='Metric'
-        )
-        _ = optics(df, 'Phi', 'Dominant Frequency')
-        _ = dbscan(df, 'Phi', 'Dominant Frequency', 0.1)
+        scatter(df, x="Phi", y="Dominant Frequency", color="Confidence", symbol="Metric")
+        _ = optics(df, "Phi", "Dominant Frequency")
+        _ = dbscan(df, "Phi", "Dominant Frequency", 0.1)
         density_heatmap(data)
         heatmap_2(data)
     else:
         console = MyConsole()
         console.set(True)
-        console.print('[bold red] No data[/]')
+        console.print("[bold red] No data[/]")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_args()
     main(args)

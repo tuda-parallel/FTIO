@@ -1,5 +1,4 @@
-"""Contains functions that execute workflow using the continuous Wavelet Transform.
-"""
+"""Contains functions that execute workflow using the continuous Wavelet Transform."""
 
 import time
 import copy
@@ -63,13 +62,11 @@ def ftio_wavelet_disc(
     #! Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
-    b_sampled, args.freq =  sample_data(bandwidth, time_stamps, args.freq, args.verbose)
+    b_sampled, args.freq = sample_data(bandwidth, time_stamps, args.freq, args.verbose)
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
     tik = time.time()
-    console.print(
-        f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
-    )
+    console.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
 
     #! Find the level for the discrete wavelet
     # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1-Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20-%202010%20-%20Rede_AIASYB2.pdf
@@ -86,15 +83,14 @@ def ftio_wavelet_disc(
     freq_ranges = wavelet_freq_bands(args.freq, args.level)
     # Upsample coefficients for equal length
     t_sampled = time_stamps[0] + np.arange(0, len(b_sampled)) * 1 / args.freq
-    coefficients_upsampled = upsample_coefficients(
-        coefficients, args.wavelet, len(b_sampled)
-    )
+    coefficients_upsampled = upsample_coefficients(coefficients, args.wavelet, len(b_sampled))
     # plot functions
     if any(x in args.engine for x in ["mat", "plot"]):
         console.print(f"Generating {args.transformation.upper()} Plot\n")
         analysis_figures_wavelet = AnalysisFigures(args, coefficients=coefficients_upsampled)
-        f1 =  plot_coeffs_reconst_signal(args, time_stamps, bandwidth, t_sampled, b_sampled, coefficients_upsampled,
-                                          freq_ranges)
+        f1 = plot_coeffs_reconst_signal(
+            args, time_stamps, bandwidth, t_sampled, b_sampled, coefficients_upsampled, freq_ranges
+        )
         f2 = plot_wavelet_disc_spectrum(args, t_sampled, coefficients_upsampled, freq_ranges)
 
         analysis_figures_wavelet.add_figure([f1], f"wavelet_disc")
@@ -107,7 +103,6 @@ def ftio_wavelet_disc(
         # for fig in f:
         #     fig.show()
 
-
     #! Perform analysis on the result from the DWT
     # analysis = "dft_on_all"
     analysis = "dft_on_approx_coeff"
@@ -115,10 +110,10 @@ def ftio_wavelet_disc(
     # analysis = "dwt_x_autocorrelation"
 
     if len(coefficients) <= 2:
-        analysis = "dft_on_all" 
+        analysis = "dft_on_all"
         console.print(f"[green]Setting analysis to {analysis}")
 
-    #? Option 1 ("dft_on_approx_coeff"): Execute DFT on approx. coefficients from DWT
+    # ? Option 1 ("dft_on_approx_coeff"): Execute DFT on approx. coefficients from DWT
     # cont = input("\nContinue with the DFT? [y/n]")
     # if len(cont) == 0 or "y" in cont.lower():
     if "dft_on_approx_coeff" in analysis:
@@ -128,8 +123,8 @@ def ftio_wavelet_disc(
             args, coefficients_upsampled[0], t_sampled, total_bytes, ranks
         )
         analysis_figures_wavelet += analysis_figures_dft
-        
-    #? Option 2: Find intersection between DWT and DFT
+
+    # ? Option 2: Find intersection between DWT and DFT
     elif "dft_on_all" in analysis:
         args.transformation = "dft"
         # TODO: For this to be parallel, the generated HTML files need different names as they are overwritten
@@ -142,7 +137,7 @@ def ftio_wavelet_disc(
                 future = executor.submit(ftio_dft, tmp_args, coeffs, t_sampled, total_bytes, ranks)
                 futures[future] = i
 
-            # Process futures as they complete 
+            # Process futures as they complete
             for future in as_completed(futures):
                 prediction, analysis_figures_dft, _ = future.result()
                 convert_and_plot(args, analysis_figures_dft)
@@ -151,21 +146,21 @@ def ftio_wavelet_disc(
                 console.print(f"[green] {index} completed[/]")
             exit()
 
-    #? Option 3: Find intersection between DWT and DFT
+    # ? Option 3: Find intersection between DWT and DFT
     elif "dft_x_dwt" in analysis:
         args.transformation = "dft"
-        #Filter using wavelet and call DFT on lowest last coefficient
+        # Filter using wavelet and call DFT on lowest last coefficient
         prediction, analysis_figures_dft, share = ftio_dft(
             args, b_sampled, t_sampled, total_bytes, ranks
         )
         analysis_figures_wavelet += analysis_figures_dft
         display_prediction(args, prediction)
 
-    #? Option 4: Apply autocorrelation on low
+    # ? Option 4: Apply autocorrelation on low
     elif "dwt_x_autocorrelation" in analysis:
-        res = find_fd_autocorrelation(args, coefficients_upsampled[0],args.freq, analysis_figures_wavelet)
+        res = find_fd_autocorrelation(
+            args, coefficients_upsampled[0], args.freq, analysis_figures_wavelet
+        )
         exit()
-
-
 
     return prediction, analysis_figures_wavelet, share

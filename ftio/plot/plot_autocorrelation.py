@@ -6,8 +6,9 @@ import matplotlib.figure
 from ftio.plot.helper import format_plot
 
 
-def plot_autocorr_results(args: Namespace, acorr: np.ndarray, peaks: np.ndarray, outliers: np.ndarray,
-                          flag: bool = False):
+def plot_autocorr_results(
+    args: Namespace, acorr: np.ndarray, peaks: np.ndarray, outliers: np.ndarray, flag: bool = False
+):
     """
     Dispatches autocorrelation plot rendering based on the specified engine.
 
@@ -27,12 +28,14 @@ def plot_autocorr_results(args: Namespace, acorr: np.ndarray, peaks: np.ndarray,
         if "mat" in args.engine:
             fig = plot_matplotlib_autocorr_results(acorr, peaks, outliers, flag)
         elif "plot" in args.engine:
-            fig =  plot_plotly_autocorr_results(acorr, peaks, outliers, flag)
+            fig = plot_plotly_autocorr_results(acorr, peaks, outliers, flag)
 
     return fig
 
 
-def plot_plotly_autocorr_results(acorr: np.ndarray, peaks: np.ndarray, outliers: np.ndarray, flag: bool = False) -> go.Figure:
+def plot_plotly_autocorr_results(
+    acorr: np.ndarray, peaks: np.ndarray, outliers: np.ndarray, flag: bool = False
+) -> go.Figure:
     """
     Creates a Plotly figure for autocorrelation data.
 
@@ -100,7 +103,9 @@ def plot_plotly_autocorr_results(acorr: np.ndarray, peaks: np.ndarray, outliers:
     return format_plot(fig)
 
 
-def plot_matplotlib_autocorr_results(acorr: np.ndarray, peaks: np.ndarray, outliers: np.ndarray, flag: bool = False) -> matplotlib.figure.Figure:
+def plot_matplotlib_autocorr_results(
+    acorr: np.ndarray, peaks: np.ndarray, outliers: np.ndarray, flag: bool = False
+) -> matplotlib.figure.Figure:
     """
     Creates a Matplotlib figure for autocorrelation data.
 
@@ -118,12 +123,16 @@ def plot_matplotlib_autocorr_results(acorr: np.ndarray, peaks: np.ndarray, outli
     ax.plot(acorr, marker="o", linestyle="-", label="ACF", color="purple")
 
     # Plot peaks
-    ax.scatter(peaks, acorr[peaks], color="green", s=100, marker="*", label="peaks", edgecolors="black")
+    ax.scatter(
+        peaks, acorr[peaks], color="green", s=100, marker="*", label="peaks", edgecolors="black"
+    )
 
     # Plot relevant peaks
     if flag:
         val = np.delete(peaks, outliers)
-        ax.scatter(val, acorr[val], facecolors='none', edgecolors='red', s=150, label="relevant peaks")
+        ax.scatter(
+            val, acorr[val], facecolors="none", edgecolors="red", s=150, label="relevant peaks"
+        )
 
     ax.set_xlabel("Lag (Samples)")
     ax.set_ylabel("ACF")

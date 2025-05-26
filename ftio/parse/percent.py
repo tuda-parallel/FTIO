@@ -1,20 +1,17 @@
-
-
-
-class Percent: 
-    def  __init__(self,io_time): 
+class Percent:
+    def __init__(self, io_time):
         # XXXX
         # |||'-> Bandwidth / Throughput / Delta
         # ||'--> Write / Read
-        # |'---> Async / Sync / Overhead /  IO / Compute      
+        # |'---> Async / Sync / Overhead /  IO / Compute
         # |----> Total / IO / Compute
-        
-        time = io_time.delta_t_agg     
-        io = io_time.delta_t_agg_io  
-        compute = io_time.delta_t_com     
+
+        time = io_time.delta_t_agg
+        io = io_time.delta_t_agg_io
+        compute = io_time.delta_t_com
         # [ ] fix this
-# TODO: add flag to control granualaierty of sampling. Individual I/O operation can be discarded if focus is on phase (remove vectors)
-# HACK: this is a todo
+        # TODO: add flag to control granualaierty of sampling. Individual I/O operation can be discarded if focus is on phase (remove vectors)
+        # HACK: this is a todo
 
         # Async Write
         self.TAWB = self.percent(time, io_time.delta_t_awr)
@@ -26,7 +23,7 @@ class Percent:
         self.CAWB = self.percent(compute, io_time.delta_t_awr)
         self.CAWT = self.percent(compute, io_time.delta_t_awa)
         self.CAWD = self.percent(compute, io_time.delta_t_aw_lost)
-    
+
         # Async Read
         self.TARB = self.percent(time, io_time.delta_t_arr)
         self.TART = self.percent(time, io_time.delta_t_ara)
@@ -42,12 +39,12 @@ class Percent:
         self.TSW = self.percent(time, io_time.delta_t_sw)
         self.ISW = self.percent(io, io_time.delta_t_sw)
         self.CSW = self.percent(compute, io_time.delta_t_sw)
-        
+
         # Sync Read
         self.TSR = self.percent(time, io_time.delta_t_sr)
         self.ISR = self.percent(io, io_time.delta_t_sr)
         self.CSR = self.percent(compute, io_time.delta_t_sr)
-        
+
         # Lib overhead
         self.TO = self.percent(time, io_time.delta_t_overhead)
         self.IO = self.percent(io, io_time.delta_t_overhead)
@@ -57,6 +54,5 @@ class Percent:
         self.TC = self.percent(time, compute)
         self.CI = self.percent(compute, io)
 
-
-    def percent(self,a,b):
-        return b/a*100 if a != 0  else 0
+    def percent(self, a, b):
+        return b / a * 100 if a != 0 else 0

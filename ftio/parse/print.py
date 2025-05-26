@@ -1,5 +1,5 @@
-"""Converts results from TMIO / Darshan files into Extra-P supported format
-"""
+"""Converts results from TMIO / Darshan files into Extra-P supported format"""
+
 import numpy as np
 from ftio.parse.scales import Scales
 from ftio.parse.helper import scale_metric
@@ -66,9 +66,7 @@ class Print:
 
     def print_io_mode(self, mode, type):
         self.print_data(mode, "total_bytes", f"{mode}->total_bytes", "Size (B)", type)
-        self.print_data(
-            mode, "max_bytes_per_rank", f"{mode}->max_bytes_per_rank", "Size (B)", type
-        )
+        self.print_data(mode, "max_bytes_per_rank", f"{mode}->max_bytes_per_rank", "Size (B)", type)
         self.print_data(
             mode,
             "max_bytes_per_phase",
@@ -84,7 +82,10 @@ class Print:
             type,
         )
         self.print_data(
-            mode, "total_io_phases", f"{mode}->total_io_phases", "Hits",
+            mode,
+            "total_io_phases",
+            f"{mode}->total_io_phases",
+            "Hits",
             type,
         )
         self.print_data(
@@ -116,15 +117,9 @@ class Print:
             self.print_data(mode, "bandwidth.app_ind", f"{mode}->T_E", print_type=type)
             self.print_data(mode, "bandwidth.app_avr", f"{mode}->T_A", print_type=type)
             self.print_data(mode, "bandwidth.app_sum", f"{mode}->T_S", print_type=type)
-        self.print_data(
-            mode, "bandwidth.min", f"{mode}->per_rank->min", print_type=type
-        )
-        self.print_data(
-            mode, "bandwidth.max", f"{mode}->per_rank->max", print_type=type
-        )
-        self.print_data(
-            mode, "bandwidth.median", f"{mode}->per_rank->median", print_type=type
-        )
+        self.print_data(mode, "bandwidth.min", f"{mode}->per_rank->min", print_type=type)
+        self.print_data(mode, "bandwidth.max", f"{mode}->per_rank->max", print_type=type)
+        self.print_data(mode, "bandwidth.median", f"{mode}->per_rank->median", print_type=type)
         self.print_data(
             mode,
             "bandwidth.weighted_harmonic_mean",
@@ -531,13 +526,13 @@ class Print:
                         for j, _ in enumerate(art):
                             if j == 0:
                                 if self.args.scale:
-                                    metric, order = scale_metric(metric,art[j])
+                                    metric, order = scale_metric(metric, art[j])
                             self.file.write(
                                 f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art[j]*order:e} }}\n'
                             )
                     else:
                         if self.args.scale:
-                            metric, order = scale_metric(metric,art)
+                            metric, order = scale_metric(metric, art)
                         self.file.write(
                             f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art*order:e} }}\n'
                         )

@@ -33,11 +33,7 @@ CONSOLE.set(True)
 files_in_progress = FileQueue()
 
 
-def move_files_os(
-    args: argparse.Namespace,
-    parallel: bool = False,
-    period:float = 0
-) -> None:
+def move_files_os(args: argparse.Namespace, parallel: bool = False, period: float = 0) -> None:
     """
     Moves files and directories from the source directory to the stage-out path.
 
@@ -58,9 +54,7 @@ def move_files_os(
     regex = None
     # Compile the regex pattern if provided
     if args.regex:
-        CONSOLE.print(
-            f"[bold green][Trigger][/][green] Using pattern: {args.regex}[/]\n"
-        )
+        CONSOLE.print(f"[bold green][Trigger][/][green] Using pattern: {args.regex}[/]\n")
         regex = re.compile(args.regex)
 
     # Iterate over all items in the source directory
@@ -79,9 +73,7 @@ def move_files_os(
                     files_in_progress.mark_done(file_name)
                 else:
                     if args.debug:
-                        CONSOLE.print(
-                            f"[bold green][Trigger][/]: already moving {file_name}"
-                        )
+                        CONSOLE.print(f"[bold green][Trigger][/]: already moving {file_name}")
 
             else:
                 if args.debug:
@@ -94,16 +86,10 @@ def move_files_os(
                 if regex and regex.match(file_name):
                     if not files_in_progress.in_progress(file_name):
                         files_in_progress.put(file_name)
-                        futures[
-                            executor.submit(
-                                move_file, args, file_name, period
-                            )
-                        ] = i
+                        futures[executor.submit(move_file, args, file_name, period)] = i
                     else:
                         if args.debug:
-                            CONSOLE.print(
-                                f"[bold green][Trigger][/]:  already moving {file_name}"
-                            )
+                            CONSOLE.print(f"[bold green][Trigger][/]:  already moving {file_name}")
 
                 else:
                     if args.debug:
@@ -121,9 +107,7 @@ def move_files_os(
                     files_in_progress.mark_done(files[index])
 
 
-def move_file(
-    args: argparse.Namespace, file_name: str, period:float = 0
-) -> None:
+def move_file(args: argparse.Namespace, file_name: str, period: float = 0) -> None:
     """
     Stages out a single file if it matches the regex and meets modification time criteria.
 
@@ -131,8 +115,8 @@ def move_file(
         args (argparse.Namespace): Parsed command line arguments.
         file_name (str): Name of the file to stage out.
     """
-    threshold = period/2 # the io took half the time
-    threshold = max(threshold,10)
+    threshold = period / 2  # the io took half the time
+    threshold = max(threshold, 10)
     fast = False  # fast copy still has an error with the preload
 
     modification_time = time.time() - get_time(args, file_name)
@@ -197,20 +181,20 @@ def get_files(args: argparse.Namespace) -> list[str]:
         files = [f"{item}" for item in files if "." in item]
         if args.debug:
             CONSOLE.print(f"[bold green][Trigger][/][green]: Finished moving  {files}[/]\n")
-        
+
     except Exception as e:
         if args.debug:
             CONSOLE.print(f"[bold green][Trigger][/][green]: Error encountered  {e}[/]\n")
-        
+
         files = preloaded_call(args, f"ls -R {args.gkfs_mntdir}")
-        
+
         if files:
             files = files.splitlines()
             # if args.debug:
             #     CONSOLE.print(f"[bold green][Trigger][/][green]: Found files are{files}[/]\n")
             files = [f for f in files if "LIBGKFS" not in f]
             files = [f"{args.gkfs_mntdir}/{item}" for item in files if "." in item]
-    
+
     if files:
         return files
     else:
@@ -286,15 +270,11 @@ def copy_metadata(src: str, dst: str, ld_preload: str = None) -> None:
     stat_info = os.stat(src)
 
     # Set the metadata on the destination file (timestamps and permissions)
-    os.utime(
-        dst, (stat_info.st_atime, stat_info.st_mtime)
-    )  # Access and modification times
+    os.utime(dst, (stat_info.st_atime, stat_info.st_mtime))  # Access and modification times
     os.chmod(dst, stat_info.st_mode)  # File permissions
 
 
-def fast_chunk_copy_file(
-    args: argparse.Namespace, file_name: str, threads: int = 4
-) -> None:
+def fast_chunk_copy_file(args: argparse.Namespace, file_name: str, threads: int = 4) -> None:
     """
     Copies a single file in parallel using multiple threads.
 
@@ -329,9 +309,7 @@ def fast_chunk_copy_file(
             start = i * chunk_size
             end = min((i + 1) * chunk_size, file_size)
             futures.append(
-                executor.submit(
-                    write_chunk, mmapped_file, dst, start, end, args.ld_preload
-                )
+                executor.submit(write_chunk, mmapped_file, dst, start, end, args.ld_preload)
             )
 
         # Wait for all threads to finish
@@ -361,7 +339,7 @@ def jit_move(settings: JitSettings) -> None:
         str(settings.gkfs_hostfile),
         "--gkfs_mntdir",
         str(settings.gkfs_mntdir),
-        "--ignore_mtime"
+        "--ignore_mtime",
     ]
     if settings.regex_match:
         args += ["--regex", f"{str(settings.regex_match)}"]
@@ -370,12 +348,10 @@ def jit_move(settings: JitSettings) -> None:
         args += ["--parallel_move"]
 
     if settings.debug_lvl > 0:
-        args +=  ["--debug"]
-    
+        args += ["--debug"]
+
     # Define CLI parser
-    parser = argparse.ArgumentParser(
-        description="Data staging arguments", prog="file_mover"
-    )
+    parser = argparse.ArgumentParser(description="Data staging arguments", prog="file_mover")
 
     parser.add_argument(
         "--stage_out_path",
@@ -398,18 +374,12 @@ def jit_move(settings: JitSettings) -> None:
     parser.add_argument(
         "--ld_preload", type=str, default=None, help="LD_PRELOAD call to GekkoFs file."
     )
-    parser.add_argument(
-        "--host_file", type=str, default=None, help="Hostfile for GekkoFs."
-    )
+    parser.add_argument("--host_file", type=str, default=None, help="Hostfile for GekkoFs.")
     parser.add_argument(
         "--gkfs_mntdir", type=str, default=None, help="Mount directory for GekkoFs."
     )
-    parser.add_argument(
-        "--ignore_mtime",action="store_true", default=True
-        )
-    parser.add_argument(
-        "--parallel_move",action="store_true", default=False
-        )
+    parser.add_argument("--ignore_mtime", action="store_true", default=True)
+    parser.add_argument("--parallel_move", action="store_true", default=False)
     parser.add_argument(
         "--debug",
         dest="debug",
@@ -422,7 +392,7 @@ def jit_move(settings: JitSettings) -> None:
         dest="adaptive",
         help="Adaptive flag for flushing",
         default="cancel",
-        choices={"skip","cancel",""}
+        choices={"skip", "cancel", ""},
     )
 
     # Parse and call mover

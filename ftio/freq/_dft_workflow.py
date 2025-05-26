@@ -1,5 +1,5 @@
-"""Contains functions that execute workflow using the discrete Fourier Transform.
-"""
+"""Contains functions that execute workflow using the discrete Fourier Transform."""
+
 import time
 from argparse import Namespace
 import numpy as np
@@ -8,8 +8,8 @@ from rich.panel import Panel
 
 from ftio.freq._fourier_fit import fourier_fit
 from ftio.freq.discretize import sample_data
-from ftio.freq._dft import dft, prepare_plot_dft, precision_dft
-from ftio.freq.anomaly_detection import outlier_detection
+from ftio.freq._dft import dft
+from ftio.analysis.anomaly_detection import outlier_detection
 from ftio.freq.helper import MyConsole
 from ftio.freq._filter import filter_signal
 from ftio.freq._share_signal_data import SharedSignalData
@@ -25,7 +25,7 @@ def ftio_dft(
     total_bytes: int = 0,
     ranks: int = 1,
     text: str = "",
-)-> tuple[Prediction,AnalysisFigures,SharedSignalData]:
+) -> tuple[Prediction, AnalysisFigures, SharedSignalData]:
     """
     Performs a Discrete Fourier Transform (DFT) on the sampled bandwidth data, finds the dominant frequency, followed by outlier
     detection to spot the dominant frequency. This function also  prepares the necessary outputs for plotting or reporting.
@@ -53,33 +53,31 @@ def ftio_dft(
     #!  Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
-    b_sampled, args.freq =  sample_data(bandwidth, time_stamps, args.freq, args.verbose)
+    b_sampled, args.freq = sample_data(bandwidth, time_stamps, args.freq, args.verbose)
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
     #! Apply filter if specified
     if args.filter_type:
-        b_sampled  = filter_signal(args, b_sampled, analysis_figures)
+        b_sampled = filter_signal(args, b_sampled, analysis_figures)
 
     #!  Perform DFT
     tik = time.time()
-    console.print(
-        f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
-    )
+    console.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
     n = len(b_sampled)
     frequencies = args.freq * np.arange(0, n) / n
     X = dft(b_sampled)
-    X = X * np.exp(-2j * np.pi * frequencies * time_stamps[0]) # Correct phase offset due to start time t0
+    X = X * np.exp(
+        -2j * np.pi * frequencies * time_stamps[0]
+    )  # Correct phase offset due to start time t0
     amp = abs(X)
     phi = np.arctan2(X.imag, X.real)
     conf = np.zeros(len(amp))
     # welch(bandwidth,freq)
 
     #!  Find the dominant frequency
-    (
-        dominant_index,
-        conf[1 : int(n / 2) + 1],
-        outlier_text
-    ) = outlier_detection(amp, frequencies, args)
+    (dominant_index, conf[1 : int(n / 2) + 1], outlier_text) = outlier_detection(
+        amp, frequencies, args
+    )
 
     #  Ignore DC offset
     conf[0] = np.inf
@@ -120,20 +118,19 @@ def ftio_dft(
     #! Set plot parameters and plot
     if any(x in args.engine for x in ["mat", "plot"]):
         console.print(f"Generating {args.transformation.upper()} Plot\n")
-        analysis_figures += AnalysisFigures(args, bandwidth, time_stamps, b_sampled, t_sampled,
-                                           frequencies, amp, phi, conf, ranks)
+        analysis_figures += AnalysisFigures(
+            args, bandwidth, time_stamps, b_sampled, t_sampled, frequencies, amp, phi, conf, ranks
+        )
         if not args.autocorrelation:
             plot_dft(args, prediction, analysis_figures)
         console.print(f" --- Done --- \n")
 
     if args.autocorrelation:
-        share.set_data_from_predicition(b_sampled,prediction)
+        share.set_data_from_predicition(b_sampled, prediction)
 
     precision_text = ""
     # precision_text = precision_dft(amp, phi, dominant_index, b_sampled, t_sampled, frequencies, args.engine)
     text = Group(text, outlier_text, precision_text[:-1])
-
-
 
     console.print(
         Panel.fit(

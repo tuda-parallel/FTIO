@@ -9,6 +9,7 @@ from ftio.processing.compact_operations import quick_ftio
 from ftio.processing.post_processing import label_phases
 from ftio.cli.ftio_core import main
 
+
 def test_quick_ftio():
     """Test the API functionality of ftio."""
     ranks = 10
@@ -62,10 +63,9 @@ def test_quick_ftio():
         64.5,
     ]
     b, t = overlap(b_rank, t_rank_s, t_rank_e)
-    argv =["-e", "no"]
+    argv = ["-e", "no"]
     _ = quick_ftio(argv, b, t, total_bytes, ranks)
     assert True
-
 
 
 def test_post_processing():
@@ -74,7 +74,7 @@ def test_post_processing():
     args = ["ftio", file, "-e", "no"]
     prediction, args = main(args)
     _ = label_phases(prediction[-1], args)
-    assert True 
+    assert True
 
 
 def test_ftio_multiple_files():

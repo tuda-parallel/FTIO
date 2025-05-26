@@ -130,7 +130,9 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                                             # if skipped more than 2, force flushing
                                             if skipped >= 2:
                                                 if not condition:
-                                                    condition = True  # continue waiting until the time ends
+                                                    condition = (
+                                                        True  # continue waiting until the time ends
+                                                    )
                                                     CONSOLE.print(
                                                         f"[bold green][Trigger][/][yellow] Too many skips, staging data out in {time.time() < countdown} s[/]\n"
                                                     )
@@ -176,7 +178,7 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                 exit()
 
 
-def move_files_cargo(args: argparse.Namespace, period:float = 0) -> None:
+def move_files_cargo(args: argparse.Namespace, period: float = 0) -> None:
     """
     Moves files using Cargo.
 
@@ -186,12 +188,12 @@ def move_files_cargo(args: argparse.Namespace, period:float = 0) -> None:
 
     """
     if period != 0 and args.ignore_mtime:
-        threshold = period/2 # the io took half the time
-        threshold = max(threshold,10)
+        threshold = period / 2  # the io took half the time
+        threshold = max(threshold, 10)
         call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run --mtime {int(threshold)}"
     else:
         call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
-        
+
     CONSOLE.print(f"[bold green][Trigger][/][green] {call}")
     os.system(call)
 
@@ -259,7 +261,7 @@ def parse_args_data_stager(
         dest="adaptive",
         help="Adaptive flag for flushing",
         default="cancel",
-        choices={"skip","cancel",""}
+        choices={"skip", "cancel", ""},
     )
     parser.add_argument(
         "--ignore_mtime",
@@ -315,9 +317,7 @@ def parse_args_data_stager(
     parser.add_argument(
         "--ld_preload", type=str, default=None, help="LD_PRELOAD call to GekkoFs file."
     )
-    parser.add_argument(
-        "--host_file", type=str, default=None, help="Hostfile for GekkoFs."
-    )
+    parser.add_argument("--host_file", type=str, default=None, help="Hostfile for GekkoFs.")
     parser.add_argument(
         "--gkfs_mntdir", type=str, default=None, help="Mount directory for GekkoFs."
     )

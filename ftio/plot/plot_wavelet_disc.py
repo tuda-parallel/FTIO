@@ -2,6 +2,7 @@
 This module contains functions for plotting discrete wavelet transforms and their spectra
 using Matplotlib and Plotly.
 """
+
 from argparse import Namespace
 import numpy as np
 import pywt
@@ -73,9 +74,7 @@ def plot_wave_disc(
         # GoH0+G1H1 = 1 -> Multiply a with H1 and d with G1
         # https://medium.com/@shouke.wei/process-of-discrete-wavelet-transform-iii-wavelet-partial-reconstruction-ca7a8f9420dc
         if "recon" in use:
-            cc[level - i + 1] = pywt.upcoef(
-                "d", coffs[level - i + 1], wavelet, level=i
-            )[:n]
+            cc[level - i + 1] = pywt.upcoef("d", coffs[level - i + 1], wavelet, level=i)[:n]
         else:
             # Wrong: only upsample: ‘↑ 2’ denotes ‘upsample by 2’ (put 0’s before values)
             # cc[level-i+1,::2**(i)] = coffs[level-i+1]
@@ -129,9 +128,7 @@ def plot_wave_disc(
         plt.ylabel("Frequency (Hz)", fontsize=18)
         plt.xticks(fontsize=18)
         plt.yticks(fontsize=18)
-        y = np.concatenate(
-            [np.array([0]), freq / 2 ** np.arange(start=level + 1, stop=0, step=-1)]
-        )
+        y = np.concatenate([np.array([0]), freq / 2 ** np.arange(start=level + 1, stop=0, step=-1)])
         x = (
             -2 / freq + t[0] + 1 / freq * np.arange(0, len(b_sampled) + 1)
         )  # ? add corner shifted by half a sample step
@@ -177,9 +174,7 @@ def get_names(freq_bands: np.ndarray, n: int):
         f"RS{n-i} from CD (Freq: [{freq_bands[i, 0]:.3e} Hz - {freq_bands[i, 1]:.3e}] Hz)"
         for i in range(n)
     ]
-    names[1] = (
-        f"RS{n - 1} from CA (Freq: [{freq_bands[0, 0]:.3e} Hz - {freq_bands[0, 1]:.3e}] Hz)"
-    )
+    names[1] = f"RS{n - 1} from CA (Freq: [{freq_bands[0, 0]:.3e} Hz - {freq_bands[0, 1]:.3e}] Hz)"
 
     return names
 
@@ -242,7 +237,10 @@ def matplot_coeffs_reconst_signal(
     fig.tight_layout()
     return fig
 
-def matplot_wavelet_disc_spectrum(t_sampled: np.ndarray, coeffs: np.ndarray, freq_ranges: np.ndarray):
+
+def matplot_wavelet_disc_spectrum(
+    t_sampled: np.ndarray, coeffs: np.ndarray, freq_ranges: np.ndarray
+):
     """
     Plot the wavelet spectrum (frequency decomposition) using Matplotlib with pcolormesh.
 
@@ -290,7 +288,6 @@ def matplot_wavelet_disc_spectrum(t_sampled: np.ndarray, coeffs: np.ndarray, fre
     return fig
 
 
-
 ####################################################################################################
 #! Plotly plotting functions
 ####################################################################################################
@@ -325,9 +322,7 @@ def ploty_coeffs_reconst_signal(
     )
 
     # Plot the original bandwidth
-    fig.add_trace(
-        go.Scatter(x=t, y=b, mode="lines", name="Bandwidth"), row=1, col=1
-    )
+    fig.add_trace(go.Scatter(x=t, y=b, mode="lines", name="Bandwidth"), row=1, col=1)
 
     # Plot the original bandwidth
     fig.add_trace(
@@ -448,13 +443,13 @@ def plot_coeffs_reconst_signal(
     """
     if "plotly" in args.engine:
         fig = ploty_coeffs_reconst_signal(
-            t, b,  t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis
+            t, b, t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis
         )
         # create_html([fig], args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, args.transformation)
 
     else:
         fig = matplot_coeffs_reconst_signal(
-            t, b,  t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis
+            t, b, t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis
         )
 
     return fig

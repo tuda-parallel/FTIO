@@ -4,6 +4,7 @@ from datetime import datetime
 import json
 import numpy as np
 from ftio.parse.csv_reader import read_csv_file
+
 # from ftio.api.trace_analysis.helper import quick_plot
 from ftio.processing.compact_operations import quick_ftio
 from rich.console import Console
@@ -68,9 +69,7 @@ def extract_arrays_from_csv(argv=sys.argv[1:], verbose=True):
         b_b = np.array(arrays["both"]).astype(float)
 
     if "timestamp" in arrays:
-        entries = [
-            datetime.strptime(ts, "%Y-%m-%d %H:%M:%S.%f") for ts in arrays["timestamp"]
-        ]
+        entries = [datetime.strptime(ts, "%Y-%m-%d %H:%M:%S.%f") for ts in arrays["timestamp"]]
         t_s = entries[0]
         time_diffs_in_seconds = [(dt - t_s).total_seconds() for dt in entries]
         t = np.array(time_diffs_in_seconds)
@@ -93,9 +92,7 @@ def extract_arrays_from_csv(argv=sys.argv[1:], verbose=True):
     if "-f" not in argv:
         argv.extend(["-f", f"{2/t_step}"])
         if verbose:
-            console.print(
-                f"[bold green]Sampling rate set to {t_step} sec ({2/t_step:.3f}) Hz[/]"
-            )
+            console.print(f"[bold green]Sampling rate set to {t_step} sec ({2/t_step:.3f}) Hz[/]")
     # plot
     # quick_plot(t,b_w)
 

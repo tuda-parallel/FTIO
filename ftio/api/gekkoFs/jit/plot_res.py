@@ -41,7 +41,7 @@ def format(fig: go.Figure, title: str = "") -> None:
         ),
     )
 
-    format_plot_and_ticks(fig, x_minor=False,font_size=20)
+    format_plot_and_ticks(fig, x_minor=False, font_size=20)
     # Display the plot
     fig.show()
 
@@ -86,9 +86,7 @@ def format_plot_and_ticks(
             )
         )
     if font:
-        fig.update_layout(
-            font=dict(family="Courier New, monospace", size=font_size, color="black")
-        )
+        fig.update_layout(font=dict(family="Courier New, monospace", size=font_size, color="black"))
 
     fig.update_layout(
         plot_bgcolor="white",
@@ -135,6 +133,7 @@ def format_plot_and_ticks(
 
     return fig
 
+
 def your_function() -> None:
     """
     function to create and format a bar chart using Plotly.
@@ -154,6 +153,7 @@ def your_function() -> None:
 def main() -> None:
     your_function()
     # add more
+
 
 if __name__ == "__main__":
     main()

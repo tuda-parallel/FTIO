@@ -1,5 +1,4 @@
-"""Module contains function functions to discretize the data.
-"""
+"""Module contains function functions to discretize the data."""
 
 from __future__ import annotations
 from argparse import Namespace
@@ -11,7 +10,9 @@ from numba import jit
 from ftio.freq.helper import MyConsole
 
 
-def sample_data(b: np.ndarray, t: np.ndarray, freq:float=-1, verbose:bool = False) -> tuple[np.ndarray, float]:
+def sample_data(
+    b: np.ndarray, t: np.ndarray, freq: float = -1, verbose: bool = False
+) -> tuple[np.ndarray, float]:
     """
     Samples the data at equal time steps  according to the specified frequency.
 
@@ -20,7 +21,7 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq:float=-1, verbose:bool = Fals
         t (np.ndarray): Time points corresponding to the bandwidth values.
         freq (float, optional): Sampling frequency. Defaults to -1, which triggers automatic calculation of the optimal sampling frequency.
         verbose (bool, optional): Flag to indicated if information about the sampling process, including the time window, frequency step, and abstraction error is
-        printed 
+        printed
 
     Returns:
         tuple: A tuple containing:
@@ -43,7 +44,7 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq:float=-1, verbose:bool = Fals
         text += f"Recommended sampling frequency: {freq:.3e} Hz\n"
     elif freq == -2:
         N = 10000
-        freq = N/np.floor((t[-1] - t[0])) if t[-1] != t[0] else 1000
+        freq = N / np.floor((t[-1] - t[0])) if t[-1] != t[0] else 1000
     else:
         text += f"Sampling frequency:  {freq:.3e} Hz\n"
     N = int(np.floor((t[-1] - t[0]) * freq))
@@ -92,12 +93,14 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq:float=-1, verbose:bool = Fals
     return b_sampled, freq
 
 
-def sample_data_same_size(b: np.ndarray, t:np.ndarray, freq=-1, n_bins=-1) -> tuple[np.ndarray,np.ndarray]:
+def sample_data_same_size(
+    b: np.ndarray, t: np.ndarray, freq=-1, n_bins=-1
+) -> tuple[np.ndarray, np.ndarray]:
     """
-    Discretize the data according to the specified frequency, ensuring the sampled data has the same 
+    Discretize the data according to the specified frequency, ensuring the sampled data has the same
     number of bins as specified.
 
-    This function samples the bandwidth data at the given frequency and returns the sampled 
+    This function samples the bandwidth data at the given frequency and returns the sampled
     data along with the corresponding time points, ensuring the number of bins is consistent with the provided `n_bins` value.
 
     Args:
@@ -134,9 +137,8 @@ def sample_data_same_size(b: np.ndarray, t:np.ndarray, freq=-1, n_bins=-1) -> tu
     return b_sampled, t
 
 
-
 @jit(nopython=True, cache=True)
-def find_lowest_time_change(t:np.ndarray)-> float:
+def find_lowest_time_change(t: np.ndarray) -> float:
     """finds the lowest time change
 
     Args:
@@ -159,7 +161,10 @@ def find_lowest_time_change(t:np.ndarray)-> float:
 
     return t_rec
 
-def sample_data_and_prepare_plots(args:Namespace, bandwidth:np.ndarray, time_b:np.ndarray, ranks:int)-> tuple[np.ndarray, float, list[list[pd.DataFrame]]]:
+
+def sample_data_and_prepare_plots(
+    args: Namespace, bandwidth: np.ndarray, time_b: np.ndarray, ranks: int
+) -> tuple[np.ndarray, float, list[list[pd.DataFrame]]]:
     """
     Samples the data and prepares plots if required.
 
@@ -178,13 +183,9 @@ def sample_data_and_prepare_plots(args:Namespace, bandwidth:np.ndarray, time_b:n
     # sample the data
     b_sampled, freq = sample_data(bandwidth, time_b, args.freq, args.verbose)
 
-    #prepare data for plotting
+    # prepare data for plotting
     figures_data = AnalysisFigures()
     if any(x in args.engine for x in ["mat", "plot"]):
         figures_data = prepare_plot_sample(bandwidth, time_b, freq, len(b_sampled), ranks)
 
-
     return b_sampled, freq, figures_data
-
-
-    

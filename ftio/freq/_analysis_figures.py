@@ -4,15 +4,44 @@ from ftio.freq.freq_html import create_html
 import matplotlib.pyplot as plt
 import matplotlib.figure  # to check type
 
+
 class AnalysisFigures:
-    def __init__(self, args:Namespace=None, b=None, t=None, b_sampled=None, t_sampled=None,
-                 freqs=None, amp=None, phi=None, conf=None, ranks=None, scales = None, coefficients=None):
-        self.set_bulk(args, b, t, b_sampled, t_sampled, freqs, amp, phi, conf, ranks, scales, coefficients)
+    def __init__(
+        self,
+        args: Namespace = None,
+        b=None,
+        t=None,
+        b_sampled=None,
+        t_sampled=None,
+        freqs=None,
+        amp=None,
+        phi=None,
+        conf=None,
+        ranks=None,
+        scales=None,
+        coefficients=None,
+    ):
+        self.set_bulk(
+            args, b, t, b_sampled, t_sampled, freqs, amp, phi, conf, ranks, scales, coefficients
+        )
         self.figures = []
         self.figure_titles = []
 
-    def set_bulk(self, args:Namespace=None, b=None, t=None, b_sampled=None, t_sampled=None,
-                 freqs=None, amp=None, phi=None, conf=None, ranks=None, scales = None, coefficients=None):
+    def set_bulk(
+        self,
+        args: Namespace = None,
+        b=None,
+        t=None,
+        b_sampled=None,
+        t_sampled=None,
+        freqs=None,
+        amp=None,
+        phi=None,
+        conf=None,
+        ranks=None,
+        scales=None,
+        coefficients=None,
+    ):
         self.args = args
         self.b = b
         self.t = t
@@ -89,12 +118,11 @@ class AnalysisFigures:
             self.figures.append(fig_list)
             self.figure_titles.append(source)
 
-    def add_figure_and_show(self, fig_list:list, source: str = ""):
+    def add_figure_and_show(self, fig_list: list, source: str = ""):
         self.add_figure(fig_list, source)
         self.show_figs(fig_list, source)
 
-
-    def show_figs(self, fig_list, name, condition = None):
+    def show_figs(self, fig_list, name, condition=None):
         if condition is None:
             condition = self.args.runtime_plots or "mat" in self.args.engine
         if condition:
@@ -114,10 +142,20 @@ class AnalysisFigures:
             for i, fig_list in enumerate(self.figures):
                 self.show_figs(fig_list, self.figure_titles[i], condition)
 
-
-
     def __str__(self):
-        attrs = ["b", "t", "b_sampled", "t_sampled", "freqs", "amp", "phi", "conf", "scales", "coefficients", "ranks"]
+        attrs = [
+            "b",
+            "t",
+            "b_sampled",
+            "t_sampled",
+            "freqs",
+            "amp",
+            "phi",
+            "conf",
+            "scales",
+            "coefficients",
+            "ranks",
+        ]
         lines = [f"{attr}: {getattr(self, attr)}" for attr in attrs]
         return "AnalysisFigures with data:\n" + "\n".join(lines)
 
@@ -150,7 +188,18 @@ class AnalysisFigures:
             if attr in ["figures", "figure_titles"]:
                 continue
 
-            if attr in ["b", "t", "b_sampled", "t_sampled", "freqs", "amp", "phi", "conf","scales", "coefficients"]:
+            if attr in [
+                "b",
+                "t",
+                "b_sampled",
+                "t_sampled",
+                "freqs",
+                "amp",
+                "phi",
+                "conf",
+                "scales",
+                "coefficients",
+            ]:
                 self_val = getattr(self, attr, None)
                 other_val = value
                 if self_val is None and other_val is not None:
@@ -171,7 +220,18 @@ class AnalysisFigures:
 
     def __repr__(self):
         s = f"AnalysisFigures Class containing the following elements:{self.figure_titles}\n"
-        attrs = ["b", "t", "b_sampled", "t_sampled", "freqs", "amp", "phi", "conf", "scales", "coefficients", "ranks"]
+        attrs = [
+            "b",
+            "t",
+            "b_sampled",
+            "t_sampled",
+            "freqs",
+            "amp",
+            "phi",
+            "conf",
+            "scales",
+            "coefficients",
+            "ranks",
+        ]
         lines = [f"{attr}: {type(getattr(self, attr)).__name__}" for attr in attrs]
         return s + "AnalysisFigures with fields and types:\n" + "\n".join(lines)
-

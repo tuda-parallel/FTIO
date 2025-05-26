@@ -28,16 +28,14 @@ def predictor_with_processes(shared_resources, args):
             # monitor
             stamp, procs = pm.monitor(filename, stamp, procs)
             # launch prediction_process
-            procs.append(
-                handle_in_process(prediction_process, args=(shared_resources, args))
-            )
+            procs.append(handle_in_process(prediction_process, args=(shared_resources, args)))
     except KeyboardInterrupt:
         print_data(shared_resources.data)
         export_extrap(shared_resources.data)
         print("-- done -- ")
 
 
-def prediction_process(shared_resources, args: list[str], msgs = None) -> None:
+def prediction_process(shared_resources, args: list[str], msgs=None) -> None:
     """Performs prediction made up of two part: (1) Executes FTIO and (2) appends to data the value
 
     Args:
@@ -49,6 +47,5 @@ def prediction_process(shared_resources, args: list[str], msgs = None) -> None:
     while not shared_resources.queue.empty():
         shared_resources.data.append(shared_resources.queue.get())
 
-    _ = find_probability(shared_resources.data, counter = shared_resources.count.value)
+    _ = find_probability(shared_resources.data, counter=shared_resources.count.value)
     shared_resources.count.value += 1
-

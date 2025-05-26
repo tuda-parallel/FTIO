@@ -10,13 +10,14 @@ from ftio.parse.metrics import Metrics
 from ftio.parse.scales import Scales
 from ftio.plot.dash_files.dash_app import IOAnalysisApp
 from ftio.plot.print_html import PrintHtml
-from ftio.plot.helper import *  
+from ftio.plot.helper import *
 from ftio.plot.plot_error import plot_error_bar, plot_time_error_bar
 from ftio.plot.units import find_unit
 from ftio.freq.helper import MyConsole
 
 
 CONSOLE = MyConsole()
+
 
 def _find_free_port():
     sock = socket.socket()
@@ -65,8 +66,10 @@ class PlotCore:
         else:
             args.render = "dynamic"
 
-        print("\033[1;32mMultithreaded is on \033[1;0m") if args.threaded else print(
-            "\033[1;31mMultithreaded is off \033[1;0m"
+        (
+            print("\033[1;32mMultithreaded is on \033[1;0m")
+            if args.threaded
+            else print("\033[1;31mMultithreaded is off \033[1;0m")
         )
 
         out = PrintHtml(path, self.names, args)
@@ -143,21 +146,13 @@ class PlotCore:
                 self.plot_time()
                 out.generate_html_core("time.html", self.get_figure("time.html"))
                 self.plot_io_mode("async write", self.data.df_wat, self.data.df_wab)
-                out.generate_html_core(
-                    "write_async.html", self.get_figure("write_async.html")
-                )
+                out.generate_html_core("write_async.html", self.get_figure("write_async.html"))
                 self.plot_io_mode("async read", self.data.df_rat, self.data.df_rab)
-                out.generate_html_core(
-                    "read_async.html", self.get_figure("read_async.html")
-                )
+                out.generate_html_core("read_async.html", self.get_figure("read_async.html"))
                 self.plot_io_mode("sync write", self.data.df_wst)
-                out.generate_html_core(
-                    "write_sync.html", self.get_figure("write_sync.html")
-                )
+                out.generate_html_core("write_sync.html", self.get_figure("write_sync.html"))
                 self.plot_io_mode("sync read", self.data.df_rst)
-                out.generate_html_core(
-                    "read_sync.html", self.get_figure("read_sync.html")
-                )
+                out.generate_html_core("read_sync.html", self.get_figure("read_sync.html"))
 
         out.generate_html_end()
         print("\033[1;32m------------------- done -------------------\n\033[1;0m")
@@ -171,25 +166,17 @@ class PlotCore:
         if "async" in mode:
             if "write" in mode:
                 self.plot_io_mode("async write", self.data.df_wat, self.data.df_wab)
-                out.generate_html_core(
-                    "write_async.html", self.get_figure("write_async.html")
-                )
+                out.generate_html_core("write_async.html", self.get_figure("write_async.html"))
             else:
                 self.plot_io_mode("async read", self.data.df_rat, self.data.df_rab)
-                out.generate_html_core(
-                    "read_async.html", self.get_figure("read_async.html")
-                )
+                out.generate_html_core("read_async.html", self.get_figure("read_async.html"))
         elif "sync" in mode:
             if "write" in mode:
                 self.plot_io_mode("sync write", self.data.df_wst)
-                out.generate_html_core(
-                    "write_sync.html", self.get_figure("write_sync.html")
-                )
+                out.generate_html_core("write_sync.html", self.get_figure("write_sync.html"))
             else:
                 self.plot_io_mode("sync read", self.data.df_rst)
-                out.generate_html_core(
-                    "read_sync.html", self.get_figure("read_sync.html")
-                )
+                out.generate_html_core("read_sync.html", self.get_figure("read_sync.html"))
         else:
             self.plot_time()
             out.generate_html_core("time.html", self.get_figure("time.html"))
@@ -300,7 +287,7 @@ class PlotCore:
             width=self.width,
             height=self.height,
         )
-        f[-1] = format_plot(f[-1],17)
+        f[-1] = format_plot(f[-1], 17)
 
         f.append(go.Figure())
         if df_t:
@@ -329,7 +316,7 @@ class PlotCore:
             width=self.width,
             height=self.height,
         )  # ,legend_title_text='Metrics' )
-        f[-1] = format_plot(f[-1],17)
+        f[-1] = format_plot(f[-1], 17)
 
         f.append(go.Figure())
         if df_t:
@@ -397,11 +384,9 @@ class PlotCore:
             width=self.width,
             height=self.height,
         )
-        f[-1] = format_plot(f[-1],17)
+        f[-1] = format_plot(f[-1], 17)
 
-        _ = go.Figure(
-            layout=dict(template="plotly")
-        )  #!fixes plotly error for default values
+        _ = go.Figure(layout=dict(template="plotly"))  #!fixes plotly error for default values
         if df_t:
             fig_tmp = px.histogram(
                 df_t[1],
@@ -420,7 +405,7 @@ class PlotCore:
                 xaxis_title="Throughput (B/s)",
                 yaxis_title="Count",
             )
-            fig_tmp = format_plot(fig_tmp,17)
+            fig_tmp = format_plot(fig_tmp, 17)
             f.append(fig_tmp)
 
         if df_b:
@@ -441,7 +426,7 @@ class PlotCore:
                 xaxis_title="Bandwidth (B/s)",
                 yaxis_title="Count",
             )
-            fig_tmp = format_plot(fig_tmp,17)
+            fig_tmp = format_plot(fig_tmp, 17)
             f.append(fig_tmp)
 
         io_stats = Metrics(args)
@@ -457,10 +442,7 @@ class PlotCore:
             except:
                 index = df_t[1]["number_of_ranks"].astype(str).isin([i])
                 index_ind = df_t[3]["number_of_ranks"].astype(str).isin([i])
-            if (
-                len(df_t[1]["file_index"][index]) != 0
-                or len(df_t[3]["file_index"][index_ind]) != 0
-            ):
+            if len(df_t[1]["file_index"][index]) != 0 or len(df_t[3]["file_index"][index_ind]) != 0:
                 for j in range(
                     int(df_t[1]["file_index"][index].min()),
                     int(df_t[1]["file_index"][index].max() + 1),
@@ -469,10 +451,10 @@ class PlotCore:
                     index2 = df_t[1]["file_index"][index].isin([j])
                     index2_ind = df_t[3]["file_index"][index_ind].isin([j])
                     # find the order and unit of the plots on y-axis
-                    unit, order = find_unit(df_t,index,index2,index_ind,index2_ind,args)
+                    unit, order = find_unit(df_t, index, index2, index_ind, index2_ind, args)
                     # # compatibility mode with earlier version
                     # CONSOLE.info(f"[yellow]WARNING:[/] Compatibility Mode")
-                    # unit, order = find_unit(df_t,index,index2,index_ind,index2_ind,args,pow(10,6)) 
+                    # unit, order = find_unit(df_t,index,index2,index_ind,index2_ind,args,pow(10,6))
                     # order = order*pow(10,6)
 
                     # if no async, show only T instead of T_A
@@ -487,9 +469,9 @@ class PlotCore:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_t[1]["t_overlap"][index][index2],
-                                    y=df_t[1]["b_overlap_avr"][index][index2]*order,
+                                    y=df_t[1]["b_overlap_avr"][index][index2] * order,
                                     mode="lines",
-                                    name= T_name, #name="$T$", # For BW limit paper
+                                    name=T_name,  # name="$T$", # For BW limit paper
                                     line={"shape": "hv"},
                                     fill="tozeroy",
                                 )
@@ -499,9 +481,9 @@ class PlotCore:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_b[1]["t_overlap"][index][index2],
-                                    y=df_b[1]["b_overlap_avr"][index][index2]*order,
+                                    y=df_b[1]["b_overlap_avr"][index][index2] * order,
                                     mode="lines",
-                                    name="$B_A$", #name="$B_L$", # For BW limit paper
+                                    name="$B_A$",  # name="$B_L$", # For BW limit paper
                                     line={"shape": "hv"},
                                     fill="tozeroy",
                                 )
@@ -509,25 +491,25 @@ class PlotCore:
 
                     # ? Sum plot
                     if args.sum:
-                        if df_t and  df_b: # shows this only in async mode
+                        if df_t and df_b:  # shows this only in async mode
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_t[1]["t_overlap"][index][index2],
-                                    y=df_t[1]["b_overlap_sum"][index][index2]*order,
+                                    y=df_t[1]["b_overlap_sum"][index][index2] * order,
                                     mode="lines",
                                     name="$T_S$",
                                     line={"shape": "hv"},
                                     fill="tozeroy",
-                                    )
-                                )  
+                                )
+                            )
 
                         if df_b:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_b[1]["t_overlap"][index][index2],
-                                    y=df_b[1]["b_overlap_sum"][index][index2]*order,
+                                    y=df_b[1]["b_overlap_sum"][index][index2] * order,
                                     mode="lines",
-                                    name="$B_S$",#name="$B$", # For BW limit paper
+                                    name="$B_S$",  # name="$B$", # For BW limit paper
                                     line={"shape": "hv"},
                                     fill="tozeroy",
                                 )
@@ -539,25 +521,25 @@ class PlotCore:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_t[3]["t_overlap_ind"][index_ind][index2_ind],
-                                    y=df_t[3]["b_overlap_ind"][index_ind][index2_ind]*order,
+                                    y=df_t[3]["b_overlap_ind"][index_ind][index2_ind] * order,
                                     mode="lines",
                                     name="$T_E$",
                                     line={"shape": "hv"},
                                     fill="tozeroy",
                                 )
-                            ) 
+                            )
 
                         if df_b:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_b[3]["t_overlap_ind"][index_ind][index2_ind],
-                                    y=df_b[3]["b_overlap_ind"][index_ind][index2_ind]*order,
+                                    y=df_b[3]["b_overlap_ind"][index_ind][index2_ind] * order,
                                     mode="lines",
                                     name="$B_E$",
                                     line={"shape": "hv"},
                                     fill="tozeroy",
                                 )
-                            )  
+                            )
 
                     f[-1].update_layout(
                         barmode="stack",
@@ -568,8 +550,8 @@ class PlotCore:
                         showlegend=True,
                         title=f"{i} Ranks (Run {j})",
                     )
-                    f[-1] = format_plot(f[-1],17)
-                    
+                    f[-1] = format_plot(f[-1], 17)
+
                     if self.names and (args.avr or args.sum or args.ind):
                         run_index = ranks.index[ranks.astype(int) == i].tolist()[j]
                         f[-1].update_layout(
@@ -634,9 +616,7 @@ class PlotCore:
                 self.names = [x.replace(".", "_") for x in self.names]
                 procs = []
                 for fig in f:
-                    procs.append(
-                        Process(target=save_fig, args=(fig, f, path, self.names[-1]))
-                    )
+                    procs.append(Process(target=save_fig, args=(fig, f, path, self.names[-1])))
                     procs[-1].start()
 
                 while procs:
@@ -657,9 +637,7 @@ class PlotCore:
             for count, type in enumerate(["average", "sum", "ind"]):
                 f.append(go.Figure())
                 f[-1].update_layout(width=self.width, height=self.height)
-                f[-1].update_xaxes(
-                    minor=dict(ticklen=6, tickcolor="black", showgrid=True)
-                )
+                f[-1].update_xaxes(minor=dict(ticklen=6, tickcolor="black", showgrid=True))
                 for i in ["max", "min", "median", "hmean", "amean"]:
                     if df_t:
                         f[-1].add_trace(
@@ -689,7 +667,7 @@ class PlotCore:
                     yaxis_title="Transfer Rate (B/s)",
                     title="Overlap Statistics: %s" % type.capitalize(),
                 )
-                f[-1] = format_plot(f[-1],17)
+                f[-1] = format_plot(f[-1], 17)
 
             f_1 = plot_error_bar(io_stats.t_avr, "T_{A}")
             f_2 = plot_error_bar(io_stats.t_sum, "T_{S}")
@@ -709,10 +687,7 @@ class PlotCore:
         # ? Init
         CONSOLE.print(f"│   ├── [green]Creating plot I/O time [/]")
         self.nRun = len(pd.unique(self.data.df_time["file_index"]))
-        colors = (
-            px.colors.qualitative.Plotly +
-            px.colors.qualitative.D3 
-            )
+        colors = px.colors.qualitative.Plotly + px.colors.qualitative.D3
         symbols = [
             "square",
             "circle",
@@ -730,9 +705,7 @@ class PlotCore:
             x = self.data.df_time["number_of_ranks"].astype(str)
 
         else:
-            self.data.df_time = self.data.df_time.sort_values(
-                by=["number_of_ranks", "file_index"]
-            )
+            self.data.df_time = self.data.df_time.sort_values(by=["number_of_ranks", "file_index"])
             x = [
                 self.data.df_time["number_of_ranks"].astype(str),
                 self.data.df_time["file_index"].astype(str),
@@ -755,9 +728,7 @@ class PlotCore:
                     fill="tozeroy",
                     name="Total",
                     legendgroup="Total",
-                    marker=dict(
-                        symbol=symbols[0], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[0], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[0],
                     showlegend=legend_fix(self, i),
                 ),
@@ -772,9 +743,7 @@ class PlotCore:
                     fill="tozeroy",
                     name="App",
                     legendgroup="App",
-                    marker=dict(
-                        symbol=symbols[1], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[1], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[1],
                     showlegend=legend_fix(self, i),
                 ),
@@ -789,9 +758,7 @@ class PlotCore:
                     fill="tozeroy",
                     name="Overhead",
                     legendgroup="Overhead",
-                    marker=dict(
-                        symbol=symbols[2], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[2], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[2],
                     showlegend=legend_fix(self, i),
                 ),
@@ -809,33 +776,25 @@ class PlotCore:
         self.f_t[-1].update_layout(hovermode="x", legend_tracegroupgap=1)
         self.f_t[-1].update_xaxes(showspikes=True, spikethickness=1, spikecolor="black")
         self.f_t[-1].update_yaxes(showspikes=True, spikethickness=1, spikecolor="black")
-        self.f_t[-1] = format_plot(self.f_t[-1],17)
+        self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
         modes = ["delta_t_total", "delta_t_agg", "delta_t_overhead"]
         names = ["Total", "App", "Overhead"]
         self.f_t.append(
-            plot_time_error_bar(
-                self.data.df_time, modes, names, colors, symbols, markeredgecolor
-            )
+            plot_time_error_bar(self.data.df_time, modes, names, colors, symbols, markeredgecolor)
         )
 
         self.f_t.append(go.Figure())
         if self.nRun != 1:
             self.f_t[-1].update_layout(barmode="relative")
             self.f_t[-1].update_layout(
-                legend=dict(
-                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-                )
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
         self.f_t[-1].add_trace(
             go.Bar(
                 x=x,
-                y=self.data.df_time["delta_t_agg"]
-                / self.data.df_time["delta_t_total"]
-                * 100,
-                text=self.data.df_time["delta_t_agg"]
-                / self.data.df_time["delta_t_total"]
-                * 100,
+                y=self.data.df_time["delta_t_agg"] / self.data.df_time["delta_t_total"] * 100,
+                text=self.data.df_time["delta_t_agg"] / self.data.df_time["delta_t_total"] * 100,
                 name="App",
                 textposition="inside",
                 textangle=0,
@@ -846,9 +805,7 @@ class PlotCore:
         self.f_t[-1].add_trace(
             go.Bar(
                 x=x,
-                y=self.data.df_time["delta_t_overhead"]
-                / self.data.df_time["delta_t_total"]
-                * 100,
+                y=self.data.df_time["delta_t_overhead"] / self.data.df_time["delta_t_total"] * 100,
                 text=self.data.df_time["delta_t_overhead"]
                 / self.data.df_time["delta_t_total"]
                 * 100,
@@ -868,7 +825,7 @@ class PlotCore:
         )  # ,uniformtext_minsize=12, uniformtext_mode='show')
         self.f_t[-1].update_layout(barmode="relative")
         self.f_t[-1].update_yaxes(range=[0, 100])
-        self.f_t[-1] = format_plot(self.f_t[-1],17)
+        self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
         self.f_t.append(go.Figure())
         delmiter = "<br>"
@@ -876,19 +833,13 @@ class PlotCore:
             delmiter = " "
             self.f_t[-1].update_layout(barmode="relative")
             self.f_t[-1].update_layout(
-                legend=dict(
-                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-                )
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
         self.f_t[-1].add_trace(
             go.Bar(
                 x=x,
-                y=self.data.df_time["delta_t_com"]
-                / self.data.df_time["delta_t_total"]
-                * 100,
-                text=self.data.df_time["delta_t_com"]
-                / self.data.df_time["delta_t_total"]
-                * 100,
+                y=self.data.df_time["delta_t_com"] / self.data.df_time["delta_t_total"] * 100,
+                text=self.data.df_time["delta_t_com"] / self.data.df_time["delta_t_total"] * 100,
                 name="Compute",
                 textposition="inside",
                 textangle=0,
@@ -900,12 +851,8 @@ class PlotCore:
         self.f_t[-1].add_trace(
             go.Bar(
                 x=x,
-                y=self.data.df_time["delta_t_agg_io"]
-                / self.data.df_time["delta_t_total"]
-                * 100,
-                text=self.data.df_time["delta_t_agg_io"]
-                / self.data.df_time["delta_t_total"]
-                * 100,
+                y=self.data.df_time["delta_t_agg_io"] / self.data.df_time["delta_t_total"] * 100,
+                text=self.data.df_time["delta_t_agg_io"] / self.data.df_time["delta_t_total"] * 100,
                 name="Visible I/O",
                 textposition="inside",
                 textangle=0,
@@ -979,7 +926,7 @@ class PlotCore:
             barmode="stack",
         )  # ,uniformtext_minsize=12, uniformtext_mode='show')
         self.f_t[-1].update_yaxes(range=[0, 100])
-        self.f_t[-1] = format_plot(self.f_t[-1],17)
+        self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
         self.f_t.append(add_fig_col(self.nRun))
         for i in range(0, self.nRun):
@@ -991,9 +938,7 @@ class PlotCore:
                     mode="lines+markers",
                     fill="tozeroy",
                     name="app",
-                    marker=dict(
-                        symbol=symbols[1], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[1], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[0],
                     legendgroup="app",
                     showlegend=legend_fix(self, i),
@@ -1008,9 +953,7 @@ class PlotCore:
                     mode="lines+markers",
                     fill="tozeroy",
                     name="Compute",
-                    marker=dict(
-                        symbol=symbols[3], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[3], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[1],
                     legendgroup="Compute",
                     showlegend=legend_fix(self, i),
@@ -1025,9 +968,7 @@ class PlotCore:
                     mode="lines+markers",
                     fill="tozeroy",
                     name="Visible I/O",
-                    marker=dict(
-                        symbol=symbols[4], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[4], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[2],
                     legendgroup="I/O",
                     showlegend=legend_fix(self, i),
@@ -1045,35 +986,27 @@ class PlotCore:
             title="Application Time",
         )
         self.f_t[-1].update_layout(hovermode="x", legend_tracegroupgap=1)
-        self.f_t[-1] = format_plot(self.f_t[-1],17)
+        self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
         modes = ["delta_t_agg", "delta_t_com", "delta_t_agg_io"]
         names = ["App", "Compute", "I/O"]
         self.f_t.append(
-            plot_time_error_bar(
-                self.data.df_time, modes, names, colors, symbols, markeredgecolor
-            )
+            plot_time_error_bar(self.data.df_time, modes, names, colors, symbols, markeredgecolor)
         )
-        self.f_t[-1] = format_plot(self.f_t[-1],17)
+        self.f_t[-1] = format_plot(self.f_t[-1], 17)
         self.f_t[-1].update_yaxes(type="log", row=1, col=1, showspikes=True)
 
         self.f_t.append(go.Figure())
         if self.nRun != 1:
             self.f_t[-1].update_layout(barmode="relative")
             self.f_t[-1].update_layout(
-                legend=dict(
-                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-                )
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
         self.f_t[-1].add_trace(
             go.Bar(
                 x=x,
-                y=self.data.df_time["delta_t_com"]
-                / self.data.df_time["delta_t_agg"]
-                * 100,
-                text=self.data.df_time["delta_t_com"]
-                / self.data.df_time["delta_t_agg"]
-                * 100,
+                y=self.data.df_time["delta_t_com"] / self.data.df_time["delta_t_agg"] * 100,
+                text=self.data.df_time["delta_t_com"] / self.data.df_time["delta_t_agg"] * 100,
                 name="Compute",
                 textposition="inside",
                 textangle=0,
@@ -1084,12 +1017,8 @@ class PlotCore:
         self.f_t[-1].add_trace(
             go.Bar(
                 x=x,
-                y=self.data.df_time["delta_t_agg_io"]
-                / self.data.df_time["delta_t_agg"]
-                * 100,
-                text=self.data.df_time["delta_t_agg_io"]
-                / self.data.df_time["delta_t_agg"]
-                * 100,
+                y=self.data.df_time["delta_t_agg_io"] / self.data.df_time["delta_t_agg"] * 100,
+                text=self.data.df_time["delta_t_agg_io"] / self.data.df_time["delta_t_agg"] * 100,
                 name="I/O",
                 textposition="inside",
                 textangle=0,
@@ -1107,7 +1036,7 @@ class PlotCore:
             barmode="stack",
         )  # ,uniformtext_minsize=12, uniformtext_mode='show')
         self.f_t[-1].update_yaxes(range=[0, 100])
-        self.f_t[-1] = format_plot(self.f_t[-1],17)
+        self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
         # ? I/O to compute ration
         self.f_t.append(add_fig_col(self.nRun))
@@ -1120,9 +1049,7 @@ class PlotCore:
                     mode="lines+markers",
                     name="Compute to I/O time",
                     legendgroup="Compute",
-                    marker=dict(
-                        symbol=symbols[3], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[3], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[0],
                     showlegend=legend_fix(self, i),
                     text=self.data.df_time["number_of_ranks"][index],
@@ -1141,9 +1068,7 @@ class PlotCore:
                     mode="lines+markers",
                     name="Ref",
                     legendgroup="Ref",
-                    marker=dict(
-                        symbol=symbols[4], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[4], line=dict(width=1, color=markeredgecolor)),
                     line_dash="dash",
                     marker_color=colors[1],
                     showlegend=legend_fix(self, i),
@@ -1168,7 +1093,7 @@ class PlotCore:
             tickvals=self.data.df_time["delta_t_agg_io"][index],
             showspikes=True,
         )
-        self.f_t[-1] = format_plot(self.f_t[-1],17)
+        self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
         #! I/O instensity for the malleability manager
         self.f_t.append(add_fig_col(self.nRun))
@@ -1182,9 +1107,7 @@ class PlotCore:
                     mode="lines+markers",
                     name="I/O time to compute",
                     legendgroup="IO1",
-                    marker=dict(
-                        symbol=symbols[3], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[3], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[0],
                     showlegend=legend_fix(self, i),
                     text=self.data.df_time["number_of_ranks"][index],
@@ -1203,9 +1126,7 @@ class PlotCore:
                     mode="lines+markers",
                     name="I/O time to total",
                     legendgroup="IO2",
-                    marker=dict(
-                        symbol=symbols[5], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[5], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[2],
                     showlegend=legend_fix(self, i),
                     text=self.data.df_time["number_of_ranks"][index],
@@ -1223,9 +1144,7 @@ class PlotCore:
                     mode="lines+markers",
                     name="Ref",
                     legendgroup="Ref",
-                    marker=dict(
-                        symbol=symbols[4], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[4], line=dict(width=1, color=markeredgecolor)),
                     line_dash="dash",
                     marker_color=colors[1],
                     showlegend=legend_fix(self, i),
@@ -1243,7 +1162,7 @@ class PlotCore:
             height=self.height,
             title="I/O intensity",
         )
-        self.f_t[-1] = format_plot(self.f_t[-1],17)
+        self.f_t[-1] = format_plot(self.f_t[-1], 17)
         self.f_t[-1].update_yaxes(
             title_text="Ranks",
             secondary_y=True,
@@ -1258,16 +1177,11 @@ class PlotCore:
         modes = ["delta_t_agg_io / delta_t_com", "delta_t_agg_io / delta_t_agg"]
         names = ["I/O to compute", "I/O to total"]
         self.f_t.append(
-            plot_time_error_bar(
-                self.data.df_time, modes, names, colors, symbols, markeredgecolor
-            )
+            plot_time_error_bar(self.data.df_time, modes, names, colors, symbols, markeredgecolor)
         )
 
         self.f_t.append(go.Figure())
-        colors = (
-            px.colors.qualitative.Plotly +
-            px.colors.qualitative.D3 
-            )
+        colors = px.colors.qualitative.Plotly + px.colors.qualitative.D3
         y = (
             self.data.df_time["delta_t_com"]
             - (self.data.df_time["delta_t_ara"] - self.data.df_time["delta_t_ar_lost"])
@@ -1276,9 +1190,7 @@ class PlotCore:
         if self.nRun != 1:
             self.f_t[-1].update_layout(barmode="relative")
             self.f_t[-1].update_layout(
-                legend=dict(
-                    orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-                )
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
         if not y.empty and not all(y == 0):
             self.f_t[-1].add_trace(
@@ -1300,16 +1212,10 @@ class PlotCore:
             self.f_t[-1].add_trace(
                 go.Bar(
                     x=x,
-                    y=(
-                        self.data.df_time["delta_t_awa"]
-                        - self.data.df_time["delta_t_aw_lost"]
-                    )
+                    y=(self.data.df_time["delta_t_awa"] - self.data.df_time["delta_t_aw_lost"])
                     / self.data.df_time["delta_t_agg"]
                     * 100,
-                    text=(
-                        self.data.df_time["delta_t_awa"]
-                        - self.data.df_time["delta_t_aw_lost"]
-                    )
+                    text=(self.data.df_time["delta_t_awa"] - self.data.df_time["delta_t_aw_lost"])
                     / self.data.df_time["delta_t_agg"]
                     * 100,
                     name="Async write exploit",
@@ -1326,16 +1232,10 @@ class PlotCore:
             self.f_t[-1].add_trace(
                 go.Bar(
                     x=x,
-                    y=(
-                        self.data.df_time["delta_t_ara"]
-                        - self.data.df_time["delta_t_ar_lost"]
-                    )
+                    y=(self.data.df_time["delta_t_ara"] - self.data.df_time["delta_t_ar_lost"])
                     / self.data.df_time["delta_t_agg"]
                     * 100,
-                    text=(
-                        self.data.df_time["delta_t_ara"]
-                        - self.data.df_time["delta_t_ar_lost"]
-                    )
+                    text=(self.data.df_time["delta_t_ara"] - self.data.df_time["delta_t_ar_lost"])
                     / self.data.df_time["delta_t_agg"]
                     * 100,
                     name="Async read exploit",
@@ -1352,9 +1252,7 @@ class PlotCore:
             self.f_t[-1].add_trace(
                 go.Bar(
                     x=x,
-                    y=self.data.df_time["delta_t_aw_lost"]
-                    / self.data.df_time["delta_t_agg"]
-                    * 100,
+                    y=self.data.df_time["delta_t_aw_lost"] / self.data.df_time["delta_t_agg"] * 100,
                     text=self.data.df_time["delta_t_aw_lost"]
                     / self.data.df_time["delta_t_agg"]
                     * 100,
@@ -1372,9 +1270,7 @@ class PlotCore:
             self.f_t[-1].add_trace(
                 go.Bar(
                     x=x,
-                    y=self.data.df_time["delta_t_ar_lost"]
-                    / self.data.df_time["delta_t_agg"]
-                    * 100,
+                    y=self.data.df_time["delta_t_ar_lost"] / self.data.df_time["delta_t_agg"] * 100,
                     text=self.data.df_time["delta_t_ar_lost"]
                     / self.data.df_time["delta_t_agg"]
                     * 100,
@@ -1392,12 +1288,8 @@ class PlotCore:
             self.f_t[-1].add_trace(
                 go.Bar(
                     x=x,
-                    y=self.data.df_time["delta_t_sw"]
-                    / self.data.df_time["delta_t_agg"]
-                    * 100,
-                    text=self.data.df_time["delta_t_sw"]
-                    / self.data.df_time["delta_t_agg"]
-                    * 100,
+                    y=self.data.df_time["delta_t_sw"] / self.data.df_time["delta_t_agg"] * 100,
+                    text=self.data.df_time["delta_t_sw"] / self.data.df_time["delta_t_agg"] * 100,
                     name="Sync write",
                     textposition="inside",
                     textangle=0,
@@ -1412,12 +1304,8 @@ class PlotCore:
             self.f_t[-1].add_trace(
                 go.Bar(
                     x=x,
-                    y=self.data.df_time["delta_t_sr"]
-                    / self.data.df_time["delta_t_agg"]
-                    * 100,
-                    text=self.data.df_time["delta_t_sr"]
-                    / self.data.df_time["delta_t_agg"]
-                    * 100,
+                    y=self.data.df_time["delta_t_sr"] / self.data.df_time["delta_t_agg"] * 100,
+                    text=self.data.df_time["delta_t_sr"] / self.data.df_time["delta_t_agg"] * 100,
                     name="Sync read",
                     textposition="inside",
                     textangle=0,
@@ -1435,7 +1323,7 @@ class PlotCore:
             barmode="stack",
             margin=dict(t=200),
         )
-        self.f_t[-1] = format_plot(self.f_t[-1],17)
+        self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
         self.f_t.append(add_fig_col(self.nRun))
         for i in range(0, self.nRun):
@@ -1446,9 +1334,7 @@ class PlotCore:
                     y=self.data.df_time["delta_t_sr"][index],
                     mode="lines+markers",
                     name="Sync read",
-                    marker=dict(
-                        symbol=symbols[0], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[0], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[0],
                     showlegend=legend_fix(self, i),
                     legendgroup="delta_t_sr",
@@ -1462,9 +1348,7 @@ class PlotCore:
                     y=self.data.df_time["delta_t_ara"][index],
                     mode="lines+markers",
                     name="Async read act.",
-                    marker=dict(
-                        symbol=symbols[1], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[1], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[1],
                     showlegend=legend_fix(self, i),
                     legendgroup="delta_t_ara",
@@ -1478,9 +1362,7 @@ class PlotCore:
                     y=self.data.df_time["delta_t_arr"][index],
                     mode="lines+markers",
                     name="Async read req.",
-                    marker=dict(
-                        symbol=symbols[2], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[2], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[2],
                     showlegend=legend_fix(self, i),
                     legendgroup="delta_t_arr",
@@ -1494,9 +1376,7 @@ class PlotCore:
                     y=self.data.df_time["delta_t_ar_lost"][index],
                     mode="lines+markers",
                     name="Async read lost",
-                    marker=dict(
-                        symbol=symbols[3], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[3], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[3],
                     showlegend=legend_fix(self, i),
                     legendgroup="delta_t_ar_lost",
@@ -1510,9 +1390,7 @@ class PlotCore:
                     y=self.data.df_time["delta_t_sw"][index],
                     mode="lines+markers",
                     name="Sync write",
-                    marker=dict(
-                        symbol=symbols[4], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[4], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[4],
                     showlegend=legend_fix(self, i),
                     legendgroup="delta_t_sw",
@@ -1526,9 +1404,7 @@ class PlotCore:
                     y=self.data.df_time["delta_t_awa"][index],
                     mode="lines+markers",
                     name="Async write act.",
-                    marker=dict(
-                        symbol=symbols[5], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[5], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[5],
                     showlegend=legend_fix(self, i),
                     legendgroup="delta_t_awa",
@@ -1542,9 +1418,7 @@ class PlotCore:
                     y=self.data.df_time["delta_t_awr"][index],
                     mode="lines+markers",
                     name="Async write req.",
-                    marker=dict(
-                        symbol=symbols[6], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[6], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[6],
                     showlegend=legend_fix(self, i),
                     legendgroup="delta_t_awr",
@@ -1558,9 +1432,7 @@ class PlotCore:
                     y=self.data.df_time["delta_t_aw_lost"][index],
                     mode="lines+markers",
                     name="Async write lost",
-                    marker=dict(
-                        symbol=symbols[7], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[7], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[7],
                     showlegend=legend_fix(self, i),
                     legendgroup="delta_t_aw_lost",
@@ -1577,7 +1449,7 @@ class PlotCore:
             height=self.height,
             title="I/O time",
         )
-        self.f_t[-1] = format_plot(self.f_t[-1],17)
+        self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
         self.f_t.append(add_fig_row(self.nRun, onefig=True))
         for i in range(0, self.nRun):
@@ -1590,9 +1462,7 @@ class PlotCore:
                     legendgroup="delta_t_sr",
                     legendgrouptitle_text="Sync read",
                     name="run %i" % i,
-                    marker=dict(
-                        symbol=symbols[0], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[0], line=dict(width=1, color=markeredgecolor)),
                 ),
                 row=1,
                 col=1,
@@ -1605,9 +1475,7 @@ class PlotCore:
                     legendgroup="delta_t_ara",
                     legendgrouptitle_text="Async read act.",
                     name="run %i" % i,
-                    marker=dict(
-                        symbol=symbols[1], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[1], line=dict(width=1, color=markeredgecolor)),
                 ),
                 row=1,
                 col=1,
@@ -1620,9 +1488,7 @@ class PlotCore:
                     legendgroup="delta_t_arr",
                     legendgrouptitle_text="Async read req.",
                     name="run %i" % i,
-                    marker=dict(
-                        symbol=symbols[2], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[2], line=dict(width=1, color=markeredgecolor)),
                 ),
                 row=1,
                 col=1,
@@ -1635,9 +1501,7 @@ class PlotCore:
                     legendgroup="delta_t_ar_lost",
                     legendgrouptitle_text="Async read lost.",
                     name="run %i" % i,
-                    marker=dict(
-                        symbol=symbols[3], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[3], line=dict(width=1, color=markeredgecolor)),
                 ),
                 row=1,
                 col=1,
@@ -1650,9 +1514,7 @@ class PlotCore:
                     legendgroup="delta_t_sw",
                     legendgrouptitle_text="Sync write ",
                     name="run %i" % i,
-                    marker=dict(
-                        symbol=symbols[4], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[4], line=dict(width=1, color=markeredgecolor)),
                 ),
                 row=1,
                 col=1,
@@ -1665,9 +1527,7 @@ class PlotCore:
                     legendgroup="delta_t_awa",
                     legendgrouptitle_text="Async write act.",
                     name="run %i" % i,
-                    marker=dict(
-                        symbol=symbols[5], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[5], line=dict(width=1, color=markeredgecolor)),
                 ),
                 row=1,
                 col=1,
@@ -1680,9 +1540,7 @@ class PlotCore:
                     legendgroup="delta_t_awr",
                     legendgrouptitle_text="Async write req.",
                     name="run %i" % i,
-                    marker=dict(
-                        symbol=symbols[6], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[6], line=dict(width=1, color=markeredgecolor)),
                 ),
                 row=1,
                 col=1,
@@ -1695,9 +1553,7 @@ class PlotCore:
                     legendgroup="delta_t_aw_lost",
                     legendgrouptitle_text="Async lost",
                     name="run %i" % i,
-                    marker=dict(
-                        symbol=symbols[7], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[7], line=dict(width=1, color=markeredgecolor)),
                 ),
                 row=1,
                 col=1,
@@ -1710,7 +1566,7 @@ class PlotCore:
             height=self.height,
             title="I/O time",
         )
-        self.f_t[-1] = format_plot(self.f_t[-1],17)
+        self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
         #! Error bar
         # modes = ["delta_t_sr", "delta_t_sw",  "delta_t_ar_lost", "delta_t_aw_lost",  "delta_t_ara",     "delta_t_awa",     "delta_t_arr",      "delta_t_awr"]
@@ -1736,9 +1592,7 @@ class PlotCore:
             "Async write lost",
         ]
         self.f_t.append(
-            plot_time_error_bar(
-                self.data.df_time, modes, names, colors, symbols, markeredgecolor
-            )
+            plot_time_error_bar(self.data.df_time, modes, names, colors, symbols, markeredgecolor)
         )
 
         self.f_t.append(add_fig_col(self.nRun))
@@ -1751,9 +1605,7 @@ class PlotCore:
                     mode="lines+markers",
                     name="Overhead",
                     legendgroup="delta_t_overhead",
-                    marker=dict(
-                        symbol=symbols[0], line=dict(width=1, color=markeredgecolor)
-                    ),
+                    marker=dict(symbol=symbols[0], line=dict(width=1, color=markeredgecolor)),
                     marker_color=colors[0],
                     showlegend=legend_fix(self, i),
                 ),
@@ -1769,9 +1621,7 @@ class PlotCore:
                         mode="lines+markers",
                         name="Post runtime",
                         legendgroup="delta_t_overhead_post_runtime",
-                        marker=dict(
-                            symbol=symbols[1], line=dict(width=1, color=markeredgecolor)
-                        ),
+                        marker=dict(symbol=symbols[1], line=dict(width=1, color=markeredgecolor)),
                         marker_color=colors[1],
                         showlegend=legend_fix(self, i),
                     ),
@@ -1786,9 +1636,7 @@ class PlotCore:
                         mode="lines+markers",
                         name="During runtime",
                         legendgroup="delta_t_overhead_peri_runtime",
-                        marker=dict(
-                            symbol=symbols[2], line=dict(width=1, color=markeredgecolor)
-                        ),
+                        marker=dict(symbol=symbols[2], line=dict(width=1, color=markeredgecolor)),
                         marker_color=colors[2],
                         showlegend=legend_fix(self, i),
                     ),
@@ -1803,7 +1651,7 @@ class PlotCore:
             height=self.height,
             title="Overhead",
         )
-        self.f_t[-1] = format_plot(self.f_t[-1],17)
+        self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
         if (
             "delta_t_overhead_post_runtime" in self.data.df_time.head()
@@ -1813,9 +1661,7 @@ class PlotCore:
             if self.nRun != 1:
                 self.f_t[-1].update_layout(barmode="relative")
                 self.f_t[-1].update_layout(
-                    legend=dict(
-                        orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-                    )
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
                 )
             self.f_t[-1].add_trace(
                 go.Bar(
@@ -1858,7 +1704,7 @@ class PlotCore:
                 barmode="stack",
             )  # ,uniformtext_minsize=12, uniformtext_mode='show')
             self.f_t[-1].update_yaxes(range=[0, 100])
-            self.f_t[-1] = format_plot(self.f_t[-1],17)
+            self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
         if "delta_t_rank0" in self.data.df_time.head():
             self.f_t.append(go.Figure())
@@ -1867,9 +1713,7 @@ class PlotCore:
                 delmiter = " "
                 self.f_t[-1].update_layout(barmode="relative")
                 self.f_t[-1].update_layout(
-                    legend=dict(
-                        orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
-                    )
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
                 )
             self.f_t[-1].add_trace(
                 go.Bar(
@@ -1931,7 +1775,7 @@ class PlotCore:
                 barmode="stack",
             )
             self.f_t[-1].update_yaxes(range=[0, 100])
-            self.f_t[-1] = format_plot(self.f_t[-1],17)
+            self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
             self.f_t.append(add_fig_col(self.nRun))
             for i in range(0, self.nRun):
@@ -1944,9 +1788,7 @@ class PlotCore:
                         fill="tozeroy",
                         name="Total",
                         legendgroup="Total",
-                        marker=dict(
-                            symbol=symbols[0], line=dict(width=1, color=markeredgecolor)
-                        ),
+                        marker=dict(symbol=symbols[0], line=dict(width=1, color=markeredgecolor)),
                         marker_color=colors[0],
                         showlegend=legend_fix(self, i),
                     ),
@@ -1961,9 +1803,7 @@ class PlotCore:
                         fill="tozeroy",
                         name="App",
                         legendgroup="App",
-                        marker=dict(
-                            symbol=symbols[1], line=dict(width=1, color=markeredgecolor)
-                        ),
+                        marker=dict(symbol=symbols[1], line=dict(width=1, color=markeredgecolor)),
                         marker_color=colors[1],
                         showlegend=legend_fix(self, i),
                     ),
@@ -1973,19 +1813,13 @@ class PlotCore:
                 self.f_t[-1].add_trace(
                     go.Scatter(
                         x=self.data.df_time["number_of_ranks"][index],
-                        y=self.data.df_time["delta_t_rank0_overhead_post_runtime"][
-                            index
-                        ]
-                        + self.data.df_time["delta_t_rank0_overhead_peri_runtime"][
-                            index
-                        ],
+                        y=self.data.df_time["delta_t_rank0_overhead_post_runtime"][index]
+                        + self.data.df_time["delta_t_rank0_overhead_peri_runtime"][index],
                         mode="lines+markers",
                         fill="tozeroy",
                         name="Overhead",
                         legendgroup="Overhead",
-                        marker=dict(
-                            symbol=symbols[2], line=dict(width=1, color=markeredgecolor)
-                        ),
+                        marker=dict(symbol=symbols[2], line=dict(width=1, color=markeredgecolor)),
                         marker_color=colors[2],
                         showlegend=legend_fix(self, i),
                     ),
@@ -2001,13 +1835,9 @@ class PlotCore:
                 title="Time Distribution Rank 0",
             )
             self.f_t[-1].update_layout(hovermode="x", legend_tracegroupgap=1)
-            self.f_t[-1].update_xaxes(
-                showspikes=True, spikethickness=1, spikecolor="black"
-            )
-            self.f_t[-1].update_yaxes(
-                showspikes=True, spikethickness=1, spikecolor="black"
-            )
-            self.f_t[-1] = format_plot(self.f_t[-1],17)
+            self.f_t[-1].update_xaxes(showspikes=True, spikethickness=1, spikecolor="black")
+            self.f_t[-1].update_yaxes(showspikes=True, spikethickness=1, spikecolor="black")
+            self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
             modes = [
                 "delta_t_rank0",
