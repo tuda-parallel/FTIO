@@ -15,10 +15,11 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 
 import numpy as np
 import plotly.graph_objects as go
-from ftio.plot.helper import format_plot_and_ticks
-from rich.table import Table
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
+
+from ftio.plot.helper import format_plot_and_ticks
 
 CONSOLE = Console()
 
@@ -37,7 +38,11 @@ class JitResult:
         self.stage_in_stats = {}
 
     def add_experiment(
-        self, tmp_app: list[float], tmp_stage_out: list[float], tmp_stage_in: list[float], run: str
+        self,
+        tmp_app: list[float],
+        tmp_stage_out: list[float],
+        tmp_stage_in: list[float],
+        run: str,
     ):
         """
         Add an experiment's data to the JitResult object.
@@ -83,7 +88,9 @@ class JitResult:
         self.stage_out_stats[run] = stage_out_stats
         self.stage_in_stats[run] = stage_in_stats
 
-    def add_dict(self, data_list: list[dict], get_latest_timestamp: bool = True):
+    def add_dict(
+        self, data_list: list[dict], get_latest_timestamp: bool = True
+    ):
         """
         Add data from a dictionary to the JitResult object, optionally using the latest data based on the timestamp.
 
@@ -130,8 +137,15 @@ class JitResult:
         fig = go.Figure()
 
         fig.add_bar(x=categories, y=self.app, text=self.app, name="App")
-        fig.add_bar(x=categories, y=self.stage_out, text=self.stage_out, name="Stage out")
-        fig.add_bar(x=categories, y=self.stage_in, text=self.stage_in, name="Stage in")
+        fig.add_bar(
+            x=categories,
+            y=self.stage_out,
+            text=self.stage_out,
+            name="Stage out",
+        )
+        fig.add_bar(
+            x=categories, y=self.stage_in, text=self.stage_in, name="Stage in"
+        )
 
         # Update text formatting
         fig.update_traces(
@@ -144,7 +158,12 @@ class JitResult:
 
         # Sum total
         total = list(
-            np.round(np.array(self.app) + np.array(self.stage_out) + np.array(self.stage_in), 2)
+            np.round(
+                np.array(self.app)
+                + np.array(self.stage_out)
+                + np.array(self.stage_in),
+                2,
+            )
         )
 
         # Plot total
@@ -164,7 +183,11 @@ class JitResult:
         self.format_and_show(fig, title, False)
 
     def format_and_show(
-        self, fig: go.Figure, title: str = "", text: bool = True, barmode: str = "relative"
+        self,
+        fig: go.Figure,
+        title: str = "",
+        text: bool = True,
+        barmode: str = "relative",
     ):
 
         if text:
@@ -190,8 +213,12 @@ class JitResult:
             title_font_size=24,  # Increased title font size
             width=1000 + 100 * len(self.node),
             height=550,
-            xaxis=dict(title_font=dict(size=24)),  # Increased x-axis title font size
-            yaxis=dict(title_font=dict(size=24)),  # Increased y-axis title font size
+            xaxis=dict(
+                title_font=dict(size=24)
+            ),  # Increased x-axis title font size
+            yaxis=dict(
+                title_font=dict(size=24)
+            ),  # Increased y-axis title font size
             legend=dict(
                 font=dict(size=20),  # Increased legend font size
             ),
@@ -264,14 +291,38 @@ class JitResult:
                 "mean": np.mean(app_values[index]) if app_values[index] else 0,
             }
             stats["stage_out"][index] = {
-                "min": min(stage_out_values[index]) if stage_out_values[index] else 0,
-                "max": max(stage_out_values[index]) if stage_out_values[index] else 0,
-                "mean": np.mean(stage_out_values[index]) if stage_out_values[index] else 0,
+                "min": (
+                    min(stage_out_values[index])
+                    if stage_out_values[index]
+                    else 0
+                ),
+                "max": (
+                    max(stage_out_values[index])
+                    if stage_out_values[index]
+                    else 0
+                ),
+                "mean": (
+                    np.mean(stage_out_values[index])
+                    if stage_out_values[index]
+                    else 0
+                ),
             }
             stats["stage_in"][index] = {
-                "min": min(stage_in_values[index]) if stage_in_values[index] else 0,
-                "max": max(stage_in_values[index]) if stage_in_values[index] else 0,
-                "mean": np.mean(stage_in_values[index]) if stage_in_values[index] else 0,
+                "min": (
+                    min(stage_in_values[index])
+                    if stage_in_values[index]
+                    else 0
+                ),
+                "max": (
+                    max(stage_in_values[index])
+                    if stage_in_values[index]
+                    else 0
+                ),
+                "mean": (
+                    np.mean(stage_in_values[index])
+                    if stage_in_values[index]
+                    else 0
+                ),
             }
 
         # Jit nodes are off by 1, as FTIO runs on a dedicated on
@@ -317,7 +368,11 @@ class JitResult:
                 stage_in_stats = self.stage_in_stats.get(run, None)
 
                 # Check if the statistics are available (otherwise skip this run or use default values)
-                if app_stats is None or stage_out_stats is None or stage_in_stats is None:
+                if (
+                    app_stats is None
+                    or stage_out_stats is None
+                    or stage_in_stats is None
+                ):
                     continue  # Skip this run if any of the stats are missing
 
                 # Extract the mean, min, and max values for each mode
@@ -344,7 +399,9 @@ class JitResult:
 
                 # Calculate error bars (min-max) and add them to the lists
                 app_error_diff.append((app_max - app_min) / 2)
-                stage_out_error_diff.append((stage_out_max - stage_out_min) / 2)
+                stage_out_error_diff.append(
+                    (stage_out_max - stage_out_min) / 2
+                )
                 stage_in_error_diff.append((stage_in_max - stage_in_min) / 2)
 
         # Plot app mean with min-max error bars
@@ -354,7 +411,9 @@ class JitResult:
                 y=app_values,
                 text=app_values,
                 name=f"App",
-                error_y=dict(type="data", array=app_error_diff),  # Min-max error bars
+                error_y=dict(
+                    type="data", array=app_error_diff
+                ),  # Min-max error bars
             )
         )
 
@@ -365,7 +424,9 @@ class JitResult:
                 y=stage_out_values,
                 text=stage_out_values,
                 name=f"Stage out",
-                error_y=dict(type="data", array=stage_out_error_diff),  # Min-max error bars
+                error_y=dict(
+                    type="data", array=stage_out_error_diff
+                ),  # Min-max error bars
             )
         )
 
@@ -376,7 +437,9 @@ class JitResult:
                 y=stage_in_values,
                 text=stage_in_values,
                 name=f"Stage in",
-                error_y=dict(type="data", array=stage_in_error_diff),  # Min-max error bars
+                error_y=dict(
+                    type="data", array=stage_in_error_diff
+                ),  # Min-max error bars
             )
         )
 
@@ -434,13 +497,20 @@ def sort_data(data_list: list[dict], get_latest_timestamp: bool = False):
     if get_latest_timestamp:
         # Separate entries with and without timestamps
         with_timestamp = [i for i in data_list["data"] if "timestamp" in i]
-        without_timestamp = [i for i in data_list["data"] if "timestamp" not in i]
+        without_timestamp = [
+            i for i in data_list["data"] if "timestamp" not in i
+        ]
 
         # Sort the entries that have timestamps in descending order
-        with_timestamp.sort(key=lambda x: x.get("timestamp", "0000-00-00 00:00:00"), reverse=True)
+        with_timestamp.sort(
+            key=lambda x: x.get("timestamp", "0000-00-00 00:00:00"),
+            reverse=True,
+        )
 
         # Now loop through the sorted data and update only the latest entry per mode
-        nodes_data = {}  # A dictionary to track the latest data for each mode and nodes
+        nodes_data = (
+            {}
+        )  # A dictionary to track the latest data for each mode and nodes
         for i in with_timestamp:
             nodes = i["nodes"]
             mode = i["mode"]
@@ -465,7 +535,9 @@ def sort_data(data_list: list[dict], get_latest_timestamp: bool = False):
 
 def speed_up(arr, nodes):
     # Ensure the array length is divisible by the number of nodes
-    assert len(arr) % len(nodes) == 0, "Array length must be divisible by the number of nodes"
+    assert (
+        len(arr) % len(nodes) == 0
+    ), "Array length must be divisible by the number of nodes"
 
     # Reshape the array into chunks based on the number of nodes
     chunks = arr.reshape(-1, len(nodes))
@@ -476,8 +548,12 @@ def speed_up(arr, nodes):
     # Calculate the speedups
 
     glass_speedup = np.where(last_chunk != 0, last_chunk / first_chunk, 0)
-    gekko_lustre_speedup = np.where(last_chunk != 0, last_chunk / second_chunk, 0)
-    glass_vs_gekko_speedup = np.where(second_chunk != 0, second_chunk / first_chunk, 0)
+    gekko_lustre_speedup = np.where(
+        last_chunk != 0, last_chunk / second_chunk, 0
+    )
+    glass_vs_gekko_speedup = np.where(
+        second_chunk != 0, second_chunk / first_chunk, 0
+    )
 
     # #this is improvment not sspeedup
     # glass_speedup = np.where(last_chunk != 0, (last_chunk - first_chunk) / last_chunk, 0)*100
@@ -545,11 +621,21 @@ def print_table(
     table.add_column("GekkoFS / GLASS", style="magenta")
 
     # concat list and find max
-    min_value = min(np.concatenate([lustre_vs_glass, lustre_vs_gekko, gekkos_vs_glass]))
-    max_value = max(np.concatenate([lustre_vs_glass, lustre_vs_gekko, gekkos_vs_glass]))
+    min_value = min(
+        np.concatenate([lustre_vs_glass, lustre_vs_gekko, gekkos_vs_glass])
+    )
+    max_value = max(
+        np.concatenate([lustre_vs_glass, lustre_vs_gekko, gekkos_vs_glass])
+    )
 
-    for i in range(len(nodes)):  # Use len(nodes) to iterate through the list of node names
-        row_values = [lustre_vs_glass[i], lustre_vs_gekko[i], gekkos_vs_glass[i]]
+    for i in range(
+        len(nodes)
+    ):  # Use len(nodes) to iterate through the list of node names
+        row_values = [
+            lustre_vs_glass[i],
+            lustre_vs_gekko[i],
+            gekkos_vs_glass[i],
+        ]
         chunks = [first_chunk[i], second_chunk[i], last_chunk[i]]
         highlighted = highlight_row(row_values, chunks, min_value, max_value)
         table.add_row(nodes[i], *highlighted)  # Use the node name directly
@@ -654,7 +740,13 @@ def stat(app, stage_out, stage_in, nodes, panel=""):
 
 
 def stat_with_min_max(
-    app, stage_out, stage_in, node, app_error_diff, stage_out_error, stage_in_error
+    app,
+    stage_out,
+    stage_in,
+    node,
+    app_error_diff,
+    stage_out_error,
+    stage_in_error,
 ):
     console = Console()
     console.print("[bold blue]--- Average  Speed-up  ----[/]")
@@ -672,7 +764,11 @@ def stat_with_min_max(
         stage_out_error = np.array(stage_out_error)
         stage_in_error = np.array(stage_in_error)
         console.print(
-            Panel.fit("[bold blue]--- Max Speed-up  ----[/]", style="white", border_style="green")
+            Panel.fit(
+                "[bold blue]--- Max Speed-up  ----[/]",
+                style="white",
+                border_style="green",
+            )
         )
         stat(
             app + app_error_diff,
@@ -682,7 +778,11 @@ def stat_with_min_max(
             "Max",
         )
         console.print(
-            Panel.fit("[bold blue]--- Min Speed-up  ----[/]", style="white", border_style="red")
+            Panel.fit(
+                "[bold blue]--- Min Speed-up  ----[/]",
+                style="white",
+                border_style="red",
+            )
         )
         stat(
             app - app_error_diff,

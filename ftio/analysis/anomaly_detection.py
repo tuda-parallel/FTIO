@@ -13,23 +13,23 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 from __future__ import annotations
-from sklearn.cluster import DBSCAN
-from sklearn.neighbors import NearestNeighbors
+
+# all
+import numpy as np
 from kneed import KneeLocator
 from rich.panel import Panel
+
+# find_peaks
+from scipy.signal import find_peaks
+from sklearn.cluster import DBSCAN
 
 # Isolation forest
 from sklearn.ensemble import IsolationForest
 
 # Lof
-from sklearn.neighbors import LocalOutlierFactor
+from sklearn.neighbors import LocalOutlierFactor, NearestNeighbors
 
-# find_peaks
-from scipy.signal import find_peaks
-
-# all
-import numpy as np
-from ftio.plot.anomaly_plot import plot_outliers, plot_decision_boundaries
+from ftio.plot.anomaly_plot import plot_decision_boundaries, plot_outliers
 
 
 def outlier_detection(
@@ -75,7 +75,11 @@ def outlier_detection(
     #     dominant_index = np.array(dominant_index)
     #     dominant_index = list(dominant_index[np.argsort(tmp)])
     text = Panel.fit(
-        text[:-1], style="white", border_style="green", title=title, title_align="left"
+        text[:-1],
+        style="white",
+        border_style="green",
+        title=title,
+        title_align="left",
     )
 
     return dominant_index, conf, text
@@ -84,7 +88,9 @@ def outlier_detection(
 # ?#################################
 # ? Z-score
 # ?#################################
-def z_score(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.ndarray, str]:
+def z_score(
+    amp: np.ndarray, freq_arr: np.ndarray, args
+) -> tuple[list[float], np.ndarray, str]:
     """calculates the outliers using zscore
 
     Args:
@@ -124,15 +130,17 @@ def z_score(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], n
         counter = 0
         for i in index[0]:
             counter += 1
-            text += (
-                f"           {counter}) {1/freq_arr[i+1]:.3f} s: z_k = {z_k[i]/np.max(z_k):.2f}\n"
-            )
+            text += f"           {counter}) {1/freq_arr[i+1]:.3f} s: z_k = {z_k[i]/np.max(z_k):.2f}\n"
 
-    index, removed_index, msg = remove_harmonics(freq_arr, amp_tmp, indices[index[0]])
+    index, removed_index, msg = remove_harmonics(
+        freq_arr, amp_tmp, indices[index[0]]
+    )
     text += msg
 
     if len(index) == 0:
-        text += "[red]No dominant frequency -> Signal might be not periodic[/]\n"
+        text += (
+            "[red]No dominant frequency -> Signal might be not periodic[/]\n"
+        )
     else:
         removed_index = [i - 1 for i in removed_index]  # tmp starts at 1
         # conf[index] = (z_k[index]/max_z  + z_k[index]/np.sum(z_k[index]) + 1/np.sum(z_k > 3))/3
@@ -165,7 +173,9 @@ def z_score(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], n
 # ?#################################
 # ? DB-Scan
 # ?#################################
-def db_scan(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.ndarray, str]:
+def db_scan(
+    amp: np.ndarray, freq_arr: np.ndarray, args
+) -> tuple[list[float], np.ndarray, str]:
     """calculates the outliers using dbscan
 
     Args:
@@ -189,7 +199,9 @@ def db_scan(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], n
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
     #! norm over sum for amplitude with power spectrum
-    d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
+    d = np.vstack(
+        (freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())
+    ).T
 
     eps_mode = "range"
     if eps_mode == "avr":
@@ -206,7 +218,8 @@ def db_scan(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], n
     elif eps_mode == "range":
         text += "Calculating eps using range\n"
         eps = np.sqrt(
-            pow((d[:, 1].max() - d[:, 1].min()) * (1 - args.tol), 2) + pow(d[1, 0] - d[0, 0], 2)
+            pow((d[:, 1].max() - d[:, 1].min()) * (1 - args.tol), 2)
+            + pow(d[1, 0] - d[0, 0], 2)
         )
         conf = d[:, 1] / d[:, 1].max()
     else:  # find distance using knee method
@@ -238,13 +251,19 @@ def db_scan(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], n
     model.fit(d)
     dominant_index = model.labels_
     # normalize like the remaing methods
-    dominant_index[dominant_index == -1] = dominant_index[dominant_index == -1] - 1
+    dominant_index[dominant_index == -1] = (
+        dominant_index[dominant_index == -1] - 1
+    )
     dominant_index = dominant_index + 1
 
     if "plotly" in args.engine:
-        plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d, eps)
+        plot_outliers(
+            args, freq_arr, amp, indecies, conf, dominant_index, d, eps
+        )
 
-    clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp, indecies[dominant_index == -1])
+    clean_index, _, msg = remove_harmonics(
+        freq_arr, amp_tmp, indecies[dominant_index == -1]
+    )
     dominant_index, text_d = dominant(clean_index, freq_arr, conf)
 
     return dominant_index, conf, text + msg + text_d
@@ -277,7 +296,9 @@ def isolation_forest(
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
     #! norm over sum for amplitude with power spectrum
-    d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
+    d = np.vstack(
+        (freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())
+    ).T
 
     model = IsolationForest(contamination=0.001, warm_start=True)
     # model = IsolationForest(contamination=float(0.001),warm_start=True, n_estimators=2)
@@ -290,7 +311,9 @@ def isolation_forest(
         plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d)
         plot_decision_boundaries(model, d, conf)
 
-    clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp, indecies[dominant_index == -1])
+    clean_index, _, msg = remove_harmonics(
+        freq_arr, amp_tmp, indecies[dominant_index == -1]
+    )
     dominant_index, text_d = dominant(clean_index, freq_arr, conf)
 
     return dominant_index, abs(conf), text + msg + text_d
@@ -299,7 +322,9 @@ def isolation_forest(
 # ?#################################
 # ? Odin
 # ?#################################
-def lof(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.ndarray, str]:
+def lof(
+    amp: np.ndarray, freq_arr: np.ndarray, args
+) -> tuple[list[float], np.ndarray, str]:
     """calculates the outliers using isolation lof
 
     Args:
@@ -322,7 +347,9 @@ def lof(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.nd
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
     #! norm over sum for amplitude with power spectrum
-    d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
+    d = np.vstack(
+        (freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())
+    ).T
 
     model = LocalOutlierFactor(contamination=0.001, novelty=True)
     model.fit(d)
@@ -335,7 +362,9 @@ def lof(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.nd
     if "plotly" in args.engine:
         plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d)
 
-    clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp, indecies[dominant_index == -1])
+    clean_index, _, msg = remove_harmonics(
+        freq_arr, amp_tmp, indecies[dominant_index == -1]
+    )
     dominant_index, text_d = dominant(clean_index, freq_arr, conf)
 
     return dominant_index, abs(conf), text + msg + text_d
@@ -344,7 +373,9 @@ def lof(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.nd
 # ?#################################
 # ? find_peaks
 # ?#################################
-def peaks(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.ndarray, str]:
+def peaks(
+    amp: np.ndarray, freq_arr: np.ndarray, args
+) -> tuple[list[float], np.ndarray, str]:
     """calculates the outliers using isolation lof
 
     Args:
@@ -367,7 +398,9 @@ def peaks(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
     #! norm over sum for amplitude with power spectrum
-    d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
+    d = np.vstack(
+        (freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())
+    ).T
 
     limit = 1.2 * np.mean(d[:, 1])
     found_peaks, _ = find_peaks(d[:, 1], height=limit if limit > 0.2 else 0.2)
@@ -380,7 +413,9 @@ def peaks(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.
     if "plotly" in args.engine:
         plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d)
 
-    clean_index, _, msg = remove_harmonics(freq_arr, amp_tmp, indecies[dominant_index == -1])
+    clean_index, _, msg = remove_harmonics(
+        freq_arr, amp_tmp, indecies[dominant_index == -1]
+    )
     dominant_index, text_d = dominant(clean_index, freq_arr, conf)
 
     return dominant_index, abs(conf), text + msg + text_d
@@ -419,7 +454,9 @@ def dominant(
     return out, text
 
 
-def remove_harmonics(freq_arr, amp_tmp, index_list) -> tuple[np.ndarray, list, str]:
+def remove_harmonics(
+    freq_arr, amp_tmp, index_list
+) -> tuple[np.ndarray, list, str]:
     """Removes harmonics
 
     Args:

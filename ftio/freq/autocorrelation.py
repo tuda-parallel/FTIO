@@ -4,23 +4,28 @@ and to filter outliers from the detected peaks.
 """
 
 from __future__ import annotations
+
 import time
-import numpy as np
-from scipy.signal import find_peaks
-from rich.panel import Panel
 from argparse import Namespace
+
+import numpy as np
+from rich.panel import Panel
+from scipy.signal import find_peaks
 
 # from rich.padding import Padding
 import ftio.freq.discretize as dis
-from ftio.freq.helper import MyConsole
-from ftio.plot.plot_autocorrelation import plot_autocorr_results
-from ftio.freq._share_signal_data import SharedSignalData
-from ftio.freq.prediction import Prediction
 from ftio.freq._analysis_figures import AnalysisFigures
+from ftio.freq._share_signal_data import SharedSignalData
+from ftio.freq.helper import MyConsole
+from ftio.freq.prediction import Prediction
+from ftio.plot.plot_autocorrelation import plot_autocorr_results
 
 
 def find_autocorrelation(
-    args: Namespace, data: dict, analysis_figures: AnalysisFigures, share: SharedSignalData
+    args: Namespace,
+    data: dict,
+    analysis_figures: AnalysisFigures,
+    share: SharedSignalData,
 ) -> Prediction:
     """Finds the period using autocorreleation
 
@@ -61,7 +66,9 @@ def find_autocorrelation(
             total_bytes = share.get("total_bytes")
         else:
             total_bytes = 0
-            bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
+            bandwidth = (
+                data["bandwidth"] if "bandwidth" in data else np.array([])
+            )
             time_stamps = data["time"] if "time" in data else np.array([])
             t_s = time_stamps[0]
             t_e = time_stamps[-1]
@@ -70,7 +77,11 @@ def find_autocorrelation(
                 t_s = time_stamps[0]
                 bandwidth = bandwidth[len(bandwidth) - len(time_stamps) :]
                 total_bytes = np.sum(
-                    bandwidth * (np.concatenate([time_stamps[1:], time_stamps[-1:]]) - time_stamps)
+                    bandwidth
+                    * (
+                        np.concatenate([time_stamps[1:], time_stamps[-1:]])
+                        - time_stamps
+                    )
                 )
                 console.print(f"[purple]Start time set to {args.ts:.2f}")
             else:
@@ -81,26 +92,36 @@ def find_autocorrelation(
                 t_s = time_stamps[-1]
                 bandwidth = bandwidth[len(bandwidth) - len(time_stamps) :]
                 total_bytes = np.sum(
-                    bandwidth * (np.concatenate([time_stamps[1:], time_stamps[-1:]]) - time_stamps)
+                    bandwidth
+                    * (
+                        np.concatenate([time_stamps[1:], time_stamps[-1:]])
+                        - time_stamps
+                    )
                 )
                 console.print(f"[purple]End time set to {args.te:.2f}")
             else:
                 console.print(f"[purple]End time: {time_stamps[-1]:.2f}")
 
             # sample the bandwidth
-            b_sampled, freq = dis.sample_data(bandwidth, time_stamps, args.freq, args.verbose)
+            b_sampled, freq = dis.sample_data(
+                bandwidth, time_stamps, args.freq, args.verbose
+            )
 
         res = find_fd_autocorrelation(args, b_sampled, freq, analysis_figures)
 
         # save the results
-        prediction.dominant_freq = 1 / res["periodicity"] if res["periodicity"] > 0 else np.nan
+        prediction.dominant_freq = (
+            1 / res["periodicity"] if res["periodicity"] > 0 else np.nan
+        )
         prediction.conf = res["conf"]
         prediction.t_start = t_s
         prediction.t_end = t_e
         prediction.total_bytes = total_bytes
         prediction.freq = freq
         prediction.candidates = candidates
-        console.print(f"\n[cyan]Autocorrelation finished:[/] {time.time() - tik:.3f} s")
+        console.print(
+            f"\n[cyan]Autocorrelation finished:[/] {time.time() - tik:.3f} s"
+        )
 
     return prediction
 
@@ -135,21 +156,33 @@ def filter_outliers(
             q3 = np.percentile(candidates, 75)
             iqr = q3 - q1
             threshold = 1.5 * iqr
-            outliers = np.where((candidates < q1 - threshold) | (candidates > q3 + threshold))
+            outliers = np.where(
+                (candidates < q1 - threshold) | (candidates > q3 + threshold)
+            )
         elif "z" in method:
-            text += "Filtering method: [purple]Z-score with weighteed mean[/]\n"
+            text += (
+                "Filtering method: [purple]Z-score with weighteed mean[/]\n"
+            )
             # With Zscore:
-            mean = np.average(candidates, weights=weights) if len(weights) > 0 else 0
-            # std = np.std(candidates)
-            std = (
-                np.sqrt(np.abs(np.average((candidates - mean) ** 2, weights=weights)))
+            mean = (
+                np.average(candidates, weights=weights)
                 if len(weights) > 0
                 else 0
             )
-            text += (
-                f"Wighted mean is [purple]{mean:.3f}[/] and weighted std. is [purple]{std:.3f}[/]\n"
+            # std = np.std(candidates)
+            std = (
+                np.sqrt(
+                    np.abs(
+                        np.average((candidates - mean) ** 2, weights=weights)
+                    )
+                )
+                if len(weights) > 0
+                else 0
             )
-            z_score = np.abs((candidates - mean) / std) if std != 0 else np.array([])
+            text += f"Wighted mean is [purple]{mean:.3f}[/] and weighted std. is [purple]{std:.3f}[/]\n"
+            z_score = (
+                np.abs((candidates - mean) / std) if std != 0 else np.array([])
+            )
             outliers = np.where(z_score > 1)
             text += f"Z-score is [purple]{print_array(z_score)}[/]\n"
 
@@ -165,7 +198,10 @@ def filter_outliers(
 
 
 def find_fd_autocorrelation(
-    args: Namespace, b_sampled: np.ndarray, freq: float, analysis_figures: AnalysisFigures
+    args: Namespace,
+    b_sampled: np.ndarray,
+    freq: float,
+    analysis_figures: AnalysisFigures,
 ) -> dict:
     """
     Computes the autocorrelation of a sampled signal, detects peaks, and calculates periodicity and confidence
@@ -198,7 +234,9 @@ def find_fd_autocorrelation(
     # Calculating period and its statistics
     if candidates.size > 0:
         mean = np.average(candidates, weights=weights)
-        std = np.sqrt(np.abs(np.average((candidates - mean) ** 2, weights=weights)))
+        std = np.sqrt(
+            np.abs(np.average((candidates - mean) ** 2, weights=weights))
+        )
         tmp = [f"{1/i:.4f}" for i in candidates]  # Formatting frequencies
         periodicity = mean
         coef_var = np.abs(std / mean)
@@ -233,7 +271,9 @@ def find_fd_autocorrelation(
     # plot
     if any(x in args.engine for x in ["mat", "plot"]):
         console.print(f"Generating Autocorrelation Plot\n")
-        fig = plot_autocorr_results(args, acorr, peaks, outliers, len(candidates) > 0)
+        fig = plot_autocorr_results(
+            args, acorr, peaks, outliers, len(candidates) > 0
+        )
         analysis_figures.add_figure([fig], "Autocorrelation")
         console.print(f" --- Done --- \n")
 

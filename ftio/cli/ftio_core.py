@@ -17,24 +17,26 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 from __future__ import annotations
-from argparse import Namespace
-import time
+
 import sys
+import time
+from argparse import Namespace
+
 import numpy as np
 
-from ftio.parse.extract import get_time_behavior_and_args
-from ftio.plot.freq_plot import convert_and_plot
-from ftio.freq.helper import MyConsole
-from ftio.freq.autocorrelation import find_autocorrelation
-from ftio.processing.print_output import display_prediction
-from ftio.prediction.unify_predictions import merge_predictions
-from ftio.freq.time_window import data_in_time_window
-from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
-from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
+from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft_workflow import ftio_dft
 from ftio.freq._share_signal_data import SharedSignalData
+from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
+from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
+from ftio.freq.autocorrelation import find_autocorrelation
+from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
-from ftio.freq._analysis_figures import AnalysisFigures
+from ftio.freq.time_window import data_in_time_window
+from ftio.parse.extract import get_time_behavior_and_args
+from ftio.plot.freq_plot import convert_and_plot
+from ftio.prediction.unify_predictions import merge_predictions
+from ftio.processing.print_output import display_prediction
 
 
 def main(
@@ -65,7 +67,9 @@ def main(
     data, args = get_time_behavior_and_args(cmd_input, msgs)
     console = MyConsole(args.verbose)
     console.print(f"\n[cyan]Data imported in:[/] {time.time() - start:.2f} s")
-    console.print(f"[cyan]Frequency Analysis:[/] {args.transformation.upper()}")
+    console.print(
+        f"[cyan]Frequency Analysis:[/] {args.transformation.upper()}"
+    )
     console.print(f"[cyan]Mode:[/] {args.mode}")
 
     list_analysis_figures = []
@@ -112,7 +116,9 @@ def core(sim: dict, args: Namespace) -> tuple[Prediction, AnalysisFigures]:
         return Prediction(), AnalysisFigures()
 
     # Perform frequency analysis (dft/wavelet)
-    prediction_freq_analysis, analysis_figures, share = freq_analysis(args, sim)
+    prediction_freq_analysis, analysis_figures, share = freq_analysis(
+        args, sim
+    )
     # Perform autocorrelation if args.autocorrelation is true + Merge the results into a single prediction
     prediction_auto = find_autocorrelation(args, sim, analysis_figures, share)
     # Merge results
@@ -169,7 +175,9 @@ def freq_analysis(
     ranks = data["ranks"] if "ranks" in data else 0
 
     #! Extract relevant data
-    bandwidth, time_b, text = data_in_time_window(args, bandwidth, time_b, total_bytes, ranks)
+    bandwidth, time_b, text = data_in_time_window(
+        args, bandwidth, time_b, total_bytes, ranks
+    )
 
     #! Perform transformation
     if "dft" in args.transformation:
@@ -183,7 +191,9 @@ def freq_analysis(
         )
 
     elif "wave_cont" in args.transformation:
-        prediction, analysis_figures, share = ftio_wavelet_cont(args, bandwidth, time_b, ranks)
+        prediction, analysis_figures, share = ftio_wavelet_cont(
+            args, bandwidth, time_b, ranks
+        )
 
     else:
         raise Exception("Unsupported decomposition specified")

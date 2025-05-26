@@ -1,13 +1,16 @@
 """Performs prediction with Pools (ProcessPoolExecutor) and a callback mechanism"""
 
 from __future__ import annotations
+
 import subprocess
+
 import zmq
-from ftio.multiprocessing.async_process import join_procs, handle_in_process
-from ftio.prediction.processes import prediction_process
-from ftio.prediction.helper import print_data, export_extrap
-from ftio.parse.args import parse_args
+
 from ftio.freq.helper import MyConsole
+from ftio.multiprocessing.async_process import handle_in_process, join_procs
+from ftio.parse.args import parse_args
+from ftio.prediction.helper import export_extrap, print_data
+from ftio.prediction.processes import prediction_process
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -58,7 +61,9 @@ def predictor_with_processes_zmq(
                 # launch prediction
                 # TODO: append b_app and t_app
                 procs.append(
-                    handle_in_process(prediction_process, args=(shard_resources, args, msgs))
+                    handle_in_process(
+                        prediction_process, args=(shard_resources, args, msgs)
+                    )
                 )
     except KeyboardInterrupt:
         print_data(shard_resources.data)
@@ -76,7 +81,9 @@ def bind_socket(addr: str, port: str):
         CONSOLE.print(f"[yellow]Error encountered:\n{e}[/]")
         CONSOLE.print("[yellow]Wrong IP address. Attempting to correct...[/]")
         addr = str(
-            subprocess.check_output("ip addr | grep 'inet 10' | awk  '{print $2}'", shell=True)
+            subprocess.check_output(
+                "ip addr | grep 'inet 10' | awk  '{print $2}'", shell=True
+            )
         )
         end = addr.rfind("/")
         start = addr.find("'")

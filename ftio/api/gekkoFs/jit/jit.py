@@ -12,9 +12,11 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-import sys
 import signal
+import sys
+
 from rich.console import Console
+
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.jittime import JitTime
 from ftio.api.gekkoFs.jit.setup_core import (
@@ -28,17 +30,16 @@ from ftio.api.gekkoFs.jit.setup_core import (
     start_gekko_daemon,
     start_gekko_proxy,
 )
-from ftio.api.gekkoFs.jit.setup_helper import (
+from ftio.api.gekkoFs.jit.setup_helper import (  # set_env,
+    allocate,
+    cancel_jit_jobs,
     get_address_cargo,
     get_address_ftio,
     handle_sigint,
     hard_kill,
+    log_dir,
     log_execution,
     parse_options,
-    cancel_jit_jobs,
-    allocate,
-    # set_env,
-    log_dir,
     print_settings,
     save_bandwidth,
     save_hosts_file,
@@ -46,7 +47,6 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     snapshot_directory,
     soft_kill,
 )
-
 
 console = Console()
 
@@ -141,7 +141,9 @@ def main() -> None:
     # 12.0 Hard kill
     hard_kill(settings)
 
-    console.print("[bold green]############### JIT completed ###############[/]")
+    console.print(
+        "[bold green]############### JIT completed ###############[/]"
+    )
     sys.exit(0)
 
 

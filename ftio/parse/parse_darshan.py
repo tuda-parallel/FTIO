@@ -1,5 +1,5 @@
-from ftio.parse.simrun import Simrun
 from ftio.parse.darshan_reader import extract
+from ftio.parse.simrun import Simrun
 
 
 class ParseDarshan:

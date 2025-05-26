@@ -9,9 +9,10 @@ Returns:
 
 import sys
 import time
+
 import darshan
-from rich.console import Console
 import pandas as pd
+from rich.console import Console
 
 
 def extract(path, args) -> tuple[dict, int]:
@@ -70,7 +71,9 @@ def extract_data(path: str, args) -> tuple[list, int, dict]:
                     pass
                 elif freq > 0 and "ftio" in args.files[0]:
                     args.freq = freq
-                    console.print(f"[cyan]Adjusting sampling freq:[/] {freq:.3e}")
+                    console.print(
+                        f"[cyan]Adjusting sampling freq:[/] {freq:.3e}"
+                    )
 
         elif "POSIX" in args.dxt_mode.upper():
             if "DXT_POSIX" in modules:
@@ -80,7 +83,9 @@ def extract_data(path: str, args) -> tuple[list, int, dict]:
                 dataframe, freq, total_time = extract_heatmap(report, "POSIX")
                 if freq > 0:
                     args.freq = freq
-                    console.print(f"[cyan]Adjusting sampling freq:[/] {freq:.3e}")
+                    console.print(
+                        f"[cyan]Adjusting sampling freq:[/] {freq:.3e}"
+                    )
 
         console.print(f"[cyan]Done:[/] {time.time()-start:.3f} s\n")
 
@@ -132,7 +137,9 @@ def extract_heatmap(report, kind: str) -> tuple[list, float, dict]:
                     }
                 )
             else:
-                dataframe.append({"rank": rank, f"{mode}_segments": pd.DataFrame()})
+                dataframe.append(
+                    {"rank": rank, f"{mode}_segments": pd.DataFrame()}
+                )
             t_sum_rank += col_name[-1].right
 
         total_time["delta_t_agg"] = t_sum_rank
@@ -184,7 +191,10 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
     time_sw = 0
 
     for rank, _ in enumerate(dataframe):
-        if "write_segments" in dataframe[rank] and not dataframe[rank]["write_segments"].empty:
+        if (
+            "write_segments" in dataframe[rank]
+            and not dataframe[rank]["write_segments"].empty
+        ):
             bandwidth = dataframe[rank]["write_segments"]["length"] / (
                 dataframe[rank]["write_segments"]["end_time"]
                 - dataframe[rank]["write_segments"]["start_time"]
@@ -197,26 +207,38 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
             write["bandwidth"]["t_rank_s"].extend(
                 dataframe[rank]["write_segments"]["start_time"].to_list()
             )
-            write["number_of_ranks"] = max(write["number_of_ranks"], dataframe[rank]["rank"] + 1)
+            write["number_of_ranks"] = max(
+                write["number_of_ranks"], dataframe[rank]["rank"] + 1
+            )
             time_sw += sum(
                 (
                     dataframe[rank]["write_segments"]["end_time"]
                     - dataframe[rank]["write_segments"]["start_time"]
                 ).to_list()
             )
-            write["total_bytes"] += sum(dataframe[rank]["write_segments"]["length"])
+            write["total_bytes"] += sum(
+                dataframe[rank]["write_segments"]["length"]
+            )
             write["max_bytes_per_rank"] = max(
-                write["max_bytes_per_rank"], sum(dataframe[rank]["write_segments"]["length"])
+                write["max_bytes_per_rank"],
+                sum(dataframe[rank]["write_segments"]["length"]),
             )
             write["max_bytes_per_phase"] = max(
-                write["max_bytes_per_phase"], max(dataframe[rank]["write_segments"]["length"])
+                write["max_bytes_per_phase"],
+                max(dataframe[rank]["write_segments"]["length"]),
             )
             write["max_io_phases_per_rank"] = max(
-                write["max_io_phases_per_rank"], len(dataframe[rank]["write_segments"]["length"])
+                write["max_io_phases_per_rank"],
+                len(dataframe[rank]["write_segments"]["length"]),
             )
-            write["total_io_phases"] += len(dataframe[rank]["write_segments"]["length"])
+            write["total_io_phases"] += len(
+                dataframe[rank]["write_segments"]["length"]
+            )
 
-        if "read_segments" in dataframe[rank] and not dataframe[rank]["read_segments"].empty:
+        if (
+            "read_segments" in dataframe[rank]
+            and not dataframe[rank]["read_segments"].empty
+        ):
             bandwidth = dataframe[rank]["read_segments"]["length"] / (
                 dataframe[rank]["read_segments"]["end_time"]
                 - dataframe[rank]["read_segments"]["start_time"]
@@ -229,24 +251,33 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
             read["bandwidth"]["t_rank_s"].extend(
                 dataframe[rank]["read_segments"]["start_time"].to_list()
             )
-            read["number_of_ranks"] = max(read["number_of_ranks"], dataframe[rank]["rank"] + 1)
+            read["number_of_ranks"] = max(
+                read["number_of_ranks"], dataframe[rank]["rank"] + 1
+            )
             time_sr += sum(
                 (
                     dataframe[rank]["read_segments"]["end_time"]
                     - dataframe[rank]["read_segments"]["start_time"]
                 ).to_list()
             )
-            read["total_bytes"] += sum(dataframe[rank]["read_segments"]["length"])
+            read["total_bytes"] += sum(
+                dataframe[rank]["read_segments"]["length"]
+            )
             read["max_bytes_per_rank"] = max(
-                read["max_bytes_per_rank"], sum(dataframe[rank]["read_segments"]["length"])
+                read["max_bytes_per_rank"],
+                sum(dataframe[rank]["read_segments"]["length"]),
             )
             read["max_bytes_per_phase"] = max(
-                read["max_bytes_per_phase"], max(dataframe[rank]["read_segments"]["length"])
+                read["max_bytes_per_phase"],
+                max(dataframe[rank]["read_segments"]["length"]),
             )
             read["max_io_phases_per_rank"] = max(
-                read["max_io_phases_per_rank"], len(dataframe[rank]["read_segments"]["length"])
+                read["max_io_phases_per_rank"],
+                len(dataframe[rank]["read_segments"]["length"]),
             )
-            read["total_io_phases"] += len(dataframe[rank]["read_segments"]["length"])
+            read["total_io_phases"] += len(
+                dataframe[rank]["read_segments"]["length"]
+            )
 
     # total time
     time = {

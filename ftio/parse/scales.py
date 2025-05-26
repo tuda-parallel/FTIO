@@ -1,20 +1,22 @@
 """Handles the importing of modules"""
 
-import os
 import datetime
-import pandas as pd
+import os
+
 import numpy as np
+import pandas as pd
 from rich.console import Console
-from ftio.parse.parse_json import ParseJson
-from ftio.parse.parse_jsonl import ParseJsonl
-from ftio.parse.parse_recorder import ParseRecorder
-from ftio.parse.parse_darshan import ParseDarshan
-from ftio.parse.parse_msgpack import ParseMsgpack
-from ftio.parse.parse_txt import ParseTxt
-from ftio.parse.parse_custom import ParseCustom
-from ftio.parse.parse_zmq import ParseZmq
+
 from ftio.parse.args import parse_args
 from ftio.parse.helper import match_mode, print_info
+from ftio.parse.parse_custom import ParseCustom
+from ftio.parse.parse_darshan import ParseDarshan
+from ftio.parse.parse_json import ParseJson
+from ftio.parse.parse_jsonl import ParseJsonl
+from ftio.parse.parse_msgpack import ParseMsgpack
+from ftio.parse.parse_recorder import ParseRecorder
+from ftio.parse.parse_txt import ParseTxt
+from ftio.parse.parse_zmq import ParseZmq
 
 
 class Scales:
@@ -87,19 +89,29 @@ class Scales:
                     skip_files = ["scale.jsonl", ".call.txt"]
                     for unwanted in skip_files:
                         if unwanted in files:
-                            console.print(f"[yellow]Skipping file: {root}/{unwanted}[/]")
+                            console.print(
+                                f"[yellow]Skipping file: {root}/{unwanted}[/]"
+                            )
                             files.remove(unwanted)
 
                     # sort the files
                     sorted_files = sorted(files, key=len)
 
                     for file in sorted_files:
-                        if any(ext in file for ext in ["json", "darshan", "msgpack", "txt"]):
+                        if any(
+                            ext in file
+                            for ext in ["json", "darshan", "msgpack", "txt"]
+                        ):
                             file_path = os.path.join(root, file)
                             # Limit the number of ranks to consider if self.limit is defined
                             try:
-                                if self.args.limit > 0 and get_rank(file) >= self.args.limit:
-                                    console.print(f"[yellow]Skipping file: {file}[/]")
+                                if (
+                                    self.args.limit > 0
+                                    and get_rank(file) >= self.args.limit
+                                ):
+                                    console.print(
+                                        f"[yellow]Skipping file: {file}[/]"
+                                    )
                                     continue
                             except Exception as error:
                                 console.print(
@@ -112,7 +124,9 @@ class Scales:
 
             # Compare Several files
             elif (
-                not self.same_path and ".json" in path[-6:] and not "ftio" in self.prog_name.lower()
+                not self.same_path
+                and ".json" in path[-6:]
+                and not "ftio" in self.prog_name.lower()
             ):
                 self.names.append(path)
                 console.print(f"[cyan]Current file:[/] {path}")
@@ -163,7 +177,12 @@ class Scales:
         for i in argv:
             self.call = self.call + " " + i
         f = open("%s/.call.txt" % (os.getcwd()), "a")
-        f.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M") + " :" + self.call + "\n\n")
+        f.write(
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            + " :"
+            + self.call
+            + "\n\n"
+        )
         f.close()
 
     def check_same_path(self):
@@ -294,7 +313,9 @@ class Scales:
 
             else:
                 data_metrics = np.vstack((data_metrics, data[1]))
-                data_rank_ovr = np.concatenate((data_rank_ovr, data[3]), axis=1)
+                data_rank_ovr = np.concatenate(
+                    (data_rank_ovr, data[3]), axis=1
+                )
                 data_rank = np.concatenate((data_rank, data[5]), axis=1)
                 data_ind_ovr = np.concatenate((data_ind_ovr, data[7]), axis=1)
                 data_ind = np.concatenate((data_ind, data[9]), axis=1)
@@ -370,7 +391,9 @@ def get_rank(name: str) -> int:
         return name
     else:
         start = name.rfind("/")
-        end = max(name.rfind(".json"), name.rfind(".darshan"), name.rfind(".msgpack"))
+        end = max(
+            name.rfind(".json"), name.rfind(".darshan"), name.rfind(".msgpack")
+        )
         rank = name[start + 1 : end]
         strs = ["_", "-", " "]
         if any(x in rank for x in strs):

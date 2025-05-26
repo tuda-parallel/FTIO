@@ -5,12 +5,14 @@ This module provides functionality to process and display prediction results on 
 """
 
 from argparse import Namespace
+
 import numpy as np
 from rich.table import Table
-from ftio.prediction.unify_predictions import color_pred
-from ftio.prediction.helper import get_dominant_and_conf
+
 from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
+from ftio.prediction.helper import get_dominant_and_conf
+from ftio.prediction.unify_predictions import color_pred
 
 
 def display_prediction(
@@ -44,7 +46,8 @@ def display_prediction(
             )
         else:
             console.info(
-                "[cyan underline]Prediction results:[/]\n" "[red]No dominant frequency found[/]\n"
+                "[cyan underline]Prediction results:[/]\n"
+                "[red]No dominant frequency found[/]\n"
             )
     # If -n is provided, print the top frequencies with their confidence and amplitude in a table
     if isinstance(argv, Namespace) and argv.n_freq > 0:
@@ -52,7 +55,11 @@ def display_prediction(
         if prediction.top_freqs:
             freq_array = prediction.top_freqs["freq"]
             conf_array = np.round(
-                np.where(np.isinf(prediction.top_freqs["conf"]), 1, prediction.top_freqs["conf"])
+                np.where(
+                    np.isinf(prediction.top_freqs["conf"]),
+                    1,
+                    prediction.top_freqs["conf"],
+                )
                 * 100,
                 2,
             )
@@ -60,11 +67,21 @@ def display_prediction(
             phi_array = prediction.top_freqs["phi"]
 
             table = Table(show_header=True, header_style="bold cyan")
-            table.add_column("Freq (Hz)", justify="right", style="white", no_wrap=True)
-            table.add_column("Conf. (%)", justify="right", style="white", no_wrap=True)
-            table.add_column("Amplitude", justify="right", style="white", no_wrap=True)
-            table.add_column("Phi", justify="right", style="white", no_wrap=True)
-            table.add_column("Cosine Wave", justify="right", style="white", no_wrap=True)
+            table.add_column(
+                "Freq (Hz)", justify="right", style="white", no_wrap=True
+            )
+            table.add_column(
+                "Conf. (%)", justify="right", style="white", no_wrap=True
+            )
+            table.add_column(
+                "Amplitude", justify="right", style="white", no_wrap=True
+            )
+            table.add_column(
+                "Phi", justify="right", style="white", no_wrap=True
+            )
+            table.add_column(
+                "Cosine Wave", justify="right", style="white", no_wrap=True
+            )
 
             description = ""
             # Add frequency data
@@ -86,6 +103,8 @@ def display_prediction(
                     description += " + " + cosine_wave
 
             console.info(table)
-            console.info(f"Carterization up to {argv.n_freq} frequencies: \n{description}\n")
+            console.info(
+                f"Carterization up to {argv.n_freq} frequencies: \n{description}\n"
+            )
         else:
             console.info("[red]No top frequency data found[/]")

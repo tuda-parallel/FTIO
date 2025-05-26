@@ -12,6 +12,7 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 
 import numpy as np
 from rich.panel import Panel
+
 from ftio.freq.helper import MyConsole
 
 

@@ -6,10 +6,11 @@ a NumPy-based implementation or FastDTW (if available). It also supports
 multi-threaded DTW evaluation for improved performance.
 """
 
-import numpy as np
 import importlib.util
-from scipy.spatial.distance import euclidean
 from threading import Thread
+
+import numpy as np
+from scipy.spatial.distance import euclidean
 
 # Check if fastdtw is available
 FASTDTW_AVAILABLE: bool = importlib.util.find_spec("fastdtw") is not None
@@ -80,7 +81,9 @@ def evaluate_dtw(discret_arr, original_discret_signal, freq):
     print(f"    '-> \033[1;32mfreq {freq:.2f} Hz\033[1;0m --> dtw: {dtw_k1}")
 
 
-def threaded_dtw(sum_all_components, df, dominant_X1, dominant_k1, dominant_X2, dominant_k2):
+def threaded_dtw(
+    sum_all_components, df, dominant_X1, dominant_k1, dominant_X2, dominant_k2
+):
     """
     Compute DTW distances for dominant components in parallel using threads.
 

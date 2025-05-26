@@ -1,8 +1,10 @@
-import numpy as np
 from argparse import Namespace
-from ftio.freq.freq_html import create_html
-import matplotlib.pyplot as plt
+
 import matplotlib.figure  # to check type
+import matplotlib.pyplot as plt
+import numpy as np
+
+from ftio.freq.freq_html import create_html
 
 
 class AnalysisFigures:
@@ -22,7 +24,18 @@ class AnalysisFigures:
         coefficients=None,
     ):
         self.set_bulk(
-            args, b, t, b_sampled, t_sampled, freqs, amp, phi, conf, ranks, scales, coefficients
+            args,
+            b,
+            t,
+            b_sampled,
+            t_sampled,
+            freqs,
+            amp,
+            phi,
+            conf,
+            ranks,
+            scales,
+            coefficients,
         )
         self.figures = []
         self.figure_titles = []
@@ -84,7 +97,9 @@ class AnalysisFigures:
             value (array-like): The value to set (converted to np.array).
         """
         if not hasattr(self, field_name):
-            raise AttributeError(f"'AnalysisFigures' object has no attribute '{field_name}'")
+            raise AttributeError(
+                f"'AnalysisFigures' object has no attribute '{field_name}'"
+            )
         setattr(self, field_name, np.array(value))
 
     def get(self, field_name):
@@ -101,14 +116,18 @@ class AnalysisFigures:
             AttributeError: If the attribute does not exist.
         """
         if not hasattr(self, field_name):
-            raise AttributeError(f"'AnalysisFigures' object has no attribute '{field_name}'")
+            raise AttributeError(
+                f"'AnalysisFigures' object has no attribute '{field_name}'"
+            )
         return getattr(self, field_name)
 
     def is_empty(self) -> bool:
         return len(self.figures) == 0
 
     def __bool__(self):
-        return self.is_empty() or any(x in self.args.engine for x in ["mat", "plot"])
+        return self.is_empty() or any(
+            x in self.args.engine for x in ["mat", "plot"]
+        )
 
     def __len__(self):
         return len(self.figures)
@@ -138,7 +157,9 @@ class AnalysisFigures:
 
     def show(self):
         if self.args is not None:
-            condition = "plot" in self.args.engine and not self.args.runtime_plots
+            condition = (
+                "plot" in self.args.engine and not self.args.runtime_plots
+            )
             for i, fig_list in enumerate(self.figures):
                 self.show_figs(fig_list, self.figure_titles[i], condition)
 
@@ -233,5 +254,9 @@ class AnalysisFigures:
             "coefficients",
             "ranks",
         ]
-        lines = [f"{attr}: {type(getattr(self, attr)).__name__}" for attr in attrs]
-        return s + "AnalysisFigures with fields and types:\n" + "\n".join(lines)
+        lines = [
+            f"{attr}: {type(getattr(self, attr)).__name__}" for attr in attrs
+        ]
+        return (
+            s + "AnalysisFigures with fields and types:\n" + "\n".join(lines)
+        )

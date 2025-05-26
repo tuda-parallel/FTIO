@@ -1,8 +1,10 @@
 """Groups predictions according to frequency step"""
 
 from __future__ import annotations
+
 import numpy as np
 from sklearn.cluster import DBSCAN
+
 from ftio.prediction.helper import get_dominant
 
 
@@ -74,7 +76,9 @@ def group_dbscan(data: list[dict]) -> tuple[list[dict], int]:
 
     tol_min = 1 / np.std(window) if window and np.std(window) != 0 else 1e-8
     tol = (
-        2 * tol_max if tol_max < 3 * tol_min else np.abs(1 - (tol_min / np.mean(window))) * tol_max
+        2 * tol_max
+        if tol_max < 3 * tol_min
+        else np.abs(1 - (tol_min / np.mean(window))) * tol_max
     )  # 3 times std means 99 points
     tol = tol if tol > 0 and tol != np.inf else 1e-8  # dbscan expects tol > 0
     # print(f"tol_min is: {tol_min}\ntol_max is: {tol_max}\ntol is: {tol}")

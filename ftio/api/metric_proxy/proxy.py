@@ -1,10 +1,10 @@
-from ftio.cli.ftio_core import core
-from ftio.parse.args import parse_args
-from ftio.processing.print_output import display_prediction
-from ftio.plot.freq_plot import convert_and_plot
 from ftio.api.metric_proxy.parse_proxy import parse
-from ftio.processing.post_processing import label_phases
+from ftio.cli.ftio_core import core
 from ftio.freq.helper import MyConsole
+from ftio.parse.args import parse_args
+from ftio.plot.freq_plot import convert_and_plot
+from ftio.processing.post_processing import label_phases
+from ftio.processing.print_output import display_prediction
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -12,7 +12,9 @@ CONSOLE.set(True)
 # ---------------------------------
 # Modification Area
 # ---------------------------------
-b, t = parse("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", "total___mpi___size_total")
+b, t = parse(
+    "/d/sim/metric_proxy/traces/Mixed_1x8_5.json", "total___mpi___size_total"
+)
 # b, t = parse("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", "mpi___size___mpi_allgather")
 ranks = 32
 

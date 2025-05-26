@@ -142,6 +142,9 @@ pip install .
 
 #Or with external dependencies for improved performance
 pip install '.[external-libs]'
+
+#Or with external dependencies and style tools 
+pip install '.[external-libs,development-libs]'
 ```
 
 > [!note]

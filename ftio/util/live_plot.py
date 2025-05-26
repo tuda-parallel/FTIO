@@ -1,12 +1,13 @@
-import dash
-from dash import dcc, html
-import plotly.graph_objects as go
-import pandas as pd
-import json
-from dash.dependencies import Input, Output
-import threading
 import base64
 import io
+import json
+import threading
+
+import dash
+import pandas as pd
+import plotly.graph_objects as go
+from dash import dcc, html
+from dash.dependencies import Input, Output
 
 # Initialize Dash app
 app = dash.Dash(__name__)
@@ -65,11 +66,21 @@ def update_graph(n, uploaded_file):
     fig = go.Figure()
     if not current_data.empty:
         fig.add_trace(
-            go.Scatter(x=current_data["x"], y=current_data["y"], mode="markers", name="Data Points")
+            go.Scatter(
+                x=current_data["x"],
+                y=current_data["y"],
+                mode="markers",
+                name="Data Points",
+            )
         )
 
         # Customize the layout of the plot
-        fig.update_layout(title="Live Data Plot", xaxis_title="X", yaxis_title="Y", showlegend=True)
+        fig.update_layout(
+            title="Live Data Plot",
+            xaxis_title="X",
+            yaxis_title="Y",
+            showlegend=True,
+        )
 
     return fig
 

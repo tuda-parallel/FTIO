@@ -1,10 +1,10 @@
+import matplotlib.pyplot as plt
 import numpy as np
-from scipy.cluster.hierarchy import linkage
 import pandas as pd
 import plotly.express as px
-import seaborn as sns
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+import seaborn as sns
+from scipy.cluster.hierarchy import linkage
 
 from ftio.plot.helper import format_plot_and_ticks
 
@@ -34,7 +34,11 @@ def heatmap(data):
 
     # Convert to DataFrame
     heatmap_data = pd.DataFrame(
-        {"Metric": metrics, "Dominant Frequency": dominant_freqs, "Confidence": confs}
+        {
+            "Metric": metrics,
+            "Dominant Frequency": dominant_freqs,
+            "Confidence": confs,
+        }
     )
 
     # Ensure data is not empty and contains valid ranges
@@ -58,10 +62,12 @@ def heatmap(data):
     )
 
     # Convert Interval bins to strings for Plotly
-    heatmap_data["Dominant Frequency Binned"] = heatmap_data["Dominant Frequency Binned"].astype(
-        str
+    heatmap_data["Dominant Frequency Binned"] = heatmap_data[
+        "Dominant Frequency Binned"
+    ].astype(str)
+    heatmap_data.sort_values(
+        by="Dominant Frequency", inplace=True, ignore_index=True
     )
-    heatmap_data.sort_values(by="Dominant Frequency", inplace=True, ignore_index=True)
 
     # Pivot the DataFrame to switch x and y axes
     heatmap_pivot = heatmap_data.pivot_table(
@@ -102,14 +108,23 @@ def heatmap(data):
 
 def scatter(df, x, y, color, symbol) -> None:
     # Create the scatter plot
-    fig = px.scatter(df, x=x, y=y, color=color, symbol=symbol, color_continuous_scale="Viridis")
+    fig = px.scatter(
+        df,
+        x=x,
+        y=y,
+        color=color,
+        symbol=symbol,
+        color_continuous_scale="Viridis",
+    )
     # Display the plot
     fig.update_layout(
         xaxis_title=x,
         yaxis_title=y,
         xaxis_tickangle=-45,
         margin=dict(l=100, r=100, t=50, b=150),
-        coloraxis_colorbar=dict(orientation="h", ticks="outside", ticksuffix=" %", title=""),
+        coloraxis_colorbar=dict(
+            orientation="h", ticks="outside", ticksuffix=" %", title=""
+        ),
     )
     fig.show()
 
@@ -134,7 +149,9 @@ def scatter2D(df) -> None:
         yaxis_title="Dominant Frequency",
         xaxis_tickangle=-45,
         margin=dict(l=100, r=100, t=50, b=150),
-        coloraxis_colorbar=dict(yanchor="top", y=1, ticks="outside", ticksuffix=" %"),
+        coloraxis_colorbar=dict(
+            yanchor="top", y=1, ticks="outside", ticksuffix=" %"
+        ),
     )
     fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()
@@ -166,7 +183,11 @@ def heatmap_2(data):
 
     # Convert to DataFrame
     heatmap_data = pd.DataFrame(
-        {"Metric": metrics, "Dominant Frequency": dominant_freqs, "Confidence": confs}
+        {
+            "Metric": metrics,
+            "Dominant Frequency": dominant_freqs,
+            "Confidence": confs,
+        }
     )
 
     # Ensure data is not empty and contains valid ranges
@@ -177,7 +198,9 @@ def heatmap_2(data):
     dominant_freq_per_metric = heatmap_data.loc[
         heatmap_data.groupby("Metric")["Confidence"].idxmax()
     ]
-    dominant_freq_per_metric.sort_values("Dominant Frequency", ignore_index=True, inplace=True)
+    dominant_freq_per_metric.sort_values(
+        "Dominant Frequency", ignore_index=True, inplace=True
+    )
 
     # Create a DataFrame for the differences in Dominant Frequency
     # metrics_unique = sorted(dominant_freq_per_metric['Metric'].unique())
@@ -192,10 +215,12 @@ def heatmap_2(data):
         for j, metric_j in enumerate(metrics_unique):
             if i <= j:  # Only calculate for one half of the matrix
                 freq_i = dominant_freq_per_metric.loc[
-                    dominant_freq_per_metric["Metric"] == metric_i, "Dominant Frequency"
+                    dominant_freq_per_metric["Metric"] == metric_i,
+                    "Dominant Frequency",
                 ].values
                 freq_j = dominant_freq_per_metric.loc[
-                    dominant_freq_per_metric["Metric"] == metric_j, "Dominant Frequency"
+                    dominant_freq_per_metric["Metric"] == metric_j,
+                    "Dominant Frequency",
                 ].values
                 if len(freq_i) > 0 and len(freq_j) > 0:
                     if zscore:
@@ -203,7 +228,11 @@ def heatmap_2(data):
                         Z_j = (freq_j[0] - mu) / sigma
                         diff = abs(Z_i - Z_j) * 100
                     else:
-                        diff = abs(freq_i[0] - freq_j[0]) / ((freq_i[0] + freq_j[0]) / 2) * 100
+                        diff = (
+                            abs(freq_i[0] - freq_j[0])
+                            / ((freq_i[0] + freq_j[0]) / 2)
+                            * 100
+                        )
                         # diff = abs(freq_i[0] - freq_j[0]) * 100
                 else:
                     diff = -1
@@ -223,12 +252,16 @@ def heatmap_2(data):
     heatmap_diff.columns = metrics_unique
     plot_heatmap(heatmap_diff)
 
-    heatmap_diff = heatmap_diff.fillna(0)  # Replace NaN with 0 or another strategy
+    heatmap_diff = heatmap_diff.fillna(
+        0
+    )  # Replace NaN with 0 or another strategy
     # Apply hierarchical clustering using fastcluster
     # linkage_matrix = fastcluster.linkage(
     #     heatmap_diff, method="average", metric="euclidean"
     # )
-    linkage_matrix = linkage(heatmap_diff, method="average", metric="euclidean")
+    linkage_matrix = linkage(
+        heatmap_diff, method="average", metric="euclidean"
+    )
 
     sns.clustermap(
         heatmap_diff,
@@ -250,7 +283,9 @@ def density_heatmap(data) -> None:
     # Calculate number of bins based on data range
     if data:
         t_start = data[0].get("t_start", 0)
-        t_end = data[0].get("t_end", 100)  # Use a default end value if not provided
+        t_end = data[0].get(
+            "t_end", 100
+        )  # Use a default end value if not provided
         nbins = round((t_end - t_start) / 10)
     else:
         nbins = 30  # Default value if no data is provided
@@ -265,7 +300,9 @@ def density_heatmap(data) -> None:
             continue
 
     # Create a DataFrame for the plot
-    df = pd.DataFrame(data_points, columns=["Metric", "Dominant Frequency", "Confidence"])
+    df = pd.DataFrame(
+        data_points, columns=["Metric", "Dominant Frequency", "Confidence"]
+    )
 
     # Create the density heatmap
     fig = px.density_heatmap(
@@ -290,7 +327,11 @@ def density_heatmap(data) -> None:
         yaxis_title="Dominant Frequency",
         xaxis_tickangle=-45,
         coloraxis_colorbar=dict(
-            yanchor="top", y=1, ticks="outside", ticksuffix=" %", title="Confidence (%)"
+            yanchor="top",
+            y=1,
+            ticks="outside",
+            ticksuffix=" %",
+            title="Confidence (%)",
         ),
         margin=dict(l=100, r=100, t=50, b=150),
     )
@@ -336,7 +377,9 @@ def plot_heatmap(heatmap_diff):
             tickmode="linear",  # Ensure tick labels are spaced out
             tickangle=90,  # Rotate tick labels if they overlap
         ),
-        margin=dict(l=100, r=100, t=50, b=150),  # Adjust margins to give more space
+        margin=dict(
+            l=100, r=100, t=50, b=150
+        ),  # Adjust margins to give more space
     )
     fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()
@@ -346,7 +389,11 @@ def plot_timeseries_metrics(metrics, width=None, height=None):
     fig = go.Figure()
     for metric, arrays in metrics.items():
         if len(arrays[0]) > 1:
-            fig.add_trace(go.Scatter(x=arrays[1], y=arrays[0], mode="lines+markers", name=metric))
+            fig.add_trace(
+                go.Scatter(
+                    x=arrays[1], y=arrays[0], mode="lines+markers", name=metric
+                )
+            )
 
     fig.update_layout(
         xaxis_title="Time (s)",

@@ -3,10 +3,11 @@ the bandwidth, the start time, and the end time.
 """
 
 import zmq
+
+from ftio.freq.helper import MyConsole
+from ftio.parse.msgpack_reader import extract_data
 from ftio.parse.simrun import Simrun
 from ftio.parse.zmq_reader import extract
-from ftio.parse.msgpack_reader import extract_data
-from ftio.freq.helper import MyConsole
 
 
 class ParseZmq:

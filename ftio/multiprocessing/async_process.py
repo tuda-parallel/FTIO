@@ -1,8 +1,9 @@
 """Performs action async to current process"""
 
 from __future__ import annotations
-from typing import Callable
+
 from multiprocessing import Process
+from typing import Callable
 
 
 def handle_in_process(function: Callable, args) -> Process:

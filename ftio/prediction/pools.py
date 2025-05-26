@@ -1,11 +1,13 @@
 """Performs prediction with Pools (ProcessPoolExecutor) and a callback mechanism"""
 
 from __future__ import annotations
+
 from concurrent.futures import ProcessPoolExecutor
+
 import ftio.prediction.monitor as pm
-from ftio.prediction.probability_analysis import find_probability
-from ftio.prediction.helper import print_data
 from ftio.prediction.analysis import ftio_process
+from ftio.prediction.helper import print_data
+from ftio.prediction.probability_analysis import find_probability
 
 # from ftio.prediction.async_process import handle_in_process
 

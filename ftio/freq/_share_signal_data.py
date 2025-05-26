@@ -26,7 +26,14 @@ class SharedSignalData:
     def __init__(self):
         self.data = {}
 
-    def set_data(self, b_sampled=None, freq=None, t_start=None, t_end=None, total_bytes=None):
+    def set_data(
+        self,
+        b_sampled=None,
+        freq=None,
+        t_start=None,
+        t_end=None,
+        total_bytes=None,
+    ):
         """
         Set shared signal analysis data.
 

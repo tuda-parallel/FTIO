@@ -1,11 +1,13 @@
 """Module contains function functions to discretize the data."""
 
 from __future__ import annotations
+
 from argparse import Namespace
-from rich.panel import Panel
+
 import numpy as np
 import pandas as pd
 from numba import jit
+from rich.panel import Panel
 
 from ftio.freq.helper import MyConsole
 
@@ -77,7 +79,9 @@ def sample_data(
     text += f"Abstraction error: {error:.5f}\n"
 
     if len(b_sampled) == 0:
-        raise RuntimeError("No data in sampled bandwidth.\n Try increasing the sampling frequency")
+        raise RuntimeError(
+            "No data in sampled bandwidth.\n Try increasing the sampling frequency"
+        )
 
     console = MyConsole(verbose)
     console.print(
@@ -186,6 +190,8 @@ def sample_data_and_prepare_plots(
     # prepare data for plotting
     figures_data = AnalysisFigures()
     if any(x in args.engine for x in ["mat", "plot"]):
-        figures_data = prepare_plot_sample(bandwidth, time_b, freq, len(b_sampled), ranks)
+        figures_data = prepare_plot_sample(
+            bandwidth, time_b, freq, len(b_sampled), ranks
+        )
 
     return b_sampled, freq, figures_data

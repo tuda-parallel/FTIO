@@ -8,7 +8,9 @@ Returns:
 """
 
 from __future__ import annotations
+
 import sys
+
 import msgpack
 
 
@@ -90,12 +92,27 @@ def assign_bandwidth(arr: list, io_type: str) -> list[dict]:
             # n_op.append(i[8])
     if "async" in io_type:
         return [
-            {"b_rank_sum": T_sum, "b_rank_avr": T_avr, "t_rank_s": t_start, "t_rank_e": t_end_act},
-            {"b_rank_sum": B_sum, "b_rank_avr": B_avr, "t_rank_s": t_start, "t_rank_e": t_end_req},
+            {
+                "b_rank_sum": T_sum,
+                "b_rank_avr": T_avr,
+                "t_rank_s": t_start,
+                "t_rank_e": t_end_act,
+            },
+            {
+                "b_rank_sum": B_sum,
+                "b_rank_avr": B_avr,
+                "t_rank_s": t_start,
+                "t_rank_e": t_end_req,
+            },
         ]
     else:
         return [
-            {"b_rank_sum": T_sum, "b_rank_avr": T_avr, "t_rank_s": t_start, "t_rank_e": t_end_act}
+            {
+                "b_rank_sum": T_sum,
+                "b_rank_avr": T_avr,
+                "t_rank_s": t_start,
+                "t_rank_e": t_end_act,
+            }
         ]
 
 

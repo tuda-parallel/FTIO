@@ -1,6 +1,8 @@
 import time
+
 import msgpack
 from rich.console import Console
+
 from ftio.parse.input_template import init_data
 
 

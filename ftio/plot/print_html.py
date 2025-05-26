@@ -6,10 +6,11 @@ import os
 import platform as plat
 from sys import platform
 from threading import Lock
+
 import plotly.offline
 from plotly.graph_objects import Figure
-from ftio.freq.helper import MyConsole
 
+from ftio.freq.helper import MyConsole
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -18,7 +19,9 @@ CONSOLE.set(True)
 class PrintHtml:
     """Class to Create HTML files with sub-pages"""
 
-    def __init__(self, path, names, args=None, filename="main.html", outdir="io_results") -> None:
+    def __init__(
+        self, path, names, args=None, filename="main.html", outdir="io_results"
+    ) -> None:
         """generates HTML report
         Args:
             filename (str): main html file name
@@ -49,12 +52,15 @@ class PrintHtml:
             # ? 1. set current working directory
             pwd = os.getcwd()
             if len(self.path) <= 1 and not any(
-                ext in self.path[0] for ext in ["json", "darshan", "msgpack", "txt"]
+                ext in self.path[0]
+                for ext in ["json", "darshan", "msgpack", "txt"]
             ):
                 pwd = os.path.join(pwd, os.path.relpath(self.path[0], pwd))
 
             self.path = os.path.join(pwd, self.outdir)
-            CONSOLE.print(f"[green]\nGenerating HTML report [/]\n├── Directory is: {self.path}")
+            CONSOLE.print(
+                f"[green]\nGenerating HTML report [/]\n├── Directory is: {self.path}"
+            )
 
             # ? 2. Create directory if needed
             if not os.path.exists(self.path):
@@ -92,7 +98,9 @@ class PrintHtml:
         if any(x in html_file for x in invalid):
             for i in invalid:
                 if i in html_file:
-                    CONSOLE.print(f"[yellow] Warning: removing character {i} in {html_file}[/]")
+                    CONSOLE.print(
+                        f"[yellow] Warning: removing character {i} in {html_file}[/]"
+                    )
                     html_file = html_file.replace(i, "")
 
         # convert all figures to  html
@@ -101,20 +109,26 @@ class PrintHtml:
         # Mark entry in main.html
         with open(self.filename, "a") as file:
             self.lock.acquire()
-            tmp = html_file.replace("_", " ").replace(".html", " ").capitalize()
+            tmp = (
+                html_file.replace("_", " ").replace(".html", " ").capitalize()
+            )
             file.write(
                 f'<h3 ><a href="file://{self.path}/{html_file}" style="color:black;">{tmp}: {len(f)} figures </a>\n'
             )
             self.lock.release()
 
-        CONSOLE.print(f"    ├──  [green] Finished generating {html_file}    [/]")
+        CONSOLE.print(
+            f"    ├──  [green] Finished generating {html_file}    [/]"
+        )
 
     def generate_html_end(self) -> None:
         """closes the File and displays the location of the HTML files"""
 
         # close the file
         with open(self.filename, "a") as file:
-            file.write('<hr style="height:2px;border-width:0;color:gray;background-color:gray">\n')
+            file.write(
+                '<hr style="height:2px;border-width:0;color:gray;background-color:gray">\n'
+            )
             if self.names:
                 # self.names = list(set(self.names))
                 file.write("<br><br> Folders map to:<ul>\n")
@@ -124,17 +138,23 @@ class PrintHtml:
             file.write("</body></html> \n")
         CONSOLE.print(f"    └──  [green] done    [/]")
 
-        CONSOLE.print(f"[cyan]\nTo see the result call \nopen {self.path}/main.html \n[/]")
+        CONSOLE.print(
+            f"[cyan]\nTo see the result call \nopen {self.path}/main.html \n[/]"
+        )
         if self.show:
             if platform == "linux" or platform == "linux2":
                 if "WSL" in plat.uname().release:
-                    os.system(f"powershell.exe start ./{self.outdir}/main.html ")
+                    os.system(
+                        f"powershell.exe start ./{self.outdir}/main.html "
+                    )
                 else:
                     os.system(f"open {self.path}/main.html \n")
 
             if "windows" in platform:
                 try:
-                    os.system(f"powershell.exe start {self.path}/main.html &\n")
+                    os.system(
+                        f"powershell.exe start {self.path}/main.html &\n"
+                    )
                 except:
                     os.system(f"powershell.exe start./{self.path}/main.html")
 
@@ -142,7 +162,9 @@ class PrintHtml:
 # **********************************************************************
 # *                       1. figures_to_html
 # **********************************************************************
-def figures_to_html(figs: list, filename: str = "write_async.html", names: list = []) -> None:
+def figures_to_html(
+    figs: list, filename: str = "write_async.html", names: list = []
+) -> None:
     """Convert list of figures to a HTML file
 
     Args:
@@ -169,7 +191,10 @@ def figures_to_html(figs: list, filename: str = "write_async.html", names: list 
     current_file = os.path.basename(filename)
     for fig in figs:
         if figs.index(fig) + 1 == len(figs):
-            CONSOLE.print(f"    │    └──  {current_file} total figures {len(figs)}      ", end="\n")
+            CONSOLE.print(
+                f"    │    └──  {current_file} total figures {len(figs)}      ",
+                end="\n",
+            )
         else:
             CONSOLE.print(
                 f"    │    ├──   {current_file} figure  ({figs.index(fig)+1}/{len(figs)})\r",
@@ -177,7 +202,9 @@ def figures_to_html(figs: list, filename: str = "write_async.html", names: list 
             )
         html_parts = (
             html_parts
-            + fig.to_html(config=conf, include_plotlyjs=False, include_mathjax="cdn")
+            + fig.to_html(
+                config=conf, include_plotlyjs=False, include_mathjax="cdn"
+            )
             + "\n"
         )
 

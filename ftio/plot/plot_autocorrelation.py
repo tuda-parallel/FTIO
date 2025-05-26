@@ -1,13 +1,19 @@
 from argparse import Namespace
+
+import matplotlib.figure
+import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
-import matplotlib.pyplot as plt
-import matplotlib.figure
+
 from ftio.plot.helper import format_plot
 
 
 def plot_autocorr_results(
-    args: Namespace, acorr: np.ndarray, peaks: np.ndarray, outliers: np.ndarray, flag: bool = False
+    args: Namespace,
+    acorr: np.ndarray,
+    peaks: np.ndarray,
+    outliers: np.ndarray,
+    flag: bool = False,
 ):
     """
     Dispatches autocorrelation plot rendering based on the specified engine.
@@ -26,7 +32,9 @@ def plot_autocorr_results(
     fig = None
     if any(x in args.engine for x in ["mat", "plot"]):
         if "mat" in args.engine:
-            fig = plot_matplotlib_autocorr_results(acorr, peaks, outliers, flag)
+            fig = plot_matplotlib_autocorr_results(
+                acorr, peaks, outliers, flag
+            )
         elif "plot" in args.engine:
             fig = plot_plotly_autocorr_results(acorr, peaks, outliers, flag)
 
@@ -34,7 +42,10 @@ def plot_autocorr_results(
 
 
 def plot_plotly_autocorr_results(
-    acorr: np.ndarray, peaks: np.ndarray, outliers: np.ndarray, flag: bool = False
+    acorr: np.ndarray,
+    peaks: np.ndarray,
+    outliers: np.ndarray,
+    flag: bool = False,
 ) -> go.Figure:
     """
     Creates a Plotly figure for autocorrelation data.
@@ -61,13 +72,19 @@ def plot_plotly_autocorr_results(
     )
 
     fig.update_layout(
-        font={"family": "Courier New, monospace", "size": 24, "color": "black"},
+        font={
+            "family": "Courier New, monospace",
+            "size": 24,
+            "color": "black",
+        },
         xaxis_title="Lag (Samples)",
         yaxis_title="ACF",
         width=1100,
         height=400,
         legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99),
-        coloraxis_colorbar=dict(yanchor="top", y=1, x=0, ticks="outside", ticksuffix=" bills"),
+        coloraxis_colorbar=dict(
+            yanchor="top", y=1, x=0, ticks="outside", ticksuffix=" bills"
+        ),
     )
 
     # Plot peaks
@@ -104,7 +121,10 @@ def plot_plotly_autocorr_results(
 
 
 def plot_matplotlib_autocorr_results(
-    acorr: np.ndarray, peaks: np.ndarray, outliers: np.ndarray, flag: bool = False
+    acorr: np.ndarray,
+    peaks: np.ndarray,
+    outliers: np.ndarray,
+    flag: bool = False,
 ) -> matplotlib.figure.Figure:
     """
     Creates a Matplotlib figure for autocorrelation data.
@@ -124,14 +144,25 @@ def plot_matplotlib_autocorr_results(
 
     # Plot peaks
     ax.scatter(
-        peaks, acorr[peaks], color="green", s=100, marker="*", label="peaks", edgecolors="black"
+        peaks,
+        acorr[peaks],
+        color="green",
+        s=100,
+        marker="*",
+        label="peaks",
+        edgecolors="black",
     )
 
     # Plot relevant peaks
     if flag:
         val = np.delete(peaks, outliers)
         ax.scatter(
-            val, acorr[val], facecolors="none", edgecolors="red", s=150, label="relevant peaks"
+            val,
+            acorr[val],
+            facecolors="none",
+            edgecolors="red",
+            s=150,
+            label="relevant peaks",
         )
 
     ax.set_xlabel("Lag (Samples)")

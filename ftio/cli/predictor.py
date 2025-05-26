@@ -1,11 +1,13 @@
 """This functions performs the prediction with the the help of ftio.py"""
 
 from __future__ import annotations
+
 import sys
+
 from ftio.parse.helper import print_info
 from ftio.prediction.pools import predictor_with_pools
-from ftio.prediction.processes_zmq import predictor_with_processes_zmq
 from ftio.prediction.processes import predictor_with_processes
+from ftio.prediction.processes_zmq import predictor_with_processes_zmq
 from ftio.prediction.shared_resources import SharedResources
 
 

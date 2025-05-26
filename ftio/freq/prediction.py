@@ -96,7 +96,9 @@ class Prediction:
         if isinstance(value, list):
             value = np.array(value)
         if not isinstance(value, np.ndarray):
-            raise TypeError("amp must be a numpy ndarray or list convertible to ndarray")
+            raise TypeError(
+                "amp must be a numpy ndarray or list convertible to ndarray"
+            )
         self._amp = value
 
     @property
@@ -108,7 +110,9 @@ class Prediction:
         if isinstance(value, list):
             value = np.array(value)
         if not isinstance(value, np.ndarray):
-            raise TypeError("phi must be a numpy ndarray or list convertible to ndarray")
+            raise TypeError(
+                "phi must be a numpy ndarray or list convertible to ndarray"
+            )
         self._phi = value
 
     @property
@@ -190,7 +194,9 @@ class Prediction:
         if isinstance(value, list):
             value = np.array(value)
         if not isinstance(value, np.ndarray):
-            raise TypeError("candidates must be a numpy ndarray or list convertible to ndarray")
+            raise TypeError(
+                "candidates must be a numpy ndarray or list convertible to ndarray"
+            )
         self._candidates = value
 
     def get(self, key: str):

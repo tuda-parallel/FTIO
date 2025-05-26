@@ -15,7 +15,9 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 import os
 import time
 from datetime import datetime
+
 from rich.console import Console
+
 from ftio.api.gekkoFs.jit.execute_and_wait import execute_block
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.setup_helper import jit_print
@@ -49,13 +51,19 @@ def check_setup(settings: JitSettings):
         gekkofs_hostfile = settings.gkfs_hostfile
         with open(gekkofs_hostfile, "r") as file:
             gekkofs_hostfile_content = file.read()
-        console.print(f"[cyan]>> Geko hostfile:\n{gekkofs_hostfile_content}[/]")
+        console.print(
+            f"[cyan]>> Geko hostfile:\n{gekkofs_hostfile_content}[/]"
+        )
 
         # ls_command = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={gekkofs_hostfile} ls {settings.gkfs_mntdir}"
         # files = subprocess.check_output(ls_command, shell=True).decode()
         # console.print(f"[cyan]>> geko_ls {gkfs_mntdir}: \n{files}[/]")
 
-        if settings.cluster and settings.debug_lvl > 0 and not settings.exclude_daemon:
+        if (
+            settings.cluster
+            and settings.debug_lvl > 0
+            and not settings.exclude_daemon
+        ):
 
             additional_arguments = ""
             timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
@@ -64,7 +72,9 @@ def check_setup(settings: JitSettings):
                 # if not settings.exclude_ftio:
                 #     additional_arguments += f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} -x LIBGKFS_ENABLE_METRICS=on "
                 if not settings.exclude_proxy:
-                    additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+                    additional_arguments += (
+                        f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
+                    )
                 if not settings.exclude_daemon:
                     additional_arguments += (
                         f"-x LIBGKFS_LOG=info,warnings,errors "
@@ -83,7 +93,9 @@ def check_setup(settings: JitSettings):
                 # if not settings.exclude_ftio:
                 #     additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},"
                 if not settings.exclude_proxy:
-                    additional_arguments += f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
+                    additional_arguments += (
+                        f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
+                    )
                 if not settings.exclude_daemon:
                     additional_arguments += (
                         f"LIBGKFS_LOG=info,warnings,errors,"

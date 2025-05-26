@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 from argparse import Namespace
-from ftio.freq.freq_html import create_html
+
 from ftio.freq._analysis_figures import AnalysisFigures
+from ftio.freq.freq_html import create_html
 from ftio.freq.prediction import Prediction
 
 

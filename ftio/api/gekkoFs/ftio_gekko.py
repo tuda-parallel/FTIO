@@ -1,19 +1,21 @@
 # import os
-import glob
 import argparse
+import glob
+
 import numpy as np
-from ftio.cli.ftio_core import core
-from ftio.parse.args import parse_args
-from ftio.processing.print_output import display_prediction
-from ftio.plot.freq_plot import convert_and_plot
-from ftio.parse.bandwidth import overlap
-from ftio.api.gekkoFs.parse_gekko import parse
 import plotly.graph_objects as go
-from ftio.plot.helper import format_plot
-from ftio.plot.units import set_unit
+
+from ftio.api.gekkoFs.parse_gekko import parse
+from ftio.cli.ftio_core import core
 from ftio.freq.helper import MyConsole
 from ftio.multiprocessing.async_process import handle_in_process
+from ftio.parse.args import parse_args
+from ftio.parse.bandwidth import overlap
+from ftio.plot.freq_plot import convert_and_plot
+from ftio.plot.helper import format_plot
+from ftio.plot.units import set_unit
 from ftio.prediction.helper import dump_json
+from ftio.processing.print_output import display_prediction
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -103,8 +105,14 @@ def run(
         fig = go.Figure()
         unit, order = set_unit(b)
         # fig.add_trace(go.Scatter(x=t, y=b * order, name="App Bandwidth",mode='lines+markers'))
-        fig.add_trace(go.Scatter(x=t, y=b * order, name="App Bandwidth", line={"shape": "hv"}))
-        fig.update_layout(xaxis_title="Time (s)", yaxis_title=f"Bandwidth ({unit})")
+        fig.add_trace(
+            go.Scatter(
+                x=t, y=b * order, name="App Bandwidth", line={"shape": "hv"}
+            )
+        )
+        fig.update_layout(
+            xaxis_title="Time (s)", yaxis_title=f"Bandwidth ({unit})"
+        )
         fig = format_plot(fig)
         fig.show()
 

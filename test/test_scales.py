@@ -3,6 +3,7 @@ Functions for testing the parsing functionality of the ftio package.
 """
 
 import os
+
 from ftio.freq.helper import get_mode
 from ftio.parse.extract import extract_fields, get_time_behavior_and_args
 from ftio.parse.scales import Scales
@@ -12,7 +13,10 @@ def test_scales():
     """
     Test the Scales class initialization.
     """
-    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/ior/collective/1536_new.json")
+    file = os.path.join(
+        os.path.dirname(__file__),
+        "../examples/tmio/ior/collective/1536_new.json",
+    )
     args = [
         "ftio",
         file,
@@ -27,7 +31,10 @@ def test_assign_data():  # type: ignore
     """
     Test the assign_data method of the Scales class.
     """
-    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/ior/collective/1536_new.json")
+    file = os.path.join(
+        os.path.dirname(__file__),
+        "../examples/tmio/ior/collective/1536_new.json",
+    )
     args = [
         "ftio",
         file,
@@ -46,7 +53,10 @@ def test_get_io_mode():
     """
     Test the get_io_mode method of the Scales class.
     """
-    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/ior/collective/1536_new.json")
+    file = os.path.join(
+        os.path.dirname(__file__),
+        "../examples/tmio/ior/collective/1536_new.json",
+    )
     args = [
         "ftio",
         file,
@@ -64,7 +74,10 @@ def test_get_time_behavior_and_args():
     """
     Test the get_time_behavior_and_args function.
     """
-    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/ior/collective/1536_new.json")
+    file = os.path.join(
+        os.path.dirname(__file__),
+        "../examples/tmio/ior/collective/1536_new.json",
+    )
     args = [
         "ftio",
         file,
@@ -79,7 +92,10 @@ def test_extract_fields():
     """
     Test the extract_fields function.
     """
-    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/ior/collective/1536_new.json")
+    file = os.path.join(
+        os.path.dirname(__file__),
+        "../examples/tmio/ior/collective/1536_new.json",
+    )
     args = [
         "ftio",
         file,

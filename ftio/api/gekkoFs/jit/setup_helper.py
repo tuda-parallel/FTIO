@@ -12,15 +12,17 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-import sys
-import subprocess
 import argparse
 import os
-import signal
-import shutil
-from datetime import datetime
 import re
+import shutil
+import signal
+import subprocess
+import sys
+from datetime import datetime
+
 from rich.console import Console
+
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.jittime import JitTime
 
@@ -47,11 +49,15 @@ def is_port_in_use(port_number: int | str) -> bool:
         ).decode("utf-8")
         # If output is found, the port is in use
         if netstat_output:
-            jit_print(f"[bold red]>> Error: Port {port_number} is already in use...[/bold red]")
+            jit_print(
+                f"[bold red]>> Error: Port {port_number} is already in use...[/bold red]"
+            )
             out = True  # Port is in use
     except subprocess.CalledProcessError:
         # grep returns a non-zero exit status if it finds no matches
-        jit_print(f"[bold blue]>> Port {port_number} is available.[/bold blue]")
+        jit_print(
+            f"[bold blue]>> Port {port_number} is available.[/bold blue]"
+        )
         out = False  # Port is free
 
     return out
@@ -72,14 +78,18 @@ def check_port(settings: JitSettings) -> None:
         # Identify the process ID using the settings.port_ftio
         try:
             process_output = (
-                subprocess.check_output(f"netstat -nlp | grep :{settings.port_ftio} ", shell=True)
+                subprocess.check_output(
+                    f"netstat -nlp | grep :{settings.port_ftio} ", shell=True
+                )
                 .decode()
                 .strip()
             )
             process_id = process_output.split()[6].split("/")[0]
 
             if process_id:
-                jit_print(f"[bold yellow]>> Terminating process with PID: {process_id}[/]")
+                jit_print(
+                    f"[bold yellow]>> Terminating process with PID: {process_id}[/]"
+                )
                 os.kill(int(process_id), 9)
                 jit_print(
                     f"[bold green]>> Using port {settings.port_ftio} on {settings.address_ftio}.[/]"
@@ -90,10 +100,14 @@ def check_port(settings: JitSettings) -> None:
                 )
                 exit(1)
         except subprocess.CalledProcessError as e:
-            jit_print(f"[bold red]>> Failed to retrieve process information: {e}[/]")
+            jit_print(
+                f"[bold red]>> Failed to retrieve process information: {e}[/]"
+            )
             exit(1)
     else:
-        jit_print(f"[bold green]>> Using port {settings.port_ftio} on {settings.address_ftio}.[/]")
+        jit_print(
+            f"[bold green]>> Using port {settings.port_ftio} on {settings.address_ftio}.[/]"
+        )
 
 
 def parse_options(settings: JitSettings, args: list[str]) -> None:
@@ -121,15 +135,21 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         help='Application-specific flags as a string (e.g., "600 600 600 6 6 6 0 F .").',
     )
 
-    parser.add_argument("-n", "--nodes", type=int, help="Number of nodes to run the setup.")
-    parser.add_argument("-t", "--max-time", type=int, help="Max execution time in minutes.")
+    parser.add_argument(
+        "-n", "--nodes", type=int, help="Number of nodes to run the setup."
+    )
+    parser.add_argument(
+        "-t", "--max-time", type=int, help="Max execution time in minutes."
+    )
     parser.add_argument(
         "-j",
         "--job-id",
         type=int,
         help="Use existing job ID instead of allocating new resources.",
     )
-    parser.add_argument("-l", "--log-name", type=str, help="Directory name for storing logs.")
+    parser.add_argument(
+        "-l", "--log-name", type=str, help="Directory name for storing logs."
+    )
     parser.add_argument(
         "-i",
         "--install_location",
@@ -142,7 +162,9 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         type=int,
         help="Default number of procs if --procs_list is omitted.",
     )
-    parser.add_argument("-o", "--omp_threads", type=int, help="Number of OpenMP threads used.")
+    parser.add_argument(
+        "-o", "--omp_threads", type=int, help="Number of OpenMP threads used."
+    )
     parser.add_argument(
         "-p",
         "--procs_list",
@@ -155,7 +177,9 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         type=str,
         help='FTIO arguments as a string (e.g., "--freq 10 -v -e no").',
     )
-    parser.add_argument("--address", type=str, help="Address where FTIO is executed.")
+    parser.add_argument(
+        "--address", type=str, help="Address where FTIO is executed."
+    )
     parser.add_argument("--port", type=str, help="Port for FTIO and GekkoFS.")
 
     parser.add_argument(
@@ -194,10 +218,20 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         help="Exclude FTIO, GekkoFs, and Cargo.",
     )
     parser.add_argument(
-        "-r", "--dry_run", action="store_true", help="Do not execute tools and app."
+        "-r",
+        "--dry_run",
+        action="store_true",
+        help="Do not execute tools and app.",
     )
-    parser.add_argument("-d", "--debug", type=int, help="Debug level for additional info.")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Show output of each step.")
+    parser.add_argument(
+        "-d", "--debug", type=int, help="Debug level for additional info."
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Show output of each step.",
+    )
     parser.add_argument(
         "-y",
         "--skip_confirm",
@@ -205,7 +239,10 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         help="Automatically cancel running JIT jobs.",
     )
     parser.add_argument(
-        "-u", "--use_mpirun", action="store_true", help="Use mpirun instead of srun."
+        "-u",
+        "--use_mpirun",
+        action="store_true",
+        help="Use mpirun instead of srun.",
     )
     parser.add_argument(
         "-s",
@@ -265,7 +302,9 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         settings.omp_threads = parsed_args.omp_threads
     if parsed_args.procs_list:
         try:
-            procs_list = [int(proc) for proc in parsed_args.procs_list.split(",")]
+            procs_list = [
+                int(proc) for proc in parsed_args.procs_list.split(",")
+            ]
         except ValueError:
             console.print(
                 "[bold red]Invalid --procs value. Must be a comma-separated list of numbers.[/]"
@@ -273,7 +312,9 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
             sys.exit(1)
 
         if len(procs_list) > 5:
-            console.print("[bold red]Too many values for --procs. Maximum is 5.[/]")
+            console.print(
+                "[bold red]Too many values for --procs. Maximum is 5.[/]"
+            )
             sys.exit(1)
 
         if len(procs_list) > 0:
@@ -285,7 +326,9 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         if len(procs_list) > 3:
             settings.procs_cargo = procs_list[3]
             if settings.procs_cargo < 2:
-                jit_print("[bold yellow]>> Warning: Not recommended to set Cargo < 2[/]")
+                jit_print(
+                    "[bold yellow]>> Warning: Not recommended to set Cargo < 2[/]"
+                )
         if len(procs_list) > 4:
             settings.procs_ftio = procs_list[4]
 
@@ -326,7 +369,9 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
                 settings.exclude_all = True
                 console.print("[yellow]- all[/]")
             else:
-                jit_print(f"[bold red]>> Invalid exclude option: {exclude} [/]")
+                jit_print(
+                    f"[bold red]>> Invalid exclude option: {exclude} [/]"
+                )
                 sys.exit(1)
 
     if parsed_args.gkfs_daemon:
@@ -382,7 +427,9 @@ def install_all(settings: JitSettings) -> None:
         try:
             # Create directory
             jit_print(">>> Creating directory")
-            status.update("[bold green]JIT >>> Creating directory[/]", speed=30)
+            status.update(
+                "[bold green]JIT >>> Creating directory[/]", speed=30
+            )
             os.makedirs(settings.install_location, exist_ok=True)
 
             # unload CUDA for Gekko
@@ -396,10 +443,14 @@ def install_all(settings: JitSettings) -> None:
 
             # Clone GKFS
             jit_print(">>> Installing GKFS")
-            if os.path.isdir(os.path.join(settings.install_location, "gekkofs")):
+            if os.path.isdir(
+                os.path.join(settings.install_location, "gekkofs")
+            ):
                 jit_print(">>> GKFS exists, skipping installation")
             else:
-                status.update("[bold green]JIT >>> Installing GKFS[/]", speed=30)
+                status.update(
+                    "[bold green]JIT >>> Installing GKFS[/]", speed=30
+                )
                 subprocess.run(
                     [
                         "git",
@@ -411,7 +462,9 @@ def install_all(settings: JitSettings) -> None:
                     check=True,
                 )
                 os.chdir(os.path.join(settings.install_location, "gekkofs"))
-                subprocess.run(["git", "pull", "--recurse-submodules"], check=True)
+                subprocess.run(
+                    ["git", "pull", "--recurse-submodules"], check=True
+                )
                 os.chdir(settings.install_location)
 
                 # Build GKFS
@@ -427,7 +480,9 @@ def install_all(settings: JitSettings) -> None:
                     ],
                     check=True,
                 )
-                build_dir = os.path.join(settings.install_location, "gekkofs", "build")
+                build_dir = os.path.join(
+                    settings.install_location, "gekkofs", "build"
+                )
                 os.makedirs(build_dir, exist_ok=True)
                 subprocess.run(
                     [
@@ -442,14 +497,20 @@ def install_all(settings: JitSettings) -> None:
                     cwd=build_dir,
                     check=True,
                 )
-                subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
+                subprocess.run(
+                    ["make", "-j", "4", "install"], cwd=build_dir, check=True
+                )
 
                 jit_print(">>> GEKKO installed")
-                status.update("[bold green]JIT >>> GEKKO installed[/]", speed=30)
+                status.update(
+                    "[bold green]JIT >>> GEKKO installed[/]", speed=30
+                )
 
             jit_print(">>> Installing Boost")
             status.update("[bold green]JIT >>> Getting Boost[/]", speed=30)
-            if os.path.isfile(os.path.join(settings.install_location, "boost_1_84_0.tar.gz")):
+            if os.path.isfile(
+                os.path.join(settings.install_location, "boost_1_84_0.tar.gz")
+            ):
                 print("File exists.")
                 jit_print(">>> Boost tar exists, skipping download")
             else:
@@ -473,7 +534,9 @@ def install_all(settings: JitSettings) -> None:
                         cwd=settings.install_location,
                         check=True,
                     )
-            if os.path.isdir(os.path.join(settings.install_location, "boost_1_84_0")):
+            if os.path.isdir(
+                os.path.join(settings.install_location, "boost_1_84_0")
+            ):
                 jit_print(">>> Boost exists, skipping installation")
             else:
                 status.update(
@@ -485,11 +548,21 @@ def install_all(settings: JitSettings) -> None:
                     cwd=settings.install_location,
                     check=True,
                 )
-                status.update("[bold green]JIT >>> Installing Boost: bootstrap[/]", speed=30)
-                build_dir = os.path.join(settings.install_location, "boost_1_84_0")
+                status.update(
+                    "[bold green]JIT >>> Installing Boost: bootstrap[/]",
+                    speed=30,
+                )
+                build_dir = os.path.join(
+                    settings.install_location, "boost_1_84_0"
+                )
                 os.chdir(build_dir)
-                subprocess.run(f"{build_dir}/bootstrap.sh", cwd=build_dir, check=True)
-                status.update("[bold green]JIT >>> Installing Boost: b2 install[/]", speed=30)
+                subprocess.run(
+                    f"{build_dir}/bootstrap.sh", cwd=build_dir, check=True
+                )
+                status.update(
+                    "[bold green]JIT >>> Installing Boost: b2 install[/]",
+                    speed=30,
+                )
                 subprocess.run(
                     [
                         f"{build_dir}/b2",
@@ -500,7 +573,10 @@ def install_all(settings: JitSettings) -> None:
                     cwd=build_dir,
                     check=True,
                 )
-                status.update("[bold green]JIT >>> Installing Boost: b2 headers[/]", speed=30)
+                status.update(
+                    "[bold green]JIT >>> Installing Boost: b2 headers[/]",
+                    speed=30,
+                )
                 subprocess.run(
                     [
                         f"{build_dir}/b2",
@@ -512,7 +588,9 @@ def install_all(settings: JitSettings) -> None:
                 )
                 jit_print(">>> Boost installed")
                 os.chdir(settings.install_location)
-                status.update("[bold green]JIT >>> Boost installed[/]", speed=30)
+                status.update(
+                    "[bold green]JIT >>> Boost installed[/]", speed=30
+                )
 
             jit_print(">>> Installing Cereal")
             status.update("[bold green]JIT >>> Installing Cereal[/]", speed=30)
@@ -522,7 +600,9 @@ def install_all(settings: JitSettings) -> None:
                 check=True,
             )
             os.chdir(os.path.join(settings.install_location, "cereal"))
-            build_dir = os.path.join(settings.install_location, "cereal", "build")
+            build_dir = os.path.join(
+                settings.install_location, "cereal", "build"
+            )
             os.makedirs(build_dir, exist_ok=True)
             subprocess.run(
                 [
@@ -534,20 +614,30 @@ def install_all(settings: JitSettings) -> None:
                 cwd=build_dir,
                 check=True,
             )
-            subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
+            subprocess.run(
+                ["make", "-j", "4", "install"], cwd=build_dir, check=True
+            )
             jit_print(">>> Cereal installed")
             status.update("[bold green]JIT >>> Cereal installed[/]", speed=30)
 
             # Install Cargo Dependencies: Thallium
             jit_print(">>> Installing Thallium")
-            status.update("[bold green]JIT >>> Installing Thallium[/]", speed=30)
+            status.update(
+                "[bold green]JIT >>> Installing Thallium[/]", speed=30
+            )
             subprocess.run(
-                ["git", "clone", "https://github.com/mochi-hpc/mochi-thallium"],
+                [
+                    "git",
+                    "clone",
+                    "https://github.com/mochi-hpc/mochi-thallium",
+                ],
                 cwd=settings.install_location,
                 check=True,
             )
             os.chdir(os.path.join(settings.install_location, "mochi-thallium"))
-            build_dir = os.path.join(settings.install_location, "mochi-thallium", "build")
+            build_dir = os.path.join(
+                settings.install_location, "mochi-thallium", "build"
+            )
             os.makedirs(build_dir, exist_ok=True)
             subprocess.run(
                 [
@@ -559,27 +649,39 @@ def install_all(settings: JitSettings) -> None:
                 cwd=build_dir,
                 check=True,
             )
-            subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
+            subprocess.run(
+                ["make", "-j", "4", "install"], cwd=build_dir, check=True
+            )
             jit_print(">>> Mochi-thallium installed")
-            status.update("[bold green]JIT >>> Mochi-thallium installed[/]", speed=30)
+            status.update(
+                "[bold green]JIT >>> Mochi-thallium installed[/]", speed=30
+            )
 
             # Clone and Build Cargo
             jit_print(">>> Installing Cargo")
             status.update("[bold green]JIT >>> Installing Cargo[/]", speed=30)
             subprocess.run(
-                ["git", "clone", "https://storage.bsc.es/gitlab/hpc/cargo.git"],
+                [
+                    "git",
+                    "clone",
+                    "https://storage.bsc.es/gitlab/hpc/cargo.git",
+                ],
                 cwd=settings.install_location,
                 check=True,
             )
             os.chdir(os.path.join(settings.install_location, "cargo"))
             replace_line_in_file(
-                "src/master.cpp", 332, f'  auto patternFile = "{settings.regex_file}";'
+                "src/master.cpp",
+                332,
+                f'  auto patternFile = "{settings.regex_file}";',
             )
             subprocess.run(
                 ["git", "checkout", "marc/nek5000"],
                 check=True,
             )
-            build_dir = os.path.join(settings.install_location, "cargo", "build")
+            build_dir = os.path.join(
+                settings.install_location, "cargo", "build"
+            )
             os.makedirs(build_dir, exist_ok=True)
             subprocess.run(
                 [
@@ -592,7 +694,9 @@ def install_all(settings: JitSettings) -> None:
                 cwd=build_dir,
                 check=True,
             )
-            subprocess.run(["make", "-j", "4", "install"], cwd=build_dir, check=True)
+            subprocess.run(
+                ["make", "-j", "4", "install"], cwd=build_dir, check=True
+            )
 
             jit_print(">>> Cargo installed")
             status.update("[bold green]JIT >>> Cargo installed[/]", speed=30)
@@ -611,7 +715,9 @@ def install_all(settings: JitSettings) -> None:
             subprocess.run(["make", "-j", "4"], check=True)
 
             jit_print(">> Installation finished")
-            status.update("[bold green]JIT >> Installation finished[/]", speed=30)
+            status.update(
+                "[bold green]JIT >> Installation finished[/]", speed=30
+            )
             console.print("\n>> Ready to go <<")
             status.update("\n>> Ready to go <<", speed=30)
             console.print("Call: ./jit.sh -n NODES -t MAX_TIME")
@@ -619,11 +725,16 @@ def install_all(settings: JitSettings) -> None:
 
         except subprocess.CalledProcessError as e:
             jit_print(f"[bold red] >>> Error encountered: {e}[/]")
-            status.update("[bold green]JIT [bold red] >>> Error encountered: {e}[/]", speed=30)
+            status.update(
+                "[bold green]JIT [bold red] >>> Error encountered: {e}[/]",
+                speed=30,
+            )
             abort()
 
 
-def replace_line_in_file(file_path: str, line_number: int, new_line_content: str) -> None:
+def replace_line_in_file(
+    file_path: str, line_number: int, new_line_content: str
+) -> None:
     """
     Replace a specific line in a file with new content.
 
@@ -641,7 +752,9 @@ def replace_line_in_file(file_path: str, line_number: int, new_line_content: str
         if line_number - 1 < len(lines):
             lines[line_number - 1] = new_line_content + "\n"
         else:
-            raise IndexError("Line number exceeds the total number of lines in the file.")
+            raise IndexError(
+                "Line number exceeds the total number of lines in the file."
+            )
 
         # Write the modified content back to the file
         with open(file_path, "w") as file:
@@ -666,12 +779,16 @@ def cancel_jit_jobs(settings: JitSettings) -> None:
     """
     if settings.job_id == 0:
         # Check if the hostname contains 'cpu' or 'mogon'
-        hostname = subprocess.check_output("hostname", shell=True).decode().strip()
+        hostname = (
+            subprocess.check_output("hostname", shell=True).decode().strip()
+        )
         if "cpu" in hostname or "mogon" in hostname:
             # Get the list of job IDs with the name "JIT"
             try:
                 jit_jobs = (
-                    subprocess.check_output("squeue --me --name=JIT --format=%A", shell=True)
+                    subprocess.check_output(
+                        "squeue --me --name=JIT --format=%A", shell=True
+                    )
                     .decode()
                     .strip()
                     .split("\n")[1:]
@@ -684,13 +801,17 @@ def cancel_jit_jobs(settings: JitSettings) -> None:
 
             # Print the list of JIT jobs
             job_list = "\n".join(jit_jobs)
-            jit_print("[bold yellow]>> The following jobs with the name 'JIT' were found:[/]")
+            jit_print(
+                "[bold yellow]>> The following jobs with the name 'JIT' were found:[/]"
+            )
             console.print(job_list)
 
             if not settings.skip_confirm:
                 # Prompt the user to confirm cancellation
                 confirmation = (
-                    input("Do you want to cancel all 'JIT' jobs? (yes/no): ").strip().lower()
+                    input("Do you want to cancel all 'JIT' jobs? (yes/no): ")
+                    .strip()
+                    .lower()
                 )
             else:
                 confirmation = "yes"
@@ -699,7 +820,9 @@ def cancel_jit_jobs(settings: JitSettings) -> None:
                 for job_id in jit_jobs:
                     subprocess.run(f"scancel {job_id}", shell=True, check=True)
                     jit_print(f"[bold cyan]>> Cancelled job ID {job_id}[/]")
-                jit_print("[bold green]>> All 'JIT' jobs have been cancelled[/]")
+                jit_print(
+                    "[bold green]>> All 'JIT' jobs have been cancelled[/]"
+                )
             else:
                 jit_print("[bold yellow]>> No jobs were cancelled[/]")
 
@@ -719,7 +842,9 @@ def relevant_files(settings: JitSettings) -> None:
         file.write(f"{settings.regex_match}\n")
 
     if settings.verbose:
-        jit_print(f"[cyan]>> Files that match {settings.regex_match} are ignored [/]")
+        jit_print(
+            f"[cyan]>> Files that match {settings.regex_match} are ignored [/]"
+        )
 
     # Display the contents of the regex file
     with open(settings.regex_file, "r") as file:
@@ -755,7 +880,9 @@ def adjust_regex(settings: JitSettings, mode: str = "stage_out") -> None:
             with open(settings.regex_file, "r") as file:
                 content = file.read()
 
-            jit_print(f"[bold cyan]>> cat {settings.regex_file}: \n{content} [/]\n")
+            jit_print(
+                f"[bold cyan]>> cat {settings.regex_file}: \n{content} [/]\n"
+            )
 
 
 def total_time(log_dir: str) -> None:
@@ -771,7 +898,9 @@ def total_time(log_dir: str) -> None:
     try:
         with open(time_log_file, "r") as file:
             lines = file.readlines()
-        total_time = sum(float(line.split()[1]) for line in lines if "seconds" in line)
+        total_time = sum(
+            float(line.split()[1]) for line in lines if "seconds" in line
+        )
     except FileNotFoundError:
         total_time = 0
 
@@ -855,7 +984,10 @@ def allocate(settings: JitSettings) -> None:
                 # its the node where the code is executed
                 try:
                     result = subprocess.run(
-                        ["hostname"], capture_output=True, text=True, check=True
+                        ["hostname"],
+                        capture_output=True,
+                        text=True,
+                        check=True,
                     )
                     ftio_node = result.stdout.strip()
 
@@ -864,7 +996,11 @@ def allocate(settings: JitSettings) -> None:
 
                 # Get node for single commands
                 if len(nodes_arr) > 1:
-                    single_node = nodes_arr[0] if nodes_arr[0] != ftio_node else nodes_arr[1]
+                    single_node = (
+                        nodes_arr[0]
+                        if nodes_arr[0] != ftio_node
+                        else nodes_arr[1]
+                    )
                 else:
                     single_node = nodes_arr[0]
 
@@ -872,11 +1008,13 @@ def allocate(settings: JitSettings) -> None:
                 settings.single_node = single_node
 
                 if len(nodes_arr) > 1:
-                    settings.ftio_node_command = f"--nodelist={settings.ftio_node}"
-                    settings.app_nodes_command = (
-                        f"--nodelist={','.join(n for n in nodes_arr if n != settings.ftio_node)}"
+                    settings.ftio_node_command = (
+                        f"--nodelist={settings.ftio_node}"
                     )
-                    settings.single_node_command = f"--nodelist={settings.single_node}"
+                    settings.app_nodes_command = f"--nodelist={','.join(n for n in nodes_arr if n != settings.ftio_node)}"
+                    settings.single_node_command = (
+                        f"--nodelist={settings.single_node}"
+                    )
                     settings.app_nodes = len(nodes_arr) - 1
                     # print(nodes_arr)
                     # print(f"{','.join(n for n in nodes_arr if n != settings.ftio_node)}\n")
@@ -885,8 +1023,14 @@ def allocate(settings: JitSettings) -> None:
                     with open(f"{settings.mpi_hostfile}", "r") as file:
                         lines = file.readlines()
 
-                    if any(line.strip() == settings.ftio_node for line in lines):
-                        new_lines = [line for line in lines if line.strip() != settings.ftio_node]
+                    if any(
+                        line.strip() == settings.ftio_node for line in lines
+                    ):
+                        new_lines = [
+                            line
+                            for line in lines
+                            if line.strip() != settings.ftio_node
+                        ]
                     else:
                         new_lines = lines[:-1]  # fallback: remove last line
 
@@ -896,13 +1040,19 @@ def allocate(settings: JitSettings) -> None:
                 jit_print(f"[green]>> JIT Job Id: {settings.job_id} [/]")
                 jit_print(f"[green]>> Allocated Nodes: {len(nodes_arr)} [/]")
                 jit_print(f"[green]>> FTIO Node: {settings.ftio_node} [/]")
-                jit_print(f"[green]>> APP Node command: {settings.app_nodes_command} [/]")
-                jit_print(f"[green]>> FTIO Node command: {settings.ftio_node_command} [/]")
+                jit_print(
+                    f"[green]>> APP Node command: {settings.app_nodes_command} [/]"
+                )
+                jit_print(
+                    f"[green]>> FTIO Node command: {settings.ftio_node_command} [/]"
+                )
 
                 # Print contents of mpi_hostfile
                 with open(f"{settings.mpi_hostfile}", "r") as file:
                     hostfile_content = file.read()
-                jit_print(f"[cyan]>> content of {settings.mpi_hostfile}: \n{hostfile_content} [/]")
+                jit_print(
+                    f"[cyan]>> content of {settings.mpi_hostfile}: \n{hostfile_content} [/]"
+                )
             settings.update_geko_files()
         else:
             settings.set_mpi_host_file()
@@ -920,7 +1070,9 @@ def get_pid(settings: JitSettings, name: str, pid: int) -> None:
     """
     if settings.cluster:
         call = f"ps aux | grep 'srun' | grep '{settings.job_id}' | grep '{name}' | grep -v grep | tail -1 | awk '{{print $2}}'"
-        res = subprocess.run(call, shell=True, check=True, capture_output=True, text=True)
+        res = subprocess.run(
+            call, shell=True, check=True, capture_output=True, text=True
+        )
         if res.stdout.strip():
             try:
                 pid = int(res.stdout.strip())
@@ -953,7 +1105,9 @@ def handle_sigint(settings: JitSettings) -> None:
     """
     if settings.trap_exit:
         settings.trap_exit = False
-        jit_print("[bold blue]>> Keyboard interrupt detected. Exiting script.[/]")
+        jit_print(
+            "[bold blue]>> Keyboard interrupt detected. Exiting script.[/]"
+        )
         exit_routine(settings)
 
 
@@ -1053,9 +1207,7 @@ def hard_kill(settings: JitSettings) -> None:
             for process in processes:
                 try:
                     # Find process IDs and kill them
-                    kill_command = (
-                        f"ps -aux | grep {process} | grep -v grep | awk '{{print $2}}' | xargs kill"
-                    )
+                    kill_command = f"ps -aux | grep {process} | grep -v grep | awk '{{print $2}}' | xargs kill"
                     while kill_command:
                         _ = subprocess.run(
                             kill_command,
@@ -1135,11 +1287,17 @@ def get_address_ftio(settings: JitSettings) -> None:
     jit_print(">> Getting FTIO ADDRESS")
     if settings.cluster:
         # call = f"srun --jobid={settings.job_id} {settings.ftio_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
-        call = "ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
-        call = generate_cluster_command(settings, call, 1, 1, node_list=settings.ftio_node)
+        call = (
+            "ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
+        )
+        call = generate_cluster_command(
+            settings, call, 1, 1, node_list=settings.ftio_node
+        )
         jit_print(f"[bold cyan]>> Executing: {call}")
         try:
-            result = subprocess.run(call, shell=True, capture_output=True, text=True, check=True)
+            result = subprocess.run(
+                call, shell=True, capture_output=True, text=True, check=True
+            )
             settings.address_ftio = result.stdout.strip()
         except subprocess.CalledProcessError as e:
             jit_print(f"[bold red]>>Error occurred: {e}")
@@ -1159,10 +1317,14 @@ def get_address_cargo(settings: JitSettings) -> None:
     if settings.cluster:
         # call = f"srun --jobid={settings.job_id} {settings.single_node_command} --disable-status -N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 --overcommit --overlap --oversubscribe --mem=0 ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
         call = f"ip addr | grep ib0 | awk '{{print $2}}' | cut -d'/' -f1 | tail -1"
-        call = generate_cluster_command(settings, call, 1, 1, node_list=settings.single_node)
+        call = generate_cluster_command(
+            settings, call, 1, 1, node_list=settings.single_node
+        )
         jit_print(f"[bold cyan]>> Executing: {call}")
         try:
-            result = subprocess.run(call, shell=True, capture_output=True, text=True, check=True)
+            result = subprocess.run(
+                call, shell=True, capture_output=True, text=True, check=True
+            )
             settings.address_cargo = result.stdout.strip()
         except subprocess.CalledProcessError as e:
             jit_print(f"[bold red]>>Error occurred: {e}")
@@ -1187,12 +1349,8 @@ def set_dir_gekko(settings: JitSettings) -> None:
         # old_gkfs_rootdir = settings.gkfs_rootdir
         old_gkfs_mntdir = settings.gkfs_mntdir
 
-        settings.gkfs_rootdir = (
-            f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_rootdir)}"
-        )
-        settings.gkfs_mntdir = (
-            f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_mntdir)}"
-        )
+        settings.gkfs_rootdir = f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_rootdir)}"
+        settings.gkfs_mntdir = f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_mntdir)}"
         jit_print(f">> |-> Gekko root dir updated to: {settings.gkfs_rootdir}")
         jit_print(f">> |-> Gekko mnt dir updated to: {settings.gkfs_mntdir}")
 
@@ -1201,7 +1359,9 @@ def set_dir_gekko(settings: JitSettings) -> None:
                 setattr(
                     settings,
                     attr,
-                    getattr(settings, attr).replace(old_gkfs_mntdir, settings.gkfs_mntdir),
+                    getattr(settings, attr).replace(
+                        old_gkfs_mntdir, settings.gkfs_mntdir
+                    ),
                 )
                 jit_print(
                     f">> |-> {attr.replace('_', ' ').capitalize()} updated to: {getattr(settings, attr)}"
@@ -1241,7 +1401,9 @@ def save_hosts_file(settings: JitSettings):
                 try:
                     shutil.move(hostfile, settings.log_dir)
                 except Exception as e:
-                    print(f"Could not move {hostfile} to {settings.log_dir}: {e}")
+                    print(
+                        f"Could not move {hostfile} to {settings.log_dir}: {e}"
+                    )
 
 
 def snapshot_directory(settings: JitSettings):
@@ -1256,7 +1418,9 @@ def snapshot_directory(settings: JitSettings):
     output_file = f"{settings.log_dir}/snapshot_{timestamp}.txt"
 
     try:
-        result = subprocess.run(["ls", "-lahrt"], check=True, capture_output=True, text=True)
+        result = subprocess.run(
+            ["ls", "-lahrt"], check=True, capture_output=True, text=True
+        )
         with open(output_file, "w") as f:
             f.write(result.stdout)
         jit_print(f"Snapshot saved to {output_file}")
@@ -1361,7 +1525,9 @@ def print_settings(settings: JitSettings) -> None:
 
     app_flags = ""
     if len(settings.app_flags) > 0:
-        flags_list = [flag for flag in settings.app_flags.split(" ") if flag.strip()]
+        flags_list = [
+            flag for flag in settings.app_flags.split(" ") if flag.strip()
+        ]
         # Indent each flag after the colon
         app_flags = "\n                  : ".join(flags_list)
 
@@ -1500,7 +1666,9 @@ def format_time(elapsed: float) -> str:
     return f"{int(hours)}h {int(minutes)}m {seconds:.2f}s"
 
 
-def elapsed_time(settings: JitSettings, runtime: JitTime, name: str, elapsed: float) -> None:
+def elapsed_time(
+    settings: JitSettings, runtime: JitTime, name: str, elapsed: float
+) -> None:
     """
     Calculate and print the elapsed time for a specific component.
 
@@ -1545,7 +1713,9 @@ def check(settings: JitSettings) -> None:
     if settings.dry_run or settings.exclude_daemon:
         return
 
-    call = flaged_call(settings, f"ls -lahrt {settings.gkfs_mntdir}", exclude=["ftio"])
+    call = flaged_call(
+        settings, f"ls -lahrt {settings.gkfs_mntdir}", exclude=["ftio"]
+    )
     try:
 
         files = subprocess.check_output(
@@ -1555,7 +1725,9 @@ def check(settings: JitSettings) -> None:
         )
         jit_print(f"[cyan]>> {call}: [/]\n{files}")
     except subprocess.CalledProcessError as e:
-        jit_print(f"[red]>> Failed to list files in {settings.gkfs_mntdir}: {e}[/]")
+        jit_print(
+            f"[red]>> Failed to list files in {settings.gkfs_mntdir}: {e}[/]"
+        )
 
 
 def generate_cluster_command(
@@ -1584,16 +1756,28 @@ def generate_cluster_command(
     procs = nodes * procs_per_node
 
     if not settings.cluster:
-        call = f"mpiexec -np {procs} --oversubscribe " f"{additional_arguments} {call}"
+        call = (
+            f"mpiexec -np {procs} --oversubscribe "
+            f"{additional_arguments} {call}"
+        )
     else:
         if not node_list:
             node_list = f"--nodelist={settings.single_node}"
 
         if settings.use_mpirun and not force_srun:
             call, procs = clean_call(call, procs)
-            call = mpiexec_call(settings, call, procs, additional_arguments, node_list)
+            call = mpiexec_call(
+                settings, call, procs, additional_arguments, node_list
+            )
         else:
-            call = srun_call(settings, call, nodes, procs_per_node, additional_arguments, node_list)
+            call = srun_call(
+                settings,
+                call,
+                nodes,
+                procs_per_node,
+                additional_arguments,
+                node_list,
+            )
 
     return call
 
@@ -1621,9 +1805,13 @@ def flaged_call(
         str: Command with appropriate flags.
     """
     if settings.use_mpirun:
-        call = flaged_mpiexec_call(settings, call, nodes * procs_per_node, exclude, special_flags)
+        call = flaged_mpiexec_call(
+            settings, call, nodes * procs_per_node, exclude, special_flags
+        )
     else:
-        call = flaged_srun_call(settings, call, nodes, procs_per_node, exclude, special_flags)
+        call = flaged_srun_call(
+            settings, call, nodes, procs_per_node, exclude, special_flags
+        )
 
     return call
 
@@ -1699,7 +1887,9 @@ def flaged_srun_call(
     return call
 
 
-def load_flags_mpiexec(settings: JitSettings, exclude: list = [], special_flags: dict = {}) -> str:
+def load_flags_mpiexec(
+    settings: JitSettings, exclude: list = [], special_flags: dict = {}
+) -> str:
     """
     Load flags for mpiexec command.
 
@@ -1719,7 +1909,9 @@ def load_flags_mpiexec(settings: JitSettings, exclude: list = [], special_flags:
             f"-x LIBGKFS_ENABLE_METRICS={default['LIBGKFS_ENABLE_METRICS']} "
         )
     if not settings.exclude_proxy and "proxy" not in exclude:
-        additional_arguments += f"-x LIBGKFS_PROXY_PID_FILE={default['LIBGKFS_PROXY_PID_FILE']} "
+        additional_arguments += (
+            f"-x LIBGKFS_PROXY_PID_FILE={default['LIBGKFS_PROXY_PID_FILE']} "
+        )
     if not settings.exclude_daemon:
         if "demon" not in exclude:
             if "demon_log" not in exclude:
@@ -1728,16 +1920,22 @@ def load_flags_mpiexec(settings: JitSettings, exclude: list = [], special_flags:
                     f"-x LIBGKFS_LOG_OUTPUT={default['LIBGKFS_LOG_OUTPUT']} "
                 )
             if "hostfile" not in exclude:
-                additional_arguments += f"-x LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']} "
+                additional_arguments += (
+                    f"-x LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']} "
+                )
             if "preload" not in exclude:
-                additional_arguments += f"-x LD_PRELOAD={default['LD_PRELOAD']} "
+                additional_arguments += (
+                    f"-x LD_PRELOAD={default['LD_PRELOAD']} "
+                )
 
     additional_arguments += get_env(settings, "mpi")
 
     return additional_arguments
 
 
-def load_flags_srun(settings: JitSettings, exclude: list = [], special_flags: dict = {}) -> str:
+def load_flags_srun(
+    settings: JitSettings, exclude: list = [], special_flags: dict = {}
+) -> str:
     """
     Load flags for srun command.
 
@@ -1757,7 +1955,9 @@ def load_flags_srun(settings: JitSettings, exclude: list = [], special_flags: di
             f"LIBGKFS_METRICS_IP_PORT={default['LIBGKFS_METRICS_IP_PORT']},"
         )
     if not settings.exclude_proxy and "proxy" not in exclude:
-        additional_arguments += f"LIBGKFS_PROXY_PID_FILE={default['LIBGKFS_PROXY_PID_FILE']},"
+        additional_arguments += (
+            f"LIBGKFS_PROXY_PID_FILE={default['LIBGKFS_PROXY_PID_FILE']},"
+        )
     if not settings.exclude_daemon:
         if "demon" not in exclude:
             if "demon_log" not in exclude:
@@ -1766,7 +1966,9 @@ def load_flags_srun(settings: JitSettings, exclude: list = [], special_flags: di
                     f"LIBGKFS_LOG_OUTPUT={default['LIBGKFS_LOG_OUTPUT']},"
                 )
             if "hostfile" not in exclude:
-                additional_arguments += f"LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']},"
+                additional_arguments += (
+                    f"LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']},"
+                )
             if "preload" not in exclude:
                 additional_arguments += f"LD_PRELOAD={default['LD_PRELOAD']},"
 
@@ -1863,7 +2065,11 @@ def srun_call(
         str: srun command.
     """
     if not node_list:
-        node_list = settings.single_node_command if nodes == 1 else settings.app_nodes_command
+        node_list = (
+            settings.single_node_command
+            if nodes == 1
+            else settings.app_nodes_command
+        )
     else:
         if "--nodelist" not in node_list:
             node_list = f"--nodelist={node_list}"
@@ -1896,7 +2102,9 @@ def clean_call(call: str, procs: int) -> tuple:
         parts = call.split()
         if "-np" in parts:
             procs = int(parts[parts.index("-np") + 1])
-            parts = [part for part in parts if part != "-np" and part != str(procs)]
+            parts = [
+                part for part in parts if part != "-np" and part != str(procs)
+            ]
             call = " ".join(parts)
     else:
         pass
@@ -1904,7 +2112,9 @@ def clean_call(call: str, procs: int) -> tuple:
     return call, procs
 
 
-def get_executable_realpath(executable_name: str, search_location: str = None) -> str:
+def get_executable_realpath(
+    executable_name: str, search_location: str = None
+) -> str:
     """
     Get the real path of an executable.
 
@@ -1917,11 +2127,15 @@ def get_executable_realpath(executable_name: str, search_location: str = None) -
     """
     if search_location:
         potential_path = os.path.join(search_location, executable_name)
-        if os.path.isfile(potential_path) and os.access(potential_path, os.X_OK):
+        if os.path.isfile(potential_path) and os.access(
+            potential_path, os.X_OK
+        ):
             try:
                 return os.path.realpath(potential_path)
             except Exception as e:
-                print(f"Warning: Could not resolve real path for {potential_path}: {e}")
+                print(
+                    f"Warning: Could not resolve real path for {potential_path}: {e}"
+                )
                 return executable_name
 
     # Fall back to searching in the system PATH
@@ -1930,7 +2144,9 @@ def get_executable_realpath(executable_name: str, search_location: str = None) -
         try:
             return os.path.realpath(executable_path)
         except Exception as e:
-            print(f"Warning: Could not resolve real path for {executable_name}: {e}")
+            print(
+                f"Warning: Could not resolve real path for {executable_name}: {e}"
+            )
 
     # Fallback: return the name if not found
     jit_print(f">> Application: {executable_name}")
@@ -1949,7 +2165,11 @@ def update_mpi_hostfile(settings: JitSettings) -> None:
     scontrol_command = f"scontrol show hostname $({squeue_command})"
 
     # Execute the command and capture the hostnames
-    hostnames = subprocess.check_output(scontrol_command, shell=True).decode().splitlines()
+    hostnames = (
+        subprocess.check_output(scontrol_command, shell=True)
+        .decode()
+        .splitlines()
+    )
 
     # Write the hostnames to the file, excluding the Ftio node
     with open(f"{settings.mpi_hostfile}", "w") as hostfile:
@@ -1970,7 +2190,9 @@ def log_failed_jobs(settings: JitSettings, info: str) -> None:
     execution_path = os.path.join(parent, "failed_execution.txt")
     if settings.cmd_call:
         try:
-            jit_print(f"[yellow]>> Adding execution to list of failed jobs in {execution_path}.[/]")
+            jit_print(
+                f"[yellow]>> Adding execution to list of failed jobs in {execution_path}.[/]"
+            )
             with open(execution_path, "a") as file:
                 file.write(f"- {info}\n\t{settings.cmd_call}\n")
             settings.cmd_call = ""
@@ -2012,7 +2234,9 @@ def log_execution(settings: JitSettings) -> None:
                             f"- [{timestamp}] Completed:  {settings.cmd_call} {info}\n"
                         )
                         job_exists = True
-                        jit_print(f"[yellow]>> Job marked as completed in {execution_path}.[/]")
+                        jit_print(
+                            f"[yellow]>> Job marked as completed in {execution_path}.[/]"
+                        )
                     else:
                         updated_lines.append(line)
 
@@ -2021,7 +2245,9 @@ def log_execution(settings: JitSettings) -> None:
                 jit_print(
                     f"[yellow]>> Adding execution to list of pending jobs in {execution_path}.[/]"
                 )
-                updated_lines.append(f"- [{timestamp}] Pending: {settings.cmd_call} {info}\n")
+                updated_lines.append(
+                    f"- [{timestamp}] Pending: {settings.cmd_call} {info}\n"
+                )
 
             # Write the updated lines back to the file
             with open(execution_path, "w") as file:
@@ -2061,9 +2287,13 @@ def get_env(settings: JitSettings, mode: str = "srun") -> str:
     """
     env = ""
     if "mpi" in mode:
-        env = " ".join(f"-x {key}={value}" for key, value in settings.env_var.items())
+        env = " ".join(
+            f"-x {key}={value}" for key, value in settings.env_var.items()
+        )
     elif "srun":  # srun
-        env = ",".join(f"{key}={value}" for key, value in settings.env_var.items())
+        env = ",".join(
+            f"{key}={value}" for key, value in settings.env_var.items()
+        )
         env = env + ","
     else:
         pass
@@ -2080,7 +2310,9 @@ def save_bandwidth(settings: JitSettings) -> None:
     if not settings.exclude_ftio:
         try:
             command = f"cp {os.path.dirname(settings.log_dir)}/bandwidth.json {settings.log_dir}/bandwidth.json || true"
-            _ = subprocess.run(command, shell=True, capture_output=True, text=True, check=True)
+            _ = subprocess.run(
+                command, shell=True, capture_output=True, text=True, check=True
+            )
         except Exception as e:
             jit_print(f"[red] >> Error saving bandwidth:\n{e}")
 
@@ -2108,7 +2340,9 @@ def parse_time(line: str) -> float | None:
         duration_str = parts[1].replace(",", ".").strip()
 
         # Try parsing compact duration format (e.g., 1d2h3m4.56s)
-        pattern = r"(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+(?:\.\d+)?)s)?$"
+        pattern = (
+            r"(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+(?:\.\d+)?)s)?$"
+        )
         match = re.fullmatch(pattern, duration_str)
         if match:
             days = int(match.group(1)) if match.group(1) else 0

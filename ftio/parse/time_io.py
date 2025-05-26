@@ -22,9 +22,13 @@ class Time:
         # lib overhead
         self.delta_t_overhead = self.assign(data, "delta_t_overhead")
         if "delta_t_overhead_post_runtime" in data:
-            self.delta_t_overhead_post_runtime = self.assign(data, "delta_t_overhead_post_runtime")
+            self.delta_t_overhead_post_runtime = self.assign(
+                data, "delta_t_overhead_post_runtime"
+            )
         if "delta_t_overhead_peri_runtime" in data:
-            self.delta_t_overhead_peri_runtime = self.assign(data, "delta_t_overhead_peri_runtime")
+            self.delta_t_overhead_peri_runtime = self.assign(
+                data, "delta_t_overhead_peri_runtime"
+            )
 
         self.delta_t_total = self.delta_t_overhead + self.delta_t_agg
         self.rank = rank

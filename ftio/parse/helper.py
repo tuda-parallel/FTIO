@@ -1,8 +1,10 @@
 import datetime
+
 import numpy as np
-from rich.panel import Panel
 from rich.console import Console
+from rich.panel import Panel
 from rich.text import Text
+
 from ftio import __version__
 
 
@@ -22,7 +24,10 @@ def scale_metric(metric: str, number: float) -> tuple[str, float]:
     if number > 0:
         order = np.log10(number)
 
-        if any(x in metric.lower() for x in ["bytes", "b", "bandwidth", "transfer"]):
+        if any(
+            x in metric.lower()
+            for x in ["bytes", "b", "bandwidth", "transfer"]
+        ):
             if order > 9:
                 order = 1e-9
                 prefix = "G"
@@ -50,7 +55,13 @@ def scale_metric(metric: str, number: float) -> tuple[str, float]:
         if not np.isnan(order):
             if any(
                 x in metric.lower()
-                for x in ["(b/s)", "(bytes/s)", "(bytes/second)", "(b/second)", "bandwidth"]
+                for x in [
+                    "(b/s)",
+                    "(bytes/s)",
+                    "(bytes/second)",
+                    "(b/second)",
+                    "bandwidth",
+                ]
             ):
                 unit = f"Bandwidth ({prefix}B/s)"
             elif any(x in metric.lower() for x in ["(bytes)", "(b)"]):
@@ -95,7 +106,13 @@ def detect_source(data: dict, args) -> str:
     if "tmio" in args.source.lower() or "custom" in args.source.lower():
         return args.source.lower()
     else:  # autodetect
-        tmio_fields = ["read_sync", "read_async_t", "read_async_b", "write_async_t", "io_time"]
+        tmio_fields = [
+            "read_sync",
+            "read_async_t",
+            "read_async_b",
+            "write_async_t",
+            "io_time",
+        ]
         if all(fields in data for fields in tmio_fields):
             return "tmio"
         else:

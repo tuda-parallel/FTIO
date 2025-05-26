@@ -4,14 +4,14 @@ using Matplotlib and Plotly.
 """
 
 from argparse import Namespace
-import numpy as np
-import pywt
+
 import matplotlib.pyplot as plt
+import numpy as np
 import plotly.graph_objects as go
+import pywt
 from plotly.subplots import make_subplots
 
 from ftio.freq.freq_html import create_html
-
 
 ####################################################################################################
 #! Deprecated functions
@@ -74,7 +74,9 @@ def plot_wave_disc(
         # GoH0+G1H1 = 1 -> Multiply a with H1 and d with G1
         # https://medium.com/@shouke.wei/process-of-discrete-wavelet-transform-iii-wavelet-partial-reconstruction-ca7a8f9420dc
         if "recon" in use:
-            cc[level - i + 1] = pywt.upcoef("d", coffs[level - i + 1], wavelet, level=i)[:n]
+            cc[level - i + 1] = pywt.upcoef(
+                "d", coffs[level - i + 1], wavelet, level=i
+            )[:n]
         else:
             # Wrong: only upsample: ‘↑ 2’ denotes ‘upsample by 2’ (put 0’s before values)
             # cc[level-i+1,::2**(i)] = coffs[level-i+1]
@@ -128,7 +130,12 @@ def plot_wave_disc(
         plt.ylabel("Frequency (Hz)", fontsize=18)
         plt.xticks(fontsize=18)
         plt.yticks(fontsize=18)
-        y = np.concatenate([np.array([0]), freq / 2 ** np.arange(start=level + 1, stop=0, step=-1)])
+        y = np.concatenate(
+            [
+                np.array([0]),
+                freq / 2 ** np.arange(start=level + 1, stop=0, step=-1),
+            ]
+        )
         x = (
             -2 / freq + t[0] + 1 / freq * np.arange(0, len(b_sampled) + 1)
         )  # ? add corner shifted by half a sample step
@@ -174,7 +181,9 @@ def get_names(freq_bands: np.ndarray, n: int):
         f"RS{n-i} from CD (Freq: [{freq_bands[i, 0]:.3e} Hz - {freq_bands[i, 1]:.3e}] Hz)"
         for i in range(n)
     ]
-    names[1] = f"RS{n - 1} from CA (Freq: [{freq_bands[0, 0]:.3e} Hz - {freq_bands[0, 1]:.3e}] Hz)"
+    names[1] = (
+        f"RS{n - 1} from CA (Freq: [{freq_bands[0, 0]:.3e} Hz - {freq_bands[0, 1]:.3e}] Hz)"
+    )
 
     return names
 
@@ -210,13 +219,27 @@ def matplot_coeffs_reconst_signal(
     num_levels = len(coeffs)
     names = get_names(freq_bands, num_levels)
     fig, axes = plt.subplots(
-        num_levels + 1, 1, figsize=(10, 3 * (num_levels + 1)), sharex=common_xaxis
+        num_levels + 1,
+        1,
+        figsize=(10, 3 * (num_levels + 1)),
+        sharex=common_xaxis,
     )
 
     # Plot the original and reconstructed signals in the first subplot
     axes[0].plot(t, b, label="Bandwidth", color="b", linestyle="dashed")
-    axes[0].plot(t_sampled, b_sampled, label="Sampled Bandwidth", color="b", linestyle="dashed")
-    axes[0].plot(t_sampled, np.sum(coeffs, axis=0), label="Reconstructed Signal", color="g")
+    axes[0].plot(
+        t_sampled,
+        b_sampled,
+        label="Sampled Bandwidth",
+        color="b",
+        linestyle="dashed",
+    )
+    axes[0].plot(
+        t_sampled,
+        np.sum(coeffs, axis=0),
+        label="Reconstructed Signal",
+        color="g",
+    )
     axes[0].set_title(names[0])
     axes[0].set_ylabel("Amplitude")
     axes[0].legend()
@@ -318,20 +341,32 @@ def ploty_coeffs_reconst_signal(
 
     names = get_names(freq_bands, len(coeffs))
     fig = make_subplots(
-        rows=len(coeffs) + 2, cols=1, subplot_titles=names, shared_xaxes=common_xaxis
+        rows=len(coeffs) + 2,
+        cols=1,
+        subplot_titles=names,
+        shared_xaxes=common_xaxis,
     )
 
     # Plot the original bandwidth
-    fig.add_trace(go.Scatter(x=t, y=b, mode="lines", name="Bandwidth"), row=1, col=1)
+    fig.add_trace(
+        go.Scatter(x=t, y=b, mode="lines", name="Bandwidth"), row=1, col=1
+    )
 
     # Plot the original bandwidth
     fig.add_trace(
-        go.Scatter(x=t_sampled, y=b_sampled, mode="lines", name="Sampled Bandwidth"), row=1, col=1
+        go.Scatter(
+            x=t_sampled, y=b_sampled, mode="lines", name="Sampled Bandwidth"
+        ),
+        row=1,
+        col=1,
     )
     # Plot the reconstructed signal
     fig.add_trace(
         go.Scatter(
-            x=t_sampled, y=np.sum(coeffs, axis=0), mode="lines", name="Reconstructed Signal"
+            x=t_sampled,
+            y=np.sum(coeffs, axis=0),
+            mode="lines",
+            name="Reconstructed Signal",
         ),
         row=1,
         col=1,
@@ -345,7 +380,9 @@ def ploty_coeffs_reconst_signal(
             col=1,
         )
         fig.update_yaxes(title_text="Amplitude", row=i + 2, col=1)
-        fig.update_xaxes(showticklabels=True, title_text="Time (s)", row=i + 2, col=1)
+        fig.update_xaxes(
+            showticklabels=True, title_text="Time (s)", row=i + 2, col=1
+        )
 
     # Final layout adjustments
     fig.update_layout(
@@ -443,13 +480,25 @@ def plot_coeffs_reconst_signal(
     """
     if "plotly" in args.engine:
         fig = ploty_coeffs_reconst_signal(
-            t, b, t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis
+            t,
+            b,
+            t_sampled,
+            b_sampled,
+            coeffs_upsampled,
+            freq_bands,
+            common_xaxis,
         )
         # create_html([fig], args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, args.transformation)
 
     else:
         fig = matplot_coeffs_reconst_signal(
-            t, b, t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis
+            t,
+            b,
+            t_sampled,
+            b_sampled,
+            coeffs_upsampled,
+            freq_bands,
+            common_xaxis,
         )
 
     return fig

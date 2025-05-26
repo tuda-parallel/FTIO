@@ -1,12 +1,13 @@
 import numpy as np
+
 from ftio.cli.ftio_core import core
-from ftio.parse.args import parse_args
-from ftio.plot.freq_plot import convert_and_plot
-from ftio.processing.print_output import display_prediction
 
 # from ftio.prediction.helper import get_dominant
 # from ftio.plot.freq_plot import convert_and_plot
 from ftio.freq.helper import MyConsole
+from ftio.parse.args import parse_args
+from ftio.plot.freq_plot import convert_and_plot
+from ftio.processing.print_output import display_prediction
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -15,7 +16,11 @@ CONSOLE.set(True)
 
 
 def ftio_metric_task(
-    metric: str, arrays: np.ndarray, argv: list, ranks: int = 0, show: bool = True
+    metric: str,
+    arrays: np.ndarray,
+    argv: list,
+    ranks: int = 0,
+    show: bool = True,
 ) -> dict:
     """generate FTIO prediction from 2d np array
 
@@ -31,7 +36,12 @@ def ftio_metric_task(
     """
     if len(arrays[0]) > 1:
         # set up data
-        data = {"bandwidth": arrays[0], "time": arrays[1], "total_bytes": 0, "ranks": ranks}
+        data = {
+            "bandwidth": arrays[0],
+            "time": arrays[1],
+            "total_bytes": 0,
+            "ranks": ranks,
+        }
 
         # parse args
         args = parse_args(argv, "ftio")
@@ -52,7 +62,12 @@ def ftio_metric_task(
 
 
 def ftio_metric_task_save(
-    data, metric: str, arrays: np.ndarray, argv: list, ranks: int, show: bool = False
+    data,
+    metric: str,
+    arrays: np.ndarray,
+    argv: list,
+    ranks: int,
+    show: bool = False,
 ) -> None:
     prediction = ftio_metric_task(metric, arrays, argv, ranks, show)
     # freq = get_dominant(prediction) #just get a single dominant value
@@ -69,8 +84,14 @@ def ftio_metric_task_save(
                 "total_bytes": prediction["total_bytes"],
                 "ranks": prediction["ranks"],
                 "freq": prediction["freq"],
-                **({"top_freq": prediction["top_freq"]} if "top_freq" in prediction else {}),
+                **(
+                    {"top_freq": prediction["top_freq"]}
+                    if "top_freq" in prediction
+                    else {}
+                ),
             }
         )
     else:
-        CONSOLE.info(f"\n[yellow underline]Warning: {metric} returned {prediction}[/]")
+        CONSOLE.info(
+            f"\n[yellow underline]Warning: {metric} returned {prediction}[/]"
+        )

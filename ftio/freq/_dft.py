@@ -1,8 +1,8 @@
 """Contains DFT methods and accuracy calculation"""
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 
 #!################
@@ -37,11 +37,17 @@ def compute_dft_spectrum(b: np.ndarray, fs: float):
     # Only keep the positive frequencies (half of the DFT result)
     indices = np.arange(0, int(len(amp) / 2) + 1)
     amp = amp[indices]  # Keep the amplitude
-    amp[1:] *= 2  # Double the amplitude for the positive frequencies (except the DC component)
+    amp[
+        1:
+    ] *= 2  # Double the amplitude for the positive frequencies (except the DC component)
     phi = phi[indices]  # Keep the corresponding phase values
     freqs = freqs[indices]
 
-    return amp, phi, freqs  # Return the amplitude, phase, and corresponding frequencies
+    return (
+        amp,
+        phi,
+        freqs,
+    )  # Return the amplitude, phase, and corresponding frequencies
 
 
 #!################
@@ -149,7 +155,8 @@ def precision_dft(
     dc_offset = np.zeros(len(amp))
     for index in dominant_index:
         x = dc_offset + 2 * (1 / len(amp)) * amp[index] * np.cos(
-            2 * np.pi * np.arange(0, len(amp)) * (index) / (len(amp)) + phi[index]
+            2 * np.pi * np.arange(0, len(amp)) * (index) / (len(amp))
+            + phi[index]
         )
         x[x < 0] = 0
         x_2 = x.copy()

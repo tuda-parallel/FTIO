@@ -1,12 +1,12 @@
 import sys
-import plotly.express as px
-import pandas as pd
-import plotly.graph_objects as go
-import numpy as np
 
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+
+from ftio.plot.helper import format_plot, legend_fix
 from ftio.plot.plot_core import PlotCore
-from ftio.plot.helper import legend_fix
-from ftio.plot.helper import format_plot
 
 
 def main(args=sys.argv):
@@ -36,7 +36,10 @@ def main(args=sys.argv):
     sets = [[0, 1], [2, 3], [4, 5], [6, 7]]
     sets_names = ["Direct", "Up-only", "Adaptive", "No Limit"]
 
-    metric = [plotter.data.df_time["delta_t_agg"], plotter.data.df_time["delta_t_agg_io"]]
+    metric = [
+        plotter.data.df_time["delta_t_agg"],
+        plotter.data.df_time["delta_t_agg_io"],
+    ]
     modes = ["Total", "IO"]
 
     for i, _ in enumerate(sets):
@@ -71,7 +74,10 @@ def main(args=sys.argv):
                     name=modes[count0],
                     legendgroup=sets_names[i],
                     legendgrouptitle_text=sets_names[i],
-                    marker=dict(symbol=symbols[i], line=dict(width=1, color=markeredgecolor)),
+                    marker=dict(
+                        symbol=symbols[i],
+                        line=dict(width=1, color=markeredgecolor),
+                    ),
                     # marker_color=colors[i]
                     showlegend=True,
                 )

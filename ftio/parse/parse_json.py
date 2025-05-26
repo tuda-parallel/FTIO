@@ -1,7 +1,8 @@
 import json
-from ftio.parse.simrun import Simrun
+
 from ftio.freq.helper import MyConsole
-from ftio.parse.helper import match_mode, detect_source
+from ftio.parse.helper import detect_source, match_mode
+from ftio.parse.simrun import Simrun
 
 
 class ParseJson:
@@ -34,7 +35,10 @@ class ParseJson:
         console = MyConsole()
         # check for mode
         fields = list(data.keys())
-        if any(x in fields for x in ["read_sync", "read_async", "write_sync", "write_async"]):
+        if any(
+            x in fields
+            for x in ["read_sync", "read_async", "write_sync", "write_async"]
+        ):
             args.source = "custom"
             if args.mode and match_mode(args.mode) in data:
                 self.add_missing_fields(data, match_mode(args.mode))
@@ -42,7 +46,12 @@ class ParseJson:
                 console.info(
                     f"[yellow]Warning: [/] Mode [yellow]{args.mode}[/] does not exist in trace"
                 )
-                for x in ["read_sync", "read_async", "read_async", "write_async"]:
+                for x in [
+                    "read_sync",
+                    "read_async",
+                    "read_async",
+                    "write_async",
+                ]:
                     if x in fields:
                         args.mode = x
                         console.info(
@@ -96,7 +105,9 @@ class ParseJson:
                             "b_overlap_avr": data[b_fields[0]],
                             "t_overlap": data[t_fields[0]],
                         }
-                        console.info(f"[yellow]Treating Json data as application-level metrics[/]")
+                        console.info(
+                            f"[yellow]Treating Json data as application-level metrics[/]"
+                        )
 
                     elif len(t_fields) == 2:
                         t_s = [k for k in t_fields if k.endswith("s")]
@@ -106,7 +117,9 @@ class ParseJson:
                             "t_rank_s": data[t_s[0]],
                             "t_rank_e": data[t_e[0]],
                         }
-                        console.info(f"[yellow]Treating Json data as rank-level metrics[/]")
+                        console.info(
+                            f"[yellow]Treating Json data as rank-level metrics[/]"
+                        )
 
                     data = {
                         "read_sync": {

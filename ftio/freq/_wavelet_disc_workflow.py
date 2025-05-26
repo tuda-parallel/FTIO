@@ -1,16 +1,20 @@
 """Contains functions that execute workflow using the continuous Wavelet Transform."""
 
-import time
 import copy
+import time
 from argparse import Namespace
-import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from ftio.processing.print_output import display_prediction
+
+import numpy as np
+
+from ftio.freq._analysis_figures import AnalysisFigures
+from ftio.freq._dft_workflow import ftio_dft
+from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq._wavelet import wavelet_disc
 from ftio.freq._wavelet_helpers import (
-    wavelet_freq_bands,
     decomposition_level,
     upsample_coefficients,
+    wavelet_freq_bands,
 )
 from ftio.freq.autocorrelation import find_fd_autocorrelation
 from ftio.freq.discretize import sample_data
@@ -20,9 +24,7 @@ from ftio.plot.plot_wavelet_disc import (
     plot_coeffs_reconst_signal,
     plot_wavelet_disc_spectrum,
 )
-from ftio.freq._dft_workflow import ftio_dft
-from ftio.freq._share_signal_data import SharedSignalData
-from ftio.freq._analysis_figures import AnalysisFigures
+from ftio.processing.print_output import display_prediction
 
 # from ftio.prediction.helper import[] get_dominant_and_conf
 
@@ -62,11 +64,17 @@ def ftio_wavelet_disc(
     #! Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
-    b_sampled, args.freq = sample_data(bandwidth, time_stamps, args.freq, args.verbose)
-    console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
+    b_sampled, args.freq = sample_data(
+        bandwidth, time_stamps, args.freq, args.verbose
+    )
+    console.print(
+        f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s"
+    )
 
     tik = time.time()
-    console.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
+    console.print(
+        f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
+    )
 
     #! Find the level for the discrete wavelet
     # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1-Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20-%202010%20-%20Rede_AIASYB2.pdf
@@ -83,15 +91,27 @@ def ftio_wavelet_disc(
     freq_ranges = wavelet_freq_bands(args.freq, args.level)
     # Upsample coefficients for equal length
     t_sampled = time_stamps[0] + np.arange(0, len(b_sampled)) * 1 / args.freq
-    coefficients_upsampled = upsample_coefficients(coefficients, args.wavelet, len(b_sampled))
+    coefficients_upsampled = upsample_coefficients(
+        coefficients, args.wavelet, len(b_sampled)
+    )
     # plot functions
     if any(x in args.engine for x in ["mat", "plot"]):
         console.print(f"Generating {args.transformation.upper()} Plot\n")
-        analysis_figures_wavelet = AnalysisFigures(args, coefficients=coefficients_upsampled)
-        f1 = plot_coeffs_reconst_signal(
-            args, time_stamps, bandwidth, t_sampled, b_sampled, coefficients_upsampled, freq_ranges
+        analysis_figures_wavelet = AnalysisFigures(
+            args, coefficients=coefficients_upsampled
         )
-        f2 = plot_wavelet_disc_spectrum(args, t_sampled, coefficients_upsampled, freq_ranges)
+        f1 = plot_coeffs_reconst_signal(
+            args,
+            time_stamps,
+            bandwidth,
+            t_sampled,
+            b_sampled,
+            coefficients_upsampled,
+            freq_ranges,
+        )
+        f2 = plot_wavelet_disc_spectrum(
+            args, t_sampled, coefficients_upsampled, freq_ranges
+        )
 
         analysis_figures_wavelet.add_figure([f1], f"wavelet_disc")
         analysis_figures_wavelet.add_figure([f2], f"wavelet_disc_spectrum")
@@ -134,7 +154,9 @@ def ftio_wavelet_disc(
             for i, coeffs in enumerate(coefficients_upsampled):
                 tmp_args = copy.deepcopy(args)
                 tmp_args.plot_name = f"ftio_dwt{i}_result"
-                future = executor.submit(ftio_dft, tmp_args, coeffs, t_sampled, total_bytes, ranks)
+                future = executor.submit(
+                    ftio_dft, tmp_args, coeffs, t_sampled, total_bytes, ranks
+                )
                 futures[future] = i
 
             # Process futures as they complete
@@ -159,7 +181,10 @@ def ftio_wavelet_disc(
     # ? Option 4: Apply autocorrelation on low
     elif "dwt_x_autocorrelation" in analysis:
         res = find_fd_autocorrelation(
-            args, coefficients_upsampled[0], args.freq, analysis_figures_wavelet
+            args,
+            coefficients_upsampled[0],
+            args.freq,
+            analysis_figures_wavelet,
         )
         exit()
 

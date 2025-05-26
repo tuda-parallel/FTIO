@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import argparse
-from ftio import __copyright__, __repo__, __version__, __license__
+
+from ftio import __copyright__, __license__, __repo__, __version__
 
 
 def parse_args(argv: list, name="") -> argparse.Namespace:
@@ -13,7 +15,9 @@ def parse_args(argv: list, name="") -> argparse.Namespace:
         flag = False
 
     if "plot" in name:
-        disc = "Plots result stored in Json file to a HTML page or PDF document."
+        disc = (
+            "Plots result stored in Json file to a HTML page or PDF document."
+        )
     elif "ftio" in name:
         disc = "Captures the period of the I/O phases. Uses frequency techniques (default=discrete fourier transformation) and outlier detection methods (Z-score) on the provided file. Supported file formats are Json, Jsonlines, Msgpack, Darshan, and reorder (folder). TMIO can be used to generate the tracing file needed. There are several parameters which can be controlled by the arguments bellow."
     elif "predictor" in name:
@@ -116,10 +120,16 @@ Full documentation:
         )
         parser.set_defaults(freq=10)
         parser.add_argument(
-            "-ts", "--ts", type=float, help="modifies the start time of the examined time window"
+            "-ts",
+            "--ts",
+            type=float,
+            help="modifies the start time of the examined time window",
         )
         parser.add_argument(
-            "-te", "--te", type=float, help="modifies the end time of the examined time window"
+            "-te",
+            "--te",
+            type=float,
+            help="modifies the end time of the examined time window",
         )
         parser.add_argument(
             "-tr",
@@ -164,7 +174,9 @@ Full documentation:
             type=str,
             help='Wavelet to use. See pywt documentation for wavelet families: pywt.wavelist(kind="continuous") or pywt.wavelist(kind="discrete") (default "morl" for continuous and "db1" for discrete)',
         )
-        parser.add_argument("-t", "--tol", dest="tol", type=float, help="tolerance value")
+        parser.add_argument(
+            "-t", "--tol", dest="tol", type=float, help="tolerance value"
+        )
         parser.set_defaults(tol=0.8)
         parser.add_argument(
             "-d",
@@ -243,7 +255,11 @@ Full documentation:
             help="avoids opening the generated HTML file since zmq is used",
         )
         parser.set_defaults(zmq=False)
-        parser.add_argument("--zmq_source", type=str, help="the source of zmq: TMIO, direct, etc.")
+        parser.add_argument(
+            "--zmq_source",
+            type=str,
+            help="the source of zmq: TMIO, direct, etc.",
+        )
         parser.set_defaults(zmq_source="direct")
         parser.add_argument(
             "--zmq_address",
@@ -254,7 +270,11 @@ Full documentation:
         )
         parser.set_defaults(zmq_address="*")
         parser.add_argument(
-            "--zmq_port", "--zmq_port", dest="zmq_port", type=str, help="zmq port for communication"
+            "--zmq_port",
+            "--zmq_port",
+            dest="zmq_port",
+            type=str,
+            help="zmq port for communication",
         )
         parser.set_defaults(zmq_port="5555")
         # filter arguments
@@ -272,13 +292,18 @@ Full documentation:
             help="Cutoff frequency for low/high-pass filters or low and high cutoff for bandpass.",
         )
         parser.add_argument(
-            "--filter_order", type=int, default=4, help="Order of Butterworth filter."
+            "--filter_order",
+            type=int,
+            default=4,
+            help="Order of Butterworth filter.",
         )
 
     #! IOPLOT Settings
     if "plot" in name.lower():
         parser.set_defaults(mode="")
-        parser.add_argument("-z", "--zoom", type=float, help="upper zoom limit on the y-axis")
+        parser.add_argument(
+            "-z", "--zoom", type=float, help="upper zoom limit on the y-axis"
+        )
         parser.add_argument(
             "-nt",
             "--no-threaded",
@@ -307,23 +332,33 @@ Full documentation:
         )
         parser.set_defaults(merge_plots=False)
         parser.add_argument(
-            "--no_disp", action="store_true", help="avoids opening the generated HTML file"
+            "--no_disp",
+            action="store_true",
+            help="avoids opening the generated HTML file",
         )
         parser.set_defaults(no_disp=False)
 
     #! PARSE Settings
     if "parse" in name.lower():
-        parser.add_argument("--scale", action="store_true", help="scales the Y-axis")
+        parser.add_argument(
+            "--scale", action="store_true", help="scales the Y-axis"
+        )
         parser.set_defaults(scale=False)
 
     #! Data modes (for all)
-    parser.add_argument("--sum", action="store_true", help="sum plot: True (default) or False")
+    parser.add_argument(
+        "--sum", action="store_true", help="sum plot: True (default) or False"
+    )
     parser.add_argument("--no_sum", dest="sum", action="store_false")
     parser.set_defaults(sum=True)
-    parser.add_argument("--avr", action="store_true", help="avr plot: True (default) or False")
+    parser.add_argument(
+        "--avr", action="store_true", help="avr plot: True (default) or False"
+    )
     parser.add_argument("--no_avr", dest="avr", action="store_false")
     parser.set_defaults(avr=True)
-    parser.add_argument("--ind", action="store_true", help="ind plot: True or False (default)")
+    parser.add_argument(
+        "--ind", action="store_true", help="ind plot: True or False (default)"
+    )
     parser.add_argument("--no_ind", dest="ind", action="store_false")
     parser.set_defaults(ind=False)
     parser.add_argument(
@@ -342,7 +377,10 @@ Full documentation:
     )
     parser.set_defaults(dxt_mode="DXT_MPIIO")
     parser.add_argument(
-        "-l", "--limit", type=int, help="max ranks to consider when reading a folder"
+        "-l",
+        "--limit",
+        type=int,
+        help="max ranks to consider when reading a folder",
     )
     parser.set_defaults(limit=-1)
 
@@ -358,7 +396,9 @@ Full documentation:
 
         recon = []
         if args.reconstruction:
-            recon = [int(x) for val in args.reconstruction for x in val.split(",")]
+            recon = [
+                int(x) for val in args.reconstruction for x in val.split(",")
+            ]
         if args.n_freq:
             if args.n_freq not in recon:
                 recon.append(int(args.n_freq))

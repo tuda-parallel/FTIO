@@ -1,13 +1,15 @@
-import os
-import sys
-import re
 import json
+import os
+import re
+import sys
 import time
-from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
-from rich.panel import Panel
+
 import numpy as np
 import pandas as pd
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
+
 from ftio.api.trace_analysis.trace_ftio_v2 import main as trace_ftio
 
 console = Console()
@@ -72,7 +74,9 @@ def main(argv=sys.argv[1:]) -> None:
 
     try:
         with progress:
-            task = progress.add_task("[green]Processing files...", total=len(csv_files))
+            task = progress.add_task(
+                "[green]Processing files...", total=len(csv_files)
+            )
 
             # Iterate over each csv file
             for file_path in csv_files:
@@ -86,7 +90,9 @@ def main(argv=sys.argv[1:]) -> None:
 
                 # Create the new file name by replacing the pattern
                 base_name = os.path.basename(file_path)
-                json_name = base_name.replace(f"_signal_{name}.csv", f"_freq_{name}.json")
+                json_name = base_name.replace(
+                    f"_signal_{name}.csv", f"_freq_{name}.json"
+                )
                 json_path = os.path.join(os.path.dirname(file_path), json_name)
                 data_converted = convert_dict(res)
 
@@ -94,7 +100,9 @@ def main(argv=sys.argv[1:]) -> None:
                     with open(json_path, "w") as file:
                         json.dump(data_converted, file, indent=4)
                 else:
-                    console.print(f"[bold red]Cannot dump Json file in {json_path}[/]")
+                    console.print(
+                        f"[bold red]Cannot dump Json file in {json_path}[/]"
+                    )
 
                 flat_res = flatten_dict(res)
                 try:
@@ -112,7 +120,9 @@ def main(argv=sys.argv[1:]) -> None:
                 # Update the progress bar
                 progress.advance(task)
 
-        progress.console.print("[bold green]All files processed successfully![/]\n")
+        progress.console.print(
+            "[bold green]All files processed successfully![/]\n"
+        )
         console.print(
             f"[blue]FTIO total time:[/] {time.time()  - start_time:.4f} seconds\n"
             f"[blue]Location:[/] {folder_path}\n"
@@ -123,7 +133,9 @@ def main(argv=sys.argv[1:]) -> None:
         progress.console.print("[bold red]Keyboard interrupt![/]\n")
         statistics(df)
         sys.exit()
-    console.print(f"[blue]Execution time:[/] {time.time()  - start_time:.4f} seconds")
+    console.print(
+        f"[blue]Execution time:[/] {time.time()  - start_time:.4f} seconds"
+    )
 
 
 def convert_dict(data):
@@ -185,7 +197,9 @@ def statistics(df, elapsed_time="", settings={}) -> None:
                 )
             )
             console.print("\n")
-            content += cleaned_text(f"{prefix.capitalize()}" + "\n----------------\n" + s + "\n\n")
+            content += cleaned_text(
+                f"{prefix.capitalize()}" + "\n----------------\n" + s + "\n\n"
+            )
         file.write(content + cleaned_text(elapsed_time))
         if settings:
             for _, field in enumerate(settings):
@@ -205,7 +219,9 @@ def periodic_apps(df, prefix) -> str:
     return out
 
 
-def compute_metrics(df: pd.DataFrame, prefix, suffix="conf", unit="%", title="") -> str:
+def compute_metrics(
+    df: pd.DataFrame, prefix, suffix="conf", unit="%", title=""
+) -> str:
     min = np.nan
     max = np.nan
     mean = np.nan

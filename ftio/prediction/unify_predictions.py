@@ -1,21 +1,26 @@
 """Merge Predections"""
 
 from __future__ import annotations
+
 import time
-import numpy as np
-from rich.panel import Panel
 from argparse import Namespace
 
+import numpy as np
+from rich.panel import Panel
+
+from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
-from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.plot.plot_dft import plot_dft
 
 CONSOLE = MyConsole()
 
 
 def merge_predictions(
-    args: Namespace, pred_dft: Prediction, pred_auto: Prediction, analysis_figures: AnalysisFigures
+    args: Namespace,
+    pred_dft: Prediction,
+    pred_auto: Prediction,
+    analysis_figures: AnalysisFigures,
 ) -> Prediction:
     """Merge prediction if both autocorrelation and freq. techniques (dft/wavelet) are executed
 
@@ -34,7 +39,9 @@ def merge_predictions(
         CONSOLE.print(f"[cyan]Merging Started:[/]\n")
         text = f"Merging Autocorrelation and {args.transformation.upper()}\n"
         if not pred_auto.is_empty() and not np.isnan(pred_auto.dominant_freq):
-            pred_merged, text = merge_core(pred_dft, pred_auto, args.freq, text)
+            pred_merged, text = merge_core(
+                pred_dft, pred_auto, args.freq, text
+            )
             if pred_merged.dominant_freq:
                 text += f"Dominant frequency: [blue bold]{np.round(pred_merged.dominant_freq[-1],4)}[/] Hz -> [blue bold]{np.round(1/pred_merged.dominant_freq[-1],4)}[/] sec\n"
                 text += f"Confidence: [bold]{color_pred(pred_merged.conf[-1])}{np.round(pred_merged.conf[-1]*100,2)}[/] %\n"
@@ -50,7 +57,9 @@ def merge_predictions(
                 title_align="left",
             )
         )
-        CONSOLE.print(f"\n[cyan]Merging finished:[/] {time.time() - tik:.3f} s")
+        CONSOLE.print(
+            f"\n[cyan]Merging finished:[/] {time.time() - tik:.3f} s"
+        )
 
         if any(x in args.engine for x in ["mat", "plot"]):
             analysis_figures.args = args
@@ -82,7 +91,8 @@ def merge_core(
     if len(pred_dft.dominant_freq) >= 1:
         if "alike" in method:
             alike = (
-                pred_auto.dominant_freq - abs(pred_dft.dominant_freq - pred_auto.dominant_freq)
+                pred_auto.dominant_freq
+                - abs(pred_dft.dominant_freq - pred_auto.dominant_freq)
             ) / pred_auto.dominant_freq
             text += f"Frequencies [yellow]{np.round(pred_dft.dominant_freq,4)}[/] Hz match [yellow]{np.round(pred_auto.dominant_freq,4)}[/] Hz by:\n[yellow]{np.round(alike,4)}[/]%\n\n"
             dominant_index = np.argmax(alike)
@@ -92,7 +102,9 @@ def merge_core(
             tol = 2 / freq  # 2 frequency steps
             hits = np.zeros(len(pred_dft.dominant_freq))
             if "ratio" in method:
-                alike = np.zeros((len(pred_dft.dominant_freq), len(pred_auto.candidates)))
+                alike = np.zeros(
+                    (len(pred_dft.dominant_freq), len(pred_auto.candidates))
+                )
             else:  # cov method
                 alike = np.zeros(len(pred_dft.dominant_freq))
 
@@ -100,11 +112,16 @@ def merge_core(
             for i, f_d in enumerate(pred_dft.dominant_freq):
                 t_d = 1 / f_d
                 hits[i] = sum(
-                    (t_d - tol < pred_auto.candidates) & (pred_auto.candidates < t_d + tol)
+                    (t_d - tol < pred_auto.candidates)
+                    & (pred_auto.candidates < t_d + tol)
                 )
                 if "ratio" in method:
                     alike[i, :] = np.min(
-                        [pred_auto.candidates / t_d, t_d / pred_auto.candidates], axis=0
+                        [
+                            pred_auto.candidates / t_d,
+                            t_d / pred_auto.candidates,
+                        ],
+                        axis=0,
                     )  # 1 - abs(pred_auto.candidates - t_d)/t_d
                 else:  # cov method
                     alike[i] = 1 - np.abs(
@@ -141,7 +158,11 @@ def merge_core(
                 ) / 3
             else:
                 text += f"Agreed prediction [blue] {alike*100}[/] %\n"
-                conf = (alike[dominant_index] + pred_dft.conf[dominant_index] + pred_auto.conf) / 3
+                conf = (
+                    alike[dominant_index]
+                    + pred_dft.conf[dominant_index]
+                    + pred_auto.conf
+                ) / 3
                 # text += f"[red bold]{alike[dominant_index]} + {pred_dft.conf[dominant_index]} + {pred_auto.conf}[/]\n"
 
             if conf >= 0.2:

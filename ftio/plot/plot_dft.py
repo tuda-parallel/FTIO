@@ -1,26 +1,30 @@
 from __future__ import annotations
-import numpy as np
+
 from argparse import Namespace
-from rich.console import Console
+
 import matplotlib
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
+import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
+from rich.console import Console
 
+from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq.dtw import threaded_dtw
+from ftio.freq.freq_html import create_html
+from ftio.freq.prediction import Prediction
 from ftio.plot.helper import format_plot
 from ftio.plot.spectrum import plot_one_spectrum
 from ftio.plot.units import set_unit
-from ftio.freq.freq_html import create_html
-from ftio.freq._analysis_figures import AnalysisFigures
-from ftio.freq.prediction import Prediction
 
 # import plotly.io as pio
 matplotlib.rcParams["backend"] = "TkAgg"
 
 
 def plot_dft(
-    args: Namespace, prediction: Prediction = None, analysis_figures: AnalysisFigures = None
+    args: Namespace,
+    prediction: Prediction = None,
+    analysis_figures: AnalysisFigures = None,
 ):
     if not any(x in args.engine for x in ["mat", "plot"]):
         return
@@ -56,7 +60,9 @@ def plot_dft(
         sum_all_components += x
 
     # dominant freq
-    dominant_freq, dominant_amp, dominant_phi = prediction.get_dominant_freq_amp_phi()
+    dominant_freq, dominant_amp, dominant_phi = (
+        prediction.get_dominant_freq_amp_phi()
+    )
     dominant_signal = None
     dominant_name = ""
     if not np.isnan(dominant_freq):
@@ -69,7 +75,8 @@ def plot_dft(
             dominant_signal = x
         else:
             dominant_name += (
-                " + " + f"{a:.1e}*cos(2\u03c0*{dominant_freq:.2e}*t+{dominant_phi:.2e})"
+                " + "
+                + f"{a:.1e}*cos(2\u03c0*{dominant_freq:.2e}*t+{dominant_phi:.2e})"
             )
             dominant_signal += x
 
@@ -78,13 +85,16 @@ def plot_dft(
     top_freqs = prediction.top_freqs
     if args.reconstruction:
         for top_index in args.reconstruction:
-            sum_top[f"Recon. top {top_index} signal"] = np.zeros_like(t_sampled)
+            sum_top[f"Recon. top {top_index} signal"] = np.zeros_like(
+                t_sampled
+            )
             for k in range(top_index):
                 a = top_freqs["amp"][k] / N
                 if k != 0 and not (N % 2 != 0 and k == N - 1):
                     a *= 2
                 sum_top[f"Recon. top {top_index} signal"] += a * np.cos(
-                    2 * np.pi * top_freqs["freq"][k] * t_sampled + top_freqs["phi"][k]
+                    2 * np.pi * top_freqs["freq"][k] * t_sampled
+                    + top_freqs["phi"][k]
                 )
 
     # For plotting top 3 signals isolated
@@ -103,7 +113,11 @@ def plot_dft(
             if k != 0 and not (N % 2 != 0 and k == N - 1):
                 a *= 2
             top_signals.append(
-                a * np.cos(2 * np.pi * top_freqs["freq"][k] * t_sampled + top_freqs["phi"][k])
+                a
+                * np.cos(
+                    2 * np.pi * top_freqs["freq"][k] * t_sampled
+                    + top_freqs["phi"][k]
+                )
             )
             top_names.append(
                 f"{a:.1e}*cos(2\u03c0*{top_freqs['freq'][k]:.2e}*t+{top_freqs['phi'][k]:.2e})"
@@ -173,7 +187,16 @@ def plot_dft(
 
 
 def plot_dft_matplotlib_top(
-    args, order, unit, b_sampled, t_sampled, b, t, sum_all_components, top_signals, top_names
+    args,
+    order,
+    unit,
+    b_sampled,
+    t_sampled,
+    b,
+    t,
+    sum_all_components,
+    top_signals,
+    top_names,
 ):
     f = plt.figure(figsize=(10, 4))
     for i, signal in enumerate(top_signals):
@@ -201,7 +224,16 @@ def plot_dft_matplotlib_top(
 
 
 def plot_dft_matplotlib_dominant(
-    args, order, unit, b_sampled, t_sampled, b, t, dominant_signal, dominant_name, sum_top
+    args,
+    order,
+    unit,
+    b_sampled,
+    t_sampled,
+    b,
+    t,
+    dominant_signal,
+    dominant_name,
+    sum_top,
 ):
     f = plt.figure(figsize=(10, 4))
     plt.fill_between(
@@ -287,7 +319,9 @@ def plot_dft_matplotlib_dominant(
             )
 
             # Plot the line on top of the fill
-            plt.plot(t_sampled, signal * order, drawstyle="steps-post", color=color)
+            plt.plot(
+                t_sampled, signal * order, drawstyle="steps-post", color=color
+            )
     plt.xlim(t_sampled[0], t_sampled[-1])
     plt.ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
     plt.ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
@@ -351,7 +385,9 @@ def plot_dft_plotly_spectrum(args, freq, amp):
         },
         width=1100,
         height=600,
-        coloraxis_colorbar=dict(yanchor="top", y=1, x=1, ticks="outside", title=""),
+        coloraxis_colorbar=dict(
+            yanchor="top", y=1, x=1, ticks="outside", title=""
+        ),
         # title="Spectrum (Ranks %i)" % r
     )
     # fig_tmp.show(config=conf)
@@ -359,7 +395,16 @@ def plot_dft_plotly_spectrum(args, freq, amp):
 
 
 def plot_dft_plotly_top(
-    args, order, unit, b_sampled, t_sampled, b, t, sum_all_components, top_signals, top_names
+    args,
+    order,
+    unit,
+    b_sampled,
+    t_sampled,
+    b,
+    t,
+    sum_all_components,
+    top_signals,
+    top_names,
 ):
     # For faster scatter plot
     def Scatter(**kwargs):
@@ -398,7 +443,11 @@ def plot_dft_plotly_top(
                 + "<br><b>Amplitude</b>: %{y}"
                 + "<br><b>T</b>: %{text} s",
                 text=len(signal) * [f"{1/args.freq:.2f}"],
-                marker_color=(colors[color_counter] if color_counter != 1 else "rgb(70,220,70)"),
+                marker_color=(
+                    colors[color_counter]
+                    if color_counter != 1
+                    else "rgb(70,220,70)"
+                ),
             )
         )
         color_counter += 1
@@ -420,14 +469,27 @@ def plot_dft_plotly_top(
         template=template,
     )
     if paper:
-        f.update_layout(legend=dict(orientation="h", yanchor="top", y=0.99, xanchor="left", x=0.01))
+        f.update_layout(
+            legend=dict(
+                orientation="h", yanchor="top", y=0.99, xanchor="left", x=0.01
+            )
+        )
     f.update_xaxes(range=[t_sampled[0], t_sampled[-1]])
     f = format_plot(f)
     return f
 
 
 def plot_dft_plotly_dominant(
-    args, order, unit, b_sampled, t_sampled, b, t, dominant_signal, dominant_name, sum_top
+    args,
+    order,
+    unit,
+    b_sampled,
+    t_sampled,
+    b,
+    t,
+    dominant_signal,
+    dominant_name,
+    sum_top,
 ):
     def Scatter(**kwargs):
         if args.render == "dynamic":
@@ -524,7 +586,9 @@ def plot_dft_plotly_dominant(
         template=template,
     )
     if paper:
-        f.update_layout(legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01))
+        f.update_layout(
+            legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
+        )
     # else:
     #     f.update_layout(
     #         legend=dict(yanchor="top", y=0.99, xanchor="right", x=.99)

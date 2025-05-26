@@ -3,11 +3,12 @@ This module contains operations for processing and plotting data using ftio.
 """
 
 from rich.console import Console
+
 from ftio.cli.ftio_core import core
-from ftio.parse.args import parse_args
-from ftio.processing.print_output import display_prediction
-from ftio.plot.freq_plot import convert_and_plot
 from ftio.freq.prediction import Prediction
+from ftio.parse.args import parse_args
+from ftio.plot.freq_plot import convert_and_plot
+from ftio.processing.print_output import display_prediction
 
 console = Console()
 
@@ -36,7 +37,12 @@ def quick_ftio(
         dict: Prediction results.
     """
     # set up data
-    data = {"time": t, "bandwidth": b, "total_bytes": total_bytes, "ranks": ranks}
+    data = {
+        "time": t,
+        "bandwidth": b,
+        "total_bytes": total_bytes,
+        "ranks": ranks,
+    }
 
     # parse args
     args = parse_args(argv, "ftio")

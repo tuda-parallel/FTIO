@@ -1,5 +1,6 @@
-from ftio.parse.simrun import Simrun
 import jsonlines
+
+from ftio.parse.simrun import Simrun
 
 
 class ParseJsonl:

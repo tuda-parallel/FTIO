@@ -1,4 +1,5 @@
 import numpy as np
+
 from ftio.freq.prediction import Prediction
 
 
@@ -14,7 +15,9 @@ class PhaseMode:
         if hasattr(self, attribute):
             return getattr(self, attribute)
         else:
-            raise AttributeError(f"'MyClass' object has no attribute '{attribute}'")
+            raise AttributeError(
+                f"'MyClass' object has no attribute '{attribute}'"
+            )
 
     def match(self, d: dict):
         if any(n in d["metric"] for n in self.matches):
@@ -54,9 +57,13 @@ def calculate_wave(
     wave = np.array([])
     name = ""
     if prediction:
-        n = int(np.floor((prediction.t_end - prediction.t_start) * prediction.freq))
+        n = int(
+            np.floor((prediction.t_end - prediction.t_start) * prediction.freq)
+        )
         if t.size == 0:
-            t = np.arange(prediction.t_start, prediction.t_end, 1 / prediction.freq)
+            t = np.arange(
+                prediction.t_start, prediction.t_end, 1 / prediction.freq
+            )
 
         if "top_freq" in prediction:
             wave = np.zeros_like(t)
@@ -66,7 +73,9 @@ def calculate_wave(
                 phi = prediction.top_freqs["phi"][j]
                 wave = wave + 2 / n * amp * np.cos(2 * np.pi * freq * t + phi)
                 if j < 3:
-                    name += f"{2 / n *amp:.1e}*cos(2\u03c0*{freq:.2e}*t+{phi:.2e})"
+                    name += (
+                        f"{2 / n *amp:.1e}*cos(2\u03c0*{freq:.2e}*t+{phi:.2e})"
+                    )
                 elif j == 4:
                     name += "..."
         else:

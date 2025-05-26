@@ -2,31 +2,35 @@
 
 import time
 from argparse import Namespace
-import pandas as pd
-import numpy as np
-from scipy.signal import find_peaks, find_peaks_cwt
-from pywt import frequency2scale
 
+import numpy as np
+import pandas as pd
+from pywt import frequency2scale
+from scipy.signal import find_peaks, find_peaks_cwt
+
+from ftio.freq._analysis_figures import AnalysisFigures
+from ftio.freq._dft_workflow import ftio_dft
+from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq._wavelet import wavelet_cont
 from ftio.freq._wavelet_helpers import get_scales
 from ftio.freq.discretize import sample_data
 from ftio.freq.helper import MyConsole
-from ftio.plot.plot_wavelet_cont import (
-    plot_wave_cont_and_spectrum,
+from ftio.freq.prediction import Prediction
+from ftio.plot.plot_wavelet_cont import (  # plot_spectrum, plot_wave_cont
     plot_scales,
     plot_scales_all_in_one,
-)  # plot_spectrum, plot_wave_cont
-from ftio.freq._dft_workflow import ftio_dft
+    plot_wave_cont_and_spectrum,
+)
 from ftio.prediction.helper import get_dominant_and_conf
-from ftio.freq._share_signal_data import SharedSignalData
-from ftio.freq.prediction import Prediction
-from ftio.freq._analysis_figures import AnalysisFigures
 
 # from ftio.analysis._logicize import logicize
 
 
 def ftio_wavelet_cont(
-    args: Namespace, bandwidth: np.ndarray, time_stamps: np.ndarray, ranks: int = 0
+    args: Namespace,
+    bandwidth: np.ndarray,
+    time_stamps: np.ndarray,
+    ranks: int = 0,
 ):
     """
     Executes continuous wavelet transformation on the provided bandwidth data.
@@ -50,8 +54,12 @@ def ftio_wavelet_cont(
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
     # bandwidth = logicize(bandwidth)
-    b_sampled, args.freq = sample_data(bandwidth, time_stamps, args.freq, args.verbose)
-    console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
+    b_sampled, args.freq = sample_data(
+        bandwidth, time_stamps, args.freq, args.verbose
+    )
+    console.print(
+        f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s"
+    )
 
     tik = time.time()
     console.print(f"[cyan]Finding Scales:[/] \n")
@@ -78,8 +86,12 @@ def ftio_wavelet_cont(
         args.n_freq = 5
         use_dominant_only = False
         scales = []
-        t_sampled = time_stamps[0] + np.arange(0, len(b_sampled)) * 1 / args.freq
-        prediction, analysis_figures, share = ftio_dft(args, b_sampled, t_sampled)
+        t_sampled = (
+            time_stamps[0] + np.arange(0, len(b_sampled)) * 1 / args.freq
+        )
+        prediction, analysis_figures, share = ftio_dft(
+            args, b_sampled, t_sampled
+        )
         dominant_freq, _ = get_dominant_and_conf(prediction)
 
         # Adjust wavelet
@@ -96,14 +108,20 @@ def ftio_wavelet_cont(
 
         # Use only the dominant frequency
         if use_dominant_only and not np.isnan(dominant_freq):
-            scales = frequency2scale(args.wavelet, np.array([dominant_freq])) * args.freq
+            scales = (
+                frequency2scale(args.wavelet, np.array([dominant_freq]))
+                * args.freq
+            )
         # use the top frequencies
         elif not use_dominant_only:
             top_freqs = prediction.top_freqs
             top_freqs = np.delete(top_freqs, np.where(top_freqs == 0))
             if len(top_freqs) > 0:
                 if mw_central_frequency == 1:
-                    scales = frequency2scale(args.wavelet, np.array(top_freqs)) * args.freq
+                    scales = (
+                        frequency2scale(args.wavelet, np.array(top_freqs))
+                        * args.freq
+                    )
                 else:
                     scales = mw_central_frequency / np.array(top_freqs)
 
@@ -120,11 +138,17 @@ def ftio_wavelet_cont(
 
     tik = time.time()
     console.print(f"\n[cyan]Scales found:[/] {time.time() - tik:.3f} s")
-    console.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
+    console.print(
+        f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
+    )
 
     # b_sampled = b_sampled - np.mean(b_sampled) #downshift by average
-    coefficients, frequencies = wavelet_cont(b_sampled, args.wavelet, scales, args.freq)
-    power_spectrum = np.abs(coefficients) ** 2  # Power of the wavelet transform
+    coefficients, frequencies = wavelet_cont(
+        b_sampled, args.wavelet, scales, args.freq
+    )
+    power_spectrum = (
+        np.abs(coefficients) ** 2
+    )  # Power of the wavelet transform
 
     # FIXME: Rather than averaging the power, find the dominant frequency by examining the power spectrum
     # NOTE: The power spectrum specifies how much a examined frequency is presented in a signal contributes to the signal
@@ -153,7 +177,9 @@ def ftio_wavelet_cont(
     # use cwt and find peaks
     # peaks = find_peaks_cwt(power_at_scale, np.arange(distance,5*distance))
     if len(t_sampled) == 0:
-        t_sampled = time_stamps[0] + np.arange(0, len(b_sampled)) * 1 / args.freq
+        t_sampled = (
+            time_stamps[0] + np.arange(0, len(b_sampled)) * 1 / args.freq
+        )
 
     peak_times = t_sampled[peaks]
 
@@ -177,17 +203,36 @@ def ftio_wavelet_cont(
         # _ = plot_wave_cont(b_sampled, frequencies, args.freq, time_b, coefficients)
         f = [
             plot_wave_cont_and_spectrum(
-                args, t_sampled, frequencies, power_spectrum, power_at_scale, dominant_scale, peaks
+                args,
+                t_sampled,
+                frequencies,
+                power_spectrum,
+                power_at_scale,
+                dominant_scale,
+                peaks,
             ),
-            plot_scales(args, t_sampled, b_sampled, power_spectrum, frequencies, scales),
+            plot_scales(
+                args, t_sampled, b_sampled, power_spectrum, frequencies, scales
+            ),
             plot_scales_all_in_one(
-                args, t_sampled, b_sampled, power_spectrum / np.max(b_sampled), frequencies, scales
+                args,
+                t_sampled,
+                b_sampled,
+                power_spectrum / np.max(b_sampled),
+                frequencies,
+                scales,
             ),
         ]
         if "ploty" in args.engine:
             f.append(
                 plot_scales_all_in_one(
-                    args, t_sampled, b_sampled, coefficients, frequencies, scales, all_peaks
+                    args,
+                    t_sampled,
+                    b_sampled,
+                    coefficients,
+                    frequencies,
+                    scales,
+                    all_peaks,
                 )
             )
 
@@ -199,7 +244,9 @@ def ftio_wavelet_cont(
 
     # Calculate the period (time difference between consecutive peaks)
     if len(peak_times) > 1:
-        periods = np.diff(peak_times)  # Differences between consecutive peak times (periods)
+        periods = np.diff(
+            peak_times
+        )  # Differences between consecutive peak times (periods)
     else:
         periods = []
 

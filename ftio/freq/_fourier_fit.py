@@ -1,11 +1,13 @@
 from argparse import Namespace
-import numpy as np
-from scipy.optimize import curve_fit
+
 import matplotlib.pyplot as plt
+import numpy as np
 import plotly.graph_objs as go
+from scipy.optimize import curve_fit
+
+from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
-from ftio.freq._analysis_figures import AnalysisFigures
 
 
 def fourier_sum(t: np.ndarray, *params) -> np.ndarray:
@@ -114,7 +116,9 @@ def fourier_fit(
         console = MyConsole()
         console.set(args.verbose)
         console.print(f"Generating Fourier Fit Plot\n")
-        fig = plot_fourier_fit(args, t, b_sampled, prediction, fourier_sum(t, *params_opt))
+        fig = plot_fourier_fit(
+            args, t, b_sampled, prediction, fourier_sum(t, *params_opt)
+        )
         analysis_figures.add_figure_and_show([fig], "fourier_fit")
         console.print(f" --- Done --- \n")
 
@@ -170,11 +174,19 @@ def plot_fourier_fit(
         fig = go.Figure()
         fig.add_trace(
             go.Scatter(
-                x=t, y=b_sampled, mode="lines", name="sampled signal", line=dict(dash="dash")
+                x=t,
+                y=b_sampled,
+                mode="lines",
+                name="sampled signal",
+                line=dict(dash="dash"),
             )
         )
-        fig.add_trace(go.Scatter(x=t, y=cA_fourier_fit, mode="lines", name="Fourier Sum"))
+        fig.add_trace(
+            go.Scatter(x=t, y=cA_fourier_fit, mode="lines", name="Fourier Sum")
+        )
         if show_top:
             for wave, label in components:
-                fig.add_trace(go.Scatter(x=t, y=wave, mode="lines", name=label))
+                fig.add_trace(
+                    go.Scatter(x=t, y=wave, mode="lines", name=label)
+                )
     return fig

@@ -1,7 +1,8 @@
 """Extracts time behavior form parsed data"""
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 from ftio.parse.scales import Scales
 
 # from ftio.freq.helper import get_mode
@@ -22,14 +23,21 @@ def get_time_behavior(df) -> list[dict]:
                 # print(f"  \033[1;32mRanks {i}\033[1;0m")
                 file_index = df[1]["file_index"][ranks].isin([j])
                 time = df[1]["t_overlap"][ranks][file_index].to_numpy()
-                bandwidth = df[1]["b_overlap_avr"][ranks][file_index].to_numpy()
+                bandwidth = df[1]["b_overlap_avr"][ranks][
+                    file_index
+                ].to_numpy()
                 try:
                     total_bytes = df[0]["total_bytes"].to_numpy()
                     total_bytes = int(float(total_bytes[-1]))
                 except ValueError:
                     total_bytes = 0
                     # expe.center()np.sum(bandwidth * (np.concatenate([time[1:], time[-1:]]) - time)
-                tmp = {"time": time, "bandwidth": bandwidth, "total_bytes": total_bytes, "ranks": i}
+                tmp = {
+                    "time": time,
+                    "bandwidth": bandwidth,
+                    "total_bytes": total_bytes,
+                    "ranks": i,
+                }
                 out.append(tmp)
     return out
 

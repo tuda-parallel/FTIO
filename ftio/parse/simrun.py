@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 import re
 import statistics as st
+
+from ftio.parse.helper import match_mode
+from ftio.parse.percent import Percent
 from ftio.parse.sample import Sample
 from ftio.parse.time_io import Time
-from ftio.parse.percent import Percent
-from ftio.parse.helper import match_mode
 
 
 class Simrun:
@@ -31,7 +33,12 @@ class Simrun:
         self.ranks = self.get_rank(ext)
         mode = match_mode(args.mode) if args.mode else ""
         args.file_index = file_index
-        supported_modes = ["read_sync", "write_sync", "read_async", "write_async"]
+        supported_modes = [
+            "read_sync",
+            "write_sync",
+            "read_async",
+            "write_async",
+        ]
 
         #! list = JSONL
         if isinstance(data, list):
@@ -43,11 +50,21 @@ class Simrun:
                     self.assign(data, args, mode, "jsonl")
                 else:
                     self.read_sync = self.merge_parts(data, "read_sync", args)
-                    self.write_sync = self.merge_parts(data, "write_sync", args)
-                    self.read_async_t = self.merge_parts(data, "read_async_t", args)
-                    self.read_async_b = self.merge_parts(data, "read_async_b", args)
-                    self.write_async_t = self.merge_parts(data, "write_async_t", args)
-                    self.write_async_b = self.merge_parts(data, "write_async_b", args)
+                    self.write_sync = self.merge_parts(
+                        data, "write_sync", args
+                    )
+                    self.read_async_t = self.merge_parts(
+                        data, "read_async_t", args
+                    )
+                    self.read_async_b = self.merge_parts(
+                        data, "read_async_b", args
+                    )
+                    self.write_async_t = self.merge_parts(
+                        data, "write_async_t", args
+                    )
+                    self.write_async_b = self.merge_parts(
+                        data, "write_async_b", args
+                    )
                     if any("io_time" in d for d in data):
                         self.io_time = self.merge_parts(data, "io_time", args)
                     else:
@@ -78,10 +95,18 @@ class Simrun:
             #! standard json files
             self.read_sync = Sample(data["read_sync"], "read_sync", args)
             self.write_sync = Sample(data["write_sync"], "write_sync", args)
-            self.read_async_t = Sample(data["read_async_t"], "read_async_t", args)
-            self.read_async_b = Sample(data["read_async_b"], "read_async_b", args)
-            self.write_async_t = Sample(data["write_async_t"], "write_async_t", args)
-            self.write_async_b = Sample(data["write_async_b"], "write_async_b", args)
+            self.read_async_t = Sample(
+                data["read_async_t"], "read_async_t", args
+            )
+            self.read_async_b = Sample(
+                data["read_async_b"], "read_async_b", args
+            )
+            self.write_async_t = Sample(
+                data["write_async_t"], "write_async_t", args
+            )
+            self.write_async_b = Sample(
+                data["write_async_b"], "write_async_b", args
+            )
             if "io_time" in data:
                 self.io_time = Time(data["io_time"], self.ranks, args)
                 self.io_percent = Percent(self.io_time)
@@ -103,13 +128,21 @@ class Simrun:
             if "read_sync" == mode:
                 self.read_sync = self.merge_parts(data, "read_sync", args)
             elif "read_async" == mode:
-                self.read_async_t = self.merge_parts(data, "read_async_t", args)
-                self.read_async_b = self.merge_parts(data, "read_async_b", args)
+                self.read_async_t = self.merge_parts(
+                    data, "read_async_t", args
+                )
+                self.read_async_b = self.merge_parts(
+                    data, "read_async_b", args
+                )
             elif "write_sync" == mode:
                 self.write_sync = self.merge_parts(data, "write_sync", args)
             elif "write_async" == mode:
-                self.write_async_t = self.merge_parts(data, "write_async_t", args)
-                self.write_async_b = self.merge_parts(data, "write_async_b", args)
+                self.write_async_t = self.merge_parts(
+                    data, "write_async_t", args
+                )
+                self.write_async_b = self.merge_parts(
+                    data, "write_async_b", args
+                )
             else:
                 pass
 
@@ -121,15 +154,25 @@ class Simrun:
             if "read_sync" == mode:
                 self.read_sync = Sample(data["read_sync"], "read_sync", args)
             elif "read_async" == mode:
-                self.read_async_t = Sample(data["read_async_t"], "read_async_t", args)
+                self.read_async_t = Sample(
+                    data["read_async_t"], "read_async_t", args
+                )
                 if "read_async_b" in data:
-                    self.read_async_b = Sample(data["read_async_b"], "read_async_b", args)
+                    self.read_async_b = Sample(
+                        data["read_async_b"], "read_async_b", args
+                    )
             elif "write_async" == mode:
-                self.write_async_t = Sample(data["write_async_t"], "write_async_t", args)
+                self.write_async_t = Sample(
+                    data["write_async_t"], "write_async_t", args
+                )
                 if "write_async_b" in data:
-                    self.write_async_b = Sample(data["write_async_b"], "write_async_b", args)
+                    self.write_async_b = Sample(
+                        data["write_async_b"], "write_async_b", args
+                    )
             elif "write_sync" == mode:
-                self.write_sync = Sample(data["write_sync"], "write_sync", args)
+                self.write_sync = Sample(
+                    data["write_sync"], "write_sync", args
+                )
 
     def reset(self, args):
         """sets all fields to empty. This is usually followed by a assign call
@@ -158,12 +201,16 @@ class Simrun:
 
         if isinstance(self.name, int):
             rank = self.name
-        elif isinstance(self.name, str) and not any(sep in self.name for sep in [".", "/"]):
+        elif isinstance(self.name, str) and not any(
+            sep in self.name for sep in [".", "/"]
+        ):
             rank = int(self.name)
         else:
             try:
                 # Extract filename from path
-                filename = self.name.replace("\\", "/").split("/")[-1]  # Normalize for Windows
+                filename = self.name.replace("\\", "/").split("/")[
+                    -1
+                ]  # Normalize for Windows
 
                 # Remove the extension
                 if filename.endswith(f".{ext}"):
@@ -242,7 +289,9 @@ class Simrun:
             # print(f)
             if isinstance(data_array[0][field], dict):
                 data_array2 = [x[field] for x in data_array if field in x]
-                my_dict[field] = self.merge_fields(data_array2, [k for k in data_array2[0].keys()])
+                my_dict[field] = self.merge_fields(
+                    data_array2, [k for k in data_array2[0].keys()]
+                )
             else:
                 if isinstance(data_array[0][field], list):
                     my_dict[field] = []

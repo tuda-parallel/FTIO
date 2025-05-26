@@ -1,4 +1,6 @@
-from ftio.plot.dash_files.callback_files.io_mode_callbacks import get_io_mode_specific_callbacks
+from ftio.plot.dash_files.callback_files.io_mode_callbacks import (
+    get_io_mode_specific_callbacks,
+)
 from ftio.plot.dash_files.data_source import get_data_source
 
 

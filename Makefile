@@ -47,14 +47,14 @@ ftio_debug_venv: override PYTHON = .venv/bin/python3
 ftio_debug_venv: ftio_debug
 
 ftio_debug: 
-	$(PYTHON) -m pip install -e .[external-libs] --no-cache-dir || \
+	$(PYTHON) -m pip install -e '.[external-libs,development-libs]' --no-cache-dir || \
 	(echo "Installing external libs failed, trying fallback..." && $(PYTHON) -m pip install -e . --no-cache-dir)
 
 ftio: 
 	$(PYTHON) -m pip install . 
 
 ftio_full: 
-	$(PYTHON) -m pip install .[external-libs] 
+	$(PYTHON) -m pip install '.[external-libs,development-libs]'
 venv: 
 	$(PYTHON) -m venv .venv 
 	@echo -e "Environment created. Using python from .venv/bin/python3" 
@@ -117,7 +117,7 @@ test:
 check_style: check_tools
 	black .
 	isort .
-	flake8 .
+# 	flake8 .
 
 check_tools:
 	@command -v black >/dev/null 2>&1 || (echo "black not found, installing..." && pip install black)

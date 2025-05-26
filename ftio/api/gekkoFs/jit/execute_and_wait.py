@@ -12,29 +12,33 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-from datetime import datetime
 import multiprocessing
-import subprocess
-import time
 import os
 import re
+import subprocess
+import time
+from datetime import datetime
+
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
 from rich.status import Status
-from rich.markup import escape
+
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.setup_helper import (
     check,
     flaged_call,
-    jit_print,
     get_pid,
+    jit_print,
 )
 
 console = Console()
 TERMINAL_WIDTH = console.size.width
 
 
-def execute_block(call: str, raise_exception: bool = True, dry_run=False) -> str:
+def execute_block(
+    call: str, raise_exception: bool = True, dry_run=False
+) -> str:
     """Executes a call and blocks till it is finished
 
     Args:
@@ -123,7 +127,11 @@ def execute_block_and_log(call: str, log_file: str) -> float:
 
 
 def execute_block_and_monitor(
-    verbose: bool, call: str, log_file: str = "", log_err_file: str = "", dry_run=False
+    verbose: bool,
+    call: str,
+    log_file: str = "",
+    log_err_file: str = "",
+    dry_run=False,
 ):
     """Executes a call, monitors its log file, and waits for completion.
 
@@ -150,7 +158,9 @@ def execute_block_and_monitor(
             err.terminate()
 
 
-def execute_background(call: str, log_file: str = "", log_err_file: str = "", dry_run=False):
+def execute_background(
+    call: str, log_file: str = "", log_err_file: str = "", dry_run=False
+):
     """Executes a call in the background and sets up a log directory.
 
     Args:
@@ -214,7 +224,11 @@ def execute_background(call: str, log_file: str = "", log_err_file: str = "", dr
 
 
 def execute_background_and_log(
-    settings: JitSettings, call: str, log_file: str, name="", err_file: str = ""
+    settings: JitSettings,
+    call: str,
+    log_file: str,
+    name="",
+    err_file: str = "",
 ) -> subprocess.Popen:
     """Executes a call in the background and returns the process. The output is displayed using a
     thread that reads the log file.
@@ -265,7 +279,9 @@ def execute_background_and_log_in_process(
         pass
 
 
-def execute_block_and_wait_line(call: str, filename: str, target_line: str) -> None:
+def execute_block_and_wait_line(
+    call: str, filename: str, target_line: str
+) -> None:
     """Executes a call and waits for a line to appear in a file.
 
     Args:
@@ -312,7 +328,9 @@ def monitor_log_file(file: str, src: str = "") -> multiprocessing.Process:
     Returns:
         multiprocessing.Process: process object
     """
-    monitor_process = multiprocessing.Process(target=print_file, args=(file, src))
+    monitor_process = multiprocessing.Process(
+        target=print_file, args=(file, src)
+    )
     monitor_process.daemon = True
     monitor_process.start()
 
@@ -320,7 +338,10 @@ def monitor_log_file(file: str, src: str = "") -> multiprocessing.Process:
 
 
 def end_of_transfer(
-    settings: JitSettings, log_file: str, call: str, monitored_files: list[str] = []
+    settings: JitSettings,
+    log_file: str,
+    call: str,
+    monitored_files: list[str] = [],
 ) -> None:
     """Monitors the end of a transfer process by checking log files.
 
@@ -360,7 +381,9 @@ def end_of_transfer(
                 console=console,
             ) as status:
                 while len(monitored_files) > 0:
-                    time.sleep(0.1)  # Short sleep interval to quickly catch new lines
+                    time.sleep(
+                        0.1
+                    )  # Short sleep interval to quickly catch new lines
 
                     # Check if the file has grown
                     current_pos = file.tell()
@@ -381,7 +404,9 @@ def end_of_transfer(
 
                         # Check if the last line is incomplete
                         if not new_data.endswith("\n"):
-                            buffer = lines.pop()  # Save incomplete line in the buffer
+                            buffer = (
+                                lines.pop()
+                            )  # Save incomplete line in the buffer
                         else:
                             buffer = ""
 
@@ -419,8 +444,14 @@ def end_of_transfer(
                         )
                         if hits > 4:
                             if stuck:
-                                jit_print("[cyan]>> Stuck? Triggering cargo again\n")
-                                _ = execute_background(call, settings.cargo_log, settings.cargo_err)
+                                jit_print(
+                                    "[cyan]>> Stuck? Triggering cargo again\n"
+                                )
+                                _ = execute_background(
+                                    call,
+                                    settings.cargo_log,
+                                    settings.cargo_err,
+                                )
                                 stuck = False
                         if hits > limit:
                             jit_print("[cyan]>> Stopping stage out\n")
@@ -430,10 +461,15 @@ def end_of_transfer(
                 status.update(
                     f"\n[bold green]JIT [cyan]>> finished moving all files at  [{timestamp}]"
                 )
-                jit_print(f"\n[cyan]>> finished moving all files at [{timestamp}]", True)
+                jit_print(
+                    f"\n[cyan]>> finished moving all files at [{timestamp}]",
+                    True,
+                )
 
 
-def end_of_transfer_online(settings: JitSettings, log_file: str, call: str, timeout=240) -> None:
+def end_of_transfer_online(
+    settings: JitSettings, log_file: str, call: str, timeout=240
+) -> None:
     """Monitors the end of a transfer process by checking log files with a timeout.
 
     Args:
@@ -467,10 +503,14 @@ def end_of_transfer_online(settings: JitSettings, log_file: str, call: str, time
             last_cargo_time = start_time
             hit = 0
             while len(monitored_files) > 0:
-                time.sleep(0.1)  # Short sleep interval to quickly catch new lines
+                time.sleep(
+                    0.1
+                )  # Short sleep interval to quickly catch new lines
 
                 if n < 10:
-                    status.update(f"Waiting for {len(monitored_files)} files: {monitored_files}")
+                    status.update(
+                        f"Waiting for {len(monitored_files)} files: {monitored_files}"
+                    )
                 else:
                     status.update(
                         f"Waiting for {len(monitored_files)} files ({time.time() - start:.2f} sec)"
@@ -486,14 +526,21 @@ def end_of_transfer_online(settings: JitSettings, log_file: str, call: str, time
                 if repeated_trigger:
                     hit += 1
                     # jit_print(f"{time_since_last_cargo} >= {stuck_time} and {stuck_files} == {len(monitored_files)}")
-                    if time_since_last_cargo >= stuck_time and stuck_files == len(monitored_files):
+                    if (
+                        time_since_last_cargo >= stuck_time
+                        and stuck_files == len(monitored_files)
+                    ):
                         jit_print(
                             f"[cyan]>> Stucked for {stuck_time} sec. Triggering cargo again\n"
                         )
-                        _ = execute_background(call, settings.cargo_log, settings.cargo_err)
+                        _ = execute_background(
+                            call, settings.cargo_log, settings.cargo_err
+                        )
                         last_cargo_time = time.time()
                         stuck_time = stuck_time * 2
-                        jit_print(f"[cyan]>> Stucked increased to {stuck_time}\n")
+                        jit_print(
+                            f"[cyan]>> Stucked increased to {stuck_time}\n"
+                        )
                         if n < 10:
                             status.update(
                                 f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}"
@@ -541,7 +588,9 @@ def get_files(settings: JitSettings, verbose=True):
         #         console.print(f"[red] >> Error using find, trying ls:\n{e}[/]")
         #     else:
         #         console.print("[red] >> Error using find, trying ls[/]"
-        command_ls = flaged_call(settings, f" ls -R {settings.gkfs_mntdir}", exclude=["ftio"])
+        command_ls = flaged_call(
+            settings, f" ls -R {settings.gkfs_mntdir}", exclude=["ftio"]
+        )
         files = subprocess.check_output(command_ls, shell=True, text=True)
         if files:
             files = files.splitlines()
@@ -566,7 +615,9 @@ def get_files(settings: JitSettings, verbose=True):
             console.print(f"\n[cyan] >> Files are:\n{files}[/]")
         if verbose or settings.debug_lvl > 2:
             timestamp = get_time()
-            console.print(f"[cyan]>> Files that need to be stage out: [{timestamp}][/]")
+            console.print(
+                f"[cyan]>> Files that need to be stage out: [{timestamp}][/]"
+            )
             for i, f in enumerate(monitored_files):
                 console.print(f"[cyan]{i}. {f}[/]")
 
@@ -585,7 +636,9 @@ def get_time():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
 
-def files_filtered(list_of_files: list[str], regex_pattern, verbose=True) -> list[str]:
+def files_filtered(
+    list_of_files: list[str], regex_pattern, verbose=True
+) -> list[str]:
     """Filters a list of files based on a regex pattern.
 
     Args:
@@ -603,7 +656,9 @@ def files_filtered(list_of_files: list[str], regex_pattern, verbose=True) -> lis
             while "/" in regex_pattern:
                 regex_pattern = regex_pattern.split("/", 1)[1]
             if verbose:
-                jit_print(f"[cyan]>> Cleaned Regex pattern to: {regex_pattern} ")
+                jit_print(
+                    f"[cyan]>> Cleaned Regex pattern to: {regex_pattern} "
+                )
         regex = re.compile(regex_pattern)
 
         for f in list_of_files:
@@ -650,7 +705,9 @@ def print_file(file, src=""):
         if "error" in src.lower():
             time.sleep(0.1)
         else:
-            with console.status(f"[bold green]Waiting for {file} to appear ...") as status:
+            with console.status(
+                f"[bold green]Waiting for {file} to appear ..."
+            ) as status:
                 time.sleep(0.1)
 
     with open(file, "r") as file:
@@ -713,7 +770,9 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
         return
 
     start_time = time.time()
-    with Status(f"[cyan]Waiting for {filename} to be created...\n", console=console) as status:
+    with Status(
+        f"[cyan]Waiting for {filename} to be created...\n", console=console
+    ) as status:
         while not os.path.isfile(filename):
             passed_time = int(time.time() - start_time)
             if passed_time >= timeout:
@@ -732,7 +791,11 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
 
 
 def wait_for_line(
-    filename: str, target_line: str, msg: str = "", timeout: int = 60, dry_run=False
+    filename: str,
+    target_line: str,
+    msg: str = "",
+    timeout: int = 60,
+    dry_run=False,
 ) -> bool:
     """Waits for a specific line to appear in a log file.
 
@@ -754,7 +817,9 @@ def wait_for_line(
         msg = "Waiting for line to appear..."
 
     while not os.path.exists(filename):
-        with console.status(f"[bold green]Waiting for {filename} to appear ...") as status:
+        with console.status(
+            f"[bold green]Waiting for {filename} to appear ..."
+        ) as status:
             time.sleep(0.1)
 
     with open(filename, "r") as file:
@@ -763,7 +828,9 @@ def wait_for_line(
         try:
             file.seek(-2, os.SEEK_END)
         except:
-            file.seek(0, 0)  # Go to the end of the file and look at the last 10 entris
+            file.seek(
+                0, 0
+            )  # Go to the end of the file and look at the last 10 entris
 
         with Status(f"[cyan]{msg}", console=console) as status:
             while True:
@@ -781,9 +848,13 @@ def wait_for_line(
                     continue
 
                 if target_line in line:
-                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                    timestamp = datetime.now().strftime(
+                        "%Y-%m-%d %H:%M:%S.%f"
+                    )[:-3]
                     status.update(f"Found target line: '{target_line}'")
-                    jit_print(f"[cyan]>> Stopped waiting at [{timestamp}]", True)
+                    jit_print(
+                        f"[cyan]>> Stopped waiting at [{timestamp}]", True
+                    )
                     break
         return success
 

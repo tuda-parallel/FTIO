@@ -2,9 +2,11 @@
 Helper functions for wavelet transformation in the FTIO package.
 """
 
-import numpy as np
 from argparse import Namespace
+
+import numpy as np
 import pywt
+
 from ftio.freq.helper import MyConsole
 
 
@@ -51,7 +53,9 @@ def decomposition_level(args: Namespace, n: int) -> int:
             console.print(f"[green]Decomposition level set to {level}[/]")
         else:
             level = pywt.dwt_max_level(n, args.wavelet)
-            console.print(f"[green]Decomposition level optimally adjusted to {level}[/]")
+            console.print(
+                f"[green]Decomposition level optimally adjusted to {level}[/]"
+            )
 
     if "wave_cont" in args.transformation:
         check_wavelet(args.wavelet, "continuous")
@@ -105,10 +109,14 @@ def wavelet_freq_bands(f_s: float, levels: int):
         high_freq = np.insert(high_freq, 0, low_freq[0])
         low_freq = np.insert(low_freq, 0, 0)
 
-    return np.column_stack((low_freq, high_freq))  # High frequencies are higher at finer levels
+    return np.column_stack(
+        (low_freq, high_freq)
+    )  # High frequencies are higher at finer levels
 
 
-def upsample_coefficients(coeffs: list[np.ndarray], wavelet="db1", signal_length: int = 0):
+def upsample_coefficients(
+    coeffs: list[np.ndarray], wavelet="db1", signal_length: int = 0
+):
     """
     Extend wavelet coefficients to the same length as the original signal using upcoef.
 
@@ -126,10 +134,14 @@ def upsample_coefficients(coeffs: list[np.ndarray], wavelet="db1", signal_length
         # Extend the coefficients using pywt.upcoef
         if i == 0:
             # Approximation coefficients (cA)
-            reconstructed = pywt.upcoef("a", coeffs[0], wavelet, level=level - 1)[:signal_length]
+            reconstructed = pywt.upcoef(
+                "a", coeffs[0], wavelet, level=level - 1
+            )[:signal_length]
         else:
             # Detail coefficients (cD)
-            reconstructed = pywt.upcoef("d", coeffs[i], wavelet, level=level - i)[:signal_length]
+            reconstructed = pywt.upcoef(
+                "d", coeffs[i], wavelet, level=level - i
+            )[:signal_length]
 
         coeffs_stretched.append(reconstructed)
 

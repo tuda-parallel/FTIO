@@ -1,9 +1,9 @@
 """Wavelet functions (continuous and discrete)"""
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pywt
 from scipy import signal
-import matplotlib.pyplot as plt
 
 # from ftio.freq.helper import MyConsole
 
@@ -29,12 +29,16 @@ def wavelet_cont(
     sampling_period = 1 / freq
     # console = MyConsole(True)
     # console.print(pywt.scale2frequency(wavelet, scale) / sampling_period)
-    coefficients, frequencies = pywt.cwt(b_sampled, scales, wavelet, sampling_period)
+    coefficients, frequencies = pywt.cwt(
+        b_sampled, scales, wavelet, sampling_period
+    )
 
     return coefficients, frequencies
 
 
-def wavelet_disc(b_sampled: np.ndarray, wavelet: str, level: int) -> list[np.ndarray]:
+def wavelet_disc(
+    b_sampled: np.ndarray, wavelet: str, level: int
+) -> list[np.ndarray]:
     """
     Perform a discrete wavelet transformation (DWT) on the input signal.
 
@@ -60,7 +64,9 @@ def welch(b, freq):
         freq (float): sampling frequency
     """
     # f, pxx_den = signal.welch(b, freq, 'flattop', 10000, scaling='spectrum', average='mean')
-    f, pxx_den = signal.welch(b, freq, "flattop", freq * 256, scaling="spectrum", average="mean")
+    f, pxx_den = signal.welch(
+        b, freq, "flattop", freq * 256, scaling="spectrum", average="mean"
+    )
     plt.semilogy(f, np.sqrt(pxx_den))
     plt.xlabel("frequency [Hz]")
     # plt.ylabel('PSD [V**2/Hz]')

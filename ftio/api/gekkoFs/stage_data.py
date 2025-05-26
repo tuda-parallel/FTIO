@@ -12,16 +12,18 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-from concurrent.futures import ThreadPoolExecutor
+import argparse
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Queue
+
 import numpy as np
-import argparse
-from ftio.parse.args import parse_args
+
 from ftio.api.gekkoFs.posix_control import move_files_os
 from ftio.freq.helper import MyConsole
+from ftio.parse.args import parse_args
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -35,7 +37,9 @@ def stage_files(args: argparse.Namespace, latest_prediction: dict) -> None:
         args (Namespace): Parsed command line arguments.
         latest_prediction (dict): Result from FTIO containing prediction details.
     """
-    period = 1 / latest_prediction["freq"] if latest_prediction["freq"] > 0 else 0
+    period = (
+        1 / latest_prediction["freq"] if latest_prediction["freq"] > 0 else 0
+    )
     text = f"frequency: {latest_prediction['freq']}\nperiod: {period} \nconfidence: {latest_prediction['conf']}\nprobability: {latest_prediction['probability']}\n"
     CONSOLE.print(f"[bold green][Trigger][/][green] {text}\n")
     if args.cargo:
@@ -58,7 +62,9 @@ def setup_cargo(args: argparse.Namespace) -> None:
     if args.cargo:
         # 1. Perform stage in outside FTIO with cpp
         # 2. Setup für Cargo Stage-out für cargo_ftio
-        call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
+        call = (
+            f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
+        )
         CONSOLE.print("\n[bold green][Init][/][green]" + call + "\n")
         os.system(call)
 
@@ -94,7 +100,9 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
             try:
                 if not sync_trigger.empty():
                     latest_prediction = sync_trigger.get()
-                    t = time.time() - latest_prediction["t_wait"]  # time waiting so far
+                    t = (
+                        time.time() - latest_prediction["t_wait"]
+                    )  # time waiting so far
                     # CONSOLE.print(f"[bold green][Trigger] queue wait time = {t:.3f} s[/]\n")
                     if not np.isnan(latest_prediction["freq"]):
                         # ? 1) Find estimated number of phases and skip in case less than 1
@@ -104,7 +112,10 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                         #     continue
 
                         # ? 2) Time analysis to find the right instance when to send the data
-                        target_time = latest_prediction["t_end"] + 1 / latest_prediction["freq"]
+                        target_time = (
+                            latest_prediction["t_end"]
+                            + 1 / latest_prediction["freq"]
+                        )
                         gkfs_elapsed_time = (
                             latest_prediction["t_flush"] + t
                         )  # t  is the waiting time in this function. t_flush contains the overhead of ftio + when the data was flushed from gekko
@@ -130,9 +141,7 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                                             # if skipped more than 2, force flushing
                                             if skipped >= 2:
                                                 if not condition:
-                                                    condition = (
-                                                        True  # continue waiting until the time ends
-                                                    )
+                                                    condition = True  # continue waiting until the time ends
                                                     CONSOLE.print(
                                                         f"[bold green][Trigger][/][yellow] Too many skips, staging data out in {time.time() < countdown} s[/]\n"
                                                     )
@@ -151,8 +160,13 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                                         )
                                 time.sleep(0.01)
 
-                            if condition and latest_prediction["probability"] > 0.5:
-                                _ = executor.submit(stage_files, args, latest_prediction)
+                            if (
+                                condition
+                                and latest_prediction["probability"] > 0.5
+                            ):
+                                _ = executor.submit(
+                                    stage_files, args, latest_prediction
+                                )
                                 # stage_files(args, latest_prediction)
                                 skipped = 0
                                 cancel_counter = 0
@@ -192,7 +206,9 @@ def move_files_cargo(args: argparse.Namespace, period: float = 0) -> None:
         threshold = max(threshold, 10)
         call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run --mtime {int(threshold)}"
     else:
-        call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
+        call = (
+            f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
+        )
 
     CONSOLE.print(f"[bold green][Trigger][/][green] {call}")
     os.system(call)
@@ -315,11 +331,19 @@ def parse_args_data_stager(
         help="Files that match the regex expression are ignored during stage out",
     )
     parser.add_argument(
-        "--ld_preload", type=str, default=None, help="LD_PRELOAD call to GekkoFs file."
+        "--ld_preload",
+        type=str,
+        default=None,
+        help="LD_PRELOAD call to GekkoFs file.",
     )
-    parser.add_argument("--host_file", type=str, default=None, help="Hostfile for GekkoFs.")
     parser.add_argument(
-        "--gkfs_mntdir", type=str, default=None, help="Mount directory for GekkoFs."
+        "--host_file", type=str, default=None, help="Hostfile for GekkoFs."
+    )
+    parser.add_argument(
+        "--gkfs_mntdir",
+        type=str,
+        default=None,
+        help="Mount directory for GekkoFs.",
     )
 
     # Parse the arguments

@@ -1,16 +1,19 @@
-import os
-import pandas as pd
-import json
 import argparse
-from rich.console import Console
+import json
+import os
+
 import numpy as np
+import pandas as pd
+from rich.console import Console
 
 from ftio.parse.bandwidth import overlap
 
 
 def parse_args():
     # Set up command-line argument parsing
-    parser = argparse.ArgumentParser(description="Convert an XLSX file to JSON.")
+    parser = argparse.ArgumentParser(
+        description="Convert an XLSX file to JSON."
+    )
     # Set default values for the file
     parser.add_argument(
         "--file",
@@ -19,7 +22,9 @@ def parse_args():
         default="IOTraces_2.xlsx",
         help="Path to the Excel file (default: IOTraces.xlsx)",
     )
-    parser.add_argument("--out", "-o", type=str, default="output.json", help="Output file name")
+    parser.add_argument(
+        "--out", "-o", type=str, default="output.json", help="Output file name"
+    )
     parser.add_argument(
         "-i",
         "--interactive",
@@ -79,20 +84,26 @@ def parse_txt(args, file_path):
         preview_rows = min(10, num_rows)  # Display up to 10 rows for preview
 
         # Print a preview of the first few lines
-        console.print(f"[green]Preview of the first {preview_rows} rows of data:[/]")
+        console.print(
+            f"[green]Preview of the first {preview_rows} rows of data:[/]"
+        )
         for i in range(preview_rows):
             console.print(f'{i}: {" | ".join(data[i])}')
 
         # Ask the user to map the appropriate columns
         console.print("\nPlease select the column to map to bandwidth:")
         value_b = int(input("> "))
-        console.print(f"[green]> Bandwidth set to column {value_b}: {data[0][value_b]}[/]")
+        console.print(
+            f"[green]> Bandwidth set to column {value_b}: {data[0][value_b]}[/]"
+        )
         for i in range(num_rows):
             b.append(float(data[i][value_b]))  # Append bandwidth data
 
         console.print("\nPlease select the column to map to time:")
         value_t = int(input("> "))
-        console.print(f"[green]> Time set to column {value_t}: {data[0][value_t]}[/]")
+        console.print(
+            f"[green]> Time set to column {value_t}: {data[0][value_t]}[/]"
+        )
         for i in range(num_rows):
             t_s.append(float(data[i][value_t]))  # Append time data
 
@@ -101,11 +112,17 @@ def parse_txt(args, file_path):
         # Only append io_time if a column is selected
         if value_io:
             value_io = int(value_io)
-            console.print(f"[green]> I/O Time set to column {value_io}: {data[0][value_io]}[/]")
+            console.print(
+                f"[green]> I/O Time set to column {value_io}: {data[0][value_io]}[/]"
+            )
             for i in range(num_rows):
-                io_time.append(float(data[i][value_io]))  # Append I/O time data
+                io_time.append(
+                    float(data[i][value_io])
+                )  # Append I/O time data
         else:
-            console.print("[yellow]> I/O Time not selected, skipping assignment.[/]")
+            console.print(
+                "[yellow]> I/O Time not selected, skipping assignment.[/]"
+            )
 
     elif args.b >= 0 and args.t >= 0:
         # Use args.b and args.t for the columns directly
@@ -123,7 +140,9 @@ def parse_txt(args, file_path):
             value_io_time = int(args.io_time)
             console.print(f"[green]> Selected IO time column: {value_io_time}")
             for i in range(len(data)):
-                io_time.append(float(data[i][value_io_time]))  # Append time data
+                io_time.append(
+                    float(data[i][value_io_time])
+                )  # Append time data
 
     else:
         # If not interactive, just load the data based on fixed indices
@@ -170,7 +189,9 @@ def parse_excel(args, file_path):
         t_s = []
         value = input("\nPlease select the column to map to bandwidth:\n> ")
         value = int(value)
-        console.print(f"[green]> bandwidth set to [{value}]: {names[value]}[/]")
+        console.print(
+            f"[green]> bandwidth set to [{value}]: {names[value]}[/]"
+        )
         b.extend(df[names[value]].tolist())
         value = input("\nPlease select the column to map to time:\n> ")
         value = int(value)
@@ -217,7 +238,9 @@ def main(args=parse_args()):
         ranks, total_bytes, b, t_s, io_time = parse_txt(args, file_path)
 
     # Remove matching NaNs
-    valid_indices = [i for i in range(len(b)) if not pd.isna(b[i]) and not pd.isna(t_s[i])]
+    valid_indices = [
+        i for i in range(len(b)) if not pd.isna(b[i]) and not pd.isna(t_s[i])
+    ]
     # Filter b and t using the valid indices
     b = [b[i] for i in valid_indices]
     t_s = [t_s[i] for i in valid_indices]

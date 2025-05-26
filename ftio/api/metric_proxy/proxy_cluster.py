@@ -1,7 +1,7 @@
 import numpy as np
-from sklearn.cluster import OPTICS, DBSCAN
-import plotly.express as px
 import pandas as pd
+import plotly.express as px
+from sklearn.cluster import DBSCAN, OPTICS
 
 from ftio.plot.helper import format_plot
 
@@ -76,12 +76,23 @@ def plot_cluster(
 
     unique_labels = set(labels)
     colors = px.colors.qualitative.Dark24[: len(unique_labels)]
-    symbols = ["circle", "square", "diamond", "cross", "x", "triangle-up", "triangle-down"] * (
-        len(unique_labels) // 7 + 1
-    )
+    symbols = [
+        "circle",
+        "square",
+        "diamond",
+        "cross",
+        "x",
+        "triangle-up",
+        "triangle-down",
+    ] * (len(unique_labels) // 7 + 1)
 
-    color_map = {label: colors[i % len(colors)] for i, label in enumerate(unique_labels)}
-    symbol_map = {label: symbols[i % len(symbols)] for i, label in enumerate(unique_labels)}
+    color_map = {
+        label: colors[i % len(colors)] for i, label in enumerate(unique_labels)
+    }
+    symbol_map = {
+        label: symbols[i % len(symbols)]
+        for i, label in enumerate(unique_labels)
+    }
 
     # Map each point to its corresponding color and symbol
     point_colors = [color_map[label] for label in labels]
@@ -117,7 +128,10 @@ def plot_cluster(
     fig.update_traces(
         marker=dict(size=10),
         hovertemplate=(
-            "x: %{x}<br>" "y: %{y}<br>" "Metric: %{customdata}<br>" "Label: %{marker.color}<br>"
+            "x: %{x}<br>"
+            "y: %{y}<br>"
+            "Metric: %{customdata}<br>"
+            "Label: %{marker.color}<br>"
         ),
     )
     fig.update_layout(uniformtext_mode="hide")

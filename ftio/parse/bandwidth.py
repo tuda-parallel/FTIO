@@ -1,6 +1,7 @@
 import numpy as np
-from ftio.parse.overlap_thread import overlap_thread
 from numba import jit
+
+from ftio.parse.overlap_thread import overlap_thread
 
 
 class Bandwidth:
@@ -95,11 +96,21 @@ class Bandwidth:
                     self.t_rank_e.extend(np.zeros(len(b["b_rank_avr"])))
 
             # 2) Calculate bandwidth overlapping at rank level
-            if "t_rank_s" in b and "b_rank_avr" in b and "b_overlap_avr" not in b and args.avr:
+            if (
+                "t_rank_s" in b
+                and "b_rank_avr" in b
+                and "b_overlap_avr" not in b
+                and args.avr
+            ):
                 self.b_overlap_avr, self.t_overlap = overlap(
                     b["b_rank_avr"], b["t_rank_s"], b["t_rank_e"]
                 )
-            if "t_rank_s" in b and "b_rank_sum" in b and "b_overlap_sum" not in b and args.sum:
+            if (
+                "t_rank_s" in b
+                and "b_rank_sum" in b
+                and "b_overlap_sum" not in b
+                and args.sum
+            ):
                 self.b_overlap_sum, self.t_overlap = overlap(
                     b["b_rank_sum"], b["t_rank_s"], b["t_rank_e"]
                 )
@@ -132,14 +143,18 @@ class Bandwidth:
         self.max = self.assign(b, "max")
         self.min = self.assign(b, "min")
 
-        self.weighted_avr_harmonic_mean = self.assign(b, "weighted_avr_harmonic_mean")
+        self.weighted_avr_harmonic_mean = self.assign(
+            b, "weighted_avr_harmonic_mean"
+        )
         self.harmonic_avr_mean = self.assign(b, "harmonic_avr_mean")
         self.arithmetic_avr_mean = self.assign(b, "arithmetic_avr_mean")
         self.median_avr = self.assign(b, "median_avr")
         self.max_avr = self.assign(b, "max_avr")
         self.min_avr = self.assign(b, "min_avr")
 
-        self.weighted_sum_harmonic_mean = self.assign(b, "weighted_sum_harmonic_mean")
+        self.weighted_sum_harmonic_mean = self.assign(
+            b, "weighted_sum_harmonic_mean"
+        )
         self.harmonic_sum_mean = self.assign(b, "harmonic_sum_mean")
         self.arithmetic_sum_mean = self.assign(b, "arithmetic_sum_mean")
         self.median_sum = self.assign(b, "median_sum")

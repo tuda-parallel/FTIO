@@ -1,14 +1,15 @@
 import json
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 from rich.progress import (
+    BarColumn,
     Progress,
     SpinnerColumn,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
     TaskProgressColumn,
     TextColumn,
-    BarColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
 )
 
 
@@ -29,14 +30,20 @@ def extract_data(data):
             max_conf_index = np.argmax(d["conf"])
             dominant_freq = d["dominant_freq"][max_conf_index]
             conf = d["conf"][max_conf_index] * 100
-            phi = d["phi"][max_conf_index]  # np.degrees(d['phi'][max_conf_index])
+            phi = d["phi"][
+                max_conf_index
+            ]  # np.degrees(d['phi'][max_conf_index])
             amp = d["amp"][max_conf_index]
             t_s = d["t_start"]
             t_e = d["t_end"]
-            data_points.append((d["metric"], dominant_freq, conf, amp, phi, t_s, t_e))
+            data_points.append(
+                (d["metric"], dominant_freq, conf, amp, phi, t_s, t_e)
+            )
         else:
             continue
-            data_points.append((d["metric"], np.NaN, np.NaN, np.NaN, np.NaN, np.NaN))
+            data_points.append(
+                (d["metric"], np.NaN, np.NaN, np.NaN, np.NaN, np.NaN)
+            )
 
     # Create a DataFrame for the plot
     df = pd.DataFrame(
@@ -73,7 +80,9 @@ def create_process_bar(total_files):
     # Create a progress bar
     progress = Progress(
         SpinnerColumn(),
-        TextColumn("[progress.description]{task.description} ({task.completed}/{task.total})"),
+        TextColumn(
+            "[progress.description]{task.description} ({task.completed}/{task.total})"
+        ),
         BarColumn(),
         TaskProgressColumn(),
         TimeRemainingColumn(),

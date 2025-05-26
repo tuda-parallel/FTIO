@@ -1,11 +1,12 @@
 """Performs prediction with Pools (ProcessPoolExecutor) and a callback mechanism"""
 
 from __future__ import annotations
+
 import ftio.prediction.monitor as pm
-from ftio.prediction.probability_analysis import find_probability
-from ftio.prediction.helper import print_data, export_extrap
-from ftio.prediction.analysis import ftio_process
 from ftio.multiprocessing.async_process import handle_in_process
+from ftio.prediction.analysis import ftio_process
+from ftio.prediction.helper import export_extrap, print_data
+from ftio.prediction.probability_analysis import find_probability
 
 # from ftio.prediction.async_process import handle_in_process
 
@@ -28,7 +29,11 @@ def predictor_with_processes(shared_resources, args):
             # monitor
             stamp, procs = pm.monitor(filename, stamp, procs)
             # launch prediction_process
-            procs.append(handle_in_process(prediction_process, args=(shared_resources, args)))
+            procs.append(
+                handle_in_process(
+                    prediction_process, args=(shared_resources, args)
+                )
+            )
     except KeyboardInterrupt:
         print_data(shared_resources.data)
         export_extrap(shared_resources.data)
@@ -47,5 +52,7 @@ def prediction_process(shared_resources, args: list[str], msgs=None) -> None:
     while not shared_resources.queue.empty():
         shared_resources.data.append(shared_resources.queue.get())
 
-    _ = find_probability(shared_resources.data, counter=shared_resources.count.value)
+    _ = find_probability(
+        shared_resources.data, counter=shared_resources.count.value
+    )
     shared_resources.count.value += 1

@@ -1,6 +1,7 @@
 import sys
-from ftio.api.metric_proxy.parse_proxy import load_proxy_trace_stdin, parse_all
+
 from ftio.api.metric_proxy.helper import data_to_json
+from ftio.api.metric_proxy.parse_proxy import load_proxy_trace_stdin, parse_all
 from ftio.prediction.tasks import ftio_metric_task_save
 
 

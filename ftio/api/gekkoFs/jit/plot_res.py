@@ -29,8 +29,12 @@ def format(fig: go.Figure, title: str = "") -> None:
         title_font_size=24,  # Increased title font size
         width=1000,
         height=700,
-        xaxis=dict(title_font=dict(size=24)),  # Increased x-axis title font size
-        yaxis=dict(title_font=dict(size=24)),  # Increased y-axis title font size
+        xaxis=dict(
+            title_font=dict(size=24)
+        ),  # Increased x-axis title font size
+        yaxis=dict(
+            title_font=dict(size=24)
+        ),  # Increased y-axis title font size
         legend=dict(
             font=dict(size=20),  # Increased legend font size
             orientation="h",
@@ -86,7 +90,11 @@ def format_plot_and_ticks(
             )
         )
     if font:
-        fig.update_layout(font=dict(family="Courier New, monospace", size=font_size, color="black"))
+        fig.update_layout(
+            font=dict(
+                family="Courier New, monospace", size=font_size, color="black"
+            )
+        )
 
     fig.update_layout(
         plot_bgcolor="white",
@@ -107,7 +115,11 @@ def format_plot_and_ticks(
     if x_minor:
         x_settings["minor_ticks"] = "outside"
         x_settings["minor"] = dict(
-            ticklen=2, tickcolor="black", tickmode="auto", nticks=n_ticks, showgrid=True
+            ticklen=2,
+            tickcolor="black",
+            tickmode="auto",
+            nticks=n_ticks,
+            showgrid=True,
         )
 
     fig.update_xaxes(**x_settings)
@@ -126,7 +138,11 @@ def format_plot_and_ticks(
     if y_minor:
         y_settings["minor_ticks"] = "outside"
         y_settings["minor"] = dict(
-            ticklen=2, tickcolor="black", tickmode="auto", nticks=n_ticks, showgrid=True
+            ticklen=2,
+            tickcolor="black",
+            tickmode="auto",
+            nticks=n_ticks,
+            showgrid=True,
         )
 
     fig.update_yaxes(**y_settings)

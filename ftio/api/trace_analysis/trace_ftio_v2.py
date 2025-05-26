@@ -1,13 +1,15 @@
-import sys
-import os
-from datetime import datetime
 import json
+import os
+import sys
+from datetime import datetime
+
 import numpy as np
+from rich.console import Console
+
 from ftio.parse.csv_reader import read_csv_file
 
 # from ftio.api.trace_analysis.helper import quick_plot
 from ftio.processing.compact_operations import quick_ftio
-from rich.console import Console
 
 console = Console()
 
@@ -32,10 +34,14 @@ def extract_arrays_from_json(argv=sys.argv[1:], verbose=True):
     t_w = np.array([])
 
     if "read" in arrays:
-        b_r = np.array(arrays["read"]["bandwidth"]["b_overlap_avr"]).astype(float)
+        b_r = np.array(arrays["read"]["bandwidth"]["b_overlap_avr"]).astype(
+            float
+        )
         t_r = np.array(arrays["read"]["bandwidth"]["t_overlap"]).astype(float)
     if "write" in arrays:
-        b_w = np.array(arrays["write"]["bandwidth"]["b_overlap_avr"]).astype(float)
+        b_w = np.array(arrays["write"]["bandwidth"]["b_overlap_avr"]).astype(
+            float
+        )
         t_w = np.array(arrays["write"]["bandwidth"]["t_overlap"]).astype(float)
 
     # adapt for FTIO
@@ -69,7 +75,10 @@ def extract_arrays_from_csv(argv=sys.argv[1:], verbose=True):
         b_b = np.array(arrays["both"]).astype(float)
 
     if "timestamp" in arrays:
-        entries = [datetime.strptime(ts, "%Y-%m-%d %H:%M:%S.%f") for ts in arrays["timestamp"]]
+        entries = [
+            datetime.strptime(ts, "%Y-%m-%d %H:%M:%S.%f")
+            for ts in arrays["timestamp"]
+        ]
         t_s = entries[0]
         time_diffs_in_seconds = [(dt - t_s).total_seconds() for dt in entries]
         t = np.array(time_diffs_in_seconds)
@@ -84,7 +93,9 @@ def extract_arrays_from_csv(argv=sys.argv[1:], verbose=True):
             t_step = float(argv[flag_index + 1])
             argv[flag_index : flag_index + 2] = []
             if verbose:
-                console.print(f"[bold green]Sampling rate set to {t_step} sec[/]")
+                console.print(
+                    f"[bold green]Sampling rate set to {t_step} sec[/]"
+                )
 
         t = np.arange(0, len(b_w) * t_step, t_step).astype(float)
 
@@ -92,7 +103,9 @@ def extract_arrays_from_csv(argv=sys.argv[1:], verbose=True):
     if "-f" not in argv:
         argv.extend(["-f", f"{2/t_step}"])
         if verbose:
-            console.print(f"[bold green]Sampling rate set to {t_step} sec ({2/t_step:.3f}) Hz[/]")
+            console.print(
+                f"[bold green]Sampling rate set to {t_step} sec ({2/t_step:.3f}) Hz[/]"
+            )
     # plot
     # quick_plot(t,b_w)
 
@@ -110,7 +123,9 @@ def extract_arrays_from_csv(argv=sys.argv[1:], verbose=True):
     return res
 
 
-def run_ftio_on_group(argv, verbose, arrays, b_r, t_r, b_w, t_w, b_b=[], t_b=[]):
+def run_ftio_on_group(
+    argv, verbose, arrays, b_r, t_r, b_w, t_w, b_b=[], t_b=[]
+):
     total_bytes_r = 0  # np.sum(np.repeat(t_s,len(b_r))*len(b_r))
     total_bytes_w = 0  # np.sum(np.repeat(t_s,len(b_w))*len(b_w))
     total_bytes_b = 0  # np.sum(np.repeat(t_s,len(b_b))*len(b_b))

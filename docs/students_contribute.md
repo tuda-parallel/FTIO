@@ -78,14 +78,24 @@
 
 ### 2. Committing Changes
 
-- Make frequent commits with clear and descriptive messages. Ideally, once you are finished working on an aspect, you create a commit for it.
-  Example:
+- Make frequent commits with clear and descriptive messages. Ideally, once you are finished working on an aspect, you create a commit for it. Before commiting, always check and fix the style:
+
+```bash
+ cd <ftio_repo>
+ make check_style
+```
+
+Afterwards, stage the files you want push 
+
+```bash
+  git add file1.py ./some_location/file2.py
+  ```
 
   ```bash
   git commit -m "FTIO: Add feature X to improve performance"
   ```
 
-  Afterwards, push your changes from *your* branch:
+  Afterwards, push your changes from *your* local branch to *your* remote:
 
   ```bash
   # You are on your-branch (check using git branch -a)
@@ -94,6 +104,9 @@
   
 > [!note]
 > Avoid using to short or undescriptive commit messages like 'update' or 'code cleaned'. 
+
+> [!note]
+> Always check that your commits align with the style used. For that call 'make check_style' in the root directory of the repo. 
 
 ### 3. Submitting Your Work
 
@@ -247,6 +260,10 @@ To add a test case for verifying your changes, follow these steps:
     cd <ftio_repo>
     make test
     ```
+5. **Regularly check that you code is conform with the style**:
+    ```bash
+    make check_style
+   ```
 
 ---
 

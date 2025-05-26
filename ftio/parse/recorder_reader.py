@@ -49,7 +49,9 @@ def extract_data(path: str, args) -> tuple[list, int]:
             current_file = open(file, "r")
             current_file = current_file.readlines()
             # data.extend([k for k in f if 'MPI_File_w' in k or 'MPI_File_r' in k])
-            data.extend([k for k in current_file if " write " in k or " read " in k])
+            data.extend(
+                [k for k in current_file if " write " in k or " read " in k]
+            )
         rank = max([int(x.replace(".txt", "")) for x in files]) + 1
         break  # no recursive walk
     return data, rank
@@ -67,17 +69,29 @@ def extract_recorder(data: list, ranks: int) -> tuple[dict, dict]:
     # FIXME: This needs to ne b_ind t_ind_s and t_ind_e, however required ind overlaping alorithm in bandiwdth.py
     write = {
         "number_of_ranks": ranks,
-        "bandwidth": {"b_rank_sum": [], "b_rank_avr": [], "t_rank_s": [], "t_rank_e": []},
+        "bandwidth": {
+            "b_rank_sum": [],
+            "b_rank_avr": [],
+            "t_rank_s": [],
+            "t_rank_e": [],
+        },
     }
     read = {
         "number_of_ranks": ranks,
-        "bandwidth": {"b_rank_sum": [], "b_rank_avr": [], "t_rank_s": [], "t_rank_e": []},
+        "bandwidth": {
+            "b_rank_sum": [],
+            "b_rank_avr": [],
+            "t_rank_s": [],
+            "t_rank_e": [],
+        },
     }
     for line in data:
         if "write" in line or "read" in line:
             s_line = line.find(" ")
             t_start = float(line[:s_line])
-            t_end = float(line[s_line + 1 : s_line + line[s_line + 1 :].find(" ") + 1])
+            t_end = float(
+                line[s_line + 1 : s_line + line[s_line + 1 :].find(" ") + 1]
+            )
             # ? For MPI oly
             # b  = line.rfind('%p')
             # b = int(line[b+3: b+3+line[b+3:].find(' ')])
@@ -85,7 +99,9 @@ def extract_recorder(data: list, ranks: int) -> tuple[dict, dict]:
             b_part = line.rfind(")")
             b_part = int(line[line[: b_part - 1].rfind(" ") + 1 : b_part - 1])
 
-            b_part = b_part / (t_end - t_start) if t_end - t_start != 0 else 0  # B/s
+            b_part = (
+                b_part / (t_end - t_start) if t_end - t_start != 0 else 0
+            )  # B/s
             # ? Assign
             if "write" in line:
                 write["bandwidth"]["t_rank_s"].append(t_start)

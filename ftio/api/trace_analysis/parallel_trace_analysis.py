@@ -10,35 +10,39 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
+import json
 import os
 import sys
 import time
-import json
-from multiprocessing import Pool, cpu_count
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from multiprocessing import Pool, cpu_count
+
 import pandas as pd
 from rich.console import Console
 from rich.progress import (
+    BarColumn,
     Progress,
     SpinnerColumn,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
     TaskProgressColumn,
     TextColumn,
-    BarColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
 )
-from ftio.api.trace_analysis.trace_ftio_v2 import main as trace_ftio
+
 from ftio.api.trace_analysis.trace_analysis import (
     convert_dict,
     flatten_dict,
     statistics,
 )
+from ftio.api.trace_analysis.trace_ftio_v2 import main as trace_ftio
 
 # Initialize the console for printing
 console = Console()
 
 
-def process_file(file_path: str, argv: list, settings: dict, index: int = 0) -> tuple:
+def process_file(
+    file_path: str, argv: list, settings: dict, index: int = 0
+) -> tuple:
     """
     Process a single file using the trace_ftio function and save the results.
 
@@ -54,7 +58,9 @@ def process_file(file_path: str, argv: list, settings: dict, index: int = 0) -> 
     error = ""
     try:
         # Call your trace_ftio function (adjust the import and call as necessary)
-        res = trace_ftio([file_path] + argv, settings["verbose"], settings["json"])
+        res = trace_ftio(
+            [file_path] + argv, settings["verbose"], settings["json"]
+        )
 
         # Create the new file name by replacing the pattern
         base_name = os.path.basename(file_path)
@@ -62,7 +68,8 @@ def process_file(file_path: str, argv: list, settings: dict, index: int = 0) -> 
         # if input file is not a json, save ftio result
         if not settings["json"] and settings["save"]:
             json_file = base_name.replace(
-                f"_signal_{settings["name"]}.csv", f"_freq_{settings["name"]}.json"
+                f"_signal_{settings["name"]}.csv",
+                f"_freq_{settings["name"]}.json",
             )
             json_path = os.path.join(os.path.dirname(file_path), json_file)
             # Convert NumPy arrays to lists and save the ftio results
@@ -71,7 +78,9 @@ def process_file(file_path: str, argv: list, settings: dict, index: int = 0) -> 
                 with open(json_path, "w") as file:
                     json.dump(data_converted, file, indent=4)
             else:
-                console.print(f"[bold red]Cannot dump Json file in {json_path}[/]")
+                console.print(
+                    f"[bold red]Cannot dump Json file in {json_path}[/]"
+                )
 
         flat_res = flatten_dict(res)
         try:
@@ -186,7 +195,9 @@ def main(argv: list = sys.argv[1:]) -> None:
     # Create a progress bar
     progress = Progress(
         SpinnerColumn(),
-        TextColumn("[progress.description]{task.description} ({task.completed}/{task.total})"),
+        TextColumn(
+            "[progress.description]{task.description} ({task.completed}/{task.total})"
+        ),
         BarColumn(),
         TaskProgressColumn(),
         TimeRemainingColumn(),
@@ -200,8 +211,12 @@ def main(argv: list = sys.argv[1:]) -> None:
             if settings["num_procs"] == -1:
                 settings["num_procs"] = int(cpu_count() / 2)
 
-            console.print(f"[bold green]Using {settings["num_procs"]} processes[/]\n")
-            task = progress.add_task("[green]Processing files", total=total_files)
+            console.print(
+                f"[bold green]Using {settings["num_procs"]} processes[/]\n"
+            )
+            task = progress.add_task(
+                "[green]Processing files", total=total_files
+            )
 
             # List to store failed file details
             failed_files = []
@@ -211,10 +226,14 @@ def main(argv: list = sys.argv[1:]) -> None:
 
             if future:
                 counter = 0
-                with ProcessPoolExecutor(max_workers=settings["num_procs"]) as executor:
+                with ProcessPoolExecutor(
+                    max_workers=settings["num_procs"]
+                ) as executor:
                     # Submit tasks to the executor
                     futures = {
-                        executor.submit(process_file, file_path, argv, settings, i): i
+                        executor.submit(
+                            process_file, file_path, argv, settings, i
+                        ): i
                         for i, file_path in enumerate(trace_files)
                     }
 
@@ -222,13 +241,18 @@ def main(argv: list = sys.argv[1:]) -> None:
                     for future in as_completed(futures):
                         # index = futures[future]
                         try:
-                            flat_res, index, file_path, error = future.result(timeout=120)
+                            flat_res, index, file_path, error = future.result(
+                                timeout=120
+                            )
                         except TimeoutError:
                             index = futures[future]
                             flat_res = None
                             error = f"[red bold] {trace_files[index]} reached timeout"
                         if flat_res:  # Process result
-                            df = pd.concat([df, pd.DataFrame([flat_res])], ignore_index=True)
+                            df = pd.concat(
+                                [df, pd.DataFrame([flat_res])],
+                                ignore_index=True,
+                            )
                         if error:  # Log any failed files
                             failed_files.append((file_path, error))
                         # Update progress
@@ -241,14 +265,19 @@ def main(argv: list = sys.argv[1:]) -> None:
                 with Pool(processes=settings["num_procs"]) as pool:
                     # Pass the index and total files to process_file
                     results = [
-                        pool.apply_async(process_file, (file_path, argv, settings, index))
+                        pool.apply_async(
+                            process_file, (file_path, argv, settings, index)
+                        )
                         for i, file_path in enumerate(trace_files)
                     ]
 
                     for result in results:
                         flat_res, index, file_path, error = result.get()
                         if flat_res:  # Process result
-                            df = pd.concat([df, pd.DataFrame([flat_res])], ignore_index=True)
+                            df = pd.concat(
+                                [df, pd.DataFrame([flat_res])],
+                                ignore_index=True,
+                            )
                         if error:  # Log any failed files
                             failed_files.append((file_path, error))
 
@@ -265,13 +294,17 @@ def main(argv: list = sys.argv[1:]) -> None:
                 f" - [bold green]{total_files - len(failed_files)} files processed successfully![/]\n"
                 f" - [bold red]{len(failed_files)} files failed[/]\n"
             )
-            console.print("\n[bold yellow]The following files failed to process:[/]")
+            console.print(
+                "\n[bold yellow]The following files failed to process:[/]"
+            )
             with open(f"{settings["res_path"]}/log.err", "w") as log:
                 for file_path, error in failed_files:
                     console.print(f"[bold red]{file_path}[/]")
                     log.write(f"{file_path}: {error}\n")
         else:
-            progress.console.print("\n[bold green]All files processed successfully![/]\n")
+            progress.console.print(
+                "\n[bold green]All files processed successfully![/]\n"
+            )
 
         console.print(
             f"[blue]FTIO total time:[/] {time.time() - start_time:.4f} seconds\n"
@@ -284,7 +317,9 @@ def main(argv: list = sys.argv[1:]) -> None:
         progress.console.print("[bold red]Keyboard interrupt![/]\n")
         statistics(df, "", settings)
         sys.exit()
-    console.print(f"[blue]Execution time:[/] {time.time() - start_time:.4f} seconds")
+    console.print(
+        f"[blue]Execution time:[/] {time.time() - start_time:.4f} seconds"
+    )
 
 
 if __name__ == "__main__":

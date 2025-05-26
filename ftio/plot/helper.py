@@ -54,7 +54,11 @@ def format_plot_and_ticks(
             )
         )
     if font:
-        fig.update_layout(font=dict(family="Courier New, monospace", size=font_size, color="black"))
+        fig.update_layout(
+            font=dict(
+                family="Courier New, monospace", size=font_size, color="black"
+            )
+        )
 
     fig.update_layout(
         plot_bgcolor="white",
@@ -75,7 +79,11 @@ def format_plot_and_ticks(
     if x_minor:
         x_settings["minor_ticks"] = "outside"
         x_settings["minor"] = dict(
-            ticklen=2, tickcolor="black", tickmode="auto", nticks=n_ticks, showgrid=True
+            ticklen=2,
+            tickcolor="black",
+            tickmode="auto",
+            nticks=n_ticks,
+            showgrid=True,
         )
 
     fig.update_xaxes(**x_settings)
@@ -94,7 +102,11 @@ def format_plot_and_ticks(
     if y_minor:
         y_settings["minor_ticks"] = "outside"
         y_settings["minor"] = dict(
-            ticklen=2, tickcolor="black", tickmode="auto", nticks=n_ticks, showgrid=True
+            ticklen=2,
+            tickcolor="black",
+            tickmode="auto",
+            nticks=n_ticks,
+            showgrid=True,
         )
 
     fig.update_yaxes(**y_settings)
@@ -119,7 +131,9 @@ def format_plot(fig: go.Figure, font_size: int = 24) -> go.Figure:
             bordercolor="Black",
             borderwidth=1,
         ),
-        font=dict(family="Courier New, monospace", size=font_size, color="black"),
+        font=dict(
+            family="Courier New, monospace", size=font_size, color="black"
+        ),
         # margin=dict(l=5, r=5, t=5, b=5) #IEEE
         # margin=dict(t=top_margin),
     )
@@ -178,7 +192,9 @@ def save_fig(fig: go.Figure, f: list[go.Figure], path: str, name: str) -> None:
     print(f"   -> Finished {index}/{length-1}")
 
 
-def add_fig_row(nRun: int, onefig: bool = False, specs=None, subplot_titles=None) -> go.Figure:
+def add_fig_row(
+    nRun: int, onefig: bool = False, specs=None, subplot_titles=None
+) -> go.Figure:
     """Creates a figure with rows of subplots.
 
     Args:
@@ -194,7 +210,9 @@ def add_fig_row(nRun: int, onefig: bool = False, specs=None, subplot_titles=None
         # self.f_t.append(go.Figure())
         f = make_subplots(rows=1, cols=1, specs=specs)
     else:
-        f = make_subplots(rows=nRun, cols=1, specs=specs, subplot_titles=subplot_titles)
+        f = make_subplots(
+            rows=nRun, cols=1, specs=specs, subplot_titles=subplot_titles
+        )
 
     return f
 

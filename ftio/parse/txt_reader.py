@@ -1,9 +1,11 @@
-import sys
 import re
+import sys
 import time
+
 from rich.console import Console
-from ftio.parse.input_template import init_data
+
 from ftio.parse.custom_patterns import convert
+from ftio.parse.input_template import init_data
 
 
 def extract(path: str, args: list, custom: bool = False) -> tuple[dict, int]:
@@ -31,7 +33,9 @@ def extract(path: str, args: list, custom: bool = False) -> tuple[dict, int]:
             for key2, value2 in translate["bandwidth"].items():
                 unit, value2 = find_scale(value2)
                 io_data["bandwidth"][key2] = extracted_data[value2]
-                io_data["bandwidth"][key2] = scale(io_data["bandwidth"][key2], unit)
+                io_data["bandwidth"][key2] = scale(
+                    io_data["bandwidth"][key2], unit
+                )
         else:
             unit, value = find_scale(value)
             io_data[key] = extracted_data[value]
@@ -66,7 +70,8 @@ def read(file_path, patterns):
                     # If the matched group contains commas, split and convert to integers
                     tmp = match.group(1).replace(", ", ",")
                     results[key] = list(
-                        float(val) if "." in val else int(val) for val in tmp.split(",")
+                        float(val) if "." in val else int(val)
+                        for val in tmp.split(",")
                     )
 
                 else:
