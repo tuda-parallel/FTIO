@@ -227,7 +227,7 @@ def find_fd_autocorrelation(
 
     # Removing outliers
     outliers, text = filter_outliers(freq, candidates, weights)
-    if outliers:
+    if len(outliers) > 0:
         candidates = np.delete(candidates, outliers)
         weights = np.delete(weights, outliers)
 

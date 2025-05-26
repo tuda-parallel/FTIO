@@ -15,25 +15,51 @@ def get_dominant(prediction: Prediction) -> float:
     """Gets the dominant frequency based on the confidence
 
     Args:
-        prediction (dict): prediction contacting the dominant frequencies and their confidence
+        prediction (dict|predicition): prediction contacting the dominant frequencies and their confidence
 
     Returns:
         float: dominant frequency (only one value!)
     """
-    return prediction.get_dominant_freq()
+    if isinstance(prediction, Prediction):
+        return prediction.get_dominant_freq()
+    elif isinstance(prediction, dict):
+        tmp = Prediction()
+        tmp.set_from_dict(
+            {
+                "dominant_freq": prediction["dominant_freq"],
+                "conf": prediction["conf"],
+                "amp": prediction["amp"],
+            }
+        )
+        return tmp.get_dominant_freq()
+    else:
+        raise TypeError("prediction must be a Prediction or dict")
 
 
 def get_dominant_and_conf(prediction: Prediction) -> tuple[float, float]:
     """Gets the dominant frequency and its confidence based on the confidence
 
     Args:
-        prediction (Prediction): prediction contacting the dominant frequencies and their confidence
+        prediction (Prediction|dict): prediction contacting the dominant frequencies and their confidence
 
     Returns:
         tuple[float, float]: dominant frequency (only one value!) and corresponding confidence
     """
 
-    return prediction.get_dominant_freq_and_conf()
+    if isinstance(prediction, Prediction):
+        return prediction.get_dominant_freq_and_conf()
+    elif isinstance(prediction, dict):
+        tmp = Prediction()
+        tmp.set_from_dict(
+            {
+                "dominant_freq": prediction["dominant_freq"],
+                "conf": prediction["conf"],
+                "amp": prediction["amp"],
+            }
+        )
+        return tmp.get_dominant_freq_and_conf()
+    else:
+        raise TypeError("prediction must be a Prediction or dict")
 
 
 def print_data(data: list[dict]) -> None:

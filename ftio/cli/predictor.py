@@ -33,7 +33,7 @@ def main(args: list[str] = sys.argv) -> None:
                 args,
             )
         else:
-            # prediction with Processes of process and a callback mechanism
+            # prediction with processes and a callback mechanism
             predictor_with_processes(shared_resources, args)
 
 

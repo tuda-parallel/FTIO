@@ -307,7 +307,10 @@ class Prediction:
         # or use conf?
         if self._amp is not None and len(self._amp) > 0:
             return np.argmax(self._amp)
-        return None
+        elif self._conf is not None and len(self._conf) > 0:
+            return np.argmax(self.conf)
+        else:
+            return None
 
     def is_empty(self):
         """

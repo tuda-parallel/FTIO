@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import ftio.prediction.monitor as pm
 from ftio.multiprocessing.async_process import handle_in_process
-from ftio.prediction.analysis import ftio_process
 from ftio.prediction.helper import export_extrap, print_data
+from ftio.prediction.online_analysis import ftio_process
 from ftio.prediction.probability_analysis import find_probability
 
 # from ftio.prediction.async_process import handle_in_process
@@ -41,7 +41,7 @@ def predictor_with_processes(shared_resources, args):
 
 
 def prediction_process(shared_resources, args: list[str], msgs=None) -> None:
-    """Performs prediction made up of two part: (1) Executes FTIO and (2) appends to data the value
+    """Performs prediction made up of two parts: (1) Executes FTIO and (2) appends to data the value
 
     Args:
         shared_resources (SharedResources): shared resources among processes

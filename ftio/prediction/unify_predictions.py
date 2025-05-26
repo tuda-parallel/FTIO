@@ -86,18 +86,24 @@ def merge_core(
     conf = 0
     out_freq, out_conf = [], []
     method = "hits"
-    method2 = "cov"  # ratio or cov for method hits
-
+    # method = "cov"  # ratio or cov for method hits
+    dominant_index_auto = pred_auto.get_dominant_index()
     if len(pred_dft.dominant_freq) >= 1:
         if "alike" in method:
             alike = (
-                pred_auto.dominant_freq
-                - abs(pred_dft.dominant_freq - pred_auto.dominant_freq)
-            ) / pred_auto.dominant_freq
+                pred_auto.dominant_freq[dominant_index_auto]
+                - abs(
+                    pred_dft.dominant_freq
+                    - pred_auto.dominant_freq[dominant_index_auto]
+                )
+            ) / pred_auto.dominant_freq[dominant_index_auto]
             text += f"Frequencies [yellow]{np.round(pred_dft.dominant_freq,4)}[/] Hz match [yellow]{np.round(pred_auto.dominant_freq,4)}[/] Hz by:\n[yellow]{np.round(alike,4)}[/]%\n\n"
             dominant_index = np.argmax(alike)
             dominant_freq = pred_dft.dominant_freq[dominant_index]
-            conf = (pred_dft.conf[dominant_index] + pred_auto.conf) / 2
+            conf = (
+                pred_dft.conf[dominant_index]
+                + pred_auto.conf[dominant_index_auto]
+            ) / 2
         elif "hits" in method:
             tol = 2 / freq  # 2 frequency steps
             hits = np.zeros(len(pred_dft.dominant_freq))
@@ -129,14 +135,14 @@ def merge_core(
                         / np.mean(np.append(pred_auto.candidates, t_d))
                     )
 
-            # check if there is a predect prediction
-            text += f"Perfect hits of [blue]{pred_dft.dominant_freq}[/] are [blue] {hits}[/]  \n"
-            for i, value in enumerate(hits):
-                if value == len(pred_auto.candidates):
-                    text += "[green bold]Perfect Prediction found! [/]\n"
-                    dominant_freq = pred_dft.dominant_freq[i]
-                    conf = 1
-                    break
+            # # check if there is a perfect prediction
+            # text += f"Perfect hits of [blue]{pred_dft.dominant_freq}[/] are [blue] {hits}[/]  \n"
+            # for i, value in enumerate(hits):
+            #     if value == len(pred_auto.candidates):
+            #         text += "[green bold]Perfect Prediction found! [/]\n"
+            #         dominant_freq = pred_dft.dominant_freq[i]
+            #         conf = 1
+            #         break
 
             # No perfect hit, see which better fits
             if "ratio" in method:
@@ -151,20 +157,33 @@ def merge_core(
                 text += f"Agreed prediction ratio  [blue] {np.sum(alike, axis=1)/len(agreed_predictions)*100}[/] %\n"
                 conf = (
                     1
-                    - np.std([pred_dft.conf[dominant_index], pred_auto.conf])
-                    / np.mean([pred_dft.conf[dominant_index], pred_auto.conf])
+                    - np.std(
+                        [
+                            pred_dft.conf[dominant_index],
+                            pred_auto.conf[dominant_index_auto],
+                        ]
+                    )
+                    / np.mean(
+                        [
+                            pred_dft.conf[dominant_index],
+                            pred_auto.conf[dominant_index_auto],
+                        ]
+                    )
                     + pred_dft.conf[dominant_index]
-                    + pred_auto.conf
+                    + pred_auto.conf[dominant_index_auto]
                 ) / 3
             else:
-                text += f"Agreed prediction [blue] {alike*100}[/] %\n"
+                text += (
+                    "Agreed prediction [blue] "
+                    + ", ".join(f"{i * 100:.2f}" for i in alike)
+                    + " %[/]\n"
+                )
                 conf = (
                     alike[dominant_index]
                     + pred_dft.conf[dominant_index]
-                    + pred_auto.conf
+                    + pred_auto.conf[dominant_index_auto]
                 ) / 3
                 # text += f"[red bold]{alike[dominant_index]} + {pred_dft.conf[dominant_index]} + {pred_auto.conf}[/]\n"
-
             if conf >= 0.2:
                 out_freq, out_conf = [dominant_freq], [conf]
             else:
@@ -180,7 +199,6 @@ def merge_core(
     pred_merged = pred_dft
     pred_merged.dominant_freq = out_freq
     pred_merged.conf = out_conf
-
     return pred_merged, text
 
 
