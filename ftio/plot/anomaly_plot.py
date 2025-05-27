@@ -41,9 +41,7 @@ def plot_outliers(
         (0.5, "rgb(150,50,150)"),
         (1, "rgb(255,50,0)"),
     ]
-    labels = [
-        (f"cluster {i}") if (i >= 0) else "outliers" for i in dominant_index
-    ]
+    labels = [(f"cluster {i}") if (i >= 0) else "outliers" for i in dominant_index]
     # prepare figures
     figs = []
     for i in np.arange(0, 5):
@@ -89,9 +87,7 @@ def plot_outliers(
         if dominant_index.max() < 20:
             color = all_colors[dominant_index]
         else:
-            color = np.array(
-                ["blue" if (x >= 0) else "red" for x in dominant_index]
-            )
+            color = np.array(["blue" if (x >= 0) else "red" for x in dominant_index])
         # draw the circles
         for i in range(0, len(d)):
             figs[0].add_shape(
@@ -193,9 +189,7 @@ def plot_outliers(
     figs[0].update_yaxes(title_text=f"Normed {y_title}")
     figs[1].update_xaxes(title_text="Normed Frequency ", range=[-0.01, 1.01])
     figs[1].update_yaxes(title_text=f"Normed {y_title}")
-    figs[2].update_xaxes(
-        title_text="Frequency (Hz)", range=[0, freq_arr[indecies].max()]
-    )
+    figs[2].update_xaxes(title_text="Frequency (Hz)", range=[0, freq_arr[indecies].max()])
     figs[2].update_yaxes(title_text=f"{y_title}")
     figs[3].update_xaxes(title_text="Frequency (Hz)")
     figs[3].update_yaxes(title_text=plt_names[0])

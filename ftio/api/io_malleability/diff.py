@@ -11,9 +11,7 @@ from ftio.parse.bandwidth import overlap
 
 def parse_args():
     # Set up command-line argument parsing
-    parser = argparse.ArgumentParser(
-        description="Convert an XLSX file to JSON."
-    )
+    parser = argparse.ArgumentParser(description="Convert an XLSX file to JSON.")
     # Set default values for the file
     parser.add_argument(
         "--file",
@@ -66,17 +64,13 @@ def parse_txt(args, file_path):
         preview_rows = min(10, num_rows)  # Display up to 10 rows for preview
 
         # Print a preview of the first few lines
-        console.print(
-            f"[green]Preview of the first {preview_rows} rows of data:[/]"
-        )
+        console.print(f"[green]Preview of the first {preview_rows} rows of data:[/]")
         for i in range(preview_rows):
             console.print(f'{i}: {" | ".join(data[i])}')
 
         console.print("\nPlease select the column to map to time:")
         value_t = int(input("> "))
-        console.print(
-            f"[green]> Time set to column {value_t}: {data[0][value_t]}[/]"
-        )
+        console.print(f"[green]> Time set to column {value_t}: {data[0][value_t]}[/]")
         for i in range(num_rows):
             t.append(float(data[i][value_t]))  # Append time data
 

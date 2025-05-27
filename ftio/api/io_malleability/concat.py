@@ -34,9 +34,7 @@ def main():
     parser.add_argument(
         "input_files", nargs="+", help="List of input log files to process"
     )
-    parser.add_argument(
-        "output_file", help="Output file to store the processed logs"
-    )
+    parser.add_argument("output_file", help="Output file to store the processed logs")
     parser.add_argument(
         "-t",
         "--timestamp-column",
@@ -49,9 +47,7 @@ def main():
     args = parser.parse_args()
 
     # Process the log files
-    process_log_files(
-        args.input_files, args.output_file, args.timestamp_column
-    )
+    process_log_files(args.input_files, args.output_file, args.timestamp_column)
     print(f"Processed log files and saved the result to {args.output_file}")
 
 

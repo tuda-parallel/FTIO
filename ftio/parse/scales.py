@@ -89,9 +89,7 @@ class Scales:
                     skip_files = ["scale.jsonl", ".call.txt"]
                     for unwanted in skip_files:
                         if unwanted in files:
-                            console.print(
-                                f"[yellow]Skipping file: {root}/{unwanted}[/]"
-                            )
+                            console.print(f"[yellow]Skipping file: {root}/{unwanted}[/]")
                             files.remove(unwanted)
 
                     # sort the files
@@ -99,8 +97,7 @@ class Scales:
 
                     for file in sorted_files:
                         if any(
-                            ext in file
-                            for ext in ["json", "darshan", "msgpack", "txt"]
+                            ext in file for ext in ["json", "darshan", "msgpack", "txt"]
                         ):
                             file_path = os.path.join(root, file)
                             # Limit the number of ranks to consider if self.limit is defined
@@ -109,9 +106,7 @@ class Scales:
                                     self.args.limit > 0
                                     and get_rank(file) >= self.args.limit
                                 ):
-                                    console.print(
-                                        f"[yellow]Skipping file: {file}[/]"
-                                    )
+                                    console.print(f"[yellow]Skipping file: {file}[/]")
                                     continue
                             except Exception as error:
                                 console.print(
@@ -178,10 +173,7 @@ class Scales:
             self.call = self.call + " " + i
         f = open("%s/.call.txt" % (os.getcwd()), "a")
         f.write(
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-            + " :"
-            + self.call
-            + "\n\n"
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M") + " :" + self.call + "\n\n"
         )
         f.close()
 
@@ -313,9 +305,7 @@ class Scales:
 
             else:
                 data_metrics = np.vstack((data_metrics, data[1]))
-                data_rank_ovr = np.concatenate(
-                    (data_rank_ovr, data[3]), axis=1
-                )
+                data_rank_ovr = np.concatenate((data_rank_ovr, data[3]), axis=1)
                 data_rank = np.concatenate((data_rank, data[5]), axis=1)
                 data_ind_ovr = np.concatenate((data_ind_ovr, data[7]), axis=1)
                 data_ind = np.concatenate((data_ind, data[9]), axis=1)
@@ -391,9 +381,7 @@ def get_rank(name: str) -> int:
         return name
     else:
         start = name.rfind("/")
-        end = max(
-            name.rfind(".json"), name.rfind(".darshan"), name.rfind(".msgpack")
-        )
+        end = max(name.rfind(".json"), name.rfind(".darshan"), name.rfind(".msgpack"))
         rank = name[start + 1 : end]
         strs = ["_", "-", " "]
         if any(x in rank for x in strs):

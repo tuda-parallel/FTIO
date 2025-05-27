@@ -66,17 +66,13 @@ def find_unit(df_t, index, index2, index_ind, index2_ind, args, offset=1):
     unit = "B/s"
     order = 1e-0
     if args.avr and "b_overlap_avr" in df_t[1]:
-        tmp_unit, tmp_order = set_unit(
-            df_t[1]["b_overlap_avr"][index][index2] * offset
-        )
+        tmp_unit, tmp_order = set_unit(df_t[1]["b_overlap_avr"][index][index2] * offset)
         if tmp_order < order:
             order = tmp_order
             unit = tmp_unit
 
     if args.sum and "b_overlap_sum" in df_t[1]:
-        tmp_unit, tmp_order = set_unit(
-            df_t[1]["b_overlap_sum"][index][index2] * offset
-        )
+        tmp_unit, tmp_order = set_unit(df_t[1]["b_overlap_sum"][index][index2] * offset)
         if tmp_order < order:
             order = tmp_order
             unit = tmp_unit

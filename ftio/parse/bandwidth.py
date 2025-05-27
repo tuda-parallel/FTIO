@@ -143,18 +143,14 @@ class Bandwidth:
         self.max = self.assign(b, "max")
         self.min = self.assign(b, "min")
 
-        self.weighted_avr_harmonic_mean = self.assign(
-            b, "weighted_avr_harmonic_mean"
-        )
+        self.weighted_avr_harmonic_mean = self.assign(b, "weighted_avr_harmonic_mean")
         self.harmonic_avr_mean = self.assign(b, "harmonic_avr_mean")
         self.arithmetic_avr_mean = self.assign(b, "arithmetic_avr_mean")
         self.median_avr = self.assign(b, "median_avr")
         self.max_avr = self.assign(b, "max_avr")
         self.min_avr = self.assign(b, "min_avr")
 
-        self.weighted_sum_harmonic_mean = self.assign(
-            b, "weighted_sum_harmonic_mean"
-        )
+        self.weighted_sum_harmonic_mean = self.assign(b, "weighted_sum_harmonic_mean")
         self.harmonic_sum_mean = self.assign(b, "harmonic_sum_mean")
         self.arithmetic_sum_mean = self.assign(b, "arithmetic_sum_mean")
         self.median_sum = self.assign(b, "median_sum")

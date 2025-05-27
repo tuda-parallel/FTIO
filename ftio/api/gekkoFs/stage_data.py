@@ -37,9 +37,7 @@ def stage_files(args: argparse.Namespace, latest_prediction: dict) -> None:
         args (Namespace): Parsed command line arguments.
         latest_prediction (dict): Result from FTIO containing prediction details.
     """
-    period = (
-        1 / latest_prediction["freq"] if latest_prediction["freq"] > 0 else 0
-    )
+    period = 1 / latest_prediction["freq"] if latest_prediction["freq"] > 0 else 0
     text = f"frequency: {latest_prediction['freq']}\nperiod: {period} \nconfidence: {latest_prediction['conf']}\nprobability: {latest_prediction['probability']}\n"
     CONSOLE.print(f"[bold green][Trigger][/][green] {text}\n")
     if args.cargo:
@@ -62,9 +60,7 @@ def setup_cargo(args: argparse.Namespace) -> None:
     if args.cargo:
         # 1. Perform stage in outside FTIO with cpp
         # 2. Setup für Cargo Stage-out für cargo_ftio
-        call = (
-            f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
-        )
+        call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
         CONSOLE.print("\n[bold green][Init][/][green]" + call + "\n")
         os.system(call)
 
@@ -100,9 +96,7 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
             try:
                 if not sync_trigger.empty():
                     latest_prediction = sync_trigger.get()
-                    t = (
-                        time.time() - latest_prediction["t_wait"]
-                    )  # time waiting so far
+                    t = time.time() - latest_prediction["t_wait"]  # time waiting so far
                     # CONSOLE.print(f"[bold green][Trigger] queue wait time = {t:.3f} s[/]\n")
                     if not np.isnan(latest_prediction["freq"]):
                         # ? 1) Find estimated number of phases and skip in case less than 1
@@ -113,8 +107,7 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
 
                         # ? 2) Time analysis to find the right instance when to send the data
                         target_time = (
-                            latest_prediction["t_end"]
-                            + 1 / latest_prediction["freq"]
+                            latest_prediction["t_end"] + 1 / latest_prediction["freq"]
                         )
                         gkfs_elapsed_time = (
                             latest_prediction["t_flush"] + t
@@ -160,13 +153,8 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                                         )
                                 time.sleep(0.01)
 
-                            if (
-                                condition
-                                and latest_prediction["probability"] > 0.5
-                            ):
-                                _ = executor.submit(
-                                    stage_files, args, latest_prediction
-                                )
+                            if condition and latest_prediction["probability"] > 0.5:
+                                _ = executor.submit(stage_files, args, latest_prediction)
                                 # stage_files(args, latest_prediction)
                                 skipped = 0
                                 cancel_counter = 0
@@ -206,9 +194,7 @@ def move_files_cargo(args: argparse.Namespace, period: float = 0) -> None:
         threshold = max(threshold, 10)
         call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run --mtime {int(threshold)}"
     else:
-        call = (
-            f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
-        )
+        call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
 
     CONSOLE.print(f"[bold green][Trigger][/][green] {call}")
     os.system(call)

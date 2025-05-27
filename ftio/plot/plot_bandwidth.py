@@ -46,9 +46,7 @@ def load_json_and_plot(filenames):
             for sync_type, sync_data in data.items():
                 if "bandwidth" in sync_data:
                     print(f"found type:{sync_type}")
-                    b = np.array(
-                        sync_data["bandwidth"].get("b_overlap_avr", [])
-                    )
+                    b = np.array(sync_data["bandwidth"].get("b_overlap_avr", []))
                     t = np.array(sync_data["bandwidth"].get("t_overlap", []))
                     break
 
@@ -87,9 +85,7 @@ def load_json_and_plot(filenames):
 
 
 def non_zero_mean(arr: np.ndarray):
-    return (
-        np.mean(arr[np.nonzero(arr)]) if len(arr[np.nonzero(arr)]) > 0 else 0
-    )
+    return np.mean(arr[np.nonzero(arr)]) if len(arr[np.nonzero(arr)]) > 0 else 0
 
 
 def plot_bar_with_rich(
@@ -137,9 +133,9 @@ def plot_bar_with_rich(
     # Normalize x to fit within the plot width
     x_min = min(x)
     x_max = max(x)
-    x_scaled = np.interp(
-        x, (x_min, x_max), (0, plot_width - label_offset - 1)
-    ).astype(int)
+    x_scaled = np.interp(x, (x_min, x_max), (0, plot_width - label_offset - 1)).astype(
+        int
+    )
 
     # Create the plot grid ensuring no row exceeds plot width
 
@@ -170,9 +166,7 @@ def plot_bar_with_rich(
     # Construct the label line
     label_line = [" "] * plot_width
     label_line[start_pos : start_pos + len(start_label)] = list(start_label)
-    label_line[middle_pos : middle_pos + len(middle_label)] = list(
-        middle_label
-    )
+    label_line[middle_pos : middle_pos + len(middle_label)] = list(middle_label)
     label_line[end_pos : end_pos + len(end_label)] = list(end_label)
 
     # Combine into final plot with 'Bytes' on y-axis
@@ -184,7 +178,9 @@ def plot_bar_with_rich(
     # Adjust the alignment of the x-axis line and labels to account for the label_offset
 
     plot_str += f"\n{' ' * new_label_offset}└{'─' * (plot_width - len('└')-len(y_unit) -1)}>"  # Adjusted x-axis line
-    plot_str += f"\n{' ' * new_label_offset}{''.join(label_line)}"  # Adjusted x-axis label
+    plot_str += (
+        f"\n{' ' * new_label_offset}{''.join(label_line)}"  # Adjusted x-axis label
+    )
     plot_str = f" " * (label_offset + 2 + len(y_unit)) + "^\n" + plot_str
 
     # Create a panel with the plot

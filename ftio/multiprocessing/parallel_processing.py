@@ -24,9 +24,7 @@ def submit_tasks(worker_func, args_list, num_procs, use_futures):
     """
     if use_futures:
         with ProcessPoolExecutor(max_workers=num_procs) as executor:
-            return {
-                executor.submit(worker_func, *args): args for args in args_list
-            }
+            return {executor.submit(worker_func, *args): args for args in args_list}
     else:
         with Pool(processes=num_procs) as pool:
             return [pool.apply_async(worker_func, args) for args in args_list]
@@ -81,9 +79,7 @@ def receive_results(task_results, total_tasks, progress, task, use_futures):
     return processed_results, failed_results
 
 
-def parallel_processing(
-    worker_func, args_list, num_procs=-1, use_futures=True
-):
+def parallel_processing(worker_func, args_list, num_procs=-1, use_futures=True):
     """
     Process tasks in parallel using either multiprocessing.Pool or ProcessPoolExecutor.
 
@@ -116,9 +112,7 @@ def parallel_processing(
         task = progress.add_task("[green]Processing tasks", total=total_tasks)
 
         # Step 1: Submit tasks
-        task_results = submit_tasks(
-            worker_func, args_list, num_procs, use_futures
-        )
+        task_results = submit_tasks(worker_func, args_list, num_procs, use_futures)
 
         # Step 2: Receive results as they are completed
         processed_results, failed_results = receive_results(

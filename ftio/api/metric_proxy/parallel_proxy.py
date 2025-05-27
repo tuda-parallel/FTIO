@@ -206,9 +206,7 @@ def execute_parallel(
                         counter += 1
                         progress.update(task, completed=counter)
             else:  # use futures
-                with ProcessPoolExecutor(
-                    max_workers=cpu_count() - 2
-                ) as executor:
+                with ProcessPoolExecutor(max_workers=cpu_count() - 2) as executor:
                     futures = {
                         executor.submit(
                             ftio_metric_task_save,
@@ -242,9 +240,7 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
     progress = create_process_bar(total_files)
 
     with progress:
-        task = progress.add_task(
-            "[green]Processing metrics", total=total_files
-        )
+        task = progress.add_task("[green]Processing metrics", total=total_files)
         for metric, arrays in metrics.items():
             if check:
                 decreasing_order = np.all(arrays[1][-1] >= arrays[1][1])

@@ -24,10 +24,7 @@ def scale_metric(metric: str, number: float) -> tuple[str, float]:
     if number > 0:
         order = np.log10(number)
 
-        if any(
-            x in metric.lower()
-            for x in ["bytes", "b", "bandwidth", "transfer"]
-        ):
+        if any(x in metric.lower() for x in ["bytes", "b", "bandwidth", "transfer"]):
             if order > 9:
                 order = 1e-9
                 prefix = "G"

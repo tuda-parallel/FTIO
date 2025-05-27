@@ -15,9 +15,7 @@ def parse_args(argv: list, name="") -> argparse.Namespace:
         flag = False
 
     if "plot" in name:
-        disc = (
-            "Plots result stored in Json file to a HTML page or PDF document."
-        )
+        disc = "Plots result stored in Json file to a HTML page or PDF document."
     elif "ftio" in name:
         disc = "Captures the period of the I/O phases. Uses frequency techniques (default=discrete fourier transformation) and outlier detection methods (Z-score) on the provided file. Supported file formats are Json, Jsonlines, Msgpack, Darshan, and reorder (folder). TMIO can be used to generate the tracing file needed. There are several parameters which can be controlled by the arguments bellow."
     elif "predictor" in name:
@@ -174,9 +172,7 @@ Full documentation:
             type=str,
             help='Wavelet to use. See pywt documentation for wavelet families: pywt.wavelist(kind="continuous") or pywt.wavelist(kind="discrete") (default "morl" for continuous and "db1" for discrete)',
         )
-        parser.add_argument(
-            "-t", "--tol", dest="tol", type=float, help="tolerance value"
-        )
+        parser.add_argument("-t", "--tol", dest="tol", type=float, help="tolerance value")
         parser.set_defaults(tol=0.8)
         parser.add_argument(
             "-d",
@@ -340,9 +336,7 @@ Full documentation:
 
     #! PARSE Settings
     if "parse" in name.lower():
-        parser.add_argument(
-            "--scale", action="store_true", help="scales the Y-axis"
-        )
+        parser.add_argument("--scale", action="store_true", help="scales the Y-axis")
         parser.set_defaults(scale=False)
 
     #! Data modes (for all)
@@ -396,9 +390,7 @@ Full documentation:
 
         recon = []
         if args.reconstruction:
-            recon = [
-                int(x) for val in args.reconstruction for x in val.split(",")
-            ]
+            recon = [int(x) for val in args.reconstruction for x in val.split(",")]
         if args.n_freq:
             if args.n_freq not in recon:
                 recon.append(int(args.n_freq))

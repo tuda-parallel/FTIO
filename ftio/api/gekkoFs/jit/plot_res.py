@@ -29,12 +29,8 @@ def format(fig: go.Figure, title: str = "") -> None:
         title_font_size=24,  # Increased title font size
         width=1000,
         height=700,
-        xaxis=dict(
-            title_font=dict(size=24)
-        ),  # Increased x-axis title font size
-        yaxis=dict(
-            title_font=dict(size=24)
-        ),  # Increased y-axis title font size
+        xaxis=dict(title_font=dict(size=24)),  # Increased x-axis title font size
+        yaxis=dict(title_font=dict(size=24)),  # Increased y-axis title font size
         legend=dict(
             font=dict(size=20),  # Increased legend font size
             orientation="h",
@@ -84,16 +80,21 @@ def format_plot_and_ticks(
     if legend:
         fig.update_layout(
             legend=dict(
-                bgcolor="rgba(255,255,255,.99)",
-                bordercolor="Black",
-                borderwidth=1,
+                bgcolor="rgba(255,255,255,.99)", bordercolor="Black", borderwidth=1
             )
         )
+        if font:
+            fig.update_layout(
+                legend=dict(
+                    font=dict(
+                        family="Courier New, monospace", size=font_size - 1, color="black"
+                    )
+                )  # set your desired font size here
+            )
+
     if font:
         fig.update_layout(
-            font=dict(
-                family="Courier New, monospace", size=font_size, color="black"
-            )
+            font=dict(family="Courier New, monospace", size=font_size, color="black")
         )
 
     fig.update_layout(

@@ -66,23 +66,19 @@ def ftio_wavelet_disc(
     }
     console = MyConsole(verbose=args.verbose)
 
-    #! Sample the bandwidth evenly spaced in time
+    # ! Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
-    b_sampled, args.freq = sample_data(
-        bandwidth, time_stamps, args.freq, args.verbose
-    )
-    console.print(
-        f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s"
-    )
+    b_sampled, args.freq = sample_data(bandwidth, time_stamps, args.freq, args.verbose)
+    console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
     tik = time.time()
-    console.print(
-        f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
-    )
+    console.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
 
-    #! Find the level for the discrete wavelet
-    # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1-Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20-%202010%20-%20Rede_AIASYB2.pdf
+    # ! Find the level for the discrete wavelet
+    # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1
+    # -Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20
+    # -%202010%20-%20Rede_AIASYB2.pdf
     # https://www.youtube.com/watch?v=hAQQwvKsWCY&ab_channel=NathanKutz
     console.print("[green]Performing discrete wavelet decomposition[/]")
     # Max level or use DFT
@@ -90,21 +86,17 @@ def ftio_wavelet_disc(
     if args.level == 0:
         if method == "dft":
             args.transformation = "dft"
-            prediction, _, _ = ftio_dft(
-                args, bandwidth, time_stamps, total_bytes, ranks
-            )
+            prediction, _, _ = ftio_dft(args, bandwidth, time_stamps, total_bytes, ranks)
             if len(prediction.dominant_freq) > 0:
                 args.level = int(1 / (5 * prediction.get_dominant_freq()))
-                console.print(
-                    f"[green]Decomposition level adjusted to {args.level}[/]"
-                )
+                console.print(f"[green]Decomposition level adjusted to {args.level}[/]")
                 args.transformation = "wave_disc"
             else:
                 args.level = decomposition_level(args, len(b_sampled))
         else:
             args.level = decomposition_level(args, len(b_sampled))
 
-    #! calculate the coefficients using the discrete wavelet
+    # ! calculate the coefficients using the discrete wavelet
     # args.wavelet = "db8"
     # coefficients ->  [cA_n, cD_n, cD_n-1, …, cD2, cD1]
     coefficients = wavelet_disc(b_sampled, args.wavelet, args.level)
@@ -137,16 +129,12 @@ def ftio_wavelet_disc(
         analysis_figures_wavelet.add_figure([f1], f"wavelet_disc")
         analysis_figures_wavelet.add_figure([f2], f"wavelet_disc_spectrum")
         console.print(f" --- Done --- \n")
-        # # old
-        # cc, f = plot_wave_disc(
-        #     b_sampled, coefficients, time_b, args.freq, args.level, args.wavelet, bandwidth
-        # )
-        # for fig in f:
-        #     fig.show()
+    else:
+        analysis_figures_wavelet = AnalysisFigures()
 
-    #! Perform analysis on the result from the DWT
-    # analysis = "dft_on_all"
+    # ! Perform analysis on the result from the DWT
     # analysis = "dft_on_approx_coeff"
+    # analysis = "dft_on_all"
     analysis = "dft_x_dwt"
     # analysis = "dwt_x_autocorrelation"
 
@@ -163,12 +151,28 @@ def ftio_wavelet_disc(
         prediction, analysis_figures_dft, share = ftio_dft(
             args, coefficients_upsampled[0], t_sampled, total_bytes, ranks
         )
+        signal_1 = b_sampled
+        signal_2 = coefficients_upsampled[0]
+        window_freq = 0.005
+        window_duration = 1 / window_freq
+        window_size = int((t_sampled[-1] - t_sampled[0]) * window_freq * prediction.freq)
+        corr = sliding_correlation(signal_1, signal_2, window_size)
+        plot_correlation(
+            t_sampled,
+            signal_1,
+            signal_2,
+            corr,
+            window_duration,
+            ["b_sampled", "Wavelet approx. coefficients"],
+        )
+
         analysis_figures_wavelet += analysis_figures_dft
 
     # ? Option 2: Find intersection between DWT and DFT
     elif "dft_on_all" in analysis:
         args.transformation = "dft"
-        # TODO: For this to be parallel, the generated HTML files need different names as they are overwritten
+        # TODO: For this to be parallel, the generated HTML files need different names as
+        #  they are overwritten
         with ProcessPoolExecutor(max_workers=4) as executor:
             # submit futures
             futures = {}
@@ -199,9 +203,9 @@ def ftio_wavelet_disc(
         # 2) compare the results
         if len(prediction.dominant_freq) > 0:
             signal_1 = prediction.get_dominant_wave()
-            signal_2 = coefficients_upsampled[
-                0
-            ]  # max(coefficients_upsampled[0])*logicize(coefficients_upsampled[0])
+            # signal_2 = max(coefficients_upsampled[0])*logicize(
+            # coefficients_upsampled[0])
+            signal_2 = coefficients_upsampled[0]
             window_duration = 1 / prediction.get_dominant_freq()
             window_size = int(
                 (t_sampled[-1] - t_sampled[0])
@@ -209,18 +213,16 @@ def ftio_wavelet_disc(
                 * prediction.freq
             )
             corr = sliding_correlation(signal_1, signal_2, window_size)
-            plot_correlation(
-                t_sampled, signal_1, signal_2, corr, window_duration
-            )
 
-            # 3) Extract valid ranges
+            # 3) Extract valid ranges and return
             t_corr = t_sampled[: min(len(signal_1), len(signal_2), len(corr))]
-            ranges = extract_correlation_ranges(
-                t_corr, corr, min_duration=window_duration
+            prediction.ranges = extract_correlation_ranges(
+                t_corr, corr, min_duration=window_duration, verbose=args.verbose
             )
-
-        analysis_figures_wavelet += analysis_figures_dft
-        display_prediction(args, prediction)
+        if any(x in args.engine for x in ["mat", "plot"]):
+            plot_correlation(t_sampled, signal_1, signal_2, corr, window_duration)
+            analysis_figures_wavelet += analysis_figures_dft
+        # display_prediction(args, prediction)
 
     # ? Option 4: Apply autocorrelation on low
     elif "dwt_x_autocorrelation" in analysis:

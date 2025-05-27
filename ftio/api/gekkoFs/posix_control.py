@@ -60,9 +60,7 @@ def move_files_os(
     regex = None
     # Compile the regex pattern if provided
     if args.regex:
-        CONSOLE.print(
-            f"[bold green][Trigger][/][green] Using pattern: {args.regex}[/]\n"
-        )
+        CONSOLE.print(f"[bold green][Trigger][/][green] Using pattern: {args.regex}[/]\n")
         regex = re.compile(args.regex)
 
     # Iterate over all items in the source directory
@@ -87,9 +85,7 @@ def move_files_os(
 
             else:
                 if args.debug:
-                    CONSOLE.print(
-                        f"[bold green][Trigger][/]:  Ignored {file_name}"
-                    )
+                    CONSOLE.print(f"[bold green][Trigger][/]:  Ignored {file_name}")
     else:
         futures = {}
         with ProcessPoolExecutor(max_workers=5) as executor:
@@ -98,9 +94,7 @@ def move_files_os(
                 if regex and regex.match(file_name):
                     if not files_in_progress.in_progress(file_name):
                         files_in_progress.put(file_name)
-                        futures[
-                            executor.submit(move_file, args, file_name, period)
-                        ] = i
+                        futures[executor.submit(move_file, args, file_name, period)] = i
                     else:
                         if args.debug:
                             CONSOLE.print(
@@ -109,9 +103,7 @@ def move_files_os(
 
                 else:
                     if args.debug:
-                        CONSOLE.print(
-                            f"[bold green][Trigger][/]:  Ignored {file_name}"
-                        )
+                        CONSOLE.print(f"[bold green][Trigger][/]:  Ignored {file_name}")
 
             # Process results as they complete
             for future in as_completed(futures):
@@ -121,15 +113,11 @@ def move_files_os(
                     files_in_progress.mark_done(files[futures[future]])
                 except Exception as e:
                     index = futures[future]
-                    CONSOLE.print(
-                        f"[red bold] {files[index]} had an error: {e}[/]"
-                    )
+                    CONSOLE.print(f"[red bold] {files[index]} had an error: {e}[/]")
                     files_in_progress.mark_done(files[index])
 
 
-def move_file(
-    args: argparse.Namespace, file_name: str, period: float = 0
-) -> None:
+def move_file(args: argparse.Namespace, file_name: str, period: float = 0) -> None:
     """
     Stages out a single file if it matches the regex and meets modification time criteria.
 
@@ -148,9 +136,7 @@ def move_file(
             f"[bold green][Trigger][/][bold yellow]: Moving (copy & unlink) file {file_name} (last modified {modification_time:.3} -- threshold {threshold})[/]\n"
         )
         os.makedirs(
-            os.path.dirname(
-                file_name.replace(args.gkfs_mntdir, args.stage_out_path)
-            ),
+            os.path.dirname(file_name.replace(args.gkfs_mntdir, args.stage_out_path)),
             exist_ok=True,
         )
         if fast:
@@ -212,9 +198,7 @@ def get_files(args: argparse.Namespace) -> list[str]:
 
     except Exception as e:
         if args.debug:
-            CONSOLE.print(
-                f"[bold green][Trigger][/][green]: Error encountered  {e}[/]\n"
-            )
+            CONSOLE.print(f"[bold green][Trigger][/][green]: Error encountered  {e}[/]\n")
 
         files = preloaded_call(args, f"ls -R {args.gkfs_mntdir}")
 
@@ -223,9 +207,7 @@ def get_files(args: argparse.Namespace) -> list[str]:
             # if args.debug:
             #     CONSOLE.print(f"[bold green][Trigger][/][green]: Found files are{files}[/]\n")
             files = [f for f in files if "LIBGKFS" not in f]
-            files = [
-                f"{args.gkfs_mntdir}/{item}" for item in files if "." in item
-            ]
+            files = [f"{args.gkfs_mntdir}/{item}" for item in files if "." in item]
 
     if files:
         return files

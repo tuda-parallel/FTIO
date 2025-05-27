@@ -50,21 +50,11 @@ class Simrun:
                     self.assign(data, args, mode, "jsonl")
                 else:
                     self.read_sync = self.merge_parts(data, "read_sync", args)
-                    self.write_sync = self.merge_parts(
-                        data, "write_sync", args
-                    )
-                    self.read_async_t = self.merge_parts(
-                        data, "read_async_t", args
-                    )
-                    self.read_async_b = self.merge_parts(
-                        data, "read_async_b", args
-                    )
-                    self.write_async_t = self.merge_parts(
-                        data, "write_async_t", args
-                    )
-                    self.write_async_b = self.merge_parts(
-                        data, "write_async_b", args
-                    )
+                    self.write_sync = self.merge_parts(data, "write_sync", args)
+                    self.read_async_t = self.merge_parts(data, "read_async_t", args)
+                    self.read_async_b = self.merge_parts(data, "read_async_b", args)
+                    self.write_async_t = self.merge_parts(data, "write_async_t", args)
+                    self.write_async_b = self.merge_parts(data, "write_async_b", args)
                     if any("io_time" in d for d in data):
                         self.io_time = self.merge_parts(data, "io_time", args)
                     else:
@@ -95,18 +85,10 @@ class Simrun:
             #! standard json files
             self.read_sync = Sample(data["read_sync"], "read_sync", args)
             self.write_sync = Sample(data["write_sync"], "write_sync", args)
-            self.read_async_t = Sample(
-                data["read_async_t"], "read_async_t", args
-            )
-            self.read_async_b = Sample(
-                data["read_async_b"], "read_async_b", args
-            )
-            self.write_async_t = Sample(
-                data["write_async_t"], "write_async_t", args
-            )
-            self.write_async_b = Sample(
-                data["write_async_b"], "write_async_b", args
-            )
+            self.read_async_t = Sample(data["read_async_t"], "read_async_t", args)
+            self.read_async_b = Sample(data["read_async_b"], "read_async_b", args)
+            self.write_async_t = Sample(data["write_async_t"], "write_async_t", args)
+            self.write_async_b = Sample(data["write_async_b"], "write_async_b", args)
             if "io_time" in data:
                 self.io_time = Time(data["io_time"], self.ranks, args)
                 self.io_percent = Percent(self.io_time)
@@ -128,21 +110,13 @@ class Simrun:
             if "read_sync" == mode:
                 self.read_sync = self.merge_parts(data, "read_sync", args)
             elif "read_async" == mode:
-                self.read_async_t = self.merge_parts(
-                    data, "read_async_t", args
-                )
-                self.read_async_b = self.merge_parts(
-                    data, "read_async_b", args
-                )
+                self.read_async_t = self.merge_parts(data, "read_async_t", args)
+                self.read_async_b = self.merge_parts(data, "read_async_b", args)
             elif "write_sync" == mode:
                 self.write_sync = self.merge_parts(data, "write_sync", args)
             elif "write_async" == mode:
-                self.write_async_t = self.merge_parts(
-                    data, "write_async_t", args
-                )
-                self.write_async_b = self.merge_parts(
-                    data, "write_async_b", args
-                )
+                self.write_async_t = self.merge_parts(data, "write_async_t", args)
+                self.write_async_b = self.merge_parts(data, "write_async_b", args)
             else:
                 pass
 
@@ -154,25 +128,17 @@ class Simrun:
             if "read_sync" == mode:
                 self.read_sync = Sample(data["read_sync"], "read_sync", args)
             elif "read_async" == mode:
-                self.read_async_t = Sample(
-                    data["read_async_t"], "read_async_t", args
-                )
+                self.read_async_t = Sample(data["read_async_t"], "read_async_t", args)
                 if "read_async_b" in data:
-                    self.read_async_b = Sample(
-                        data["read_async_b"], "read_async_b", args
-                    )
+                    self.read_async_b = Sample(data["read_async_b"], "read_async_b", args)
             elif "write_async" == mode:
-                self.write_async_t = Sample(
-                    data["write_async_t"], "write_async_t", args
-                )
+                self.write_async_t = Sample(data["write_async_t"], "write_async_t", args)
                 if "write_async_b" in data:
                     self.write_async_b = Sample(
                         data["write_async_b"], "write_async_b", args
                     )
             elif "write_sync" == mode:
-                self.write_sync = Sample(
-                    data["write_sync"], "write_sync", args
-                )
+                self.write_sync = Sample(data["write_sync"], "write_sync", args)
 
     def reset(self, args):
         """sets all fields to empty. This is usually followed by a assign call

@@ -69,16 +69,12 @@ def main(args=parse_options()):
     # json.dump(data,out_file)
     with open(args.outfile, "w") as out_file:
         out_file.write(
-            "{"
-            + ",\n".join(f'"{i}":' + json.dumps(data[i]) for i in data)
-            + "}\n"
+            "{" + ",\n".join(f'"{i}":' + json.dumps(data[i]) for i in data) + "}\n"
         )
 
 
 def scale(data_dict: dict, field: str, value: int = 1000000):
-    if isinstance(data_dict[field], float) or isinstance(
-        data_dict[field], int
-    ):
+    if isinstance(data_dict[field], float) or isinstance(data_dict[field], int):
         data_dict[field] * value
     elif isinstance(data_dict[field], list):
         data_dict[field] = list(np.array(data_dict[field]) * value)

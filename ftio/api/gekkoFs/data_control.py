@@ -57,9 +57,7 @@ class DataControl:
 
         while not self.stop_event.is_set():
             # Wait for events (like messages) on the socket
-            events = dict(
-                poller.poll(timeout=100)
-            )  # Timeout in milliseconds (100ms)
+            events = dict(poller.poll(timeout=100))  # Timeout in milliseconds (100ms)
 
             # Check if there is an event on the socket
             if socket in events and events[socket] == zmq.POLLIN:
@@ -78,9 +76,7 @@ class DataControl:
                 0.1
             )  # Add sleep to avoid tight loop, can be adjusted or omitted based on your needs
 
-    def move_file(
-        self, file: str, counter: int, monitored_files: list
-    ) -> None:
+    def move_file(self, file: str, counter: int, monitored_files: list) -> None:
         """
         Move a single file and print its progress.
 
@@ -111,9 +107,7 @@ class DataControl:
             )
 
         except Exception as e:
-            self.console.print(
-                f"[Error] Error moving file {file}: {e}", style="bold red"
-            )
+            self.console.print(f"[Error] Error moving file {file}: {e}", style="bold red")
 
     def process_files(self) -> None:
         """
@@ -128,9 +122,7 @@ class DataControl:
             with Pool(processes=2) as pool:  # Use 2 processes
                 # Distribute the files and pass the counter and monitored files for progress tracking
                 results = [
-                    pool.apply_async(
-                        self.move_file, (file, counter, monitored_files)
-                    )
+                    pool.apply_async(self.move_file, (file, counter, monitored_files))
                     for file in monitored_files
                 ]
 
@@ -139,9 +131,7 @@ class DataControl:
                     result.wait()
 
         except Exception as e:
-            self.console.print(
-                f"[Error] Error processing files: {e}", style="bold red"
-            )
+            self.console.print(f"[Error] Error processing files: {e}", style="bold red")
 
     def __del__(self) -> None:
         """
@@ -149,14 +139,10 @@ class DataControl:
         """
         self.stop_event.set()  # Set the stop event to signal the worker to stop
         self.worker_proc.join()  # Wait for the worker process to terminate
-        self.console.print(
-            "[DataControl] Worker process stopped.", style="bold green"
-        )
+        self.console.print("[DataControl] Worker process stopped.", style="bold green")
 
 
-def trigger_data_controller(
-    address: str = "127.0.0.1", port: str = "65432"
-) -> None:
+def trigger_data_controller(address: str = "127.0.0.1", port: str = "65432") -> None:
     """
     Trigger the worker process to start processing files. The main process sends a 'START' signal
     to the worker, and the worker will scan the directory for files, print their modification timestamps,

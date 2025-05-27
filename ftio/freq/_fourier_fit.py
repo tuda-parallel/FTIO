@@ -152,13 +152,12 @@ def plot_fourier_fit(
     if show_top:
         N = len(prediction.top_freqs["freq"])
         for k in range(N):
-            a = prediction.top_freqs["amp"][k] / N
+            amp = prediction.top_freqs["amp"][k] / N
             if k != 0 and not (N % 2 != 0 and k == N - 1):
-                a *= 2
-                f = prediction.top_freqs["freq"][k]
+                freq = prediction.top_freqs["freq"][k]
+                amp *= 2
                 phi = prediction.top_freqs["phi"][k]
-                trace = a * np.cos(2 * np.pi * f * t + phi)
-                label = f"{a:.1e}*cos(2\u03c0*{f:.2e}*t+{phi:.2e})"
+                trace, label = prediction.get_wave_and_name(freq, amp, phi)
                 components.append((trace, label))
 
     if "mat" in args.engine.lower():
@@ -181,12 +180,8 @@ def plot_fourier_fit(
                 line=dict(dash="dash"),
             )
         )
-        fig.add_trace(
-            go.Scatter(x=t, y=cA_fourier_fit, mode="lines", name="Fourier Sum")
-        )
+        fig.add_trace(go.Scatter(x=t, y=cA_fourier_fit, mode="lines", name="Fourier Sum"))
         if show_top:
             for wave, label in components:
-                fig.add_trace(
-                    go.Scatter(x=t, y=wave, mode="lines", name=label)
-                )
+                fig.add_trace(go.Scatter(x=t, y=wave, mode="lines", name=label))
     return fig

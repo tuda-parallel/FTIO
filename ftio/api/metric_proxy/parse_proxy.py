@@ -50,9 +50,7 @@ def extract(json_data, match, verbose=False):
                 if verbose:
                     print(f"matched {key}")
                 x = np.array(value)
-                x = np.nan_to_num(
-                    x=x, copy=False, nan=0.0, posinf=0.0, neginf=0.0
-                )
+                x = np.nan_to_num(x=x, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
                 t_out = x[:, 0]
                 b_out = x[:, 1]
                 # remove None from b
@@ -84,11 +82,7 @@ def filter_metrics(
 
     if exclude:
         old_length = len(metrics)
-        metrics = [
-            metric
-            for metric in metrics
-            if all(n not in metric for n in exclude)
-        ]
+        metrics = [metric for metric in metrics if all(n not in metric for n in exclude)]
         text = ", ".join([str(item) for item in exclude])
         CONSOLE.info(
             f"[blue]\nExcluded matches for: \\[{text}]\nMetrics reduced further from {old_length} to {len(metrics)}[/]"
@@ -119,9 +113,7 @@ def filter_metrics(
                 out[new_key] = out.pop(old_key)
 
         if len(set(["time", "hits", "size"]) & set(exclude)) == 2:
-            keys_to_rename = [
-                (metric, metric.rsplit("__", 1)[-1]) for metric in out
-            ]
+            keys_to_rename = [(metric, metric.rsplit("__", 1)[-1]) for metric in out]
             # Perform renaming after collecting all keys
             if keys_to_rename:
                 CONSOLE.info(
@@ -180,18 +172,12 @@ def load_proxy_trace_stdin(deriv_and_not_deriv: bool = True, exclude=None):
 
 
 def clean_metrics(metrics: str):
-    deriv_metrics = [
-        metric for metric in metrics if metric.startswith("deriv")
-    ]
-    non_deriv_metrics = [
-        metric for metric in metrics if not metric.startswith("deriv")
-    ]
+    deriv_metrics = [metric for metric in metrics if metric.startswith("deriv")]
+    non_deriv_metrics = [metric for metric in metrics if not metric.startswith("deriv")]
     cleaned_metrics = [
         metric
         for metric in metrics
-        if not (
-            metric in non_deriv_metrics and "deriv__" + metric in deriv_metrics
-        )
+        if not (metric in non_deriv_metrics and "deriv__" + metric in deriv_metrics)
     ]
     CONSOLE.info(
         f"[blue]Metrics reduced from {len(metrics)} to {len(cleaned_metrics)}[/]"

@@ -23,9 +23,7 @@ def get_time_behavior(df) -> list[dict]:
                 # print(f"  \033[1;32mRanks {i}\033[1;0m")
                 file_index = df[1]["file_index"][ranks].isin([j])
                 time = df[1]["t_overlap"][ranks][file_index].to_numpy()
-                bandwidth = df[1]["b_overlap_avr"][ranks][
-                    file_index
-                ].to_numpy()
+                bandwidth = df[1]["b_overlap_avr"][ranks][file_index].to_numpy()
                 try:
                     total_bytes = df[0]["total_bytes"].to_numpy()
                     total_bytes = int(float(total_bytes[-1]))

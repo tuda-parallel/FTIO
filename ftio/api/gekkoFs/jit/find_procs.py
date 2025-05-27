@@ -102,9 +102,7 @@ for node in args.nodes:
 
                 # Adjust problem_size to be divisible by the LCM of all dims
                 if lcm_value != 0 and ADJUSTED_PROBLEM_SIZE % lcm_value != 0:
-                    ADJUSTED_PROBLEM_SIZE += (
-                        lcm_value - ADJUSTED_PROBLEM_SIZE % lcm_value
-                    )
+                    ADJUSTED_PROBLEM_SIZE += lcm_value - ADJUSTED_PROBLEM_SIZE % lcm_value
 
     else:
         # Calculate problem_size as dim * scale_problem (this is based on the first `dim` value)
@@ -112,9 +110,7 @@ for node in args.nodes:
 
     # Print the result using rich console
     CONSOLE.print(f"\n[bold green]total nodes[/bold green]: {node}")
-    CONSOLE.print(
-        f"[bold green]procs per node[/bold green]: {tmp_procs_per_node}"
-    )
+    CONSOLE.print(f"[bold green]procs per node[/bold green]: {tmp_procs_per_node}")
     CONSOLE.print(f"[bold green]problem_size[/bold green]: {problem_size}")
     CONSOLE.print(f"[bold green]dims[/bold green]: {dim}")
     CONSOLE.print(
@@ -152,9 +148,7 @@ if args.weak_scaling and len(NODES) > 1:
             f"jit -n {NODES[i]+1} -j $JOBID -p {PROCS_PER_NODE[i]}  -s -a s3d --app-flags "
             f"'{ADJUSTED_PROBLEM_SIZE} {ADJUSTED_PROBLEM_SIZE} {ADJUSTED_PROBLEM_SIZE} {dim} {dim} {dim} 0 F .'"
         )
-        txt += (
-            f"{updated_call} ; {updated_call} -x ; {updated_call} -e ftio ; "
-        )
+        txt += f"{updated_call} ; {updated_call} -x ; {updated_call} -e ftio ; "
         # txt += f"{updated_call} -e cargo ; {updated_call} -x  ; "
     print(txt)
 

@@ -39,9 +39,7 @@ def merge_predictions(
         CONSOLE.print(f"[cyan]Merging Started:[/]\n")
         text = f"Merging Autocorrelation and {args.transformation.upper()}\n"
         if not pred_auto.is_empty() and not np.isnan(pred_auto.dominant_freq):
-            pred_merged, text = merge_core(
-                pred_dft, pred_auto, args.freq, text
-            )
+            pred_merged, text = merge_core(pred_dft, pred_auto, args.freq, text)
             if pred_merged.dominant_freq:
                 text += f"Dominant frequency: [blue bold]{np.round(pred_merged.dominant_freq[-1],4)}[/] Hz -> [blue bold]{np.round(1/pred_merged.dominant_freq[-1],4)}[/] sec\n"
                 text += f"Confidence: [bold]{color_pred(pred_merged.conf[-1])}{np.round(pred_merged.conf[-1]*100,2)}[/] %\n"
@@ -57,9 +55,7 @@ def merge_predictions(
                 title_align="left",
             )
         )
-        CONSOLE.print(
-            f"\n[cyan]Merging finished:[/] {time.time() - tik:.3f} s"
-        )
+        CONSOLE.print(f"\n[cyan]Merging finished:[/] {time.time() - tik:.3f} s")
 
         if any(x in args.engine for x in ["mat", "plot"]):
             analysis_figures.args = args
@@ -93,24 +89,20 @@ def merge_core(
             alike = (
                 pred_auto.dominant_freq[dominant_index_auto]
                 - abs(
-                    pred_dft.dominant_freq
-                    - pred_auto.dominant_freq[dominant_index_auto]
+                    pred_dft.dominant_freq - pred_auto.dominant_freq[dominant_index_auto]
                 )
             ) / pred_auto.dominant_freq[dominant_index_auto]
             text += f"Frequencies [yellow]{np.round(pred_dft.dominant_freq,4)}[/] Hz match [yellow]{np.round(pred_auto.dominant_freq,4)}[/] Hz by:\n[yellow]{np.round(alike,4)}[/]%\n\n"
             dominant_index = np.argmax(alike)
             dominant_freq = pred_dft.dominant_freq[dominant_index]
             conf = (
-                pred_dft.conf[dominant_index]
-                + pred_auto.conf[dominant_index_auto]
+                pred_dft.conf[dominant_index] + pred_auto.conf[dominant_index_auto]
             ) / 2
         elif "hits" in method:
             tol = 2 / freq  # 2 frequency steps
             hits = np.zeros(len(pred_dft.dominant_freq))
             if "ratio" in method:
-                alike = np.zeros(
-                    (len(pred_dft.dominant_freq), len(pred_auto.candidates))
-                )
+                alike = np.zeros((len(pred_dft.dominant_freq), len(pred_auto.candidates)))
             else:  # cov method
                 alike = np.zeros(len(pred_dft.dominant_freq))
 
@@ -200,23 +192,3 @@ def merge_core(
     pred_merged.dominant_freq = out_freq
     pred_merged.conf = out_conf
     return pred_merged, text
-
-
-def color_pred(conf: float) -> str:
-    """highlight color according to value
-
-    Args:
-        conf (float): value between [0,1]
-
-    Returns:
-        string: color to be used with Console (from rich)
-    """
-    if conf >= 0.8:
-        color = "[green]"
-    elif conf >= 0.6:
-        color = "[blue]"
-    elif conf >= 0.3:
-        color = "[yellow]"
-    else:
-        color = "[red]"
-    return color

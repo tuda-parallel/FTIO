@@ -66,9 +66,7 @@ def find_autocorrelation(
             total_bytes = share.get("total_bytes")
         else:
             total_bytes = 0
-            bandwidth = (
-                data["bandwidth"] if "bandwidth" in data else np.array([])
-            )
+            bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
             time_stamps = data["time"] if "time" in data else np.array([])
             t_s = time_stamps[0]
             t_e = time_stamps[-1]
@@ -78,10 +76,7 @@ def find_autocorrelation(
                 bandwidth = bandwidth[len(bandwidth) - len(time_stamps) :]
                 total_bytes = np.sum(
                     bandwidth
-                    * (
-                        np.concatenate([time_stamps[1:], time_stamps[-1:]])
-                        - time_stamps
-                    )
+                    * (np.concatenate([time_stamps[1:], time_stamps[-1:]]) - time_stamps)
                 )
                 console.print(f"[purple]Start time set to {args.ts:.2f}")
             else:
@@ -93,10 +88,7 @@ def find_autocorrelation(
                 bandwidth = bandwidth[len(bandwidth) - len(time_stamps) :]
                 total_bytes = np.sum(
                     bandwidth
-                    * (
-                        np.concatenate([time_stamps[1:], time_stamps[-1:]])
-                        - time_stamps
-                    )
+                    * (np.concatenate([time_stamps[1:], time_stamps[-1:]]) - time_stamps)
                 )
                 console.print(f"[purple]End time set to {args.te:.2f}")
             else:
@@ -119,9 +111,7 @@ def find_autocorrelation(
         prediction.total_bytes = total_bytes
         prediction.freq = freq
         prediction.candidates = candidates
-        console.print(
-            f"\n[cyan]Autocorrelation finished:[/] {time.time() - tik:.3f} s"
-        )
+        console.print(f"\n[cyan]Autocorrelation finished:[/] {time.time() - tik:.3f} s")
 
     return prediction
 
@@ -160,29 +150,17 @@ def filter_outliers(
                 (candidates < q1 - threshold) | (candidates > q3 + threshold)
             )
         elif "z" in method:
-            text += (
-                "Filtering method: [purple]Z-score with weighteed mean[/]\n"
-            )
+            text += "Filtering method: [purple]Z-score with weighteed mean[/]\n"
             # With Zscore:
-            mean = (
-                np.average(candidates, weights=weights)
-                if len(weights) > 0
-                else 0
-            )
+            mean = np.average(candidates, weights=weights) if len(weights) > 0 else 0
             # std = np.std(candidates)
             std = (
-                np.sqrt(
-                    np.abs(
-                        np.average((candidates - mean) ** 2, weights=weights)
-                    )
-                )
+                np.sqrt(np.abs(np.average((candidates - mean) ** 2, weights=weights)))
                 if len(weights) > 0
                 else 0
             )
             text += f"Wighted mean is [purple]{mean:.3f}[/] and weighted std. is [purple]{std:.3f}[/]\n"
-            z_score = (
-                np.abs((candidates - mean) / std) if std != 0 else np.array([])
-            )
+            z_score = np.abs((candidates - mean) / std) if std != 0 else np.array([])
             outliers = np.where(z_score > 1)
             text += f"Z-score is [purple]{print_array(z_score)}[/]\n"
 
@@ -234,9 +212,7 @@ def find_fd_autocorrelation(
     # Calculating period and its statistics
     if candidates.size > 0:
         mean = np.average(candidates, weights=weights)
-        std = np.sqrt(
-            np.abs(np.average((candidates - mean) ** 2, weights=weights))
-        )
+        std = np.sqrt(np.abs(np.average((candidates - mean) ** 2, weights=weights)))
         tmp = [f"{1/i:.4f}" for i in candidates]  # Formatting frequencies
         periodicity = mean
         coef_var = np.abs(std / mean)
@@ -271,9 +247,7 @@ def find_fd_autocorrelation(
     # plot
     if any(x in args.engine for x in ["mat", "plot"]):
         console.print(f"Generating Autocorrelation Plot\n")
-        fig = plot_autocorr_results(
-            args, acorr, peaks, outliers, len(candidates) > 0
-        )
+        fig = plot_autocorr_results(args, acorr, peaks, outliers, len(candidates) > 0)
         analysis_figures.add_figure([fig], "Autocorrelation")
         console.print(f" --- Done --- \n")
 

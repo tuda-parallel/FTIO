@@ -31,9 +31,7 @@ def main(argv=sys.argv[1:]):
     # Read the CSV files into DataFrames and store their basenames
     for file_path in args.file_paths:
         df = pd.read_csv(file_path)
-        basename = os.path.basename(
-            file_path
-        )  # Extract basename from file path
+        basename = os.path.basename(file_path)  # Extract basename from file path
         basename = os.path.splitext(basename)[0]  # Remove extension
         df["Source File"] = basename  # Add a new column with the basename
         dataframes.append(df)
@@ -138,9 +136,7 @@ def sub_plots(df):
         )
         # Clean the 'Value' column: Convert to numeric, coerce errors to NaN
         # metric_df['Value'] = pd.to_numeric(metric_df['Value'], errors='coerce')
-        metric_df.loc[:, "Value"] = pd.to_numeric(
-            metric_df["Value"], errors="coerce"
-        )
+        metric_df.loc[:, "Value"] = pd.to_numeric(metric_df["Value"], errors="coerce")
 
         # Drop rows where 'Value' could not be converted to numeric (i.e., NaN)
         metric_df = metric_df.dropna(subset=["Value"])
@@ -151,9 +147,7 @@ def sub_plots(df):
             fig.add_annotation(
                 x=s,  # Use specific source file as x coordinate
                 y=metric_df[metric_df["Source File"] == s]["Value"].max(),
-                text=str(
-                    len(metric_df[metric_df["Source File"] == s]["Value"])
-                ),
+                text=str(len(metric_df[metric_df["Source File"] == s]["Value"])),
                 yshift=10,
                 showarrow=False,
                 col=order[i][0],

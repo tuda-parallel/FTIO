@@ -125,22 +125,20 @@ def z_score(
     )
     text += f"[green]mean[/]: {mean/np.sum(amp_tmp) if np.sum(amp_tmp) else 0:.3e}\n[green]std[/]: {std:.3e}\n"
     text += f"Frequencies with Z-score > 3 -> [green]{len(z_k[z_k>3])}[/] candidates\n"
-    text += f"         + Z > Z_max*{tol*100}% > 3 -> [green]{len(index[0])}[/] candidates\n"
+    text += (
+        f"         + Z > Z_max*{tol*100}% > 3 -> [green]{len(index[0])}[/] candidates\n"
+    )
     if len(index[0]) > 3:
         counter = 0
         for i in index[0]:
             counter += 1
             text += f"           {counter}) {1/freq_arr[i+1]:.3f} s: z_k = {z_k[i]/np.max(z_k):.2f}\n"
 
-    index, removed_index, msg = remove_harmonics(
-        freq_arr, amp_tmp, indices[index[0]]
-    )
+    index, removed_index, msg = remove_harmonics(freq_arr, amp_tmp, indices[index[0]])
     text += msg
 
     if len(index) == 0:
-        text += (
-            "[red]No dominant frequency -> Signal might be not periodic[/]\n"
-        )
+        text += "[red]No dominant frequency -> Signal might be not periodic[/]\n"
     else:
         removed_index = [i - 1 for i in removed_index]  # tmp starts at 1
         # conf[index] = (z_k[index]/max_z  + z_k[index]/np.sum(z_k[index]) + 1/np.sum(z_k > 3))/3
@@ -199,9 +197,7 @@ def db_scan(
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
     #! norm over sum for amplitude with power spectrum
-    d = np.vstack(
-        (freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())
-    ).T
+    d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
 
     eps_mode = "range"
     if eps_mode == "avr":
@@ -251,15 +247,11 @@ def db_scan(
     model.fit(d)
     dominant_index = model.labels_
     # normalize like the remaing methods
-    dominant_index[dominant_index == -1] = (
-        dominant_index[dominant_index == -1] - 1
-    )
+    dominant_index[dominant_index == -1] = dominant_index[dominant_index == -1] - 1
     dominant_index = dominant_index + 1
 
     if "plotly" in args.engine:
-        plot_outliers(
-            args, freq_arr, amp, indecies, conf, dominant_index, d, eps
-        )
+        plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d, eps)
 
     clean_index, _, msg = remove_harmonics(
         freq_arr, amp_tmp, indecies[dominant_index == -1]
@@ -296,9 +288,7 @@ def isolation_forest(
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
     #! norm over sum for amplitude with power spectrum
-    d = np.vstack(
-        (freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())
-    ).T
+    d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
 
     model = IsolationForest(contamination=0.001, warm_start=True)
     # model = IsolationForest(contamination=float(0.001),warm_start=True, n_estimators=2)
@@ -347,9 +337,7 @@ def lof(
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
     #! norm over sum for amplitude with power spectrum
-    d = np.vstack(
-        (freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())
-    ).T
+    d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
 
     model = LocalOutlierFactor(contamination=0.001, novelty=True)
     model.fit(d)
@@ -398,9 +386,7 @@ def peaks(
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
     #! norm over sum for amplitude with power spectrum
-    d = np.vstack(
-        (freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())
-    ).T
+    d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
 
     limit = 1.2 * np.mean(d[:, 1])
     found_peaks, _ = find_peaks(d[:, 1], height=limit if limit > 0.2 else 0.2)
@@ -454,9 +440,7 @@ def dominant(
     return out, text
 
 
-def remove_harmonics(
-    freq_arr, amp_tmp, index_list
-) -> tuple[np.ndarray, list, str]:
+def remove_harmonics(freq_arr, amp_tmp, index_list) -> tuple[np.ndarray, list, str]:
     """Removes harmonics
 
     Args:

@@ -6,9 +6,7 @@ from plotly.offline import get_plotlyjs
 from rich.console import Console
 
 
-def create_html(
-    figs: list, render: str, configuration: dict, name: str = "freq"
-) -> None:
+def create_html(figs: list, render: str, configuration: dict, name: str = "freq") -> None:
     console = Console()
     if platform == "linux" or platform == "linux2":
         os.system(f"rm -f ./{name}.html || true")
@@ -30,11 +28,7 @@ def create_html(
         s = ""
         for fig in figs:
             # s = s + fig.to_html(include_plotlyjs=False) + "\n"
-            s = (
-                s
-                + fig.to_html(config=configuration, include_plotlyjs=False)
-                + "\n"
-            )
+            s = s + fig.to_html(config=configuration, include_plotlyjs=False) + "\n"
 
         template = template.format(plotly=get_plotlyjs(), plots=s)
         with open(f"{name}.html", "a") as file:

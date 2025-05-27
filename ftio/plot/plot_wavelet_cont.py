@@ -209,9 +209,7 @@ def matplot_plot_scales(
         raise ValueError("Power spectrum must be a 2D array (scales, time)")
 
     # Set up the figure and subplots
-    fig, axes = plt.subplots(
-        len(scales) + 2, 1, figsize=(10, 6), sharex=common_xaxis
-    )
+    fig, axes = plt.subplots(len(scales) + 2, 1, figsize=(10, 6), sharex=common_xaxis)
     axes = axes.flatten()
 
     # Plot the time series on the first subplot
@@ -349,9 +347,7 @@ def plotly_dominant_scale(
             fig.add_trace(peak_trace)
 
     if subplot:
-        fig.update_xaxes(
-            title_text="Time (seconds)", row=subplot[0], col=subplot[1]
-        )
+        fig.update_xaxes(title_text="Time (seconds)", row=subplot[0], col=subplot[1])
         fig.update_yaxes(title_text="Power", row=subplot[0], col=subplot[1])
     else:
         fig.update_layout(
@@ -386,17 +382,11 @@ def plotly_wave_cont_spectrum(
     if fig is None:
         fig = go.Figure()
 
-    heatmap = go.Heatmap(
-        x=t, y=frequencies, z=power_spectrum, colorscale="viridis"
-    )
+    heatmap = go.Heatmap(x=t, y=frequencies, z=power_spectrum, colorscale="viridis")
     if subplot:
         fig.add_trace(heatmap, row=subplot[0], col=subplot[1])
-        fig.update_xaxes(
-            title_text="Time (seconds)", row=subplot[0], col=subplot[1]
-        )
-        fig.update_yaxes(
-            title_text="Frequencies (Hz)", row=subplot[0], col=subplot[1]
-        )
+        fig.update_xaxes(title_text="Time (seconds)", row=subplot[0], col=subplot[1])
+        fig.update_yaxes(title_text="Frequencies (Hz)", row=subplot[0], col=subplot[1])
     else:
         fig.add_trace(heatmap)
         fig.update_layout(
@@ -445,9 +435,7 @@ def plotly_wave_cont_and_spectrum(
     fig = plotly_wave_cont_spectrum(
         t, frequencies, power_spectrum, subplot=[1, 1], fig=fig
     )
-    fig = plotly_dominant_scale(
-        t, dominant_power, label, peaks, subplot=[2, 1], fig=fig
-    )
+    fig = plotly_dominant_scale(t, dominant_power, label, peaks, subplot=[2, 1], fig=fig)
 
     for i in range(1, rows):
         fig.update_xaxes(showticklabels=True, row=i, col=1)
@@ -496,9 +484,7 @@ def plotly_plot_scales(
         shared_xaxes=common_xaxis,
     )
     fig.add_trace(
-        go.Scatter(
-            x=t, y=b, mode="lines", name="Time Series", line=dict(color="blue")
-        ),
+        go.Scatter(x=t, y=b, mode="lines", name="Time Series", line=dict(color="blue")),
         row=1,
         col=1,
     )
@@ -566,9 +552,7 @@ def plotly_plot_scales_all_in_one(
     )
     fig = go.Figure()
     fig.add_trace(
-        go.Scatter(
-            x=t, y=b, mode="lines", name=names[0], line=dict(color="blue")
-        )
+        go.Scatter(x=t, y=b, mode="lines", name=names[0], line=dict(color="blue"))
     )
     for i, scale in enumerate(scales):
         fig.add_trace(
@@ -667,13 +651,9 @@ def plot_wave_cont_spectrum(
         plt.Figure: Matplotlib or Plotly figure object.
     """
     if "plotly" in args.engine:
-        fig = plotly_wave_cont_spectrum(
-            t, frequencies, power_spectrum_all_scales
-        )
+        fig = plotly_wave_cont_spectrum(t, frequencies, power_spectrum_all_scales)
     else:
-        fig = matplot_wave_cont_spectrum(
-            t, frequencies, power_spectrum_all_scales
-        )
+        fig = matplot_wave_cont_spectrum(t, frequencies, power_spectrum_all_scales)
 
     return fig
 
@@ -731,13 +711,9 @@ def plot_scales(
         plt.Figure: Matplotlib or Plotly figure object.
     """
     if "plotly" in args.engine:
-        fig = plotly_plot_scales(
-            t, b, power_spectrum, frequencies, scales, common_xaxis
-        )
+        fig = plotly_plot_scales(t, b, power_spectrum, frequencies, scales, common_xaxis)
     else:
-        fig = matplot_plot_scales(
-            t, b, power_spectrum, frequencies, scales, common_xaxis
-        )
+        fig = matplot_plot_scales(t, b, power_spectrum, frequencies, scales, common_xaxis)
 
     return fig
 
@@ -770,8 +746,6 @@ def plot_scales_all_in_one(
             t, b, power_spectrum, frequencies, scales, peaks
         )
     else:
-        fig = matplotlib_plot_scales_all_in_one(
-            t, b, power_spectrum, frequencies, scales
-        )
+        fig = matplotlib_plot_scales_all_in_one(t, b, power_spectrum, frequencies, scales)
 
     return fig

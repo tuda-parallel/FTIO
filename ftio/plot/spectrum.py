@@ -62,9 +62,7 @@ def plot_spectrum(
     return fig_tmp, name + unit
 
 
-def plot_both_spectrums(
-    args, freq: np.ndarray, amp: np.ndarray, full: bool = True
-):
+def plot_both_spectrums(args, freq: np.ndarray, amp: np.ndarray, full: bool = True):
     fig_1 = make_subplots(
         rows=2,
         cols=2,

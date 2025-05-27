@@ -64,9 +64,7 @@ def main(args: list[str] = sys.argv[1:]) -> None:
     setup_cargo(data_stager_args)
 
     # bind to socket
-    socket = bind_socket(
-        data_stager_args.zmq_address, data_stager_args.zmq_port
-    )
+    socket = bind_socket(data_stager_args.zmq_address, data_stager_args.zmq_port)
     # can be extended to listen to multiple sockets
     poller = zmq.Poller()
     poller.register(socket, zmq.POLLIN)
@@ -91,9 +89,7 @@ def main(args: list[str] = sys.argv[1:]) -> None:
 
                 if not msgs:
                     # CONSOLE.print('[red]No messages[/]')
-                    status.update(
-                        "[cyan]Waiting for messages\n", spinner="dots"
-                    )
+                    status.update("[cyan]Waiting for messages\n", spinner="dots")
                     continue
                 CONSOLE.print(f"[cyan]Got message from {ranks}:[/]")
                 status.update("")
@@ -125,9 +121,7 @@ def prediction_zmq_process(
     """
     t_prediction = time.time()
     console = Console()
-    console.print(
-        f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/]  Started"
-    )
+    console.print(f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/]  Started")
 
     # Modify the arguments
     args.extend(["-ts", f"{shared_resources.start_time.value:.2f}"])
@@ -144,9 +138,7 @@ def prediction_zmq_process(
     )
 
     # get data
-    freq, conf = get_dominant_and_conf(
-        prediction
-    )  # just get a single dominant value
+    freq, conf = get_dominant_and_conf(prediction)  # just get a single dominant value
     # save prediction results
     save_data(prediction, shared_resources)
     # display results
@@ -161,9 +153,7 @@ def prediction_zmq_process(
         shared_resources.data.append(shared_resources.queue.get())
 
     # calculate probability
-    prob = find_probability(
-        shared_resources.data, counter=shared_resources.count.value
-    )
+    prob = find_probability(shared_resources.data, counter=shared_resources.count.value)
 
     probability = -1
     for p in prob:
@@ -188,12 +178,8 @@ def prediction_zmq_process(
         }
     )
 
-    console.print(
-        f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Ended"
-    )
-    shared_resources.count.value += (
-        1  # proc-safe, as manager already handles this
-    )
+    console.print(f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Ended")
+    shared_resources.count.value += 1  # proc-safe, as manager already handles this
 
 
 if __name__ == "__main__":

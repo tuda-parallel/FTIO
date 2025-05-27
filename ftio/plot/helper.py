@@ -55,9 +55,7 @@ def format_plot_and_ticks(
         )
     if font:
         fig.update_layout(
-            font=dict(
-                family="Courier New, monospace", size=font_size, color="black"
-            )
+            font=dict(family="Courier New, monospace", size=font_size, color="black")
         )
 
     fig.update_layout(
@@ -114,7 +112,7 @@ def format_plot_and_ticks(
     return fig
 
 
-def format_plot(fig: go.Figure, font_size: int = 24) -> go.Figure:
+def format_plot(fig: go.Figure, font_size: int = 22) -> go.Figure:
     """Applies uniform formatting to the plot.
 
     Args:
@@ -127,13 +125,11 @@ def format_plot(fig: go.Figure, font_size: int = 24) -> go.Figure:
     fig.update_layout(
         plot_bgcolor="white",
         legend=dict(
-            bgcolor="rgba(255,255,255,.99)",
+            bgcolor="rgba(255,255,255,.8 )",
             bordercolor="Black",
             borderwidth=1,
         ),
-        font=dict(
-            family="Courier New, monospace", size=font_size, color="black"
-        ),
+        font=dict(family="Courier New, monospace", size=font_size, color="black"),
         # margin=dict(l=5, r=5, t=5, b=5) #IEEE
         # margin=dict(t=top_margin),
     )
@@ -210,9 +206,7 @@ def add_fig_row(
         # self.f_t.append(go.Figure())
         f = make_subplots(rows=1, cols=1, specs=specs)
     else:
-        f = make_subplots(
-            rows=nRun, cols=1, specs=specs, subplot_titles=subplot_titles
-        )
+        f = make_subplots(rows=nRun, cols=1, specs=specs, subplot_titles=subplot_titles)
 
     return f
 

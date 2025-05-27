@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages]
-find = {}
+find = { }
 # include = ["ftio*"]  # package names should match these glob patterns (["*"] by default)
 # exclude = ["ftio.tests*"]  
 
@@ -12,50 +12,50 @@ find = {}
 name = "ftio-hpc"
 dynamic = ["version"]
 dependencies = [
-	"scikit-learn",
-	"pyzmq",
-	"numba",
-	"darshan",
-	"scipy",
-	"pandas",
-	"orjson",
-	"jsonlines",
-	"plotly",
-	"kneed",
-	"PyWavelets",
-	"msgpack",
-	"rich",
-	"pytest",
-	"fastcluster",
+    "scikit-learn",
+    "pyzmq",
+    "numba",
+    "darshan",
+    "scipy",
+    "pandas",
+    "orjson",
+    "jsonlines",
+    "plotly",
+    "kneed",
+    "PyWavelets",
+    "msgpack",
+    "rich",
+    "pytest",
+    "fastcluster",
 ]
 
 requires-python = ">=3.8"
 authors = [{ name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de" }]
 maintainers = [
-	{ name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de" },
+    { name = "Ahmad Tarraf", email = "ahmad.tarraf@tu-darmstadt.de" },
 ]
 description = "Frequency Techniques for I/O"
 readme = "README.md"
 license = { file = "LICENSE" }
 keywords = ["ftio", "I/O"]
 classifiers = [
-	"Development Status :: 5 - Production/Stable",
-	"License :: OSI Approved :: BSD License",
-	"Operating System :: OS Independent",
-	"Programming Language :: Python :: 3",
-	"Programming Language :: Python :: 3 :: Only",
-	"Programming Language :: Python :: 3.8",
-	"Programming Language :: Python :: 3.9",
-	"Programming Language :: Python :: 3.10",
-	"Programming Language :: Python :: 3.11",
-	"Programming Language :: Python :: 3.12",
-	"Programming Language :: Python :: 3.13",
-	"Operating System :: OS Independent",
-	"Intended Audience :: Developers",
-	"Intended Audience :: Science/Research",
-	"Topic :: Scientific/Engineering",
-	"Topic :: Software Development",
-	"Topic :: Software Development :: Libraries :: Python Modules",
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 
@@ -79,26 +79,28 @@ parallel_trace_analysis = "ftio.api.trace_analysis.parallel_trace_analysis:main"
 proxy_ftio = "ftio.api.metric_proxy.parallel_proxy:main"
 
 # Debug-Specific Scripts
-plot_bandwdith="ftio.plot.plot_bandwidth:main" 
-convert_trace = "ftio.util.convert_old_trace:main" 
-trace_ftio = "ftio.api.trace_analysis.trace_ftio_v2:main" 
-trace_analysis = "ftio.api.trace_analysis.trace_analysis:main" 
+plot_bandwdith = "ftio.plot.plot_bandwidth:main"
+convert_trace = "ftio.util.convert_old_trace:main"
+trace_ftio = "ftio.api.trace_analysis.trace_ftio_v2:main"
+trace_analysis = "ftio.api.trace_analysis.trace_analysis:main"
 admire_proxy_invoke_ftio = "ftio.api.metric_proxy.proxy_invoke_ftio:main"
 jit_plot = "ftio.api.gekkoFs.jit.jit_plot:main"
+server_ftio = "ftio.util.server_ftio:main_cli"
 
 [project.optional-dependencies]
 external-libs = [
-	"fastdtw",
-	"dash",
-	"dash_extensions",
-	"plotly_resampler",
-	"trace_updater",
+    "fastdtw",
+    "dash",
+    "dash_extensions",
+    "plotly_resampler",
+    "trace_updater",
+    "flask",
 ]
 
 development-libs = [
     "black",
     "isort",
-#    "flake8"
+    #    "flake8"
 ]
 
 [project.gui-scripts]
@@ -115,20 +117,20 @@ log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(linen
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 
 [tool.black]
-line-length = 79
+line-length = 90
 target-version = ["py311"]
 skip-string-normalization = false
 
 [tool.isort]
 profile = "black"
-line_length = 79
+line_length = 90
 multi_line_output = 3
 include_trailing_comma = true
 force_grid_wrap = 0
 use_parentheses = true
 
 [tool.flake8]
-max-line-length = 79
+max-line-length = 90
 extend-ignore = ["E203", "W503"]  # Black compatibility
 exclude = [
     ".git",

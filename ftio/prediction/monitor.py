@@ -12,9 +12,7 @@ from ftio.multiprocessing.async_process import join_procs
 CONSOLE = Console()
 
 
-def monitor(
-    name: str, _cached_stamp: str, procs: list = []
-) -> tuple[str, list]:
+def monitor(name: str, _cached_stamp: str, procs: list = []) -> tuple[str, list]:
     """Monitors a file for change and can optionally join processes in the mean time
 
     Args:
@@ -33,9 +31,7 @@ def monitor(
 
 
 #! Method 1
-def monitor_stat(
-    name: str, _cached_stamp: str, procs: list
-) -> tuple[str, list]:
+def monitor_stat(name: str, _cached_stamp: str, procs: list) -> tuple[str, list]:
     """Monitors a file for changes
 
     Args:
@@ -99,10 +95,7 @@ def monitor_list(
             for _, i in enumerate(_cached_stamp):
                 stream = os.popen(f"stat -c %z {i} 2>&1")
                 file_stamp = stream.read()
-                if (
-                    file_stamp != _cached_stamp[i]
-                    and _cached_stamp[i] not in seen
-                ):
+                if file_stamp != _cached_stamp[i] and _cached_stamp[i] not in seen:
                     counter = counter - 1
                     seen.append(_cached_stamp[i])
                     CONSOLE.print(
@@ -121,9 +114,7 @@ def monitor_list(
 
 
 #! Method 2
-def monitor_fcntl(
-    name: str, _cached_stamp: str, procs: list
-) -> tuple[str, list]:
+def monitor_fcntl(name: str, _cached_stamp: str, procs: list) -> tuple[str, list]:
     if _cached_stamp == 0:
         return "", procs
 

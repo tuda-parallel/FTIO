@@ -80,10 +80,10 @@ def plot_results(args):
         # title = "Nek5000 with 16 procs checkpointing every 10 steps with a total of 50 steps"
         # filename = "results_mogon/procs16_steps50_writeinterval10.json "
 
-        title = "Nek5000 with 16 procs checkpointing every 5 steps with a total of 50 steps"
-        filename = (
-            "results_mogon/wacom++_app_proc_1_OMPthreads_64_12500000.json"
+        title = (
+            "Nek5000 with 16 procs checkpointing every 5 steps with a total of 50 steps"
         )
+        filename = "results_mogon/wacom++_app_proc_1_OMPthreads_64_12500000.json"
         current_directory = os.path.dirname(os.path.abspath(__file__))
         json_file_path = os.path.join(current_directory, filename)
 
@@ -97,9 +97,7 @@ def plot_results(args):
             # title = ""
             current_directory = os.getcwd()
             json_file_path = os.path.join(current_directory, filename)
-            extract_and_plot(
-                results, json_file_path, title, no_diff=args.no_diff
-            )
+            extract_and_plot(results, json_file_path, title, no_diff=args.no_diff)
 
 
 def extract_and_plot(
@@ -136,9 +134,7 @@ def main():
     """
     Main function to parse command-line arguments and plot results.
     """
-    parser = argparse.ArgumentParser(
-        description="Load JSON data from files and plot."
-    )
+    parser = argparse.ArgumentParser(description="Load JSON data from files and plot.")
     parser.add_argument(
         "filenames",
         type=str,

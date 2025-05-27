@@ -28,18 +28,14 @@ def test_wavelet_disc_args():
 
 def test_wavelet_cont_lvl_args():
     """Test continuous wavelet transformation with a specified decomposition level."""
-    args = parse_args(
-        ["-e", "no", "-c", "-tr", "wave_cont", "-le", "5"], "ftio"
-    )
+    args = parse_args(["-e", "no", "-c", "-tr", "wave_cont", "-le", "5"], "ftio")
     _ = core([], args)
     assert True
 
 
 def test_wavelet_disc_lvl_args():
     """Test discrete wavelet transformation with a specified decomposition level."""
-    args = parse_args(
-        ["-e", "no", "-c", "-tr", "wave_disc", "-le", "5"], "ftio"
-    )
+    args = parse_args(["-e", "no", "-c", "-tr", "wave_disc", "-le", "5"], "ftio")
     _ = core([], args)
     assert True
 

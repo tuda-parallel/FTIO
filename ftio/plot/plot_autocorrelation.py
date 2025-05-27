@@ -32,9 +32,7 @@ def plot_autocorr_results(
     fig = None
     if any(x in args.engine for x in ["mat", "plot"]):
         if "mat" in args.engine:
-            fig = plot_matplotlib_autocorr_results(
-                acorr, peaks, outliers, flag
-            )
+            fig = plot_matplotlib_autocorr_results(acorr, peaks, outliers, flag)
         elif "plot" in args.engine:
             fig = plot_plotly_autocorr_results(acorr, peaks, outliers, flag)
 

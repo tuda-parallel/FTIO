@@ -106,13 +106,9 @@ def run(
         unit, order = set_unit(b)
         # fig.add_trace(go.Scatter(x=t, y=b * order, name="App Bandwidth",mode='lines+markers'))
         fig.add_trace(
-            go.Scatter(
-                x=t, y=b * order, name="App Bandwidth", line={"shape": "hv"}
-            )
+            go.Scatter(x=t, y=b * order, name="App Bandwidth", line={"shape": "hv"})
         )
-        fig.update_layout(
-            xaxis_title="Time (s)", yaxis_title=f"Bandwidth ({unit})"
-        )
+        fig.update_layout(xaxis_title="Time (s)", yaxis_title=f"Bandwidth ({unit})")
         fig = format_plot(fig)
         fig.show()
 

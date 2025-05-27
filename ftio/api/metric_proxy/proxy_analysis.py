@@ -75,9 +75,7 @@ def classify_waves(data, normed=True):
     seen = []
     for mode in phasemode_list:
         seen.extend(mode.matches)
-    other = [
-        x["metric"] for x in data if all(y not in x["metric"] for y in seen)
-    ]
+    other = [x["metric"] for x in data if all(y not in x["metric"] for y in seen)]
     phasemode_list.append(PhaseMode("Other", other))
 
     sampling_freq = np.nan
@@ -119,9 +117,7 @@ def plot_waves(argv: list, arr: list[PhaseMode], t, n=None):
 
         # Loop through each mode in arr and plot
         for mode in arr:
-            ax.plot(
-                t, mode.wave, marker="o", label=mode.name
-            )  # Plot with markers
+            ax.plot(t, mode.wave, marker="o", label=mode.name)  # Plot with markers
 
         # Set axis titles
         ax.set_xlabel("Time (s)")
@@ -138,9 +134,7 @@ def plot_waves(argv: list, arr: list[PhaseMode], t, n=None):
         fig = go.Figure()
         for mode in arr:
             fig.add_trace(
-                go.Scatter(
-                    x=t, y=mode.wave, mode="lines+markers", name=mode.name
-                )
+                go.Scatter(x=t, y=mode.wave, mode="lines+markers", name=mode.name)
             )
 
         fig.update_layout(
@@ -154,9 +148,7 @@ def plot_waves(argv: list, arr: list[PhaseMode], t, n=None):
         # fig.write_image("waves.png")
 
 
-def plot_waves_and_timeseries(
-    argv: list, metrics: dict, arr: list[PhaseMode], t, n=None
-):
+def plot_waves_and_timeseries(argv: list, metrics: dict, arr: list[PhaseMode], t, n=None):
     names = []  # get_names(arr)
 
     out = PrintHtml("./", names, outdir="phase_plots")
@@ -197,8 +189,7 @@ def plot_mode(mode, metrics, t, n, subfig=False) -> list[go.Figure]:
                     y=arrays[0],
                     mode="lines+markers",
                     name=metric,
-                    hovertemplate="<i>Time </i>: %{x} s"
-                    + "<br><b>Metric</b>: %{y}<br>",
+                    hovertemplate="<i>Time </i>: %{x} s" + "<br><b>Metric</b>: %{y}<br>",
                     legendgroup=metric,
                 ),
                 **spec[1],
@@ -210,8 +201,7 @@ def plot_mode(mode, metrics, t, n, subfig=False) -> list[go.Figure]:
                     y=wave,
                     mode="lines+markers",
                     name=name,
-                    hovertemplate="<i>Time </i>: %{x} s"
-                    + "<br><b>Metric</b>: %{y}<br>",
+                    hovertemplate="<i>Time </i>: %{x} s" + "<br><b>Metric</b>: %{y}<br>",
                     legendgroup=metric,
                 ),
                 **spec[0],
@@ -228,9 +218,7 @@ def plot_mode(mode, metrics, t, n, subfig=False) -> list[go.Figure]:
         )
     if subfig:
         fig.update_xaxes(title_text="Time (s)", **spec[1])
-        fig.update_yaxes(
-            title_text=f"{mode.name.capitalize()} Metrics", **spec[1]
-        )
+        fig.update_yaxes(title_text=f"{mode.name.capitalize()} Metrics", **spec[1])
 
         if f.index(fig) == 0:
             if n:

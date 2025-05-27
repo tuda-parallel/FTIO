@@ -125,9 +125,7 @@ class AnalysisFigures:
         return len(self.figures) == 0
 
     def __bool__(self):
-        return self.is_empty() or any(
-            x in self.args.engine for x in ["mat", "plot"]
-        )
+        return self.is_empty() or any(x in self.args.engine for x in ["mat", "plot"])
 
     def __len__(self):
         return len(self.figures)
@@ -157,9 +155,7 @@ class AnalysisFigures:
 
     def show(self):
         if self.args is not None:
-            condition = (
-                "plot" in self.args.engine and not self.args.runtime_plots
-            )
+            condition = "plot" in self.args.engine and not self.args.runtime_plots
             for i, fig_list in enumerate(self.figures):
                 self.show_figs(fig_list, self.figure_titles[i], condition)
 
@@ -254,9 +250,5 @@ class AnalysisFigures:
             "coefficients",
             "ranks",
         ]
-        lines = [
-            f"{attr}: {type(getattr(self, attr)).__name__}" for attr in attrs
-        ]
-        return (
-            s + "AnalysisFigures with fields and types:\n" + "\n".join(lines)
-        )
+        lines = [f"{attr}: {type(getattr(self, attr)).__name__}" for attr in attrs]
+        return s + "AnalysisFigures with fields and types:\n" + "\n".join(lines)

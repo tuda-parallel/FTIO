@@ -12,9 +12,7 @@ CONSOLE.set(True)
 # ---------------------------------
 # Modification Area
 # ---------------------------------
-b, t = parse(
-    "/d/sim/metric_proxy/traces/Mixed_1x8_5.json", "total___mpi___size_total"
-)
+b, t = parse("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", "total___mpi___size_total")
 # b, t = parse("/d/sim/metric_proxy/traces/Mixed_1x8_5.json", "mpi___size___mpi_allgather")
 ranks = 32
 

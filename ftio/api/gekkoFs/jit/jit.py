@@ -141,9 +141,7 @@ def main() -> None:
     # 12.0 Hard kill
     hard_kill(settings)
 
-    console.print(
-        "[bold green]############### JIT completed ###############[/]"
-    )
+    console.print("[bold green]############### JIT completed ###############[/]")
     sys.exit(0)
 
 

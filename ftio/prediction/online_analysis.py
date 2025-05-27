@@ -15,9 +15,7 @@ from ftio.prediction.helper import get_dominant
 from ftio.prediction.shared_resources import SharedResources
 
 
-def ftio_process(
-    shared_resources: SharedResources, args: list[str], msgs=None
-) -> None:
+def ftio_process(shared_resources: SharedResources, args: list[str], msgs=None) -> None:
     """Perform a single prediction
 
     Args:
@@ -25,9 +23,7 @@ def ftio_process(
         args (list[str]): additional arguments passed to ftio
     """
     console = Console()
-    console.print(
-        f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/]  Started"
-    )
+    console.print(f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/]  Started")
 
     # Modify the arguments
     args.extend(["-e", "no"])
@@ -120,14 +116,9 @@ def window_adaptation(
                 t_s = 0
                 if shared_resources.hits.value == 0:
                     text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/][red bold] Resetting start time to {t_s} sec\n[/]"
-        elif (
-            "data" in args.window_adaptation and len(shared_resources.data) > 0
-        ):
+        elif "data" in args.window_adaptation and len(shared_resources.data) > 0:
             text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] Trying time window adaptation: {shared_resources.count.value:.0f} =? { args.hits * shared_resources.hits.value:.0f}\n[/]"
-            if (
-                shared_resources.count.value
-                == args.hits * shared_resources.hits.value
-            ):
+            if shared_resources.count.value == args.hits * shared_resources.hits.value:
                 # t_s = shared_resources.data[-shared_resources.count.value]['t_start']
                 # text += f'[bold purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] Adjusting start time to t_start {t_s} sec\n[/]'
                 if len(shared_resources.t_flush) > 0:
@@ -190,7 +181,9 @@ def display_result(
         text = f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Dominant freq {freq:.3f} Hz ({1/freq if freq != 0 else 0:.2f} sec)\n"
 
     # Candidates
-    text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Freq candidates: \n"
+    text += (
+        f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Freq candidates: \n"
+    )
     for i, f_d in enumerate(prediction.dominant_freq):
         text += (
             f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/]    {i}) "

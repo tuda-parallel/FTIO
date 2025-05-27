@@ -45,9 +45,7 @@ STORE_FIGURES_BY_IO_MODE: dict[str, str] = {
 TYPE_DYNAMIC_GRAPH: str = "dynamic-graph"
 
 TYPE_DYNAMIC_UPDATER_ASYNC_READ: str = "dynamic-updater-" + io_mode.ASYNC_READ
-TYPE_DYNAMIC_UPDATER_ASYNC_WRITE: str = (
-    "dynamic-updater-" + io_mode.ASYNC_WRITE
-)
+TYPE_DYNAMIC_UPDATER_ASYNC_WRITE: str = "dynamic-updater-" + io_mode.ASYNC_WRITE
 TYPE_DYNAMIC_UPDATER_SYNC_READ: str = "dynamic-updater-" + io_mode.SYNC_READ
 TYPE_DYNAMIC_UPDATER_SYNC_WRITE: str = "dynamic-updater-" + io_mode.SYNC_WRITE
 TYPE_DYNAMIC_UPDATER_TIME: str = "dynamic-updater-" + io_mode.TIME

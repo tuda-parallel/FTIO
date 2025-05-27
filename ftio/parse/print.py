@@ -19,17 +19,13 @@ class Print:
         self.print_regions_txt()
         self.file.write("\n")
         self.file.close()
-        print(
-            "\033[1;32m------------------- done -------------------\n\033[1;0m"
-        )
+        print("\033[1;32m------------------- done -------------------\n\033[1;0m")
 
     def print_json_lines(self):
         self.file = open("./scale.jsonl", "w")
         self.print_regions_jsonl()
         self.file.close()
-        print(
-            "\033[1;32m------------------- done -------------------\n\033[1;0m"
-        )
+        print("\033[1;32m------------------- done -------------------\n\033[1;0m")
 
     def print_regions_jsonl(self):
         self.print_io_read_sync("jsonl")
@@ -70,9 +66,7 @@ class Print:
         self.print_io_mode("write_async_b", type)
 
     def print_io_mode(self, mode, type):
-        self.print_data(
-            mode, "total_bytes", f"{mode}->total_bytes", "Size (B)", type
-        )
+        self.print_data(mode, "total_bytes", f"{mode}->total_bytes", "Size (B)", type)
         self.print_data(
             mode,
             "max_bytes_per_rank",
@@ -115,45 +109,23 @@ class Print:
             "Hits",
             type,
         )
-        self.print_data(
-            mode, "total_io_ops", f"{mode}->total_io_ops", "Hits", type
-        )
-        self.print_data(
-            mode, "number_of_ranks", f"{mode}->number_of_ranks", "Hits", type
-        )
+        self.print_data(mode, "total_io_ops", f"{mode}->total_io_ops", "Hits", type)
+        self.print_data(mode, "number_of_ranks", f"{mode}->number_of_ranks", "Hits", type)
         self.print_data(mode, "bandwidth.app", f"{mode}->app", print_type=type)
-        self.print_data(
-            mode, "bandwidth.appH", f"{mode}->appH", print_type=type
-        )
+        self.print_data(mode, "bandwidth.appH", f"{mode}->appH", print_type=type)
         # self.print_data(mode, 'bandwidth.b',                      f"{mode}->per_rank->b"                   , print_type = type)
         # self.print_data(mode, 'bandwidth.b_overlap_avr',          f"{mode}->per_rank->b_overlap_avr"         , print_type = type)
         # self.print_data(mode, 'bandwidth.b_overlap_sum',          f"{mode}->per_rank->b_overlap_sum"         , print_type = type)
         if "b" in mode:
-            self.print_data(
-                mode, "bandwidth.app_ind", f"{mode}->B_E", print_type=type
-            )
-            self.print_data(
-                mode, "bandwidth.app_avr", f"{mode}->B_A", print_type=type
-            )
-            self.print_data(
-                mode, "bandwidth.app_sum", f"{mode}->B_S", print_type=type
-            )
+            self.print_data(mode, "bandwidth.app_ind", f"{mode}->B_E", print_type=type)
+            self.print_data(mode, "bandwidth.app_avr", f"{mode}->B_A", print_type=type)
+            self.print_data(mode, "bandwidth.app_sum", f"{mode}->B_S", print_type=type)
         else:
-            self.print_data(
-                mode, "bandwidth.app_ind", f"{mode}->T_E", print_type=type
-            )
-            self.print_data(
-                mode, "bandwidth.app_avr", f"{mode}->T_A", print_type=type
-            )
-            self.print_data(
-                mode, "bandwidth.app_sum", f"{mode}->T_S", print_type=type
-            )
-        self.print_data(
-            mode, "bandwidth.min", f"{mode}->per_rank->min", print_type=type
-        )
-        self.print_data(
-            mode, "bandwidth.max", f"{mode}->per_rank->max", print_type=type
-        )
+            self.print_data(mode, "bandwidth.app_ind", f"{mode}->T_E", print_type=type)
+            self.print_data(mode, "bandwidth.app_avr", f"{mode}->T_A", print_type=type)
+            self.print_data(mode, "bandwidth.app_sum", f"{mode}->T_S", print_type=type)
+        self.print_data(mode, "bandwidth.min", f"{mode}->per_rank->min", print_type=type)
+        self.print_data(mode, "bandwidth.max", f"{mode}->per_rank->max", print_type=type)
         self.print_data(
             mode,
             "bandwidth.median",
@@ -538,9 +510,7 @@ class Print:
             if not call_path:
                 call_path = io_mode
             if "txt" in print_type:  # txt file
-                self.file.write(
-                    "\nREGION %s\nMETRIC %s\n" % (call_path, metric)
-                )
+                self.file.write("\nREGION %s\nMETRIC %s\n" % (call_path, metric))
                 for i in range(0, self.data.n):
                     value = getattr(self.data.s[i], io_mode)
                     if "bandwidth" in var:
@@ -568,9 +538,7 @@ class Print:
                         for j, _ in enumerate(art):
                             if j == 0:
                                 if self.args.scale:
-                                    metric, order = scale_metric(
-                                        metric, art[j]
-                                    )
+                                    metric, order = scale_metric(metric, art[j])
                             self.file.write(
                                 f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art[j]*order:e} }}\n'
                             )

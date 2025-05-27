@@ -74,9 +74,9 @@ def plot_wave_disc(
         # GoH0+G1H1 = 1 -> Multiply a with H1 and d with G1
         # https://medium.com/@shouke.wei/process-of-discrete-wavelet-transform-iii-wavelet-partial-reconstruction-ca7a8f9420dc
         if "recon" in use:
-            cc[level - i + 1] = pywt.upcoef(
-                "d", coffs[level - i + 1], wavelet, level=i
-            )[:n]
+            cc[level - i + 1] = pywt.upcoef("d", coffs[level - i + 1], wavelet, level=i)[
+                :n
+            ]
         else:
             # Wrong: only upsample: ‘↑ 2’ denotes ‘upsample by 2’ (put 0’s before values)
             # cc[level-i+1,::2**(i)] = coffs[level-i+1]
@@ -348,15 +348,11 @@ def ploty_coeffs_reconst_signal(
     )
 
     # Plot the original bandwidth
-    fig.add_trace(
-        go.Scatter(x=t, y=b, mode="lines", name="Bandwidth"), row=1, col=1
-    )
+    fig.add_trace(go.Scatter(x=t, y=b, mode="lines", name="Bandwidth"), row=1, col=1)
 
     # Plot the original bandwidth
     fig.add_trace(
-        go.Scatter(
-            x=t_sampled, y=b_sampled, mode="lines", name="Sampled Bandwidth"
-        ),
+        go.Scatter(x=t_sampled, y=b_sampled, mode="lines", name="Sampled Bandwidth"),
         row=1,
         col=1,
     )
@@ -380,9 +376,7 @@ def ploty_coeffs_reconst_signal(
             col=1,
         )
         fig.update_yaxes(title_text="Amplitude", row=i + 2, col=1)
-        fig.update_xaxes(
-            showticklabels=True, title_text="Time (s)", row=i + 2, col=1
-        )
+        fig.update_xaxes(showticklabels=True, title_text="Time (s)", row=i + 2, col=1)
 
     # Final layout adjustments
     fig.update_layout(

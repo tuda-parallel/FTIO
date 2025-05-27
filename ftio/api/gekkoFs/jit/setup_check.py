@@ -51,19 +51,13 @@ def check_setup(settings: JitSettings):
         gekkofs_hostfile = settings.gkfs_hostfile
         with open(gekkofs_hostfile, "r") as file:
             gekkofs_hostfile_content = file.read()
-        console.print(
-            f"[cyan]>> Geko hostfile:\n{gekkofs_hostfile_content}[/]"
-        )
+        console.print(f"[cyan]>> Geko hostfile:\n{gekkofs_hostfile_content}[/]")
 
         # ls_command = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={gekkofs_hostfile} ls {settings.gkfs_mntdir}"
         # files = subprocess.check_output(ls_command, shell=True).decode()
         # console.print(f"[cyan]>> geko_ls {gkfs_mntdir}: \n{files}[/]")
 
-        if (
-            settings.cluster
-            and settings.debug_lvl > 0
-            and not settings.exclude_daemon
-        ):
+        if settings.cluster and settings.debug_lvl > 0 and not settings.exclude_daemon:
 
             additional_arguments = ""
             timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")

@@ -15,9 +15,7 @@ class PhaseMode:
         if hasattr(self, attribute):
             return getattr(self, attribute)
         else:
-            raise AttributeError(
-                f"'MyClass' object has no attribute '{attribute}'"
-            )
+            raise AttributeError(f"'MyClass' object has no attribute '{attribute}'")
 
     def match(self, d: dict):
         if any(n in d["metric"] for n in self.matches):
@@ -57,13 +55,9 @@ def calculate_wave(
     wave = np.array([])
     name = ""
     if prediction:
-        n = int(
-            np.floor((prediction.t_end - prediction.t_start) * prediction.freq)
-        )
+        n = int(np.floor((prediction.t_end - prediction.t_start) * prediction.freq))
         if t.size == 0:
-            t = np.arange(
-                prediction.t_start, prediction.t_end, 1 / prediction.freq
-            )
+            t = np.arange(prediction.t_start, prediction.t_end, 1 / prediction.freq)
 
         if "top_freq" in prediction:
             wave = np.zeros_like(t)
@@ -71,11 +65,10 @@ def calculate_wave(
                 amp = prediction.top_freqs["amp"][j]
                 freq = prediction.top_freqs["freq"][j]
                 phi = prediction.top_freqs["phi"][j]
-                wave = wave + 2 / n * amp * np.cos(2 * np.pi * freq * t + phi)
+                cosine_wave, cosine_name = prediction.get_wave_and_name(freq, amp, phi)
+                wave = wave + cosine_wave
                 if j < 3:
-                    name += (
-                        f"{2 / n *amp:.1e}*cos(2\u03c0*{freq:.2e}*t+{phi:.2e})"
-                    )
+                    name += cosine_name
                 elif j == 4:
                     name += "..."
         else:
@@ -83,8 +76,8 @@ def calculate_wave(
             amp = prediction["amp"][max_conf_index]
             freq = prediction["dominant_freq"][max_conf_index]
             phi = prediction["phi"][max_conf_index]
-            wave = 2 / n * amp * np.cos(2 * np.pi * freq * t + phi)
-            name += f"{2 / n *amp:.1e}*cos(2\u03c0*{freq:.2e}*t+{phi:.2e})"
+            wave, cosine_name = prediction.get_wave_and_name(freq, amp, phi)
+            name += cosine_name
     return (wave, name)
 
 

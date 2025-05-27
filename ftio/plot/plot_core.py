@@ -63,9 +63,7 @@ class PlotCore:
             if "stat" in args.render:  # only generate a single image
                 args.threaded = False
                 if not args.mode:
-                    raise Exception(
-                        "To use render=static, --mode=... must be also set"
-                    )
+                    raise Exception("To use render=static, --mode=... must be also set")
         else:
             args.render = "dynamic"
 
@@ -151,18 +149,12 @@ class PlotCore:
                 exit(0)
             else:
                 self.plot_time()
-                out.generate_html_core(
-                    "time.html", self.get_figure("time.html")
-                )
-                self.plot_io_mode(
-                    "async write", self.data.df_wat, self.data.df_wab
-                )
+                out.generate_html_core("time.html", self.get_figure("time.html"))
+                self.plot_io_mode("async write", self.data.df_wat, self.data.df_wab)
                 out.generate_html_core(
                     "write_async.html", self.get_figure("write_async.html")
                 )
-                self.plot_io_mode(
-                    "async read", self.data.df_rat, self.data.df_rab
-                )
+                self.plot_io_mode("async read", self.data.df_rat, self.data.df_rab)
                 out.generate_html_core(
                     "read_async.html", self.get_figure("read_async.html")
                 )
@@ -176,9 +168,7 @@ class PlotCore:
                 )
 
         out.generate_html_end()
-        print(
-            "\033[1;32m------------------- done -------------------\n\033[1;0m"
-        )
+        print("\033[1;32m------------------- done -------------------\n\033[1;0m")
 
         return [*self.f_aw, *self.f_ar, *self.f_sr, *self.f_sr, *self.f_t]
 
@@ -188,16 +178,12 @@ class PlotCore:
     def plot_and_generate_html(self, mode, out):
         if "async" in mode:
             if "write" in mode:
-                self.plot_io_mode(
-                    "async write", self.data.df_wat, self.data.df_wab
-                )
+                self.plot_io_mode("async write", self.data.df_wat, self.data.df_wab)
                 out.generate_html_core(
                     "write_async.html", self.get_figure("write_async.html")
                 )
             else:
-                self.plot_io_mode(
-                    "async read", self.data.df_rat, self.data.df_rab
-                )
+                self.plot_io_mode("async read", self.data.df_rat, self.data.df_rab)
                 out.generate_html_core(
                     "read_async.html", self.get_figure("read_async.html")
                 )
@@ -511,8 +497,7 @@ class PlotCore:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_t[1]["t_overlap"][index][index2],
-                                    y=df_t[1]["b_overlap_avr"][index][index2]
-                                    * order,
+                                    y=df_t[1]["b_overlap_avr"][index][index2] * order,
                                     mode="lines",
                                     name=T_name,  # name="$T$", # For BW limit paper
                                     line={"shape": "hv"},
@@ -524,8 +509,7 @@ class PlotCore:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_b[1]["t_overlap"][index][index2],
-                                    y=df_b[1]["b_overlap_avr"][index][index2]
-                                    * order,
+                                    y=df_b[1]["b_overlap_avr"][index][index2] * order,
                                     mode="lines",
                                     name="$B_A$",  # name="$B_L$", # For BW limit paper
                                     line={"shape": "hv"},
@@ -539,8 +523,7 @@ class PlotCore:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_t[1]["t_overlap"][index][index2],
-                                    y=df_t[1]["b_overlap_sum"][index][index2]
-                                    * order,
+                                    y=df_t[1]["b_overlap_sum"][index][index2] * order,
                                     mode="lines",
                                     name="$T_S$",
                                     line={"shape": "hv"},
@@ -552,8 +535,7 @@ class PlotCore:
                             f[-1].add_trace(
                                 go.Scatter(
                                     x=df_b[1]["t_overlap"][index][index2],
-                                    y=df_b[1]["b_overlap_sum"][index][index2]
-                                    * order,
+                                    y=df_b[1]["b_overlap_sum"][index][index2] * order,
                                     mode="lines",
                                     name="$B_S$",  # name="$B$", # For BW limit paper
                                     line={"shape": "hv"},
@@ -566,12 +548,8 @@ class PlotCore:
                         if df_t:
                             f[-1].add_trace(
                                 go.Scatter(
-                                    x=df_t[3]["t_overlap_ind"][index_ind][
-                                        index2_ind
-                                    ],
-                                    y=df_t[3]["b_overlap_ind"][index_ind][
-                                        index2_ind
-                                    ]
+                                    x=df_t[3]["t_overlap_ind"][index_ind][index2_ind],
+                                    y=df_t[3]["b_overlap_ind"][index_ind][index2_ind]
                                     * order,
                                     mode="lines",
                                     name="$T_E$",
@@ -583,12 +561,8 @@ class PlotCore:
                         if df_b:
                             f[-1].add_trace(
                                 go.Scatter(
-                                    x=df_b[3]["t_overlap_ind"][index_ind][
-                                        index2_ind
-                                    ],
-                                    y=df_b[3]["b_overlap_ind"][index_ind][
-                                        index2_ind
-                                    ]
+                                    x=df_b[3]["t_overlap_ind"][index_ind][index2_ind],
+                                    y=df_b[3]["b_overlap_ind"][index_ind][index2_ind]
                                     * order,
                                     mode="lines",
                                     name="$B_E$",
@@ -609,9 +583,7 @@ class PlotCore:
                     f[-1] = format_plot(f[-1], 17)
 
                     if self.names and (args.avr or args.sum or args.ind):
-                        run_index = ranks.index[
-                            ranks.astype(int) == i
-                        ].tolist()[j]
+                        run_index = ranks.index[ranks.astype(int) == i].tolist()[j]
                         f[-1].update_layout(
                             title=f"{i} Ranks (Run {run_index}: {self.names[run_index]})",
                         )
@@ -707,12 +679,9 @@ class PlotCore:
                     if df_t:
                         f[-1].add_trace(
                             go.Scatter(
-                                x=io_stats.get(
-                                    "t_%s" % type[0:3], "number_of_ranks"
-                                ),
+                                x=io_stats.get("t_%s" % type[0:3], "number_of_ranks"),
                                 y=io_stats.get("t_%s" % type[0:3], i),
-                                name="$\\text{%s}(T_{%s})$"
-                                % (i, labels[count]),
+                                name="$\\text{%s}(T_{%s})$" % (i, labels[count]),
                                 hovertemplate="<b>Throughput</b><br>Ranks: %{x:i}<br>"
                                 + i
                                 + ": %{y:.2f}<br>",
@@ -721,12 +690,9 @@ class PlotCore:
                     if df_b:
                         f[-1].add_trace(
                             go.Scatter(
-                                x=io_stats.get(
-                                    "b_%s" % type[0:3], "number_of_ranks"
-                                ),
+                                x=io_stats.get("b_%s" % type[0:3], "number_of_ranks"),
                                 y=io_stats.get("b_%s" % type[0:3], i),
-                                name="$\\text{%s}(B_{%s})$"
-                                % (i, labels[count]),
+                                name="$\\text{%s}(B_{%s})$" % (i, labels[count]),
                                 hovertemplate="<b>Bandwidth</b><br>Ranks: %{x:i}<br>"
                                 + i
                                 + ": %{y:.2f}<br>",
@@ -856,12 +822,8 @@ class PlotCore:
             title="Time Distribution",
         )
         self.f_t[-1].update_layout(hovermode="x", legend_tracegroupgap=1)
-        self.f_t[-1].update_xaxes(
-            showspikes=True, spikethickness=1, spikecolor="black"
-        )
-        self.f_t[-1].update_yaxes(
-            showspikes=True, spikethickness=1, spikecolor="black"
-        )
+        self.f_t[-1].update_xaxes(showspikes=True, spikethickness=1, spikecolor="black")
+        self.f_t[-1].update_yaxes(showspikes=True, spikethickness=1, spikecolor="black")
         self.f_t[-1] = format_plot(self.f_t[-1], 17)
 
         modes = ["delta_t_total", "delta_t_agg", "delta_t_overhead"]
@@ -1232,9 +1194,7 @@ class PlotCore:
                 col=i + 1,
             )  # , secondary_y=False)
             # self.f_t[-1].add_trace(go.Scatter(x=self.data.df_time['delta_t_com'][index],     y=self.data.df_time['delta_t_agg_io'][index], mode = 'lines+markers', name = 'Compute to I/O time', marker_symbol=0, marker_color=colors[0], showlegend = False), row=1, col=i+1), secondary_y=True)
-            self.f_t[-1].update_xaxes(
-                title_text="Compute time (s)", row=1, col=i + 1
-            )
+            self.f_t[-1].update_xaxes(title_text="Compute time (s)", row=1, col=i + 1)
         self.f_t[-1].update_layout(
             legend_tracegroupgap=1,
             xaxis_title="Compute time (s)",
@@ -1303,9 +1263,7 @@ class PlotCore:
             self.f_t[-1].add_trace(
                 go.Scatter(
                     x=self.data.df_time["number_of_ranks"][index],
-                    y=np.repeat(
-                        0.5, len(self.data.df_time["number_of_ranks"][index])
-                    ),
+                    y=np.repeat(0.5, len(self.data.df_time["number_of_ranks"][index])),
                     mode="lines+markers",
                     name="Ref",
                     legendgroup="Ref",
@@ -1362,14 +1320,8 @@ class PlotCore:
         colors = px.colors.qualitative.Plotly + px.colors.qualitative.D3
         y = (
             self.data.df_time["delta_t_com"]
-            - (
-                self.data.df_time["delta_t_ara"]
-                - self.data.df_time["delta_t_ar_lost"]
-            )
-            - (
-                self.data.df_time["delta_t_awa"]
-                - self.data.df_time["delta_t_aw_lost"]
-            )
+            - (self.data.df_time["delta_t_ara"] - self.data.df_time["delta_t_ar_lost"])
+            - (self.data.df_time["delta_t_awa"] - self.data.df_time["delta_t_aw_lost"])
         )
         if self.nRun != 1:
             self.f_t[-1].update_layout(barmode="relative")
@@ -1889,9 +1841,7 @@ class PlotCore:
                 self.f_t[-1].add_trace(
                     go.Scatter(
                         x=self.data.df_time["number_of_ranks"][index],
-                        y=self.data.df_time["delta_t_overhead_post_runtime"][
-                            index
-                        ],
+                        y=self.data.df_time["delta_t_overhead_post_runtime"][index],
                         mode="lines+markers",
                         name="Post runtime",
                         legendgroup="delta_t_overhead_post_runtime",
@@ -1909,9 +1859,7 @@ class PlotCore:
                 self.f_t[-1].add_trace(
                     go.Scatter(
                         x=self.data.df_time["number_of_ranks"][index],
-                        y=self.data.df_time["delta_t_overhead_peri_runtime"][
-                            index
-                        ],
+                        y=self.data.df_time["delta_t_overhead_peri_runtime"][index],
                         mode="lines+markers",
                         name="During runtime",
                         legendgroup="delta_t_overhead_peri_runtime",
@@ -2032,9 +1980,7 @@ class PlotCore:
                     y=self.data.df_time["delta_t_rank0_overhead_peri_runtime"]
                     / self.data.df_time["delta_t_rank0"]
                     * 100,
-                    text=self.data.df_time[
-                        "delta_t_rank0_overhead_peri_runtime"
-                    ]
+                    text=self.data.df_time["delta_t_rank0_overhead_peri_runtime"]
                     / self.data.df_time["delta_t_rank0"]
                     * 100,
                     name="Overhead%speri-run" % delmiter,
@@ -2051,9 +1997,7 @@ class PlotCore:
                     y=self.data.df_time["delta_t_rank0_overhead_post_runtime"]
                     / self.data.df_time["delta_t_rank0"]
                     * 100,
-                    text=self.data.df_time[
-                        "delta_t_rank0_overhead_post_runtime"
-                    ]
+                    text=self.data.df_time["delta_t_rank0_overhead_post_runtime"]
                     / self.data.df_time["delta_t_rank0"]
                     * 100,
                     name="Overhead%spost-run" % delmiter,
@@ -2117,12 +2061,8 @@ class PlotCore:
                 self.f_t[-1].add_trace(
                     go.Scatter(
                         x=self.data.df_time["number_of_ranks"][index],
-                        y=self.data.df_time[
-                            "delta_t_rank0_overhead_post_runtime"
-                        ][index]
-                        + self.data.df_time[
-                            "delta_t_rank0_overhead_peri_runtime"
-                        ][index],
+                        y=self.data.df_time["delta_t_rank0_overhead_post_runtime"][index]
+                        + self.data.df_time["delta_t_rank0_overhead_peri_runtime"][index],
                         mode="lines+markers",
                         fill="tozeroy",
                         name="Overhead",

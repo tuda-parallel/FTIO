@@ -50,9 +50,7 @@ def label_phases(
 
         # iterate over all dominant frequencies or take the top_frequencies if args.n_freq is above 0
         for index, _ in enumerate(
-            prediction.conf
-            if args.n_freq == 0
-            else prediction.top_freqs["freq"]
+            prediction.conf if args.n_freq == 0 else prediction.top_freqs["freq"]
         ):
             # conf = prediction.conf[index]
             f = (
@@ -70,18 +68,14 @@ def label_phases(
                 if args.n_freq == 0
                 else prediction.top_freqs["phi"][index]
             )
-            n = np.floor(
-                (prediction.t_end - prediction.t_start) * prediction.freq
-            )
+            n = np.floor((prediction.t_end - prediction.t_start) * prediction.freq)
 
             # skip frequency at 0
             if f == 0 and args.n_freq != 0:
                 continue
 
             ## create cosine wave
-            cosine_wave = cosine_wave + 2 * amp / n * np.cos(
-                2 * np.pi * f * t + phi
-            )
+            cosine_wave = cosine_wave + 2 * amp / n * np.cos(2 * np.pi * f * t + phi)
 
     ## make square signal
     square_wave = np.zeros(len(cosine_wave))
@@ -135,9 +129,7 @@ def plot_classification(
             name = "Dominant waves"
         else:
             name = f"{n_waves} superposed <br>cosine waves"
-        fig.add_trace(
-            go.Scatter(x=t, y=cosine_wave, name=name, marker_color="red")
-        )
+        fig.add_trace(go.Scatter(x=t, y=cosine_wave, name=name, marker_color="red"))
         # fig.add_trace(go.Scatter(x=t, y=square_wave, name="square wave"))
         fig.add_hline(y=0, line_width=1, line_color="gray")
         colors = px.colors.qualitative.Plotly + px.colors.qualitative.G10

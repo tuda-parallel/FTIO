@@ -29,16 +29,12 @@ def wavelet_cont(
     sampling_period = 1 / freq
     # console = MyConsole(True)
     # console.print(pywt.scale2frequency(wavelet, scale) / sampling_period)
-    coefficients, frequencies = pywt.cwt(
-        b_sampled, scales, wavelet, sampling_period
-    )
+    coefficients, frequencies = pywt.cwt(b_sampled, scales, wavelet, sampling_period)
 
     return coefficients, frequencies
 
 
-def wavelet_disc(
-    b_sampled: np.ndarray, wavelet: str, level: int
-) -> list[np.ndarray]:
+def wavelet_disc(b_sampled: np.ndarray, wavelet: str, level: int) -> list[np.ndarray]:
     """
     Perform a discrete wavelet transformation (DWT) on the input signal.
 

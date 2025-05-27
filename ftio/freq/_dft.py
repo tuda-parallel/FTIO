@@ -155,8 +155,7 @@ def precision_dft(
     dc_offset = np.zeros(len(amp))
     for index in dominant_index:
         x = dc_offset + 2 * (1 / len(amp)) * amp[index] * np.cos(
-            2 * np.pi * np.arange(0, len(amp)) * (index) / (len(amp))
-            + phi[index]
+            2 * np.pi * np.arange(0, len(amp)) * (index) / (len(amp)) + phi[index]
         )
         x[x < 0] = 0
         x_2 = x.copy()

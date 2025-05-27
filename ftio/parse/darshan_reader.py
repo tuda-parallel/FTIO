@@ -71,9 +71,7 @@ def extract_data(path: str, args) -> tuple[list, int, dict]:
                     pass
                 elif freq > 0 and "ftio" in args.files[0]:
                     args.freq = freq
-                    console.print(
-                        f"[cyan]Adjusting sampling freq:[/] {freq:.3e}"
-                    )
+                    console.print(f"[cyan]Adjusting sampling freq:[/] {freq:.3e}")
 
         elif "POSIX" in args.dxt_mode.upper():
             if "DXT_POSIX" in modules:
@@ -83,9 +81,7 @@ def extract_data(path: str, args) -> tuple[list, int, dict]:
                 dataframe, freq, total_time = extract_heatmap(report, "POSIX")
                 if freq > 0:
                     args.freq = freq
-                    console.print(
-                        f"[cyan]Adjusting sampling freq:[/] {freq:.3e}"
-                    )
+                    console.print(f"[cyan]Adjusting sampling freq:[/] {freq:.3e}")
 
         console.print(f"[cyan]Done:[/] {time.time()-start:.3f} s\n")
 
@@ -137,9 +133,7 @@ def extract_heatmap(report, kind: str) -> tuple[list, float, dict]:
                     }
                 )
             else:
-                dataframe.append(
-                    {"rank": rank, f"{mode}_segments": pd.DataFrame()}
-                )
+                dataframe.append({"rank": rank, f"{mode}_segments": pd.DataFrame()})
             t_sum_rank += col_name[-1].right
 
         total_time["delta_t_agg"] = t_sum_rank
@@ -216,9 +210,7 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
                     - dataframe[rank]["write_segments"]["start_time"]
                 ).to_list()
             )
-            write["total_bytes"] += sum(
-                dataframe[rank]["write_segments"]["length"]
-            )
+            write["total_bytes"] += sum(dataframe[rank]["write_segments"]["length"])
             write["max_bytes_per_rank"] = max(
                 write["max_bytes_per_rank"],
                 sum(dataframe[rank]["write_segments"]["length"]),
@@ -231,9 +223,7 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
                 write["max_io_phases_per_rank"],
                 len(dataframe[rank]["write_segments"]["length"]),
             )
-            write["total_io_phases"] += len(
-                dataframe[rank]["write_segments"]["length"]
-            )
+            write["total_io_phases"] += len(dataframe[rank]["write_segments"]["length"])
 
         if (
             "read_segments" in dataframe[rank]
@@ -260,9 +250,7 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
                     - dataframe[rank]["read_segments"]["start_time"]
                 ).to_list()
             )
-            read["total_bytes"] += sum(
-                dataframe[rank]["read_segments"]["length"]
-            )
+            read["total_bytes"] += sum(dataframe[rank]["read_segments"]["length"])
             read["max_bytes_per_rank"] = max(
                 read["max_bytes_per_rank"],
                 sum(dataframe[rank]["read_segments"]["length"]),
@@ -275,9 +263,7 @@ def extract_darshan(dataframe: list) -> tuple[dict, dict, dict]:
                 read["max_io_phases_per_rank"],
                 len(dataframe[rank]["read_segments"]["length"]),
             )
-            read["total_io_phases"] += len(
-                dataframe[rank]["read_segments"]["length"]
-            )
+            read["total_io_phases"] += len(dataframe[rank]["read_segments"]["length"])
 
     # total time
     time = {

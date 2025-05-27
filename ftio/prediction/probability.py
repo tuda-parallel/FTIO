@@ -45,9 +45,7 @@ class Probability:
         p_freq_given_periodic=np.nan,
         p_periodic_given_freq=np.nan,
     ):
-        self.p_periodic = (
-            p_periodic if not np.isnan(p_periodic) else self.p_periodic
-        )
+        self.p_periodic = p_periodic if not np.isnan(p_periodic) else self.p_periodic
         self.p_freq = p_freq if not np.isnan(p_freq) else self.p_freq
         self.p_freq_given_periodic = (
             p_freq_given_periodic

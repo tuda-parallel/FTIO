@@ -11,9 +11,7 @@ from ftio.parse.bandwidth import overlap
 
 def parse_args():
     # Set up command-line argument parsing
-    parser = argparse.ArgumentParser(
-        description="Convert an XLSX file to JSON."
-    )
+    parser = argparse.ArgumentParser(description="Convert an XLSX file to JSON.")
     # Set default values for the file
     parser.add_argument(
         "--file",
@@ -84,9 +82,7 @@ def parse_txt(args, file_path):
         preview_rows = min(10, num_rows)  # Display up to 10 rows for preview
 
         # Print a preview of the first few lines
-        console.print(
-            f"[green]Preview of the first {preview_rows} rows of data:[/]"
-        )
+        console.print(f"[green]Preview of the first {preview_rows} rows of data:[/]")
         for i in range(preview_rows):
             console.print(f'{i}: {" | ".join(data[i])}')
 
@@ -101,9 +97,7 @@ def parse_txt(args, file_path):
 
         console.print("\nPlease select the column to map to time:")
         value_t = int(input("> "))
-        console.print(
-            f"[green]> Time set to column {value_t}: {data[0][value_t]}[/]"
-        )
+        console.print(f"[green]> Time set to column {value_t}: {data[0][value_t]}[/]")
         for i in range(num_rows):
             t_s.append(float(data[i][value_t]))  # Append time data
 
@@ -116,13 +110,9 @@ def parse_txt(args, file_path):
                 f"[green]> I/O Time set to column {value_io}: {data[0][value_io]}[/]"
             )
             for i in range(num_rows):
-                io_time.append(
-                    float(data[i][value_io])
-                )  # Append I/O time data
+                io_time.append(float(data[i][value_io]))  # Append I/O time data
         else:
-            console.print(
-                "[yellow]> I/O Time not selected, skipping assignment.[/]"
-            )
+            console.print("[yellow]> I/O Time not selected, skipping assignment.[/]")
 
     elif args.b >= 0 and args.t >= 0:
         # Use args.b and args.t for the columns directly
@@ -140,9 +130,7 @@ def parse_txt(args, file_path):
             value_io_time = int(args.io_time)
             console.print(f"[green]> Selected IO time column: {value_io_time}")
             for i in range(len(data)):
-                io_time.append(
-                    float(data[i][value_io_time])
-                )  # Append time data
+                io_time.append(float(data[i][value_io_time]))  # Append time data
 
     else:
         # If not interactive, just load the data based on fixed indices
@@ -189,9 +177,7 @@ def parse_excel(args, file_path):
         t_s = []
         value = input("\nPlease select the column to map to bandwidth:\n> ")
         value = int(value)
-        console.print(
-            f"[green]> bandwidth set to [{value}]: {names[value]}[/]"
-        )
+        console.print(f"[green]> bandwidth set to [{value}]: {names[value]}[/]")
         b.extend(df[names[value]].tolist())
         value = input("\nPlease select the column to map to time:\n> ")
         value = int(value)

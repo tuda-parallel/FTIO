@@ -52,8 +52,7 @@ class PrintHtml:
             # ? 1. set current working directory
             pwd = os.getcwd()
             if len(self.path) <= 1 and not any(
-                ext in self.path[0]
-                for ext in ["json", "darshan", "msgpack", "txt"]
+                ext in self.path[0] for ext in ["json", "darshan", "msgpack", "txt"]
             ):
                 pwd = os.path.join(pwd, os.path.relpath(self.path[0], pwd))
 
@@ -109,17 +108,13 @@ class PrintHtml:
         # Mark entry in main.html
         with open(self.filename, "a") as file:
             self.lock.acquire()
-            tmp = (
-                html_file.replace("_", " ").replace(".html", " ").capitalize()
-            )
+            tmp = html_file.replace("_", " ").replace(".html", " ").capitalize()
             file.write(
                 f'<h3 ><a href="file://{self.path}/{html_file}" style="color:black;">{tmp}: {len(f)} figures </a>\n'
             )
             self.lock.release()
 
-        CONSOLE.print(
-            f"    ├──  [green] Finished generating {html_file}    [/]"
-        )
+        CONSOLE.print(f"    ├──  [green] Finished generating {html_file}    [/]")
 
     def generate_html_end(self) -> None:
         """closes the File and displays the location of the HTML files"""
@@ -144,17 +139,13 @@ class PrintHtml:
         if self.show:
             if platform == "linux" or platform == "linux2":
                 if "WSL" in plat.uname().release:
-                    os.system(
-                        f"powershell.exe start ./{self.outdir}/main.html "
-                    )
+                    os.system(f"powershell.exe start ./{self.outdir}/main.html ")
                 else:
                     os.system(f"open {self.path}/main.html \n")
 
             if "windows" in platform:
                 try:
-                    os.system(
-                        f"powershell.exe start {self.path}/main.html &\n"
-                    )
+                    os.system(f"powershell.exe start {self.path}/main.html &\n")
                 except:
                     os.system(f"powershell.exe start./{self.path}/main.html")
 
@@ -202,9 +193,7 @@ def figures_to_html(
             )
         html_parts = (
             html_parts
-            + fig.to_html(
-                config=conf, include_plotlyjs=False, include_mathjax="cdn"
-            )
+            + fig.to_html(config=conf, include_plotlyjs=False, include_mathjax="cdn")
             + "\n"
         )
 

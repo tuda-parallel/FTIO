@@ -19,6 +19,7 @@ class Prediction:
         n_samples (int): Number of samples used in the prediction.
         top_freqs (dict): Dictionary storing top frequencies and associated metadata.
         candidates (np.ndarray): Array of candidates used in autocorrelation or other analysis.
+        ranges (np.ndarray): Array of ranges indicating where the dominant frequency is valid
     """
 
     def __init__(
@@ -44,6 +45,7 @@ class Prediction:
         self._n_samples = n_samples
         self._top_freqs = {}
         self._candidates = np.array([])
+        self._ranges = np.array([])
 
     @property
     def source(self):
@@ -96,9 +98,7 @@ class Prediction:
         if isinstance(value, list):
             value = np.array(value)
         if not isinstance(value, np.ndarray):
-            raise TypeError(
-                "amp must be a numpy ndarray or list convertible to ndarray"
-            )
+            raise TypeError("amp must be a numpy ndarray or list convertible to ndarray")
         self._amp = value
 
     @property
@@ -110,9 +110,7 @@ class Prediction:
         if isinstance(value, list):
             value = np.array(value)
         if not isinstance(value, np.ndarray):
-            raise TypeError(
-                "phi must be a numpy ndarray or list convertible to ndarray"
-            )
+            raise TypeError("phi must be a numpy ndarray or list convertible to ndarray")
         self._phi = value
 
     @property
@@ -198,6 +196,20 @@ class Prediction:
                 "candidates must be a numpy ndarray or list convertible to ndarray"
             )
         self._candidates = value
+
+    @property
+    def ranges(self):
+        return self._ranges
+
+    @ranges.setter
+    def ranges(self, value):
+        if isinstance(value, list):
+            value = np.array(value)
+        if not isinstance(value, np.ndarray):
+            raise TypeError(
+                "candidates must be a numpy ndarray or list convertible to ndarray"
+            )
+        self._ranges = value
 
     def get(self, key: str):
         """
@@ -321,6 +333,101 @@ class Prediction:
         """
         return not self.source
 
+    def get_wave(self, freq: float, amp: float, phi: float) -> np.ndarray:
+        """
+        Generate a cosine wave using the given frequency, amplitude, and phase.
+
+        Args:
+            freq (float): Frequency of the cosine wave in Hz.
+            amp (float): Amplitude of the wave.
+            phi (float): Phase of the wave in radians.
+
+        Returns:
+            np.ndarray: Array of sampled cosine wave values. Returns an empty array
+            if the frequency is NaN or sampling is invalid.
+        """
+        if not np.isnan(freq) and self._n_samples != 0:
+            t_sampled = self._t_start + np.arange(0, self._n_samples) * 1 / self._freq
+            if freq != 0 and not freq == self._freq / 2:
+                amp *= 2 / self._n_samples
+            else:
+                amp *= 1 / self._n_samples
+            return amp * np.cos(2 * np.pi * freq * t_sampled + phi)
+        else:
+            return np.array([])
+
+    def get_wave_name(self, freq: float, amp: float, phi: float) -> str:
+        """
+        Returns a string that describes the cosine wave
+
+        Args:
+            freq (float): Frequency of the cosine wave in Hz.
+            amp (float): Amplitude of the wave.
+            phi (float): Phase of the wave in radians.
+
+        Returns:
+            str: Name of the cosine wave at the specified entities
+        """
+        if not np.isnan(freq) and self._n_samples != 0:
+            name = f"{amp:.2e}*cos(2\u03c0*{freq:.2e}*t{'+' if phi >= 0 else '-'}{abs(phi):.2e})"
+        else:
+            name = ""
+        return name
+
+    def get_wave_and_name(
+        self, freq: float, amp: float, phi: float
+    ) -> tuple[np.ndarray, str]:
+        """
+        Generate a cosine wave using the given frequency, amplitude, and phase. Returns additionally a string which can be used to label the plots
+
+        Args:
+            freq (float): Frequency of the cosine wave in Hz.
+            amp (float): Amplitude of the wave.
+            phi (float): Phase of the wave in radians.
+
+        Returns:
+            np.ndarray: Array of sampled cosine wave values. Returns an empty array
+            str: Name of the cosine wave at the specified entities
+        """
+        cosine_wave = self.get_wave(freq, amp, phi)
+        name = self.get_wave_name(freq, amp, phi)
+        return cosine_wave, name
+
+    def get_dominant_wave(self):
+        if len(self._dominant_freq) > 0:
+            return self.get_wave(*self.get_dominant_freq_amp_phi())
+        else:
+            return np.array([])
+
+    def disp_dominant_freq_and_conf(self) -> str:
+        if not self.is_empty():
+            f_d, c_d = self.get_dominant_freq_and_conf()
+            if not np.isnan(f_d):
+                text = (
+                    f"[cyan underline]Prediction results:[/]\n[cyan]Frequency:[/] {f_d:.3e} Hz"
+                    f"[cyan] ->[/] {np.round(1/f_d, 4)} s\n"
+                    f"[cyan]Confidence:[/] {color_pred(c_d)}"
+                    f"{np.round(c_d * 100, 2)}[/] %\n"
+                )
+            else:
+                text = (
+                    "[cyan underline]Prediction results:[/]\n"
+                    "[red]No dominant frequency found[/]\n"
+                )
+            return text
+        else:
+            return ""
+
+    def disp_ranges(self) -> str:
+        if len(self.ranges) > 0:
+            text = "[cyan]Valid time segments:\n[/]"
+            for start, end in self.ranges:
+                text += f"- [{start:.2f},{end:.2f}] sec\n"
+
+            return text
+        else:
+            return ""
+
     def to_dict(self):
         """
         Return a dictionary representation of the Prediction object.
@@ -344,36 +451,26 @@ class Prediction:
             "candidates": self._candidates,
         }
 
-    def get_dominant_wave(self):
-        if len(self._dominant_freq) > 0:
-            return self.get_wave(*self.get_dominant_freq_amp_phi())
+    def to_json(self) -> str:
+        """Convert the Prediction object to a JSON-serializable string."""
+        return self.convert_json(self.to_dict())
+
+    def convert_json(self, obj):
+        """Helper method to recursively convert unsupported types."""
+        if isinstance(obj, dict):
+            return {k: self.convert_json(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [self.convert_json(i) for i in obj]
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, (np.integer,)):
+            return int(obj)
+        elif isinstance(obj, (np.floating,)):
+            return float(obj)
+        elif isinstance(obj, (np.bool_)):
+            return bool(obj)
         else:
-            return np.array([])
-
-    def get_wave(self, freq: float, amp: float, phi: float) -> np.ndarray:
-        """
-        Generate a cosine wave using the given frequency, amplitude, and phase.
-
-        Args:
-            freq (float): Frequency of the cosine wave in Hz.
-            amp (float): Amplitude of the wave.
-            phi (float): Phase of the wave in radians.
-
-        Returns:
-            np.ndarray: Array of sampled cosine wave values. Returns an empty array
-            if the frequency is NaN or sampling is invalid.
-        """
-        if not np.isnan(freq) and self._n_samples != 0:
-            t_sampled = (
-                self._t_start + np.arange(0, self._n_samples) * 1 / self._freq
-            )
-            if freq != 0:
-                amp *= 2 / self._n_samples
-            else:
-                amp *= 1 / self._n_samples
-            return amp * np.cos(2 * np.pi * freq * t_sampled + phi)
-        else:
-            return np.array([])
+            return obj
 
     def __repr__(self):
         return str(self.to_dict())
@@ -383,7 +480,7 @@ class Prediction:
 
     def __add__(self, other):
         """
-        Overload + operator to return a list of dicts of the predictions.
+        Overload add operator to return a list[dict] of the predictions.
 
         Args:
             other (Prediction or list): Another prediction instance or list.
@@ -392,7 +489,7 @@ class Prediction:
         list: Combined list of prediction dictionaries.
 
         Raises:
-            TypeError: If operand type is unsupported.
+            TypeError: If an operand type is unsupported.
         """
         if isinstance(other, Prediction):
             return [self.to_dict(), other.to_dict()]
@@ -411,3 +508,22 @@ class Prediction:
             bool: True if not empty, else False.
         """
         return not self.is_empty()
+
+
+def color_pred(value: float) -> str:
+    """highlight color according to value
+
+    Args:
+        value (float): value between [0,1]
+
+    Returns:
+        string: color to be used with Console (from rich)
+    """
+    color = "[red]"
+    if value >= 0.8:
+        color = "[green]"
+    elif value >= 0.6:
+        color = "[blue]"
+    elif value >= 0.3:
+        color = "[yellow]"
+    return color

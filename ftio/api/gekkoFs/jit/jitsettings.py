@@ -165,9 +165,7 @@ class JitSettings:
         # Dry run settings
         if self.dry_run:
             new_name = "Dry_" + self.job_name
-            self.alloc_call_flags = self.alloc_call_flags.replace(
-                self.job_name, new_name
-            )
+            self.alloc_call_flags = self.alloc_call_flags.replace(self.job_name, new_name)
             self.job_name = new_name
 
         # Gekko settings
@@ -202,9 +200,7 @@ class JitSettings:
 
     def update_geko_files(self):
         if not self.exclude_daemon:
-            self.gkfs_hostfile = self.gkfs_hostfile.replace(
-                ".txt", f"_{self.job_id}.txt"
-            )
+            self.gkfs_hostfile = self.gkfs_hostfile.replace(".txt", f"_{self.job_id}.txt")
         if not self.exclude_proxy:
             self.gkfs_proxyfile = self.gkfs_proxyfile.replace(
                 ".pid", f"_{self.job_id}.pid"
@@ -259,7 +255,9 @@ class JitSettings:
         if self.set_tasks_affinity:
             self.task_set_0 = f"taskset -c 0-{np.floor(self.procs/2)-1:.0f}"
             if self.procs - np.floor(self.procs / 2) >= self.procs_app:
-                self.task_set_1 = f"taskset -c {np.ceil(self.procs/2):.0f}-{self.procs-1:.0f}"
+                self.task_set_1 = (
+                    f"taskset -c {np.ceil(self.procs/2):.0f}-{self.procs-1:.0f}"
+                )
 
     def set_log_dirs(self):
         self.gkfs_daemon_log = os.path.join(self.log_dir, "gekko_daemon.log")
@@ -342,28 +340,28 @@ class JitSettings:
         # ? Tools
         # ?##########################
         # ****** ftio variables ******
-        self.ftio_bin_location = (
-            "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin"
-        )
+        self.ftio_bin_location = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin"
 
         # ****** gkfs variables ******
         self.gkfs_deps = "/lustre/project/nhr-admire/tarraf/deps"  # _gcc12_2"
         if self.parsed_gkfs_daemon:
             self.gkfs_daemon = self.parsed_gkfs_daemon
         else:
-            self.gkfs_daemon = (
-                f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
-            )
+            self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
 
         if self.parsed_gkfs_intercept:
             self.gkfs_intercept = self.parsed_gkfs_intercept
         else:
-            self.gkfs_intercept = f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
+            self.gkfs_intercept = (
+                f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
+            )
 
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
         self.gkfs_hostfile = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
-        self.gkfs_proxy = "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
+        self.gkfs_proxy = (
+            "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
+        )
         self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
         self.update_files_with_gkfs_mntdir = []
 
@@ -389,16 +387,12 @@ class JitSettings:
             self.app_call = "./wacommplusplus"
             # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
             # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/roms"
-            self.run_dir = (
-                "/lustre/project/nhr-admire/tarraf/wacommplusplus/build_new"
-            )
+            self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build_new"
             if not self.app_flags:  # default value if app_flags is not set
                 self.app_flags = ""
         #  ├─ LAMMPS
         elif "lammps" in self.app:
-            self.app_call = (
-                "/lustre/project/nhr-admire/shared/mylammps/build/lmp"
-            )
+            self.app_call = "/lustre/project/nhr-admire/shared/mylammps/build/lmp"
             self.run_dir = f"{self.gkfs_mntdir}"
             self.app_flags = "-in in.spce.hex"
         #  ├─ DLIO
@@ -456,9 +450,7 @@ class JitSettings:
         elif "nek" in self.app:
             if self.exclude_daemon:
                 self.pre_app_call = f"echo -e 'turbPipe\\n{self.run_dir}/input' > {self.run_dir}/SESSION.NAME"
-                self.post_app_call = (
-                    f"rm {self.run_dir}/input/*.f* || echo true"
-                )
+                self.post_app_call = f"rm {self.run_dir}/input/*.f* || echo true"
             else:
                 self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > {self.run_dir}/SESSION.NAME"
                 self.post_app_call = ""
@@ -473,19 +465,17 @@ class JitSettings:
                 self.post_app_call = ""
             else:
                 # modify wacomm.gkfs.json to include gkfs_mntdir
-                self.update_files_with_gkfs_mntdir = [
-                    f"{self.run_dir}/wacomm.gkfs.json"
-                ]
+                self.update_files_with_gkfs_mntdir = [f"{self.run_dir}/wacomm.gkfs.json"]
                 self.pre_app_call = f"export OMP_NUM_THREADS={self.omp_threads}; ln -sf {self.run_dir}/wacomm.gkfs.json {self.run_dir}/wacomm.json; "
-                self.post_app_call = f"ln -sf {self.run_dir}/wacomm.pfs.json {self.run_dir}/wacomm.json"
+                self.post_app_call = (
+                    f"ln -sf {self.run_dir}/wacomm.pfs.json {self.run_dir}/wacomm.json"
+                )
         # ├─ S3D-IO
         elif "s3d" in self.app:
             self.pre_app_call = ""
             self.post_app_call = ""
             if not self.exclude_daemon:
-                self.app_flags = self.app_flags.replace(
-                    ".", f"{self.gkfs_mntdir}"
-                )
+                self.app_flags = self.app_flags.replace(".", f"{self.gkfs_mntdir}")
         else:
             self.pre_app_call = ""
             self.post_app_call = ""
@@ -517,25 +507,17 @@ class JitSettings:
 
         # ? Regex relevant files (move matches out and in)
         # ?##########################
-        self.regex_file = (
-            "/lustre/project/nhr-admire/shared/nek_regex4cargo.txt"
-        )
+        self.regex_file = "/lustre/project/nhr-admire/shared/nek_regex4cargo.txt"
         # ├─ Nek5000
         if "nek" in self.app_call:
             self.regex_flush_match = ".*/[a-zA-Z0-9]*turbPipe0\\.f\\d+"
-            self.regex_stage_out_match = (
-                ".*/[a-zA-Z0-9]*turbPipe0\\.f\\d+"  # ".*"
-            )
+            self.regex_stage_out_match = ".*/[a-zA-Z0-9]*turbPipe0\\.f\\d+"  # ".*"
         # ├─ Wacom++
         elif "wacom" in self.app_call:
-            self.regex_flush_match = (
-                ".*/(history|restart|output)/.*\\.(nc|json)$"
-            )
+            self.regex_flush_match = ".*/(history|restart|output)/.*\\.(nc|json)$"
             # self.regex_flush_match = ".*/output/.*\\.nc$"
             # self.regex_stage_out_match = ".*"
-            self.regex_stage_out_match = (
-                ".*/(history|restart|output)/.*\\.(nc|json)$"
-            )
+            self.regex_stage_out_match = ".*/(history|restart|output)/.*\\.(nc|json)$"
         # ├─ DLIO
         elif "dlio" in self.app_call:
             self.regex_flush_match = ".*/(checkpoints)/jit/.*\\.pt$"
@@ -559,9 +541,7 @@ class JitSettings:
         # With GENERATOR (app): At open/create we create an extra .lockgekko file with size = number of opens to that file (it is distributed). We decrease and delete the file on close
         # with CONSUMER (Cargo): At Open we wait until (40 seconds~) for the lock file to dissapear. No modifications needed on the client, it is transparent.
         if self.lock_generator and not self.exclude_daemon:
-            self.env_var["LIBGKFS_PROTECT_FILES_GENERATOR"] = (
-                "1"  # app, i.e., Gekko
-            )
+            self.env_var["LIBGKFS_PROTECT_FILES_GENERATOR"] = "1"  # app, i.e., Gekko
         # else:
         #     self.env_var["LIBGKFS_PROTECT_FILES_GENERATOR"]="0"
 
@@ -579,9 +559,7 @@ class JitSettings:
             if self.parsed_gkfs_daemon:
                 self.gkfs_daemon = self.parsed_gkfs_daemon
             else:
-                self.gkfs_daemon = (
-                    f"{self.install_location}/iodeps/bin/gkfs_daemon"
-                )
+                self.gkfs_daemon = f"{self.install_location}/iodeps/bin/gkfs_daemon"
 
             if self.parsed_gkfs_intercept:
                 self.gkfs_intercept = self.parsed_gkfs_intercept
@@ -596,9 +574,7 @@ class JitSettings:
             self.gkfs_proxy = (
                 f"{self.install_location}/gekkofs/build/src/proxy/gkfs_proxy"
             )
-            self.gkfs_proxyfile = (
-                f"{self.install_location}/tarraf_gkfs_proxy.pid"
-            )
+            self.gkfs_proxyfile = f"{self.install_location}/tarraf_gkfs_proxy.pid"
             self.cargo_bin = f"{self.install_location}/iodeps/bin"
 
             self.regex_file = "/tmp/jit/nek_regex4cargo.txt"
@@ -655,17 +631,15 @@ class JitSettings:
                 self.stage_in_path = "/d/benchmark/Nek5000/turbPipe/run/input"
                 if self.exclude_daemon:
                     self.pre_app_call = "echo -e 'turbPipe\\n/d/benchmark/Nek5000/turbPipe/run/input' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
-                    self.post_app_call = "rm /d/benchmark/Nek5000/turbPipe/run/input/*.f* || true"
+                    self.post_app_call = (
+                        "rm /d/benchmark/Nek5000/turbPipe/run/input/*.f* || true"
+                    )
                 else:
                     self.pre_app_call = f"echo -e 'turbPipe\\n{self.gkfs_mntdir}' > /d/benchmark/Nek5000/turbPipe/run/SESSION.NAME"
-                    self.post_app_call = (
-                        f"rm {self.stage_out_path}/*.f* || true"
-                    )
+                    self.post_app_call = f"rm {self.stage_out_path}/*.f* || true"
             elif "s3d" in self.app:
                 self.app_call = "/d/benchmark/S3D-IO/s3d_io.x"
                 # execute "mkdir -p /d/benchmark/S3D-IO/input && touch /d/benchmark/S3D-IO/input/test"
                 self.stage_in_path = "/tmp/input"
                 if not self.exclude_daemon:
-                    self.app_flags = re.sub(
-                        r"/[^\s]+", self.gkfs_mntdir, self.app_flags
-                    )
+                    self.app_flags = re.sub(r"/[^\s]+", self.gkfs_mntdir, self.app_flags)

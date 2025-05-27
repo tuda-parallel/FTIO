@@ -6,9 +6,7 @@ from ftio.prediction.helper import get_dominant
 from ftio.prediction.probability import Probability
 
 
-def find_probability(
-    data: list[dict], method: str = "db", counter: int = -1
-) -> list:
+def find_probability(data: list[dict], method: str = "db", counter: int = -1) -> list:
     """Calculates the conditional probability that expresses
     how probable the frequency (event A) is given that the signal
     is periodic occurred (probability B).

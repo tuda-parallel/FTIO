@@ -43,9 +43,7 @@ else:
             )
             start_idx = min(max(0, start_idx - 1), max(0, start_idx - 2))
             length_x = len(hf_trace_data["x"])
-            end_idx = max(
-                min(length_x, end_idx + 1), min(length_x, end_idx + 2)
-            )
+            end_idx = max(min(length_x, end_idx + 1), min(length_x, end_idx + 2))
             return start_idx, end_idx
 
     from plotly_resampler.figure_resampler import figure_resampler_interface
@@ -59,9 +57,7 @@ def _create_id_figure(data: DataSource, filename: str = ""):
     return f"{data.io_mode}-{filename}"
 
 
-def _find_x_min_and_max(
-    file_data: FileData, data: DataSource
-) -> tuple[float, float]:
+def _find_x_min_and_max(file_data: FileData, data: DataSource) -> tuple[float, float]:
     x_min = np.inf
     x_max = -np.inf
     if file_data.data_actual_is_not_empty:
@@ -193,9 +189,7 @@ def _add_trace_invisible_for_complete_presentation(
     )
 
 
-def _add_traces(
-    fig: FigureResampler, file_data: FileData, data: DataSource
-) -> None:
+def _add_traces(fig: FigureResampler, file_data: FileData, data: DataSource) -> None:
     _add_trace_average(fig, file_data)
     _add_trace_sum(fig, file_data)
     if data.individual_is_selected:
@@ -203,13 +197,9 @@ def _add_traces(
     _add_trace_invisible_for_complete_presentation(fig, file_data, data)
 
 
-def _update_layout(
-    fig: FigureResampler, file_data: FileData, data: DataSource
-) -> None:
+def _update_layout(fig: FigureResampler, file_data: FileData, data: DataSource) -> None:
     if data.merge_plots_is_selected:
-        title = "{} collected".format(
-            io_mode.MODE_STRING_BY_MODE[data.io_mode]
-        )
+        title = "{} collected".format(io_mode.MODE_STRING_BY_MODE[data.io_mode])
     else:
         title = "{} Ranks (Run {}: {})".format(
             file_data.rank, file_data.run, file_data.name
@@ -343,9 +333,7 @@ def _append_each_figure_separately(
                     ),
                     TraceUpdater(
                         id={
-                            "type": id.TYPE_DYNAMIC_UPDATER_BY_IO_MODE[
-                                data.io_mode
-                            ],
+                            "type": id.TYPE_DYNAMIC_UPDATER_BY_IO_MODE[data.io_mode],
                             "index": id_figure,
                         },
                         gdID=f"{id_figure}",
@@ -405,9 +393,7 @@ def get_io_mode_specific_callbacks(app: DashProxy, data: DataSource) -> None:
         ]
 
         if data.merge_plots_is_selected:
-            div_children = _append_merged_plot(
-                div_children, figure_by_id_figure, data
-            )
+            div_children = _append_merged_plot(div_children, figure_by_id_figure, data)
         else:
             div_children = _append_each_figure_separately(
                 div_children, figure_by_id_figure, filenames, data

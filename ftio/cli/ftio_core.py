@@ -67,9 +67,7 @@ def main(
     data, args = get_time_behavior_and_args(cmd_input, msgs)
     console = MyConsole(args.verbose)
     console.print(f"\n[cyan]Data imported in:[/] {time.time() - start:.2f} s")
-    console.print(
-        f"[cyan]Frequency Analysis:[/] {args.transformation.upper()}"
-    )
+    console.print(f"[cyan]Frequency Analysis:[/] {args.transformation.upper()}")
     console.print(f"[cyan]Mode:[/] {args.mode}")
 
     list_analysis_figures = []
@@ -116,9 +114,7 @@ def core(sim: dict, args: Namespace) -> tuple[Prediction, AnalysisFigures]:
         return Prediction(), AnalysisFigures()
 
     # Perform frequency analysis (dft/wavelet)
-    prediction_freq_analysis, analysis_figures, share = freq_analysis(
-        args, sim
-    )
+    prediction_freq_analysis, analysis_figures, share = freq_analysis(args, sim)
     # Perform autocorrelation if args.autocorrelation is true + Merge the results into a single prediction
     prediction_auto = find_autocorrelation(args, sim, analysis_figures, share)
     # Merge results

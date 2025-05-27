@@ -48,9 +48,7 @@ def main(args: list[str] = []) -> None:
     try:
         while True:
             # monitor
-            stamp, procs = pm.monitor_list(
-                matched_files, n_buffers, stamp, procs
-            )
+            stamp, procs = pm.monitor_list(matched_files, n_buffers, stamp, procs)
 
             # launch prediction_process
             procs.append(
@@ -92,18 +90,14 @@ def prediction_process(
         None
     """
     console = Console()
-    console.print(
-        f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/]  Started"
-    )
+    console.print(f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/]  Started")
     # Modify the arguments
     args.extend(["-e", "no"])
     args.extend(["-ts", f"{shared_resources.start_time.value:.2f}"])
 
     # set up data
     if len(matched_files) != n_buffers:
-        raise RuntimeError(
-            "Error, number of buffers does not match number of files"
-        )
+        raise RuntimeError("Error, number of buffers does not match number of files")
 
     # Perform prediction
     prediction, parsed_args, _ = run(matched_files, args)
@@ -120,9 +114,7 @@ def prediction_process(
     while not shared_resources.queue.empty():
         shared_resources.data.append(shared_resources.queue.get())
 
-    _ = find_probability(
-        shared_resources.data, counter=shared_resources.count.value
-    )
+    _ = find_probability(shared_resources.data, counter=shared_resources.count.value)
     shared_resources.count.value += 1
 
 

@@ -126,9 +126,7 @@ def format_jsonl(data: list[dict]) -> tuple[str, str]:
     return string, out_ranks
 
 
-def dump_json(
-    b: np.ndarray, t: np.ndarray, filename: str = "bandwidth.json"
-) -> None:
+def dump_json(b: np.ndarray, t: np.ndarray, filename: str = "bandwidth.json") -> None:
 
     data = {"b": b.tolist(), "t": t.tolist()}
     json_file_path = os.path.join(os.getcwd(), filename)

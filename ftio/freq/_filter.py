@@ -41,9 +41,7 @@ def filter_signal(
                 "filter_cutoff must be a list containing a single float value."
             )
 
-        normal_cutoff = (
-            args.filter_cutoff[0] / f_n
-        )  # Extract the float and normalize
+        normal_cutoff = args.filter_cutoff[0] / f_n  # Extract the float and normalize
         b_coeff, a_coeff = butter(
             args.filter_order, normal_cutoff, btype="low", analog=False
         )
@@ -58,9 +56,7 @@ def filter_signal(
                 "filter_cutoff must be a list containing a single float value."
             )
 
-        normal_cutoff = (
-            args.filter_cutoff[0] / f_n
-        )  # Extract the float and normalize
+        normal_cutoff = args.filter_cutoff[0] / f_n  # Extract the float and normalize
         b_coeff, a_coeff = butter(
             args.filter_order, normal_cutoff, btype="high", analog=False
         )
@@ -96,9 +92,7 @@ def filter_signal(
         # Apply only forward filtering (faster but may introduce phase shift)
         filtered_signal = lfilter(b_coeff, a_coeff, b)
     else:
-        raise ValueError(
-            "Invalid filter method selected. Use 'lfilter' or 'filtfilt'."
-        )
+        raise ValueError("Invalid filter method selected. Use 'lfilter' or 'filtfilt'.")
 
     text = (
         f"- Type: {display_order(args.filter_order)}-order {args.filter_type}\n"

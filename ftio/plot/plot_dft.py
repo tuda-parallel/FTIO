@@ -60,42 +60,31 @@ def plot_dft(
         sum_all_components += x
 
     # dominant freq
-    dominant_freq, dominant_amp, dominant_phi = (
-        prediction.get_dominant_freq_amp_phi()
-    )
+    dominant_freq, dominant_amp, dominant_phi = prediction.get_dominant_freq_amp_phi()
     dominant_signal = None
     dominant_name = ""
     if not np.isnan(dominant_freq):
-        a = dominant_amp / N
-        if dominant_freq != 0:
-            a *= 2
-        x = a * np.cos(2 * np.pi * dominant_freq * t_sampled + dominant_phi)
+        x, wave_name = prediction.get_wave_and_name(
+            dominant_freq, dominant_amp, dominant_phi
+        )
         if not dominant_name:
-            dominant_name = f"{ a:.1e}*cos(2\u03c0*{dominant_freq:.2e}*t+{dominant_phi:.2e})"
             dominant_signal = x
+            dominant_name = wave_name
         else:
-            dominant_name += (
-                " + "
-                + f"{a:.1e}*cos(2\u03c0*{dominant_freq:.2e}*t+{dominant_phi:.2e})"
-            )
             dominant_signal += x
+            dominant_name += " + " + wave_name
 
     # For reconstruction
     sum_top = {}
     top_freqs = prediction.top_freqs
     if args.reconstruction:
         for top_index in args.reconstruction:
-            sum_top[f"Recon. top {top_index} signal"] = np.zeros_like(
-                t_sampled
-            )
+            sum_top[f"Recon. top {top_index} signal"] = np.zeros_like(t_sampled)
             for k in range(top_index):
-                a = top_freqs["amp"][k] / N
-                if k != 0 and not (N % 2 != 0 and k == N - 1):
-                    a *= 2
-                sum_top[f"Recon. top {top_index} signal"] += a * np.cos(
-                    2 * np.pi * top_freqs["freq"][k] * t_sampled
-                    + top_freqs["phi"][k]
+                x = prediction.get_wave(
+                    top_freqs["freq"][k], top_freqs["amp"][k], top_freqs["phi"][k]
                 )
+                sum_top[f"Recon. top {top_index} signal"] += x
 
     # For plotting top 3 signals isolated
     n = 3
@@ -109,19 +98,11 @@ def plot_dft(
             ids = top_candidates[:n]
             top_freqs = {"freq": freq[ids], "amp": amp[ids], "phi": phi[ids]}
         for k in range(n):
-            a = top_freqs["amp"][k] / N
-            if k != 0 and not (N % 2 != 0 and k == N - 1):
-                a *= 2
-            top_signals.append(
-                a
-                * np.cos(
-                    2 * np.pi * top_freqs["freq"][k] * t_sampled
-                    + top_freqs["phi"][k]
-                )
+            wave, wave_name = prediction.get_wave_and_name(
+                top_freqs["freq"][k], top_freqs["amp"][k], top_freqs["phi"][k]
             )
-            top_names.append(
-                f"{a:.1e}*cos(2\u03c0*{top_freqs['freq'][k]:.2e}*t+{top_freqs['phi'][k]:.2e})"
-            )
+            top_signals.append(wave)
+            top_names.append(wave_name)
 
     if "mat" in args.engine:
         f = [
@@ -319,9 +300,7 @@ def plot_dft_matplotlib_dominant(
             )
 
             # Plot the line on top of the fill
-            plt.plot(
-                t_sampled, signal * order, drawstyle="steps-post", color=color
-            )
+            plt.plot(t_sampled, signal * order, drawstyle="steps-post", color=color)
     plt.xlim(t_sampled[0], t_sampled[-1])
     plt.ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
     plt.ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
@@ -340,13 +319,6 @@ def plot_dft_matplotlib_spectrum(args, freq, amp):
     # settings
     full = False
     percent = True
-
-    # n_samples = len(freq)
-    # last = int(n_samples / 2) - 1
-    # amp = 2 * amp[0: last + 1]
-    # amp[last] = amp[last] / 2
-    # amp[0] = amp[0] / 2
-    # freq = freq[0: int(n_samples / 2)]
 
     mode = "Amplitude"
     if args.psd:
@@ -385,9 +357,7 @@ def plot_dft_plotly_spectrum(args, freq, amp):
         },
         width=1100,
         height=600,
-        coloraxis_colorbar=dict(
-            yanchor="top", y=1, x=1, ticks="outside", title=""
-        ),
+        coloraxis_colorbar=dict(yanchor="top", y=1, x=1, ticks="outside", title=""),
         # title="Spectrum (Ranks %i)" % r
     )
     # fig_tmp.show(config=conf)
@@ -444,9 +414,7 @@ def plot_dft_plotly_top(
                 + "<br><b>T</b>: %{text} s",
                 text=len(signal) * [f"{1/args.freq:.2f}"],
                 marker_color=(
-                    colors[color_counter]
-                    if color_counter != 1
-                    else "rgb(70,220,70)"
+                    colors[color_counter] if color_counter != 1 else "rgb(70,220,70)"
                 ),
             )
         )
@@ -470,9 +438,7 @@ def plot_dft_plotly_top(
     )
     if paper:
         f.update_layout(
-            legend=dict(
-                orientation="h", yanchor="top", y=0.99, xanchor="left", x=0.01
-            )
+            legend=dict(orientation="h", yanchor="top", y=0.99, xanchor="left", x=0.01)
         )
     f.update_xaxes(range=[t_sampled[0], t_sampled[-1]])
     f = format_plot(f)
@@ -562,6 +528,7 @@ def plot_dft_plotly_dominant(
             )
         )
     if args.reconstruction:
+        color_counter = 0
         for name, signal in sum_top.items():
             f.add_trace(
                 trace=Scatter(
@@ -572,6 +539,9 @@ def plot_dft_plotly_dominant(
                     fill=fill,
                     line={"shape": "hv"},
                     visible="legendonly",
+                    marker_color=(
+                        colors[color_counter] if color_counter != 1 else "rgb(70,220,70)"
+                    ),
                 )
             )
 
@@ -586,9 +556,7 @@ def plot_dft_plotly_dominant(
         template=template,
     )
     if paper:
-        f.update_layout(
-            legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
-        )
+        f.update_layout(legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01))
     # else:
     #     f.update_layout(
     #         legend=dict(yanchor="top", y=0.99, xanchor="right", x=.99)

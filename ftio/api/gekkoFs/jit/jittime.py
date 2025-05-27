@@ -172,9 +172,7 @@ class JitTime:
             "stage_out": self._stage_out,
         }
 
-    def dump_json(
-        self, settings: JitSettings, add_timestamp: bool = True
-    ) -> None:
+    def dump_json(self, settings: JitSettings, add_timestamp: bool = True) -> None:
         """
         Save the timing information and settings to a JSON file, with an option to add timestamps to new entries.
 
@@ -221,9 +219,7 @@ class JitTime:
                             break
                 else:
                     # If no entry with the same nodes exists, add a new one (with timestamp if enabled)
-                    existing_data.append(
-                        {"nodes": data["nodes"], "data": [data]}
-                    )
+                    existing_data.append({"nodes": data["nodes"], "data": [data]})
 
                 # Write the updated data back to the file
                 file.seek(0)
@@ -233,9 +229,7 @@ class JitTime:
         except FileNotFoundError:
             # If the file does not exist, create it with the new data (with timestamp if enabled)
             with open(json_path, "w") as file:
-                json.dump(
-                    [{"nodes": data["nodes"], "data": [data]}], file, indent=4
-                )
+                json.dump([{"nodes": data["nodes"], "data": [data]}], file, indent=4)
 
     def print_and_save_time(self, settings: JitSettings) -> None:
         """

@@ -28,9 +28,7 @@ def plot_filter_results_matplotlib(args, b, filtered_signal):
 
     # Time-domain signal plot (Original vs Filtered)
     axs[0].plot(t, b, label="Original Signal", linestyle="-", marker="o")
-    axs[0].plot(
-        t, filtered_signal, label="Filtered Signal", linestyle="-", marker="."
-    )
+    axs[0].plot(t, filtered_signal, label="Filtered Signal", linestyle="-", marker=".")
     axs[0].set_title("Time-Domain Signal")
     axs[0].set_xlabel("Time [s]")
     axs[0].set_ylabel("Amplitude")
@@ -38,9 +36,7 @@ def plot_filter_results_matplotlib(args, b, filtered_signal):
 
     # Frequency response plot (Magnitude Response)
     step = args.freq / (2 * len(freqs))
-    axs[1].bar(
-        freqs, amp, width=step, color="green", alpha=0.6, label="Original"
-    )
+    axs[1].bar(freqs, amp, width=step, color="green", alpha=0.6, label="Original")
     axs[1].bar(
         freqs,
         amp_filtered,
@@ -121,9 +117,7 @@ def plot_filter_results_plotly(args, b, filtered_signal, as_subplots=True):
 
         # Frequency-Domain traces
         fig.add_trace(
-            go.Bar(
-                x=freqs, y=amp, name="Original", marker=dict(color="green")
-            ),
+            go.Bar(x=freqs, y=amp, name="Original", marker=dict(color="green")),
             row=2,
             col=1,
         )

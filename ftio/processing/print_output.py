@@ -12,7 +12,6 @@ from rich.table import Table
 from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
 from ftio.prediction.helper import get_dominant_and_conf
-from ftio.prediction.unify_predictions import color_pred
 
 
 def display_prediction(
@@ -35,20 +34,8 @@ def display_prediction(
 
     console = MyConsole()
     # Display results if prediction is available
-    if prediction:
-        freq, conf = prediction.get_dominant_freq_and_conf()
-        if not np.isnan(freq):
-            console.info(
-                f"[cyan underline]Prediction results:[/]\n[cyan]Frequency:[/] {freq:.3e} Hz"
-                f"[cyan] ->[/] {np.round(1/freq, 4)} s\n"
-                f"[cyan]Confidence:[/] {color_pred(conf)}"
-                f"{np.round(conf * 100, 2)}[/] %\n"
-            )
-        else:
-            console.info(
-                "[cyan underline]Prediction results:[/]\n"
-                "[red]No dominant frequency found[/]\n"
-            )
+    console.info(prediction.disp_dominant_freq_and_conf() + prediction.disp_ranges())
+
     # If -n is provided, print the top frequencies with their confidence and amplitude in a table
     if isinstance(argv, Namespace) and argv.n_freq > 0:
         console.info(f"[cyan underline]Top {int(argv.n_freq)} Frequencies:[/]")
@@ -67,40 +54,27 @@ def display_prediction(
             phi_array = prediction.top_freqs["phi"]
 
             table = Table(show_header=True, header_style="bold cyan")
-            table.add_column(
-                "Freq (Hz)", justify="right", style="white", no_wrap=True
-            )
-            table.add_column(
-                "Conf. (%)", justify="right", style="white", no_wrap=True
-            )
-            table.add_column(
-                "Amplitude", justify="right", style="white", no_wrap=True
-            )
-            table.add_column(
-                "Phi", justify="right", style="white", no_wrap=True
-            )
-            table.add_column(
-                "Cosine Wave", justify="right", style="white", no_wrap=True
-            )
+            table.add_column("Freq (Hz)", justify="right", style="white", no_wrap=True)
+            table.add_column("Conf. (%)", justify="right", style="white", no_wrap=True)
+            table.add_column("Amplitude", justify="right", style="white", no_wrap=True)
+            table.add_column("Phi", justify="right", style="white", no_wrap=True)
+            table.add_column("Cosine Wave", justify="right", style="white", no_wrap=True)
 
             description = ""
             # Add frequency data
             for i, freq in enumerate(freq_array):
-                if freq == 0 or freq == prediction.freq / 2:
-                    cosine_wave = f"{1 / prediction.n_samples * amp_array[i]:.3e}*cos(2\u03c0*{freq:.3e}*t{' +' if phi_array[i] >= 0 else ' -'}{abs(phi_array[i]):.3e})"
-                else:
-                    cosine_wave = f"{2 / prediction.n_samples * amp_array[i]:.3e}*cos(2\u03c0*{freq:.3e}*t{' +' if phi_array[i] >= 0 else ' -'}{abs(phi_array[i]):.3e})"
+                wave_name = prediction.get_wave_name(freq, amp_array[i], phi_array[i])
                 table.add_row(
                     f"{freq:.3e}",
                     f"{conf_array[i]:.2f}",
                     f"{amp_array[i]:.3e}",
                     f"{phi_array[i]:.3e}",
-                    cosine_wave,
+                    wave_name,
                 )
                 if i == 0:
-                    description = cosine_wave
+                    description = wave_name
                 else:
-                    description += " + " + cosine_wave
+                    description += " + " + wave_name
 
             console.info(table)
             console.info(

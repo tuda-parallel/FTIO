@@ -86,12 +86,9 @@ def plot_cluster(
         "triangle-down",
     ] * (len(unique_labels) // 7 + 1)
 
-    color_map = {
-        label: colors[i % len(colors)] for i, label in enumerate(unique_labels)
-    }
+    color_map = {label: colors[i % len(colors)] for i, label in enumerate(unique_labels)}
     symbol_map = {
-        label: symbols[i % len(symbols)]
-        for i, label in enumerate(unique_labels)
+        label: symbols[i % len(symbols)] for i, label in enumerate(unique_labels)
     }
 
     # Map each point to its corresponding color and symbol

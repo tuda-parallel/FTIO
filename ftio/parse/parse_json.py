@@ -36,8 +36,7 @@ class ParseJson:
         # check for mode
         fields = list(data.keys())
         if any(
-            x in fields
-            for x in ["read_sync", "read_async", "write_sync", "write_async"]
+            x in fields for x in ["read_sync", "read_async", "write_sync", "write_async"]
         ):
             args.source = "custom"
             if args.mode and match_mode(args.mode) in data:

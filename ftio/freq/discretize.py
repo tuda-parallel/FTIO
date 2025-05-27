@@ -190,8 +190,6 @@ def sample_data_and_prepare_plots(
     # prepare data for plotting
     figures_data = AnalysisFigures()
     if any(x in args.engine for x in ["mat", "plot"]):
-        figures_data = prepare_plot_sample(
-            bandwidth, time_b, freq, len(b_sampled), ranks
-        )
+        figures_data = prepare_plot_sample(bandwidth, time_b, freq, len(b_sampled), ranks)
 
     return b_sampled, freq, figures_data

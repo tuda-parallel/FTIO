@@ -65,9 +65,7 @@ def heatmap(data):
     heatmap_data["Dominant Frequency Binned"] = heatmap_data[
         "Dominant Frequency Binned"
     ].astype(str)
-    heatmap_data.sort_values(
-        by="Dominant Frequency", inplace=True, ignore_index=True
-    )
+    heatmap_data.sort_values(by="Dominant Frequency", inplace=True, ignore_index=True)
 
     # Pivot the DataFrame to switch x and y axes
     heatmap_pivot = heatmap_data.pivot_table(
@@ -149,9 +147,7 @@ def scatter2D(df) -> None:
         yaxis_title="Dominant Frequency",
         xaxis_tickangle=-45,
         margin=dict(l=100, r=100, t=50, b=150),
-        coloraxis_colorbar=dict(
-            yanchor="top", y=1, ticks="outside", ticksuffix=" %"
-        ),
+        coloraxis_colorbar=dict(yanchor="top", y=1, ticks="outside", ticksuffix=" %"),
     )
     fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()
@@ -252,16 +248,12 @@ def heatmap_2(data):
     heatmap_diff.columns = metrics_unique
     plot_heatmap(heatmap_diff)
 
-    heatmap_diff = heatmap_diff.fillna(
-        0
-    )  # Replace NaN with 0 or another strategy
+    heatmap_diff = heatmap_diff.fillna(0)  # Replace NaN with 0 or another strategy
     # Apply hierarchical clustering using fastcluster
     # linkage_matrix = fastcluster.linkage(
     #     heatmap_diff, method="average", metric="euclidean"
     # )
-    linkage_matrix = linkage(
-        heatmap_diff, method="average", metric="euclidean"
-    )
+    linkage_matrix = linkage(heatmap_diff, method="average", metric="euclidean")
 
     sns.clustermap(
         heatmap_diff,
@@ -283,9 +275,7 @@ def density_heatmap(data) -> None:
     # Calculate number of bins based on data range
     if data:
         t_start = data[0].get("t_start", 0)
-        t_end = data[0].get(
-            "t_end", 100
-        )  # Use a default end value if not provided
+        t_end = data[0].get("t_end", 100)  # Use a default end value if not provided
         nbins = round((t_end - t_start) / 10)
     else:
         nbins = 30  # Default value if no data is provided
@@ -300,9 +290,7 @@ def density_heatmap(data) -> None:
             continue
 
     # Create a DataFrame for the plot
-    df = pd.DataFrame(
-        data_points, columns=["Metric", "Dominant Frequency", "Confidence"]
-    )
+    df = pd.DataFrame(data_points, columns=["Metric", "Dominant Frequency", "Confidence"])
 
     # Create the density heatmap
     fig = px.density_heatmap(
@@ -377,9 +365,7 @@ def plot_heatmap(heatmap_diff):
             tickmode="linear",  # Ensure tick labels are spaced out
             tickangle=90,  # Rotate tick labels if they overlap
         ),
-        margin=dict(
-            l=100, r=100, t=50, b=150
-        ),  # Adjust margins to give more space
+        margin=dict(l=100, r=100, t=50, b=150),  # Adjust margins to give more space
     )
     fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()
@@ -390,9 +376,7 @@ def plot_timeseries_metrics(metrics, width=None, height=None):
     for metric, arrays in metrics.items():
         if len(arrays[0]) > 1:
             fig.add_trace(
-                go.Scatter(
-                    x=arrays[1], y=arrays[0], mode="lines+markers", name=metric
-                )
+                go.Scatter(x=arrays[1], y=arrays[0], mode="lines+markers", name=metric)
             )
 
     fig.update_layout(

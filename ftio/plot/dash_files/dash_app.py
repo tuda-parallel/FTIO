@@ -67,8 +67,7 @@ class IOAnalysisApp(DashProxy):
                 html.H1(self.title),
                 html.Hr(),
                 html.Div(
-                    children="Number of files: "
-                    + str(len(self._plot_core.data.paths))
+                    children="Number of files: " + str(len(self._plot_core.data.paths))
                 ),
                 html.Hr(),
                 dcc.Dropdown(
@@ -77,11 +76,7 @@ class IOAnalysisApp(DashProxy):
                     id=id.DROPDOWN_FILE,
                     multi=True,
                     style={"marginTop": 10},
-                    disabled=(
-                        True
-                        if self._plot_core.data.args.merge_plots
-                        else False
-                    ),
+                    disabled=(True if self._plot_core.data.args.merge_plots else False),
                 ),
                 dcc.Checklist(
                     options=self._io_modes,

@@ -9,9 +9,7 @@ from ftio.cli.ftio_core import core
 
 def test_lowpass():
     """Test the core functionality of ftio with no extra options."""
-    file = os.path.join(
-        os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl"
-    )
+    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = [
         "ftio",
         file,
@@ -28,9 +26,7 @@ def test_lowpass():
 
 def test_highpass():
     """Test the core functionality of ftio with no extra options."""
-    file = os.path.join(
-        os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl"
-    )
+    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = [
         "ftio",
         file,
@@ -47,9 +43,7 @@ def test_highpass():
 
 def test_bandpass():
     """Test the core functionality of ftio with no extra options."""
-    file = os.path.join(
-        os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl"
-    )
+    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = [
         "ftio",
         file,

@@ -92,6 +92,4 @@ def ftio_metric_task_save(
             }
         )
     else:
-        CONSOLE.info(
-            f"\n[yellow underline]Warning: {metric} returned {prediction}[/]"
-        )
+        CONSOLE.info(f"\n[yellow underline]Warning: {metric} returned {prediction}[/]")

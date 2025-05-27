@@ -14,6 +14,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import spearmanr
 
+from ftio.freq.helper import MyConsole
+
 
 def correlation(x, y, method="pearson"):
     """
@@ -66,7 +68,9 @@ def sliding_correlation(x, y, window_size, method="pearson"):
     return corrs
 
 
-def plot_correlation(t, signal_1, signal_2, corrs, window_duration=None):
+def plot_correlation(
+    t, signal_1, signal_2, corrs, window_duration=None, name=["Cosine", "Logical"]
+):
     """
     Plot input signals, sliding correlation, and their product.
 
@@ -76,6 +80,7 @@ def plot_correlation(t, signal_1, signal_2, corrs, window_duration=None):
         signal_2        : Second input signal (1D array)
         corrs           : Sliding correlation values (1D array)
         window_duration : Optional duration of the correlation window (float)
+        name            : List of two string indicating the label on the plot
     """
     # Ensure aligned time vector for correlation
     min_len = min(len(signal_1), len(signal_2), len(corrs))
@@ -89,8 +94,8 @@ def plot_correlation(t, signal_1, signal_2, corrs, window_duration=None):
 
     # Plot signals
     plt.subplot(3, 1, 1)
-    plt.plot(t_corr, signal_1, label="Cosine signal")
-    plt.plot(t_corr, signal_2, label="Logical signal", linestyle="--")
+    plt.plot(t_corr, signal_1, label=f"{name[0]} signal")
+    plt.plot(t_corr, signal_2, label=f"{name[1]} signal", linestyle="--")
     plt.title("Signals (trimmed for correlation window)")
     plt.legend()
     plt.grid(True)
@@ -108,8 +113,8 @@ def plot_correlation(t, signal_1, signal_2, corrs, window_duration=None):
 
     # Plot masked cosine
     plt.subplot(3, 1, 3)
-    plt.plot(t_corr, masked_corr, label="Masked Cosine", color="teal")
-    plt.title("Cosine Masked by Logical Signal")
+    plt.plot(t_corr, masked_corr, label=f"Masked {name[0]}", color="teal")
+    plt.title(f"{name[0]} Masked by {name[1]} Signal")
     plt.xlabel("Time (s)")
     plt.grid(True)
 
@@ -120,9 +125,10 @@ def plot_correlation(t, signal_1, signal_2, corrs, window_duration=None):
 def extract_correlation_ranges(
     t: np.ndarray,
     corrs: np.ndarray,
-    threshold_low=0.1,
-    threshold_high=1.0,
+    threshold_low: float = 0.12,
+    threshold_high: float = 1.0,
     min_duration: float = 0.0,
+    verbose: bool = False,
 ) -> list[tuple[float, float]]:
     """
     Extract continuous time ranges where correlation is between threshold_low and threshold_high,
@@ -134,13 +140,12 @@ def extract_correlation_ranges(
         threshold_low  : Lower threshold (inclusive)
         threshold_high : Upper threshold (inclusive)
         min_duration   : Minimum duration of a valid segment (in seconds)
+        verbose        : If set, prints the result on the console
 
     Returns:
         List of (start_time, end_time) tuples
     """
-    assert len(t) == len(
-        corrs
-    ), "Time and correlation arrays must be the same length"
+    assert len(t) == len(corrs), "Time and correlation arrays must be the same length"
     mask = (corrs >= threshold_low) & (corrs <= threshold_high)
 
     # Find rising and falling edges of the mask
@@ -161,9 +166,11 @@ def extract_correlation_ranges(
         if (t_end - t_start) >= min_duration:
             ranges.append((t_start, t_end))
 
-    for start, end in ranges:
-        print(
-            f"Correlation between {threshold_low} and {threshold_high} from {start:.2f}s to {end:.2f}s"
-        )
+    if ranges:
+        console = MyConsole(verbose)
+        for start, end in ranges:
+            console.info(
+                f"Correlation between {threshold_low} and {threshold_high} from {start:.2f}s to {end:.2f}s"
+            )
 
     return ranges

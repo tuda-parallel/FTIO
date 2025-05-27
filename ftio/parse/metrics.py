@@ -15,13 +15,9 @@ class Metrics:
 
     def add(self, ranks, run, T1, T2, B1=[], B2=[]):
         if self.args.avr:
-            self.assign_metric(
-                "t_avr", T1["b_overlap_avr"], ranks, run, T1["t_overlap"]
-            )
+            self.assign_metric("t_avr", T1["b_overlap_avr"], ranks, run, T1["t_overlap"])
         if self.args.sum:
-            self.assign_metric(
-                "t_sum", T1["b_overlap_sum"], ranks, run, T1["t_overlap"]
-            )
+            self.assign_metric("t_sum", T1["b_overlap_sum"], ranks, run, T1["t_overlap"])
         if self.args.ind:
             self.assign_metric(
                 "t_ind", T2["b_overlap_ind"], ranks, run, T2["t_overlap_ind"]

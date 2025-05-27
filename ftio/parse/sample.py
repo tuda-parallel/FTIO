@@ -16,9 +16,7 @@ class Sample:
         # self.max_offset_over_ranks       = self.assign(values,"max_offset_over_ranks")
         self.total_bytes = self.assign(values, "total_bytes")
         self.max_bytes_per_phase = self.assign(values, "max_bytes_per_phase")
-        self.max_io_phases_per_rank = self.assign(
-            values, "max_io_phases_per_rank"
-        )
+        self.max_io_phases_per_rank = self.assign(values, "max_io_phases_per_rank")
         self.total_io_phases = self.assign(values, "total_io_phases")
         self.max_io_ops_per_rank = self.assign(values, "max_io_ops_per_rank")
         self.max_io_ops_in_phase = self.assign(values, "max_io_ops_in_phase")
