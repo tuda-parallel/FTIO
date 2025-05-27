@@ -42,7 +42,7 @@ def merge_predictions(
             pred_merged, text = merge_core(pred_dft, pred_auto, args.freq, text)
             if pred_merged.dominant_freq:
                 text += f"Dominant frequency: [blue bold]{np.round(pred_merged.dominant_freq[-1],4)}[/] Hz -> [blue bold]{np.round(1/pred_merged.dominant_freq[-1],4)}[/] sec\n"
-                text += f"Confidence: [bold]{color_pred(pred_merged.conf[-1])}{np.round(pred_merged.conf[-1]*100,2)}[/] %\n"
+                text += f"Confidence: [bold]{pred_merged.conf[-1]}{np.round(pred_merged.conf[-1]*100,2)}[/] %\n"
             pred_auto.candidates = []
         else:
             text += "[yellow]Autrocorrelation prediction is empty[/]\n"
