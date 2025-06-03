@@ -15,6 +15,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 # find_peaks
 from scipy.signal import find_peaks
+from scipy.stats import kurtosis
 # all
 import numpy as np
 from ftio.plot.anomaly_plot import  plot_outliers, plot_decision_boundaries
@@ -135,7 +136,7 @@ def z_score(
         # get dominant index
         dominant_index, msg = dominant(index, freq_arr, conf)
         text+= msg
-        text += new_periodicity_score(amp,freq_arr)
+        text += new_periodicity_score(amp,freq_arr, dominant_index)
         
     
     if "plotly" in args.engine:
@@ -374,7 +375,7 @@ def peaks(amp: np.ndarray, freq_arr: np.ndarray, args) -> tuple[list[float], np.
     return dominant_index, abs(conf), text+msg+text_d
 
 def new_periodicity_score(
-        amp: np.ndarray, freq_arr: np.ndarray
+        amp: np.ndarray, freq_arr: np.ndarray, dominant_peak_indices: np.ndarray = None, peak_window_half_width: int = 3
 ) -> tuple[str]:
     
     def compute_rpde(freq_arr: np.ndarray) -> float:
@@ -391,6 +392,45 @@ def new_periodicity_score(
         spectral_flatness_score = 1 - float((geometric_mean / arithmetic_mean))
         return spectral_flatness_score
 
+    def compute_peak_sharpness(spectrum_amp: np.ndarray,
+                               peak_indices_in_spectrum: np.ndarray,
+                               window_half_width: int) -> float:
+        """
+        Computes the average peak sharpness (excess kurtosis) for specified peak regions.
+        Higher values indicate more peaked regions.
+        """
+        #if peak_indices_in_spectrum is None or peak_indices_in_spectrum.size == 0:
+            # Keine Peaks angegeben, oder Spektrum zu klein für aussagekräftige Peaks
+            # Ein sehr flaches (uniformes) Spektrum hat negative Exzess-Kurtosis.
+        #    return -2.0 # Standardwert für keine/flache Peaks
+
+        sharpness_scores = []
+        for peak_idx in peak_indices_in_spectrum:
+            start_idx = max(0, peak_idx - window_half_width)
+            end_idx = min(len(spectrum_amp), peak_idx + window_half_width + 1)
+            
+            peak_window_spectrum = spectrum_amp[start_idx:end_idx]
+
+            if peak_window_spectrum.size < 4: # Kurtosis braucht mind. 4 Punkte für sinnvolle Werte
+                # oder wenn das Fenster keine Varianz hat (flach ist)
+                sharpness_scores.append(-2.0) # Flaches Fenster
+                continue
+            
+            if np.std(peak_window_spectrum) < 1e-9: # Fenster ist flach
+                sharpness_scores.append(-2.0) # Typischer Kurtosiswert für flache Verteilung
+                continue
+
+            # fisher=True gibt Exzess-Kurtosis (Normalverteilung hat 0)
+            # bias=False für die Stichproben-Kurtosis-Formel
+            k = kurtosis(peak_window_spectrum, fisher=True, bias=False)
+            sharpness_scores.append(k)
+        
+        if not sharpness_scores: # Sollte nicht passieren, wenn peak_indices nicht leer war, aber als Fallback
+            return -2.0
+            
+        return float(np.mean(sharpness_scores)) # Durchschnittliche Sharpness der Peaks
+
+
     text = ""
     indices = np.arange(1, int(len(amp) / 2) + 1)
     amp_tmp = np.array(2 * amp[indices])
@@ -399,13 +439,15 @@ def new_periodicity_score(
 
     rpde_score = compute_rpde(amp_tmp)
     sf_score = compute_spectral_flatness(amp_tmp)
+    ps_score = compute_peak_sharpness(amp_tmp, dominant_peak_indices, peak_window_half_width)
 
     text += f"\n[blue]RPDE Score: {rpde_score:.4f}[/]\n"
     text += f"[blue]Spectral Flatness Score: {sf_score:.4f}[/]\n"
+    text += f"[blue]Peak Sharpness Score: {ps_score:.4f}[/]\n"
 
-    # test classifier
+    # naive classifier
     if rpde_score > 0.30 and sf_score > 0.85:
-        text += f"[green]Period likely matches signal\n"
+        text += f"[green]Found period likely matches signal\n"
     else:
         text += f"[red]Signal most likely not periodic\n"    
     return text
