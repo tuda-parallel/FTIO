@@ -15,6 +15,7 @@ from matplotlib import pyplot as plt
 from scipy.stats import spearmanr
 
 from ftio.freq.helper import MyConsole
+from ftio.plot.units import set_unit
 
 
 def correlation(x, y, method="pearson"):
@@ -89,34 +90,44 @@ def plot_correlation(
     t_corr = t[:min_len]
     corrs = corrs[:min_len]
     masked_corr = signal_1 * signal_2
-
-    plt.figure(figsize=(12, 6))
+    # plt.figure(figsize=(10, 8))
+    # plt.subplot(3, 1, 1)
+    plt.figure(figsize=(10, 6))
+    plt.subplot(2, 1, 1)
 
     # Plot signals
-    plt.subplot(3, 1, 1)
-    plt.plot(t_corr, signal_1, label=f"{name[0]} signal")
-    plt.plot(t_corr, signal_2, label=f"{name[1]} signal", linestyle="--")
-    plt.title("Signals (trimmed for correlation window)")
-    plt.legend()
+    unit, order = set_unit(signal_2)
+    plt.plot(t_corr, order * signal_1, label=f"{name[0]}")
+    plt.plot(t_corr, order * signal_2, label=f"{name[1]}", linestyle="--")
+    plt.title("Signals from DWT and DFT", fontsize=17)
+    plt.xlim(t_corr[0], t_corr[-1])
+    plt.legend(loc="upper right")
+    plt.ylabel(f"Bandwidth ({unit})", fontsize=17)
+    plt.xlabel("Time (s)", fontsize=17)
     plt.grid(True)
 
     # Plot correlation
-    plt.subplot(3, 1, 2)
+    # plt.subplot(3, 1, 2)
+    plt.subplot(2, 1, 2)
     plt.plot(t_corr, corrs, color="purple")
     plt.axhline(0, color="gray", linestyle="--")
     title = "Sliding Window Correlation"
     if window_duration:
         title += f" (Window = {window_duration:.1f} s)"
-    plt.title(title)
-    plt.ylabel("Correlation")
+    plt.title(title, fontsize=17)
+    plt.xlim(t_corr[0], t_corr[-1])
+    plt.ylabel("Correlation", fontsize=17)
+    plt.xlabel("Time (s)", fontsize=17)
     plt.grid(True)
 
     # Plot masked cosine
-    plt.subplot(3, 1, 3)
-    plt.plot(t_corr, masked_corr, label=f"Masked {name[0]}", color="teal")
-    plt.title(f"{name[0]} Masked by {name[1]} Signal")
-    plt.xlabel("Time (s)")
-    plt.grid(True)
+    # plt.subplot(3, 1, 3)
+    # plt.plot(t_corr, masked_corr, label=f"Masked {name[0]}", color="teal")
+    # # plt.title(f"{name[0]} masked by {name[1]} Signal")
+    # plt.title(f"Cosine wave masked approximation coefficients", fontsize=15)
+    # plt.xlabel("Time (s)", fontsize=17)
+    # plt.xlim(t_corr[0], t_corr[-1])
+    # plt.grid(True)
 
     plt.tight_layout()
     plt.show()
@@ -166,11 +177,24 @@ def extract_correlation_ranges(
         if (t_end - t_start) >= min_duration:
             ranges.append((t_start, t_end))
 
+    # Step 2: Merge nearby ranges
     if ranges:
+        merged_ranges = [ranges[0]]
+        for curr_start, curr_end in ranges[1:]:
+            prev_start, prev_end = merged_ranges[-1]
+            if curr_start - prev_end < min_duration:
+                # Merge with previous
+                merged_ranges[-1] = (prev_start, curr_end)
+            else:
+                merged_ranges.append((curr_start, curr_end))
+    else:
+        merged_ranges = []
+
+    if merged_ranges:
         console = MyConsole(verbose)
-        for start, end in ranges:
+        for start, end in merged_ranges:
             console.info(
                 f"Correlation between {threshold_low} and {threshold_high} from {start:.2f}s to {end:.2f}s"
             )
 
-    return ranges
+    return merged_ranges

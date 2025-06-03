@@ -178,7 +178,7 @@ Full documentation:
             "-d",
             "--dtw",
             action="store_true",
-            help="performs dynamic time wrapping on the top 3 frequencies (highest contribution) calculated using the DFT if set (default=False)",
+            help="performs dynamic time warping on the top 3 frequencies (highest contribution) calculated using the DFT if set (default=False)",
         )
         parser.set_defaults(dtw=False)
         parser.add_argument(

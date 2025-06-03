@@ -310,6 +310,7 @@ def plot_dft_matplotlib_dominant(
     plt.xlabel("Time (s)", fontsize=17)
     plt.grid(True)
     plt.legend(loc="upper left", ncol=1, fontsize=13)
+    plt.title("FTIO DFT results", fontsize=17)
     plt.tight_layout()
     return f
 

@@ -1,4 +1,6 @@
 import argparse
+import difflib
+import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import Manager, cpu_count
 
@@ -83,7 +85,7 @@ def parse_args():
         "-S",
         "--sample_freq_proxy",
         type=float,
-        default=1e3,
+        default=1,
         help="Sample rate used in proxy",
     )
     parsed_args, unknown = parser.parse_known_args()
@@ -92,6 +94,9 @@ def parse_args():
 
 
 def main(args: argparse.Namespace = parse_args()) -> None:
+    start = time.time()
+    console = MyConsole()
+    console.set(True)
     ftio_args = args.ftio_args
     show = False  # shows the results from FTIO
     pools = False  # pools or future
@@ -109,7 +114,7 @@ def main(args: argparse.Namespace = parse_args()) -> None:
     # finds up to n frequencies. Comment this out to go back to the default version
     # ftio_args.extend(['-n', '10'])
 
-    print(ftio_args)
+    console.print(f"FTIO args: ftio_args")
     if args.proxy:
         mp = MetricProxy()
         if not args.job_id:
@@ -121,7 +126,7 @@ def main(args: argparse.Namespace = parse_args()) -> None:
         jsonl = mp.trace(job_id)
         metrics = filter_metrics(
             jsonl,
-            filter_deriv=True,
+            filter_deriv=False,
             exclude=[],
             scale_t=1 / args.sample_freq_proxy,
         )
@@ -135,8 +140,6 @@ def main(args: argparse.Namespace = parse_args()) -> None:
         )  # 'mpi'
         # metrics = parse_all(args.file , filter_deriv=True,exclude=['size','hits','proxy'], scale_t=1/args.sample_freq_proxy) # 'mpi'
 
-    console = MyConsole()
-    console.set(True)
     console.print(
         "[blue]\nSettings:\n---------[/]\n"
         f"[blue] - parallel: {not args.disable_parallel}[/]\n"
@@ -160,6 +163,14 @@ def main(args: argparse.Namespace = parse_args()) -> None:
             for metric, _ in metrics.items():
                 avail_metrics += f"{metric},"
             console.print(avail_metrics[:-1])
+            # Find closest 3 matches
+            close_matches = difflib.get_close_matches(args.metric, metrics.keys(), n=3)
+            if close_matches:
+                suggestions = ", ".join(close_matches)
+                console.print(
+                    f"\nDid you mean one of these?\n [green]{suggestions}[/green]"
+                )
+
             exit(0)
         ftio_metric_task(args.metric, array, ftio_args, ranks, True)
     else:
@@ -169,6 +180,9 @@ def main(args: argparse.Namespace = parse_args()) -> None:
             data = execute(metrics, ftio_args, ranks, show)
 
         post(data, metrics, ftio_args)
+
+    if "-v" in ftio_args:
+        console.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
 
 
 def execute_parallel(

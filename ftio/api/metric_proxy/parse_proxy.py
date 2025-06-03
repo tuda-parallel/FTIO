@@ -61,7 +61,8 @@ def extract(json_data, match, verbose=False):
                         print("removing aggregation")
                     b_shifted = b_out[:-1]
                     b_shifted = np.insert(b_shifted, 0, 0)
-                    b_out = b_out - b_shifted
+                    # b_out = b_out - b_shifted
+                    b_out = numerical_derivative(t_out, b_out)
                     break
     return b_out, t_out
 

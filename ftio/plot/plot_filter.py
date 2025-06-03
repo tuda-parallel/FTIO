@@ -4,7 +4,6 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from ftio.freq._dft import compute_dft_spectrum
-from ftio.freq.freq_html import create_html
 
 
 def plot_filter_results_matplotlib(args, b, filtered_signal):
@@ -30,9 +29,14 @@ def plot_filter_results_matplotlib(args, b, filtered_signal):
     axs[0].plot(t, b, label="Original Signal", linestyle="-", marker="o")
     axs[0].plot(t, filtered_signal, label="Filtered Signal", linestyle="-", marker=".")
     axs[0].set_title("Time-Domain Signal")
-    axs[0].set_xlabel("Time [s]")
-    axs[0].set_ylabel("Amplitude")
-    axs[0].legend(loc="best")
+    axs[0].set_xlabel("Time (s)", fontsize=17)
+    axs[0].set_ylabel("Amplitude", fontsize=17)
+    axs[0].grid(True, which="both", linestyle="--", alpha=0.6)
+    axs[0].ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
+    axs[0].ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
+    axs[0].tick_params(axis="both", labelsize=12)
+    plt.xlim(t[0], t[-1])
+    axs[0].legend(loc="upper right")
 
     # Frequency response plot (Magnitude Response)
     step = args.freq / (2 * len(freqs))
@@ -46,9 +50,14 @@ def plot_filter_results_matplotlib(args, b, filtered_signal):
         label="Filtered",
     )
     axs[1].set_title("Frequency Response")
-    axs[1].set_xlabel("Frequency [Hz]")
-    axs[1].set_ylabel("Amplitude")
-    axs[1].legend(loc="best")
+    axs[1].set_xlabel("Time (s)", fontsize=17)
+    axs[1].set_ylabel("Frequency (Hz)", fontsize=17)
+    axs[1].grid(True, which="both", linestyle="--", alpha=0.6)
+    axs[1].ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
+    axs[1].ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
+    axs[1].tick_params(axis="both", labelsize=12)
+    plt.xlim(freqs[0], freqs[-1])
+    axs[1].legend(loc="upper right")
 
     # Adjust layout to prevent overlap
     plt.tight_layout()
@@ -57,11 +66,6 @@ def plot_filter_results_matplotlib(args, b, filtered_signal):
 
     # Show the plot
     return [fig]
-
-
-import numpy as np
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 
 def plot_filter_results_plotly(args, b, filtered_signal, as_subplots=True):

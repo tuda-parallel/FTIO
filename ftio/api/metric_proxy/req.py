@@ -16,7 +16,12 @@ class MetricProxy:
         return requests.get(f"{self.url}/trace/metrics/?job={jobid}").json()
 
     def trace(self, jobid) -> dict:
-        return requests.get(f"{self.url}/trace/json?jobid={jobid}").json()
+        response = requests.get(f"{self.url}/trace/json?jobid={jobid}").json()
+        if not response.get("success", True):
+            operation = response.get("operation", "Unknown operation")
+            raise ValueError(f"Job not found: {operation}")
+        else:
+            return response
 
     def trace_metric(self, jobid, metric) -> dict:
         return requests.get(

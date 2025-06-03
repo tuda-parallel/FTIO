@@ -4,10 +4,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objs as go
 from scipy.optimize import curve_fit
+from sklearn.metrics import mean_squared_error
 
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
+from ftio.plot.helper import format_plot
+from ftio.plot.units import set_unit
 
 
 def fourier_sum(t: np.ndarray, *params) -> np.ndarray:
@@ -39,7 +42,7 @@ def fourier_fit(
     analysis_figures: AnalysisFigures,
     b_sampled: np.ndarray,
     t: np.ndarray,
-    maxfev: int = 10000,
+    maxfev: int = 50000,
 ) -> None:
     """
     Fits a sum of Fourier components to sampled data using non-linear least squares.
@@ -53,25 +56,25 @@ def fourier_fit(
     The filed top_freq is changed in Prediction is overwritten by the new results
 
     Args:
-        args : Namespace
-            Arguments containing configuration, must include 'n_freq' (number of frequencies).
-        prediction : Prediction
-            Prediction class containing initial predictions for amplitudes ('amp'), frequencies ('freq'), and phases ('phi')
+        args (Namespace): Arguments containing configuration, must include 'n_freq' (number of frequencies).
+        prediction (Prediction): Prediction class containing initial predictions for amplitudes ('amp'), frequencies ('freq'), and phases ('phi')
             under the field 'top_freq'.
-        b_sampled : np.ndarray
-            Sampled signal data to fit.
-        t : np.ndarray
-            Time points corresponding to the sampled data.
-        maxfev : int, optional
-            Maximum number of function evaluations for the optimizer (default is 10000).
+        analysis_figures (AnalysisFigures): Data and plot figures.
+        b_sampled (np.ndarray): Sampled signal data to fit.
+        t (np.ndarray): Time points corresponding to the sampled data.
+        maxfev (int, optional): Maximum number of function evaluations for the optimizer (default is 10000).
     Returns:
         None
     """
+    p0 = []
+    n = len(b_sampled)
+    console = MyConsole()
+    console.set(args.verbose)
+
     if args.reconstruction:
         if max(args.reconstruction) < args.n_freq:
             args.reconstruction.append(args.n_freq)
-    p0 = []
-    n = len(b_sampled)
+
     for i in range(args.n_freq):
         if prediction.top_freqs["freq"][i] == 0:
             scale = 1 / n
@@ -112,15 +115,28 @@ def fourier_fit(
         },
     )
 
+    dft_res = fourier_sum(t, *p0)
+    fitted = fourier_sum(t, *params_opt)
     if any(x in args.engine for x in ["mat", "plot"]):
-        console = MyConsole()
-        console.set(args.verbose)
         console.print(f"Generating Fourier Fit Plot\n")
-        fig = plot_fourier_fit(
-            args, t, b_sampled, prediction, fourier_sum(t, *params_opt)
-        )
+        fig = plot_fourier_fit(args, t, b_sampled, prediction, fitted, dft_res)
         analysis_figures.add_figure_and_show([fig], "fourier_fit")
         console.print(f" --- Done --- \n")
+
+    error_before = mean_squared_error(b_sampled, dft_res)
+    error_after = mean_squared_error(b_sampled, fitted)
+    improvement = error_before - error_after
+    improvement_pct = (
+        100 * improvement / error_before if error_before != 0 else float("inf")
+    )
+    print(
+        f"Fourier fit improvement: MSE reduced from {error_before:.6f} to {error_after:.6f} "
+        f"({improvement_pct:.2f}% improvement)"
+    )
+
+
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 
 def plot_fourier_fit(
@@ -128,7 +144,8 @@ def plot_fourier_fit(
     t: np.ndarray,
     b_sampled: np.ndarray,
     prediction: Prediction,
-    cA_fourier_fit,
+    fourier_fit,
+    dft_res,
     show_top=False,
 ):
     """
@@ -140,7 +157,8 @@ def plot_fourier_fit(
         t (array-like): Time vector
         b_sampled (array-like): Sampled signal data
         prediction : Prediction from FTIO
-        cA_fourier_fit (array-like): Fourier sum data
+        fourier_fit (array-like): Fourier sum data
+        dft_res (array-like): DFT data
         show_top (bool, optional): If True, show the top frequencies
 
     Returns:
@@ -149,10 +167,14 @@ def plot_fourier_fit(
     """
 
     components = []
+    unit, order = set_unit(b_sampled)
+    fourier_fit *= order
+    dft_res *= order
+    b_sampled *= order
+    N = len(prediction.top_freqs["freq"])
     if show_top:
-        N = len(prediction.top_freqs["freq"])
         for k in range(N):
-            amp = prediction.top_freqs["amp"][k] / N
+            amp = order * prediction.top_freqs["amp"][k] / N
             if k != 0 and not (N % 2 != 0 and k == N - 1):
                 freq = prediction.top_freqs["freq"][k]
                 amp *= 2
@@ -160,28 +182,96 @@ def plot_fourier_fit(
                 trace, label = prediction.get_wave_and_name(freq, amp, phi)
                 components.append((trace, label))
 
+    colors = plt.cm.tab10(np.linspace(0, 1, 10))
     if "mat" in args.engine.lower():
-        # Matplotlib plotting
-        fig, ax = plt.subplots()
-        ax.plot(t, b_sampled, linestyle="--", label="sampled signal")
-        ax.plot(t, cA_fourier_fit, label="Fourier Sum")
+        fig, ax = plt.subplots(figsize=(10, 4))
+
+        ax.plot(
+            t,
+            b_sampled,
+            linestyle="--",
+            color=colors[0],
+            linewidth=2,
+            label="Sampled Signal",
+        )
+        ax.plot(
+            t,
+            fourier_fit,
+            color=colors[1],
+            linewidth=2.5,
+            label=f"Fourier Fit {N}-Components Sum",
+        )
+        ax.plot(t, dft_res, color=colors[2], linewidth=2, label=f"DFT {N}-Component Sum")
+
         if show_top:
-            for wave, label in components:
-                ax.plot(t, wave, label=label)
+            for i, (wave, label) in enumerate(components):
+                ax.plot(
+                    t,
+                    wave,
+                    linestyle="-",
+                    linewidth=1.5,
+                    color=colors[(3 + i) % 10],
+                    label=label,
+                )
+
+        ax.set_xlabel("Time (s)", fontsize=17)
+        ax.set_ylabel(f"Bandwidth ({unit})", fontsize=17)
+        ax.grid(True, which="both", linestyle="--", alpha=0.6)
+        ax.ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
+        ax.ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
+        ax.tick_params(axis="both", labelsize=12)
+        plt.xlim(t[0], t[-1])
+        ax.legend(frameon=True, shadow=True, fontsize=13, loc="upper left", ncol=2)
+        fig.tight_layout()
+
     else:
-        # Plotly plotting
         fig = go.Figure()
+
         fig.add_trace(
             go.Scatter(
                 x=t,
                 y=b_sampled,
                 mode="lines",
-                name="sampled signal",
-                line=dict(dash="dash"),
+                name="Sampled Signal",
+                line=dict(dash="dash", width=3, color="blue"),
             )
         )
-        fig.add_trace(go.Scatter(x=t, y=cA_fourier_fit, mode="lines", name="Fourier Sum"))
+        fig.add_trace(
+            go.Scatter(
+                x=t,
+                y=fourier_fit,
+                mode="lines",
+                name=f"Fourier Fit {N}-Components Sum",
+                line=dict(width=4, color="orange"),
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=t,
+                y=dft_res,
+                mode="lines",
+                name=f"DFT {N}-Component Sum",
+                line=dict(width=2, color="green"),
+            )
+        )
+
         if show_top:
-            for wave, label in components:
-                fig.add_trace(go.Scatter(x=t, y=wave, mode="lines", name=label))
+            plotly_colors = ["red", "purple", "brown", "magenta", "cyan"]
+            for i, (wave, label) in enumerate(components):
+                fig.add_trace(
+                    go.Scatter(
+                        x=t,
+                        y=wave,
+                        mode="lines",
+                        name=label,
+                        line=dict(width=2, color=plotly_colors[i % len(plotly_colors)]),
+                    )
+                )
+
+        fig.update_layout(
+            xaxis_title="Time",
+            yaxis_title=f"Bandwidth ({unit})",
+        )
+        f = format_plot(fig)
+
     return fig

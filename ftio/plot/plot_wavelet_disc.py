@@ -102,13 +102,12 @@ def plot_wave_disc(
         for i in np.arange(start=level, stop=0, step=-1):
             ax[level - i + 2].plot(time_disc, cc[level - i + 1])
             ax[level - i + 2].set_title(
-                f"reconstruction at level {i} from detailed coff -> [{freq / 2 ** (i + 1)}, {freq / 2**i}] Hz"
+                f"reconstruction at level {i} from detail coefficients -> [{freq / 2 ** (i + 1)}, {freq / 2**i}] Hz"
             )
         ax[1].plot(time_disc, cc[0])
         ax[1].set_title(
-            f"reconstruction at level {level} from approximated coff -> [0, {freq / 2 ** (level + 1)}] Hz"
+            f"reconstruction at level {level} from approximation coefficients -> [0, {freq / 2 ** (level + 1)}] Hz"
         )
-        fig.legend()
         fig.tight_layout()
         f.append(fig)
 
@@ -221,7 +220,7 @@ def matplot_coeffs_reconst_signal(
     fig, axes = plt.subplots(
         num_levels + 1,
         1,
-        figsize=(10, 3 * (num_levels + 1)),
+        figsize=(10, 2.5 * (num_levels + 1)),
         sharex=common_xaxis,
     )
 
@@ -240,9 +239,15 @@ def matplot_coeffs_reconst_signal(
         label="Reconstructed Signal",
         color="g",
     )
-    axes[0].set_title(names[0])
-    axes[0].set_ylabel("Amplitude")
-    axes[0].legend()
+    # axes[0].set_title(names[0])
+    axes[0].set_ylabel("Amplitude", fontsize=17)
+    axes[0].legend(loc="upper right")
+    axes[0].grid(True, which="both", linestyle="--", alpha=0.6)
+    axes[0].yaxis.set_major_formatter(plt.FormatStrFormatter("%.1e"))
+    # axes[0].ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
+    axes[0].ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
+    axes[0].tick_params(axis="both", labelsize=12)
+    axes[0].set_xlim(t_sampled[0], t_sampled[-1])
 
     # Plot each coefficient with corresponding frequency range
     for i in range(num_levels):
@@ -251,13 +256,18 @@ def matplot_coeffs_reconst_signal(
             coeffs[i],
             label=names[i + 1],
         )
-        axes[i + 1].set_title(names[i + 1])
-        axes[i + 1].set_ylabel("Amplitude")
-        axes[i + 1].legend()
+        #         axes[i + 1].set_title(names[i + 1])
+        axes[i + 1].set_ylabel("Amplitude", fontsize=17)
+        axes[i + 1].legend(loc="upper right")
+        axes[i + 1].grid(True, which="both", linestyle="--", alpha=0.6)
+        axes[i + 1].yaxis.set_major_formatter(plt.FormatStrFormatter("%.1e"))
+        #         axes[i + 1].ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
+        axes[i + 1].ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
+        axes[i + 1].tick_params(axis="both", labelsize=12)
+        axes[i + 1].set_xlim(t_sampled[0], t_sampled[-1])
 
-    axes[-1].set_xlabel("Time (s)")
-
-    fig.tight_layout()
+    axes[-1].set_xlabel("Time (s)", fontsize=17)
+    fig.tight_layout()  # comment this out for the paper
     return fig
 
 
@@ -289,24 +299,26 @@ def matplot_wavelet_disc_spectrum(
     X, Y = np.meshgrid(time_edges, freq_edges)
 
     # Create figure
-    fig, ax = plt.subplots(figsize=(15, 8))
+    fig, ax = plt.subplots(figsize=(10, 5))
 
     # Plot using pcolormesh
     cax = ax.pcolormesh(X, Y, coeffs_magnitude, cmap="seismic", shading="flat")
 
     # Formatting
-    ax.set_xlabel("Time (s)", fontsize=18)
-    ax.set_ylabel("Frequency (Hz)", fontsize=18)
-    ax.set_title("Wavelet Spectrum", fontsize=18)
-    ax.tick_params(axis="both", labelsize=18)
+
+    plt.ylabel("Frequency (Hz)", fontsize=17)
+    plt.xlabel("Time (s)", fontsize=17)
+    # ax.set_title("Wavelet Spectrum")
+    ax.tick_params(axis="both", labelsize=12)
+    ax.ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
+    ax.ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
 
     # Invert y-axis to have higher frequencies at the top
     # plt.gca().invert_yaxis()
 
     # Add colorbar
-    cbar = fig.colorbar(cax, ax=ax)
-    cbar.set_label("Magnitude", fontsize=18)
-
+    cbar = plt.colorbar(cax, ax=ax, location="bottom", aspect=50)
+    cbar.set_label("Amplitude", fontsize=17)
     plt.tight_layout()
     return fig
 

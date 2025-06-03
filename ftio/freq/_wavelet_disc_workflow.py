@@ -7,13 +7,10 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 
-from ftio.analysis._correlation import (
-    extract_correlation_ranges,
-    plot_correlation,
-    sliding_correlation,
-)
+from ftio.analysis._logicize import logicize
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft_workflow import ftio_dft
+from ftio.freq._dft_x_dwt import analyze_correlation
 from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq._wavelet import wavelet_disc
 from ftio.freq._wavelet_helpers import (
@@ -71,6 +68,8 @@ def ftio_wavelet_disc(
     console.print("[cyan]Executing:[/] Discretization\n")
     b_sampled, args.freq = sample_data(bandwidth, time_stamps, args.freq, args.verbose)
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
+
+    # b_sampled = logicize(b_sampled)
 
     tik = time.time()
     console.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
@@ -137,10 +136,9 @@ def ftio_wavelet_disc(
     # analysis = "dft_on_all"
     analysis = "dft_x_dwt"
     # analysis = "dwt_x_autocorrelation"
-
-    if len(coefficients) <= 2:
-        analysis = "dft_on_all"
-        console.print(f"[green]Setting analysis to {analysis}")
+    # if len(coefficients) <= 2:
+    #     analysis = "dft_on_all"
+    #     console.print(f"[green]Setting analysis to {analysis}")
 
     # ? Option 1 ("dft_on_approx_coeff"): Execute DFT on approx. coefficients from DWT
     # cont = input("\nContinue with the DFT? [y/n]")
@@ -151,21 +149,6 @@ def ftio_wavelet_disc(
         prediction, analysis_figures_dft, share = ftio_dft(
             args, coefficients_upsampled[0], t_sampled, total_bytes, ranks
         )
-        signal_1 = b_sampled
-        signal_2 = coefficients_upsampled[0]
-        window_freq = 0.005
-        window_duration = 1 / window_freq
-        window_size = int((t_sampled[-1] - t_sampled[0]) * window_freq * prediction.freq)
-        corr = sliding_correlation(signal_1, signal_2, window_size)
-        plot_correlation(
-            t_sampled,
-            signal_1,
-            signal_2,
-            corr,
-            window_duration,
-            ["b_sampled", "Wavelet approx. coefficients"],
-        )
-
         analysis_figures_wavelet += analysis_figures_dft
 
     # ? Option 2: Find intersection between DWT and DFT
@@ -173,7 +156,7 @@ def ftio_wavelet_disc(
         args.transformation = "dft"
         # TODO: For this to be parallel, the generated HTML files need different names as
         #  they are overwritten
-        with ProcessPoolExecutor(max_workers=4) as executor:
+        with ProcessPoolExecutor(max_workers=1) as executor:
             # submit futures
             futures = {}
             for i, coeffs in enumerate(coefficients_upsampled):
@@ -187,9 +170,11 @@ def ftio_wavelet_disc(
             # Process futures as they complete
             for future in as_completed(futures):
                 prediction, analysis_figures_dft, _ = future.result()
-                convert_and_plot(args, analysis_figures_dft)
                 display_prediction(["ftio"], prediction)
                 index = futures[future]
+                analyze_correlation(
+                    args, prediction, coefficients_upsampled[index], t_sampled
+                )
                 console.print(f"[green] {index} completed[/]")
             exit()
 
@@ -201,28 +186,9 @@ def ftio_wavelet_disc(
             args, coefficients_upsampled[0], t_sampled, total_bytes, ranks
         )
         # 2) compare the results
-        if len(prediction.dominant_freq) > 0:
-            signal_1 = prediction.get_dominant_wave()
-            # signal_2 = max(coefficients_upsampled[0])*logicize(
-            # coefficients_upsampled[0])
-            signal_2 = coefficients_upsampled[0]
-            window_duration = 1 / prediction.get_dominant_freq()
-            window_size = int(
-                (t_sampled[-1] - t_sampled[0])
-                * prediction.get_dominant_freq()
-                * prediction.freq
-            )
-            corr = sliding_correlation(signal_1, signal_2, window_size)
-
-            # 3) Extract valid ranges and return
-            t_corr = t_sampled[: min(len(signal_1), len(signal_2), len(corr))]
-            prediction.ranges = extract_correlation_ranges(
-                t_corr, corr, min_duration=window_duration, verbose=args.verbose
-            )
+        analyze_correlation(args, prediction, coefficients_upsampled[0], t_sampled)
         if any(x in args.engine for x in ["mat", "plot"]):
-            plot_correlation(t_sampled, signal_1, signal_2, corr, window_duration)
             analysis_figures_wavelet += analysis_figures_dft
-        # display_prediction(args, prediction)
 
     # ? Option 4: Apply autocorrelation on low
     elif "dwt_x_autocorrelation" in analysis:
