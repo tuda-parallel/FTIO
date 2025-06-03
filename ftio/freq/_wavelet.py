@@ -1,14 +1,16 @@
-""" Wavelet functions (continuous and discrete) 
-"""
+"""Wavelet functions (continuous and discrete)"""
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pywt
 from scipy import signal
-import matplotlib.pyplot as plt
+
 # from ftio.freq.helper import MyConsole
 
 
-def wavelet_cont(b_sampled: np.ndarray, wavelet: str, scales:np.ndarray, freq: float) -> tuple[np.ndarray, np.ndarray]:
+def wavelet_cont(
+    b_sampled: np.ndarray, wavelet: str, scales: np.ndarray, freq: float
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform continuous wavelet transformation on a given signal.
 
@@ -23,13 +25,11 @@ def wavelet_cont(b_sampled: np.ndarray, wavelet: str, scales:np.ndarray, freq: f
             - Coefficients (np.ndarray): The wavelet coefficients obtained after the transformation.
             - Frequencies (np.ndarray): The corresponding frequencies for each scale used in the transformation.
     """
-    
+
     sampling_period = 1 / freq
     # console = MyConsole(True)
     # console.print(pywt.scale2frequency(wavelet, scale) / sampling_period)
-    coefficients, frequencies = pywt.cwt(
-        b_sampled, scales, wavelet,sampling_period
-    )
+    coefficients, frequencies = pywt.cwt(b_sampled, scales, wavelet, sampling_period)
 
     return coefficients, frequencies
 
@@ -44,14 +44,12 @@ def wavelet_disc(b_sampled: np.ndarray, wavelet: str, level: int) -> list[np.nda
         level (int): The decomposition level for the wavelet transformation.
 
     Returns:
-        List[np.ndarray]: A list of NumPy arrays, where each array contains the wavelet coefficients 
+        List[np.ndarray]: A list of NumPy arrays, where each array contains the wavelet coefficients
         for a specific level of decomposition.
     """
     # Perform Discrete Wavelet Transformation
     coefficients = pywt.wavedec(b_sampled, wavelet, level=level)
     return coefficients
-
-
 
 
 def welch(b, freq):
@@ -70,4 +68,3 @@ def welch(b, freq):
     # plt.ylabel('PSD [V**2/Hz]')
     plt.ylabel("Linear spectrum [V RMS]")
     plt.show()
-

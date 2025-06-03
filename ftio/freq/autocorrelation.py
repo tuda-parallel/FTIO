@@ -4,110 +4,121 @@ and to filter outliers from the detected peaks.
 """
 
 from __future__ import annotations
+
 import time
-import numpy as np
-from scipy.signal import find_peaks
-from rich.panel import Panel
 from argparse import Namespace
+
+import numpy as np
+from rich.panel import Panel
+from scipy.signal import find_peaks
+
 # from rich.padding import Padding
 import ftio.freq.discretize as dis
+from ftio.freq._analysis_figures import AnalysisFigures
+from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq.helper import MyConsole
+from ftio.freq.prediction import Prediction
 from ftio.plot.plot_autocorrelation import plot_autocorr_results
 
 
-
-
-def find_autocorrelation(args, data: dict, share:dict) -> dict:
+def find_autocorrelation(
+    args: Namespace,
+    data: dict,
+    analysis_figures: AnalysisFigures,
+    share: SharedSignalData,
+) -> Prediction:
     """Finds the period using autocorreleation
 
     Args:
-        args (argparse): command line arguments
-        data (dict): sampled data
+        args (argparse.Namespace): Command line arguments
+        data (dict): Sampled data
+        share (SharedSignalData): shared signal data from freq analysis like DFT:
+        analysis_figures (AnalysisFigures): Data and plot figures.
 
     Returns:
-        dict: predictions containing 4 fields: 
-            1. bandwidth (np.array): bandwidth array
-            2. time (np.array): time array indicating when bandwidth time points changed
-            3. total_bytes (int): total transferred bytes
-            4. ranks: number of ranks that did I/O
+        tuple:
+            - prediction (Prediction): Contains prediction results including dominant frequency, confidence, amplitude, etc.
     """
-    prediction = {}
+    prediction = Prediction("")
     candidates = np.array([])
     console = MyConsole()
     console.set(args.verbose)
     tik = time.time()
     if args.autocorrelation:
         console.print("[cyan]Executing:[/] Autocorrelation\n")
-        prediction = {
-        "source":"autocorrelation",
-        "dominant_freq": [],
-        "conf": [],
-        "t_start": 0,
-        "t_end": 0,
-        "total_bytes": 0,
-        }
-        # print("    '-> \033[1;32mExecuting Autocorrelation")
-        b_sampled = np.array([])
-        freq = np.nan
-        t_s = np.nan
-        t_e = np.nan
-        total_bytes = np.nan
+        prediction.set_from_dict(
+            {
+                "source": "autocorrelation",
+                "dominant_freq": np.array([]),
+                "conf": np.array([]),
+                "t_start": 0,
+                "t_end": 0,
+                "total_bytes": 0,
+            }
+        )
 
-
-        # Take data if already avilable from previous step
-        if share:
-            b_sampled = share["b_sampled"]
-            freq = share["freq"]
-            t_s = share["t_start"]
-            t_e = share["t_end"]
-            total_bytes = share["total_bytes"]
+        # Take data if already aviable from previous step
+        if not share.is_empty():
+            b_sampled = share.get("b_sampled")
+            freq = share.get("freq")
+            t_s = share.get("t_start")
+            t_e = share.get("t_end")
+            total_bytes = share.get("total_bytes")
         else:
             total_bytes = 0
             bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
-            time_b = data["time"] if "time" in data else np.array([])
-            t_s = time_b[0]
-            t_e = time_b[-1]
+            time_stamps = data["time"] if "time" in data else np.array([])
+            t_s = time_stamps[0]
+            t_e = time_stamps[-1]
             if args.ts:  # shorten data
-                time_b = time_b[time_b >= args.ts]
-                t_s = time_b[0]
-                bandwidth = bandwidth[len(bandwidth) - len(time_b) :]
+                time_stamps = time_stamps[time_stamps >= args.ts]
+                t_s = time_stamps[0]
+                bandwidth = bandwidth[len(bandwidth) - len(time_stamps) :]
                 total_bytes = np.sum(
-                    bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b)
+                    bandwidth
+                    * (np.concatenate([time_stamps[1:], time_stamps[-1:]]) - time_stamps)
                 )
                 console.print(f"[purple]Start time set to {args.ts:.2f}")
             else:
-                console.print(f"[purple]Start time: {time_b[0]:.2f}")
+                console.print(f"[purple]Start time: {time_stamps[0]:.2f}")
 
             if args.te:  # shorten data
-                time_b = time_b[time_b <= args.te]
-                t_s = time_b[-1]
-                bandwidth = bandwidth[len(bandwidth) - len(time_b) :]
+                time_stamps = time_stamps[time_stamps <= args.te]
+                t_s = time_stamps[-1]
+                bandwidth = bandwidth[len(bandwidth) - len(time_stamps) :]
                 total_bytes = np.sum(
-                    bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b)
+                    bandwidth
+                    * (np.concatenate([time_stamps[1:], time_stamps[-1:]]) - time_stamps)
                 )
                 console.print(f"[purple]End time set to {args.te:.2f}")
             else:
-                console.print(f"[purple]End time: {time_b[-1]:.2f}")
+                console.print(f"[purple]End time: {time_stamps[-1]:.2f}")
 
-            # sample the bandwidth bandwidth
-            b_sampled, freq = dis.sample_data(bandwidth, time_b, args.freq, args.verbose) 
+            # sample the bandwidth
+            b_sampled, freq = dis.sample_data(
+                bandwidth, time_stamps, args.freq, args.verbose
+            )
 
-        res = find_fd_autocorrelation(args, b_sampled, freq)
+        res = find_fd_autocorrelation(args, b_sampled, freq, analysis_figures)
 
-        #save the results
-        prediction["dominant_freq"] = 1/res["periodicity"]  if res["periodicity"] > 0 else np.nan
-        prediction["conf"] = res["conf"]
-        prediction["t_start"] = t_s
-        prediction["t_end"] = t_e
-        prediction["total_bytes"] = total_bytes
-        prediction["freq"] = freq
-        prediction["candidates"] = candidates
+        # save the results
+        prediction.dominant_freq = (
+            1 / res["periodicity"] if res["periodicity"] > 0 else np.nan
+        )
+        prediction.conf = res["conf"]
+        prediction.t_start = t_s
+        prediction.t_end = t_e
+        prediction.total_bytes = total_bytes
+        prediction.freq = freq
+        prediction.candidates = candidates
         console.print(f"\n[cyan]Autocorrelation finished:[/] {time.time() - tik:.3f} s")
-        
+
     return prediction
 
 
-def filter_outliers(freq: float, candidates: np.ndarray, weights: np.ndarray) -> tuple[np.ndarray, str]:
+def filter_outliers(
+    freq: float, candidates: np.ndarray, weights: np.ndarray
+) -> tuple[np.ndarray, str]:
     """removes outliers using either qunatil method or Z-score
 
     Args:
@@ -122,8 +133,8 @@ def filter_outliers(freq: float, candidates: np.ndarray, weights: np.ndarray) ->
     outliers = np.array([])
     # remove outliers:
     if len(candidates) > 0 and any(candidates > 0):
-        ind = np.where(candidates > 1/freq)
-        candidates = candidates[ind] # remove everythin above 10 Hz
+        ind = np.where(candidates > 1 / freq)
+        candidates = candidates[ind]  # remove everythin above 10 Hz
         if len(weights > 0):
             weights = weights[ind]
         method = "z"
@@ -143,12 +154,16 @@ def filter_outliers(freq: float, candidates: np.ndarray, weights: np.ndarray) ->
             # With Zscore:
             mean = np.average(candidates, weights=weights) if len(weights) > 0 else 0
             # std = np.std(candidates)
-            std =  np.sqrt(np.abs(np.average((candidates-mean)**2, weights=weights))) if len(weights) > 0 else 0
+            std = (
+                np.sqrt(np.abs(np.average((candidates - mean) ** 2, weights=weights)))
+                if len(weights) > 0
+                else 0
+            )
             text += f"Wighted mean is [purple]{mean:.3f}[/] and weighted std. is [purple]{std:.3f}[/]\n"
-            z_score = np.abs((candidates - mean) / std) if std != 0  else np.array([])
+            z_score = np.abs((candidates - mean) / std) if std != 0 else np.array([])
             outliers = np.where(z_score > 1)
             text += f"Z-score is [purple]{print_array(z_score)}[/]\n"
-        
+
         text += (
             f"[purple]{len(candidates)}[/] period candidates found:\n"
             f"[purple]{print_array(candidates)}[/]\n\n"
@@ -160,7 +175,12 @@ def filter_outliers(freq: float, candidates: np.ndarray, weights: np.ndarray) ->
     return outliers, text
 
 
-def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float) -> dict:
+def find_fd_autocorrelation(
+    args: Namespace,
+    b_sampled: np.ndarray,
+    freq: float,
+    analysis_figures: AnalysisFigures,
+) -> dict:
     """
     Computes the autocorrelation of a sampled signal, detects peaks, and calculates periodicity and confidence
     based on the detected periods.
@@ -169,9 +189,10 @@ def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float)
         args (Namespace): Command line arguments.
         b_sampled (np.ndarray): The sampled input signal.
         freq (float): The frequency at which the signal is sampled.
+        analysis_figures (AnalysisFigures): Data and plot figures.
 
     Returns:
-        dict: A dictionary containing the autocorrelation, peak locations, weights, 
+        dict: A dictionary containing the autocorrelation, peak locations, weights,
                 calculated periodicity, and confidence level.
     """
     # Compute autocorrelation of the sampled signal
@@ -180,14 +201,14 @@ def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float)
     # Finding peak locations and calculating the average time differences between them
     peaks, prop = find_peaks(acorr, height=0.15)
     candidates = np.diff(peaks) / freq
-    weights = np.diff(prop['peak_heights'])
+    weights = np.diff(prop["peak_heights"])
 
     # Removing outliers
     outliers, text = filter_outliers(freq, candidates, weights)
-    if outliers:
+    if len(outliers) > 0:
         candidates = np.delete(candidates, outliers)
         weights = np.delete(weights, outliers)
-        
+
     # Calculating period and its statistics
     if candidates.size > 0:
         mean = np.average(candidates, weights=weights)
@@ -213,12 +234,32 @@ def find_fd_autocorrelation(args: Namespace, b_sampled: np.ndarray, freq: float)
     )
     console = MyConsole()
     console.set(args.verbose)
-    console.print(Panel.fit(text[:-1], style="white", border_style="purple", title="Autocorrelation", title_align="left"))
+    console.print(
+        Panel.fit(
+            text[:-1],
+            style="white",
+            border_style="purple",
+            title="Autocorrelation",
+            title_align="left",
+        )
+    )
 
     # plot
-    plot_autocorr_results(args, acorr, peaks, outliers, len(candidates) > 0)
+    if any(x in args.engine for x in ["mat", "plot"]):
+        console.print(f"Generating Autocorrelation Plot\n")
+        fig = plot_autocorr_results(args, acorr, peaks, outliers, len(candidates) > 0)
+        analysis_figures.add_figure([fig], "Autocorrelation")
+        console.print(f" --- Done --- \n")
 
-    return {"autocorrelation": acorr, "candidates": candidates, "peaks": peaks, "outliers": outliers, "weights": weights, "periodicity": periodicity, "conf": conf}
+    return {
+        "autocorrelation": acorr,
+        "candidates": candidates,
+        "peaks": peaks,
+        "outliers": outliers,
+        "weights": weights,
+        "periodicity": periodicity,
+        "conf": conf,
+    }
 
 
 def autocorrelation(arr: np.ndarray) -> np.ndarray:
@@ -248,11 +289,11 @@ def autocorrelation(arr: np.ndarray) -> np.ndarray:
     return acorr
 
 
-def print_array(array:np.ndarray) -> str:
+def print_array(array: np.ndarray) -> str:
     out = ""
     if len(array) == 0:
-        out =" "
+        out = " "
     for i in array:
         out += f" {i:.2f}"
 
-    return "["+out[1:]+"]"
+    return "[" + out[1:] + "]"

@@ -23,7 +23,9 @@ class FileData:
         self._mask = self._data_actual[1]["number_of_ranks"].isin([self.rank])
         self._mask_ind = self._data_actual[3]["number_of_ranks"].isin([self.rank])
         self._mask2 = self._data_actual[1]["file_index"][self._mask].isin([self.run])
-        self._mask2_ind = self._data_actual[3]["file_index"][self._mask_ind].isin([self.run])
+        self._mask2_ind = self._data_actual[3]["file_index"][self._mask_ind].isin(
+            [self.run]
+        )
 
     @property
     def run(self) -> int:
@@ -145,7 +147,8 @@ class DataSource:
         elif len(self._data_required) != 0:
             self._ranks = self._data_required[0]["number_of_ranks"].astype(int)
         names_and_ranks_df = pd.concat(
-            [pd.Series(self._plot_core.names, name="filenames"), self._ranks], axis=1
+            [pd.Series(self._plot_core.names, name="filenames"), self._ranks],
+            axis=1,
         )
         self._filenames = names_and_ranks_df["filenames"].to_list()
         self._ranks = names_and_ranks_df["number_of_ranks"].to_list()

@@ -20,7 +20,16 @@ class StackPlot:
             if group != 0:
                 txt = {"legendgroup": group, "legendgrouptitle_text": group}
             self.fig.add_trace(
-                go.Scatter(x=t, y=b, name=name, **txt, line={"shape": "hv", "width": 0.5}, fill="tozeroy", hoverinfo="x+y", stackgroup="one")
+                go.Scatter(
+                    x=t,
+                    y=b,
+                    name=name,
+                    **txt,
+                    line={"shape": "hv", "width": 0.5},
+                    fill="tozeroy",
+                    hoverinfo="x+y",
+                    stackgroup="one",
+                )
             )
         elif "mat" in self.engine:
             if group != 0:

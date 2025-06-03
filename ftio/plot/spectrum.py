@@ -1,13 +1,17 @@
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
 from ftio.plot.helper import format_plot
 
 
 def plot_spectrum(
-    amp: np.ndarray, freq: np.ndarray, mode: str = "Amplitude", percent: bool = False
+    amp: np.ndarray,
+    freq: np.ndarray,
+    mode: str = "Amplitude",
+    percent: bool = False,
 ):
     template = "plotly"
     name = "Amplitude" if "amp" in mode.lower() else "Power"
@@ -34,7 +38,11 @@ def plot_spectrum(
         x="freq",
         y="A",
         color="A",
-        color_continuous_scale=["rgb(0,50,150)", "rgb(150,50,150)", "rgb(255,50,0)"],
+        color_continuous_scale=[
+            "rgb(0,50,150)",
+            "rgb(150,50,150)",
+            "rgb(255,50,0)",
+        ],
     )
 
     fig_tmp.update_traces(

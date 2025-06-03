@@ -1,12 +1,15 @@
-import sys
-import os
-from datetime import datetime
 import json
+import os
+import sys
+from datetime import datetime
+
 import numpy as np
-from ftio.parse.csv_reader import read_csv_file
-# from ftio.api.trace_analysis.helper import quick_plot
-from ftio.processing.operations import quick_ftio
 from rich.console import Console
+
+from ftio.parse.csv_reader import read_csv_file
+
+# from ftio.api.trace_analysis.helper import quick_plot
+from ftio.processing.compact_operations import quick_ftio
 
 console = Console()
 

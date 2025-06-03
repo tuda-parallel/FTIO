@@ -1,5 +1,5 @@
-from ftio.parse.simrun import Simrun
 from ftio.parse.msgpack_reader import extract
+from ftio.parse.simrun import Simrun
 
 
 class ParseMsgpack:
@@ -8,7 +8,7 @@ class ParseMsgpack:
         if self.path[-1] == "/":
             self.path = self.path[:-1]
 
-    def to_simrun(self, args, index = 0):
+    def to_simrun(self, args, index=0):
         """Convert to Simrun class
         Args:
             ars (argparse): command line arguments
@@ -19,4 +19,4 @@ class ParseMsgpack:
         file = self.path
         data = extract(file)
 
-        return Simrun(data,'msgpack', file, args, index)
+        return Simrun(data, "msgpack", file, args, index)

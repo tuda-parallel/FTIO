@@ -1,5 +1,4 @@
-"""Helper function for frequency techniques    
-"""
+"""Helper function for frequency techniques"""
 
 from rich.console import Console
 
@@ -45,30 +44,6 @@ def get_sim(data, mode):
         elif "sync" in mode:
             return data.write_sync
     raise Exception("undefined mode set")
-
-
-def merge_results(
-    predictions: list[dict], dfs: list[list], prediction: dict, df: list[list]
-):
-    """
-    Merges the results of two data frames (df0 and df1) and appends a new prediction to the list of predictions.
-
-    Args:
-        predictions (list[dict]): A list of prediction dictionaries.
-        df0 (list[list]): List for plotting containing four lists.
-        prediction (dict): New prediction to be added to the predictions list.
-        df1 (list[list]): New list to be appended to the data for plotting.
-
-    Returns:
-        None:
-    """
-
-    # Merge data for plotting
-    for i in range(len(dfs)):
-        dfs[i].extend(df[i])
-
-    # Append the new prediction to the predictions list
-    predictions.append(prediction)
 
 
 class MyConsole(Console):

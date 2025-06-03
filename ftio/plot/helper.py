@@ -2,34 +2,61 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-def legend_fix(data, c) -> bool:
+
+def legend_fix(data, c: int) -> bool:
+    """Determines if the legend should be fixed for the current plot.
+
+    Args:
+        data: Data object containing plot information.
+        c (int): Current index of the plot.
+
+    Returns:
+        bool: True if the legend should be fixed, False otherwise.
+    """
     if c == data.nRun - 1:
         return True
     else:
         return False
 
 
-def format_plot_and_ticks(fig: go.Figure, legend=True, font=True, x_minor=True, y_minor=True, x_ticks = True, y_ticks = True) -> go.Figure:
-    """Formats plots
+def format_plot_and_ticks(
+    fig: go.Figure,
+    legend: bool = True,
+    font: bool = True,
+    x_minor: bool = True,
+    y_minor: bool = True,
+    x_ticks: bool = True,
+    y_ticks: bool = True,
+    n_ticks: int = 5,
+    font_size: int = 17,
+) -> go.Figure:
+    """Formats the plot with specified settings for legend, font, and axis ticks.
 
     Args:
-        fig (go.Figure): figure from plotly
-        legend (bool, optional): flag to format legend as well. Defaults to True.
-        font (bool, optional): flag to format font as well. Defaults to True.
+        fig (go.Figure): Plotly figure to format.
+        legend (bool, optional): Whether to format the legend. Defaults to True.
+        font (bool, optional): Whether to format the font. Defaults to True.
+        x_minor (bool, optional): Whether to show minor ticks on the x-axis. Defaults to True.
+        y_minor (bool, optional): Whether to show minor ticks on the y-axis. Defaults to True.
+        x_ticks (bool, optional): Whether to show major ticks on the x-axis. Defaults to True.
+        y_ticks (bool, optional): Whether to show major ticks on the y-axis. Defaults to True.
+        n_ticks (int, optional): Number of minor ticks. Defaults to 5.
 
     Returns:
-        go.Figure: Formatted figure
+        go.Figure: Formatted Plotly figure.
     """
     if legend:
-        fig.update_layout(legend=dict(
+        fig.update_layout(
+            legend=dict(
                 bgcolor="rgba(255,255,255,.99)",
                 bordercolor="Black",
                 borderwidth=1,
-            ))
+            )
+        )
     if font:
-        fig.update_layout(font=dict(
-            family="Courier New, monospace", size=17, color="black"
-            ))
+        fig.update_layout(
+            font=dict(family="Courier New, monospace", size=font_size, color="black")
+        )
 
     fig.update_layout(
         plot_bgcolor="white",
@@ -37,12 +64,12 @@ def format_plot_and_ticks(fig: go.Figure, legend=True, font=True, x_minor=True, 
     )
 
     x_settings = dict(
-        mirror = True,
-        showgrid = True,
-        showline = True,
-        linecolor = "black",
-        gridcolor = "lightgrey"
-        )
+        mirror=True,
+        showgrid=True,
+        showline=True,
+        linecolor="black",
+        gridcolor="lightgrey",
+    )
     if x_ticks:
         x_settings["ticks"] = "outside"
         x_settings["ticklen"] = 10
@@ -50,18 +77,22 @@ def format_plot_and_ticks(fig: go.Figure, legend=True, font=True, x_minor=True, 
     if x_minor:
         x_settings["minor_ticks"] = "outside"
         x_settings["minor"] = dict(
-            ticklen=2, tickcolor="black", tickmode="auto", nticks=5, showgrid=True
+            ticklen=2,
+            tickcolor="black",
+            tickmode="auto",
+            nticks=n_ticks,
+            showgrid=True,
         )
 
     fig.update_xaxes(**x_settings)
-    
+
     y_settings = dict(
-        mirror = True,
-        showgrid = True,
-        showline = True,
-        linecolor = "black",
-        gridcolor = "lightgrey"
-        )
+        mirror=True,
+        showgrid=True,
+        showline=True,
+        linecolor="black",
+        gridcolor="lightgrey",
+    )
     if y_ticks:
         y_settings["ticks"] = "outside"
         y_settings["ticklen"] = 10
@@ -69,7 +100,11 @@ def format_plot_and_ticks(fig: go.Figure, legend=True, font=True, x_minor=True, 
     if y_minor:
         y_settings["minor_ticks"] = "outside"
         y_settings["minor"] = dict(
-            ticklen=2, tickcolor="black", tickmode="auto", nticks=5, showgrid=True
+            ticklen=2,
+            tickcolor="black",
+            tickmode="auto",
+            nticks=n_ticks,
+            showgrid=True,
         )
 
     fig.update_yaxes(**y_settings)
@@ -77,16 +112,20 @@ def format_plot_and_ticks(fig: go.Figure, legend=True, font=True, x_minor=True, 
     return fig
 
 
-def format_plot(fig, font_size=24) -> go.Figure:
-    """makes plots uniform
+def format_plot(fig: go.Figure, font_size: int = 22) -> go.Figure:
+    """Applies uniform formatting to the plot.
 
     Args:
-        fig (pltoly figure)
+        fig (go.Figure): Plotly figure to format.
+        font_size (int, optional): Font size for the plot. Defaults to 24.
+
+    Returns:
+        go.Figure: Formatted Plotly figure.
     """
     fig.update_layout(
         plot_bgcolor="white",
         legend=dict(
-            bgcolor="rgba(255,255,255,.99)",
+            bgcolor="rgba(255,255,255,.8 )",
             bordercolor="Black",
             borderwidth=1,
         ),
@@ -126,7 +165,18 @@ def format_plot(fig, font_size=24) -> go.Figure:
     return fig
 
 
-def save_fig(fig, f, path, name):
+def save_fig(fig: go.Figure, f: list[go.Figure], path: str, name: str) -> None:
+    """Saves the given figure to a file.
+
+    Args:
+        fig (go.Figure): Plotly figure to save.
+        f (list): List of figures.
+        path (str): Directory path to save the figure.
+        name (str): Base name for the saved file.
+
+    Returns:
+        None
+    """
     length = len(f)
     index = f.index(fig)
     try:
@@ -138,7 +188,20 @@ def save_fig(fig, f, path, name):
     print(f"   -> Finished {index}/{length-1}")
 
 
-def add_fig_row(nRun, onefig=False, specs=None, subplot_titles=None) -> go.Figure:
+def add_fig_row(
+    nRun: int, onefig: bool = False, specs=None, subplot_titles=None
+) -> go.Figure:
+    """Creates a figure with rows of subplots.
+
+    Args:
+        nRun (int): Number of rows.
+        onefig (bool, optional): Whether to create a single figure. Defaults to False.
+        specs (list, optional): Specifications for the subplots. Defaults to None.
+        subplot_titles (list, optional): Titles for the subplots. Defaults to None.
+
+    Returns:
+        go.Figure: Plotly figure with rows of subplots.
+    """
     if nRun == 1 or onefig == True:
         # self.f_t.append(go.Figure())
         f = make_subplots(rows=1, cols=1, specs=specs)
@@ -149,8 +212,24 @@ def add_fig_row(nRun, onefig=False, specs=None, subplot_titles=None) -> go.Figur
 
 
 def add_fig_col(
-    nRun, onefig=False, specs=None, subplot_titles=None, horizontal_spacing=0.01
+    nRun: int,
+    onefig: bool = False,
+    specs=None,
+    subplot_titles=None,
+    horizontal_spacing: float = 0.01,
 ) -> go.Figure:
+    """Creates a figure with columns of subplots.
+
+    Args:
+        nRun (int): Number of columns.
+        onefig (bool, optional): Whether to create a single figure. Defaults to False.
+        specs (list, optional): Specifications for the subplots. Defaults to None.
+        subplot_titles (list, optional): Titles for the subplots. Defaults to None.
+        horizontal_spacing (float, optional): Spacing between columns. Defaults to 0.01.
+
+    Returns:
+        go.Figure: Plotly figure with columns of subplots.
+    """
     if nRun == 1 or onefig == True:
         # self.f_t.append(go.Figure())
         f = make_subplots(rows=1, cols=1, specs=specs)

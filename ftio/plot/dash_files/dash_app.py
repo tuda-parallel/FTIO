@@ -1,20 +1,30 @@
-import sys
 import importlib.util
+import sys
+
 import ftio.plot.dash_files.constants.id as id
 import ftio.plot.dash_files.constants.io_mode as io_mode
 from ftio.plot.dash_files.callback_files.callbacks import get_callbacks
 
 DASH_AVAILABLE = importlib.util.find_spec("dash") is not None
 if not DASH_AVAILABLE:
-    sys.exit("Dash module not found. Please install it using 'make full' or 'pip install dash dash-extensions'.")
+    sys.exit(
+        "Dash module not found. Please install it using 'make full' or 'pip install dash dash-extensions'."
+    )
 else:
     from dash import dcc, html
-    from dash_extensions.enrich import DashProxy, ServersideOutputTransform, TriggerTransform
+    from dash_extensions.enrich import (
+        DashProxy,
+        ServersideOutputTransform,
+        TriggerTransform,
+    )
 
 
 class IOAnalysisApp(DashProxy):
     def __init__(self, plot_core) -> None:
-        super().__init__(__name__, transforms=[ServersideOutputTransform(), TriggerTransform()])
+        super().__init__(
+            __name__,
+            transforms=[ServersideOutputTransform(), TriggerTransform()],
+        )
         self.title = "IO Analysis"
 
         self._plot_core = plot_core
@@ -29,10 +39,26 @@ class IOAnalysisApp(DashProxy):
             children=[
                 dcc.Loading(
                     [
-                        dcc.Store(id=id.STORE_FIGURES_SYNC_READ, data={}, storage_type="memory"),
-                        dcc.Store(id=id.STORE_FIGURES_SYNC_WRITE, data={}, storage_type="memory"),
-                        dcc.Store(id=id.STORE_FIGURES_ASYNC_READ, data={}, storage_type="memory"),
-                        dcc.Store(id=id.STORE_FIGURES_ASYNC_WRITE, data={}, storage_type="memory"),
+                        dcc.Store(
+                            id=id.STORE_FIGURES_SYNC_READ,
+                            data={},
+                            storage_type="memory",
+                        ),
+                        dcc.Store(
+                            id=id.STORE_FIGURES_SYNC_WRITE,
+                            data={},
+                            storage_type="memory",
+                        ),
+                        dcc.Store(
+                            id=id.STORE_FIGURES_ASYNC_READ,
+                            data={},
+                            storage_type="memory",
+                        ),
+                        dcc.Store(
+                            id=id.STORE_FIGURES_ASYNC_WRITE,
+                            data={},
+                            storage_type="memory",
+                        ),
                         # dcc.Store(id=id.STORE_FIGURES_TIME, data={}, storage_type="memory"),
                     ],
                     fullscreen=True,
@@ -40,7 +66,9 @@ class IOAnalysisApp(DashProxy):
                 ),
                 html.H1(self.title),
                 html.Hr(),
-                html.Div(children="Number of files: " + str(len(self._plot_core.data.paths))),
+                html.Div(
+                    children="Number of files: " + str(len(self._plot_core.data.paths))
+                ),
                 html.Hr(),
                 dcc.Dropdown(
                     options=self._plot_core.data.paths,
@@ -48,7 +76,7 @@ class IOAnalysisApp(DashProxy):
                     id=id.DROPDOWN_FILE,
                     multi=True,
                     style={"marginTop": 10},
-                    disabled=True if self._plot_core.data.args.merge_plots else False,
+                    disabled=(True if self._plot_core.data.args.merge_plots else False),
                 ),
                 dcc.Checklist(
                     options=self._io_modes,

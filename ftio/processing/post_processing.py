@@ -1,11 +1,16 @@
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+
+from ftio.freq.prediction import Prediction
 from ftio.plot.helper import format_plot
 
 
 def label_phases(
-    prediction: dict, args, b0: np.ndarray = np.array([]), t0: np.ndarray = np.array([])
+    prediction: Prediction,
+    args,
+    b0: np.ndarray = np.array([]),
+    t0: np.ndarray = np.array([]),
 ):
     """Labels the phases using the result from FTIO
 
@@ -22,51 +27,53 @@ def label_phases(
     only0ne = False
     n_waves = 1
 
-    t = np.arange(prediction["t_start"], prediction["t_end"], 1 / prediction["freq"])
+    t = np.arange(prediction.t_start, prediction.t_end, 1 / prediction.freq)
 
     if only0ne:
-        dominant_index = np.argmax(prediction["conf"])
-        # conf = prediction["conf"][dominant_index]
-        f = prediction["dominant_freq"][dominant_index]
-        amp = prediction["amp"][dominant_index]
-        phi = prediction["phi"][dominant_index]
-        n = np.floor((prediction["t_end"] - prediction["t_start"]) * prediction["freq"])
+        dominant_index = np.argmax(prediction.conf)
+        # conf = prediction.conf[dominant_index]
+        f = prediction.dominant_freq[dominant_index]
+        amp = prediction.amp[dominant_index]
+        phi = prediction.phi[dominant_index]
+        n = np.floor((prediction.t_end - prediction.t_start) * prediction.freq)
 
         ## create cosine wave
         cosine_wave = 2 * amp / n * np.cos(2 * np.pi * f * t + phi)
     else:
         cosine_wave = np.zeros(len(t))
-        n_waves = len(prediction["conf"]) if args.n_freq == 0 else len(prediction["top_freq"]["freq"])
+        n_waves = (
+            len(prediction.conf)
+            if args.n_freq == 0
+            else len(prediction.top_freqs["freq"])
+        )
         print(f"merging {n_waves} frequencies")
 
         # iterate over all dominant frequencies or take the top_frequencies if args.n_freq is above 0
         for index, _ in enumerate(
-            prediction["conf"] if args.n_freq == 0 else prediction["top_freq"]["freq"]
+            prediction.conf if args.n_freq == 0 else prediction.top_freqs["freq"]
         ):
-            # conf = prediction["conf"][index]
+            # conf = prediction.conf[index]
             f = (
-                prediction["dominant_freq"][index]
+                prediction.dominant_freq[index]
                 if args.n_freq == 0
-                else prediction["top_freq"]["freq"][index]
+                else prediction.top_freqs["freq"][index]
             )
             amp = (
-                prediction["amp"][index]
+                prediction.amp[index]
                 if args.n_freq == 0
-                else prediction["top_freq"]["amp"][index]
+                else prediction.top_freqs["amp"][index]
             )
             phi = (
-                prediction["phi"][index]
+                prediction.phi[index]
                 if args.n_freq == 0
-                else prediction["top_freq"]["phi"][index]
+                else prediction.top_freqs["phi"][index]
             )
-            n = np.floor(
-                (prediction["t_end"] - prediction["t_start"]) * prediction["freq"]
-            )
+            n = np.floor((prediction.t_end - prediction.t_start) * prediction.freq)
 
-            #skip frequency at 0
+            # skip frequency at 0
             if f == 0 and args.n_freq != 0:
                 continue
-            
+
             ## create cosine wave
             cosine_wave = cosine_wave + 2 * amp / n * np.cos(2 * np.pi * f * t + phi)
 
@@ -110,19 +117,19 @@ def label_phases(
     return phases, time
 
 
-def plot_classification(args, cosine_wave, t, time, n_waves = 0, b0 =np.array([]), t0=np.array([])) -> go.Figure | None:
+def plot_classification(
+    args, cosine_wave, t, time, n_waves=0, b0=np.array([]), t0=np.array([])
+) -> go.Figure | None:
     fig = None
     if any(x in args.engine for x in ["mat", "plot"]):
         fig = go.Figure()
         if n_waves == 1:
-            name = "Dominant wave" 
+            name = "Dominant wave"
         elif args.n_freq == 0:
             name = "Dominant waves"
         else:
             name = f"{n_waves} superposed <br>cosine waves"
-        fig.add_trace(
-            go.Scatter(x=t, y=cosine_wave, name=name, marker_color="red")
-        )
+        fig.add_trace(go.Scatter(x=t, y=cosine_wave, name=name, marker_color="red"))
         # fig.add_trace(go.Scatter(x=t, y=square_wave, name="square wave"))
         fig.add_hline(y=0, line_width=1, line_color="gray")
         colors = px.colors.qualitative.Plotly + px.colors.qualitative.G10

@@ -1,11 +1,13 @@
 from __future__ import annotations
-import os
+
 import fcntl
+import os
 import signal
 from time import sleep
+
 from rich.console import Console
+
 from ftio.multiprocessing.async_process import join_procs
-from time import sleep
 
 CONSOLE = Console()
 

@@ -1,13 +1,14 @@
 from multiprocessing import Manager
 
+
 class SharedResources:
     def __init__(self):
-        '''Initialize the manager and shared resources.'''
+        """Initialize the manager and shared resources."""
         self.manager = Manager()
         self._init_shared_resources()
 
     def _init_shared_resources(self):
-        '''Initialize the shared resources.'''
+        """Initialize the shared resources."""
         # Queue for FTIO data
         self.queue = self.manager.Queue()
         # list of dicts with all predictions so far
@@ -29,15 +30,15 @@ class SharedResources:
         self.t_flush = self.manager.list()
 
     def restart(self):
-        '''Restart the manager and reinitialize shared resources.'''
+        """Restart the manager and reinitialize shared resources."""
         print("Shutting down existing Manager...")
-        self.manager.shutdown()  
+        self.manager.shutdown()
 
         print("Starting new Manager...")
-        self.manager = Manager() 
+        self.manager = Manager()
         self._init_shared_resources()
 
     def shutdown(self):
-        '''Shutdown the manager.'''
+        """Shutdown the manager."""
         print("Shutting down Manager...")
         self.manager.shutdown()

@@ -1,10 +1,10 @@
+import matplotlib.pyplot as plt
 import numpy as np
-from scipy.cluster.hierarchy import linkage
 import pandas as pd
 import plotly.express as px
-import seaborn as sns
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+import seaborn as sns
+from scipy.cluster.hierarchy import linkage
 
 from ftio.plot.helper import format_plot_and_ticks
 
@@ -34,7 +34,11 @@ def heatmap(data):
 
     # Convert to DataFrame
     heatmap_data = pd.DataFrame(
-        {"Metric": metrics, "Dominant Frequency": dominant_freqs, "Confidence": confs}
+        {
+            "Metric": metrics,
+            "Dominant Frequency": dominant_freqs,
+            "Confidence": confs,
+        }
     )
 
     # Ensure data is not empty and contains valid ranges
@@ -96,14 +100,19 @@ def heatmap(data):
             # len=200,
         ),
     )
-    fig = format_plot_and_ticks(fig,False, True,False,False)
+    fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()
 
 
 def scatter(df, x, y, color, symbol) -> None:
     # Create the scatter plot
     fig = px.scatter(
-        df, x=x, y=y, color=color, symbol=symbol, color_continuous_scale="Viridis"
+        df,
+        x=x,
+        y=y,
+        color=color,
+        symbol=symbol,
+        color_continuous_scale="Viridis",
     )
     # Display the plot
     fig.update_layout(
@@ -140,7 +149,7 @@ def scatter2D(df) -> None:
         margin=dict(l=100, r=100, t=50, b=150),
         coloraxis_colorbar=dict(yanchor="top", y=1, ticks="outside", ticksuffix=" %"),
     )
-    fig = format_plot_and_ticks(fig,False, True,False,False)
+    fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()
 
 
@@ -170,7 +179,11 @@ def heatmap_2(data):
 
     # Convert to DataFrame
     heatmap_data = pd.DataFrame(
-        {"Metric": metrics, "Dominant Frequency": dominant_freqs, "Confidence": confs}
+        {
+            "Metric": metrics,
+            "Dominant Frequency": dominant_freqs,
+            "Confidence": confs,
+        }
     )
 
     # Ensure data is not empty and contains valid ranges
@@ -198,10 +211,12 @@ def heatmap_2(data):
         for j, metric_j in enumerate(metrics_unique):
             if i <= j:  # Only calculate for one half of the matrix
                 freq_i = dominant_freq_per_metric.loc[
-                    dominant_freq_per_metric["Metric"] == metric_i, "Dominant Frequency"
+                    dominant_freq_per_metric["Metric"] == metric_i,
+                    "Dominant Frequency",
                 ].values
                 freq_j = dominant_freq_per_metric.loc[
-                    dominant_freq_per_metric["Metric"] == metric_j, "Dominant Frequency"
+                    dominant_freq_per_metric["Metric"] == metric_j,
+                    "Dominant Frequency",
                 ].values
                 if len(freq_i) > 0 and len(freq_j) > 0:
                     if zscore:
@@ -240,7 +255,6 @@ def heatmap_2(data):
     # )
     linkage_matrix = linkage(heatmap_diff, method="average", metric="euclidean")
 
-
     sns.clustermap(
         heatmap_diff,
         row_linkage=linkage_matrix,
@@ -276,9 +290,7 @@ def density_heatmap(data) -> None:
             continue
 
     # Create a DataFrame for the plot
-    df = pd.DataFrame(
-        data_points, columns=["Metric", "Dominant Frequency", "Confidence"]
-    )
+    df = pd.DataFrame(data_points, columns=["Metric", "Dominant Frequency", "Confidence"])
 
     # Create the density heatmap
     fig = px.density_heatmap(
@@ -303,7 +315,11 @@ def density_heatmap(data) -> None:
         yaxis_title="Dominant Frequency",
         xaxis_tickangle=-45,
         coloraxis_colorbar=dict(
-            yanchor="top", y=1, ticks="outside", ticksuffix=" %", title="Confidence (%)"
+            yanchor="top",
+            y=1,
+            ticks="outside",
+            ticksuffix=" %",
+            title="Confidence (%)",
         ),
         margin=dict(l=100, r=100, t=50, b=150),
     )
@@ -351,7 +367,7 @@ def plot_heatmap(heatmap_diff):
         ),
         margin=dict(l=100, r=100, t=50, b=150),  # Adjust margins to give more space
     )
-    fig = format_plot_and_ticks(fig,False, True,False,False)
+    fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()
 
 
