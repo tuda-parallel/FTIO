@@ -32,22 +32,29 @@ def vmd(signal, t, fs, denoise=False):
         u, u_hat, omega = VMD(signal_hat, alpha, tau, K, DC, init, tol)
 
         plot_imfs(signal, t, u, K, signal_hat)
+
+        plot_imf_char(signal, t, fs, u, K)
+
+        center_freqs = omega[-1] * fs
+        u_periodic, cen_freq_per = rm_nonperiodic(u, center_freqs, t)
+
+        imf_select_change_point(signal, signal_hat, u_periodic, t, cen_freq_per)
     else:
         u, u_hat, omega = VMD(signal, alpha, tau, K, DC, init, tol)
 
         plot_imfs(signal, t, u, K)
 
-    plot_imf_char(signal, t, fs, u, K)
+        plot_imf_char(signal, t, fs, u, K)
 
-    center_freqs = omega[-1] * fs
-    u_periodic, cen_freq_per = rm_nonperiodic(u, center_freqs, t)
+        center_freqs = omega[-1] * fs
+        u_periodic, cen_freq_per = rm_nonperiodic(u, center_freqs, t)
+
+        imf_select_change_point(signal, signal, u_periodic, t, cen_freq_per)
 
     #rel = imf_select_msm(signal, u_periodic)
 
     #analytic_signal = hilbert(u[1])
     #amplitude_envelope = np.abs(analytic_signal)
-
-    imf_select_change_point(signal_hat, u_periodic, t, cen_freq_per)
 
 def plot_imfs(signal, t, u, K, denoised=None):
     fig, ax = plt.subplots(K+1)
@@ -125,7 +132,7 @@ def imf_select_msm(signal, u_per):
 
 import ruptures as rpt
 
-def imf_select_change_point(signal, u_per, t, center_freqs): #, u_per):
+def imf_select_change_point(orig, signal, u_per, t, center_freqs): #, u_per):
     # change point detection
     #model = "l1"
     #model = "l2"
