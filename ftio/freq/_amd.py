@@ -234,7 +234,7 @@ def imf_select_change_point(orig, signal, u_per, t, center_freqs, fs, args): #, 
         imf = u_per[j]
 
         corr = pcc(signal.astype(float), imf).statistic
-        if corr > 0.7:
+        if corr > 0.65:
             start = 0
             end = len(imf)
             time = start, end
@@ -274,7 +274,7 @@ def imf_select_change_point(orig, signal, u_per, t, center_freqs, fs, args): #, 
 
             #corr = scc(window, segment).statistic
             corr = pcc(window.astype(float), segment.astype(float)).statistic
-            if corr > 0.6:
+            if corr > 0.65:
                 time = start, end
 
                 frq = det_imf_frq(imf, center_freqs[j], fs, args)
