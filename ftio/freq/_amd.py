@@ -10,7 +10,7 @@ def amd(b_sampled, freq, bandwidth, time_b, method="vmd"):
     t_start = time_b[0]
     t_end = time_b[-1]
     N = len(b_sampled)
-    t = np.arange(t_start, t_end, (t_end-t_start)/N, dtype=float)
+    t = np.linspace(t_start, t_end, N)
 
     if (method == "vmd"):
         vmd(b_sampled, t, freq, denoise=True)
@@ -65,21 +65,21 @@ def plot_imfs(signal, t, u, K, denoised=None):
     plt.show()
 
 def plot_imf_char(signal, t, fs, u, K, denoised=None):
-    fig, ax = plt.subplots(K)
+    fig, ax = plt.subplots(K+1)
     ax[0].plot(t, signal)
 
-    for i in range(1,K):
-        analytic_signal = hilbert(u[0])
+    for i in range(1,K+1):
+        analytic_signal = hilbert(u[i-1])
         amplitude_envelope = np.abs(analytic_signal)
         instantaneous_phase = np.unwrap(np.angle(analytic_signal))
         instantaneous_frequency = np.diff(instantaneous_phase) / (2.0*np.pi) * fs
 
-        if len(u[i]) < len(t):
-            end = len(u[i])
+        if len(u[i-1]) < len(t):
+            end = len(u[i-1])
         else:
             end = len(t)
 
-        ax[i].plot(t[:end], u[i])
+        ax[i].plot(t[:end], u[i-1])
         ax[i].plot(t[1:end], instantaneous_frequency, label="inst freq")
         ax[i].plot(t[:end], amplitude_envelope, label="amp")
 
