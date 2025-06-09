@@ -2,20 +2,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 from vmdpy import VMD
 
+from ftio.freq.anomaly_detection import z_score
 from ftio.freq.denoise import tfpf_wvd
 from ftio.freq.frq_verification import pcc, scc
 from scipy.signal import hilbert
 
-def amd(b_sampled, freq, bandwidth, time_b, method="vmd"):
+def amd(b_sampled, freq, bandwidth, time_b, args, method="vmd"):
     t_start = time_b[0]
     t_end = time_b[-1]
     N = len(b_sampled)
     t = np.linspace(t_start, t_end, N)
 
     if (method == "vmd"):
-        vmd(b_sampled, t, freq, denoise=True)
+        vmd(b_sampled, t, freq, args, denoise=True)
 
-def vmd(signal, t, fs, denoise=False):
+def vmd(signal, t, fs, args, denoise=False):
     # fixed parameters
     tau = 0.           # noise-tolerance (no strict fidelity enforcement)
     DC = 0             # no DC part imposed
@@ -38,7 +39,7 @@ def vmd(signal, t, fs, denoise=False):
         center_freqs = omega[-1] * fs
         u_periodic, cen_freq_per = rm_nonperiodic(u, center_freqs, t)
 
-        imf_select_change_point(signal, signal_hat, u_periodic, t, cen_freq_per)
+        imf_select_change_point(signal, signal_hat, u_periodic, t, cen_freq_per, fs, args)
     else:
         u, u_hat, omega = VMD(signal, alpha, tau, K, DC, init, tol)
 
@@ -49,7 +50,7 @@ def vmd(signal, t, fs, denoise=False):
         center_freqs = omega[-1] * fs
         u_periodic, cen_freq_per = rm_nonperiodic(u, center_freqs, t)
 
-        imf_select_change_point(signal, signal, u_periodic, t, cen_freq_per)
+        imf_select_change_point(signal, signal, u_periodic, t, cen_freq_per, fs, args)
 
     #rel = imf_select_msm(signal, u_periodic)
 
@@ -106,6 +107,87 @@ def rm_nonperiodic(u, center_freqs, t):
 
     return u_periodic, center_freqs[i:]
 
+def det_imf_frq(imf, center_frq, fs, args):
+    analytic_signal = hilbert(imf)
+    amplitude_envelope = np.abs(analytic_signal)
+
+    ####
+
+    instantaneous_phase = np.unwrap(np.angle(analytic_signal))
+    instantaneous_frequency = np.diff(instantaneous_phase) / (2.0*np.pi) * fs
+
+    #length = len(imf)
+    #if len(instantaneous_frequency) < length:
+    #    length = len(instantaneous_frequency)
+    #if len(amplitude_envelope) < length:
+
+
+    t = np.arange(0, len(imf))
+
+    #plt.plot(t, imf)
+    #plt.plot(t[1:], instantaneous_frequency, label="inst freq")
+    #plt.plot(t, amplitude_envelope, label="amp")
+
+    #plt.show()
+
+    ###
+
+    from scipy.fft import fft, ifft
+
+    yf = fft(amplitude_envelope)
+
+    N = len(imf)
+    T = 1.0 / 20.0
+    xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
+
+    #plt.plot(xf[:30], 2.0/N * np.abs(yf[:N//2])[:30])
+    #plt.show()
+
+    # identify peak
+    n = len(yf)
+    freq_arr = fs * np.arange(0, n) / n
+    indices = z_score(yf, freq_arr, args)[0]
+
+    #ind = indices[0]
+
+    amp_frq = []
+    amp_corr = []
+
+    #print("inidices peaks amp env")
+    #print(ind)
+
+    for ind in indices:
+
+        # correlation ifft & amplitude envelope
+        amp_frq_arr = np.zeros(len(imf))
+        amp_frq_arr[ind] = yf[ind]
+        amp_cos = ifft(amp_frq_arr)
+
+        corr = scc(amplitude_envelope, amp_cos).statistic
+
+        t = np.arange(0, len(imf))
+
+        #plt.plot(t, amplitude_envelope)
+        #plt.plot(t, amp_cos)
+        #plt.show()
+
+        print("corr segm amp envel & cos")
+        print(corr)
+
+        if corr > 0.8:
+            amp_frq.append(fs * ind / len(imf))
+            amp_corr.append(corr)
+            print("corr segm amp envel & cos > 0.8")
+            print(amp_frq)
+
+    if not amp_frq:
+        return center_frq
+    elif len(amp_frq) == 1:
+        return amp_frq[0]
+    else:
+        i = np.argmax(amp_corr)
+        return amp_frq[i]
+
 # most significant mode
 def imf_select_msm(signal, u_per):
     corr_stats = np.empty(u_per.shape[0])
@@ -132,7 +214,7 @@ def imf_select_msm(signal, u_per):
 
 import ruptures as rpt
 
-def imf_select_change_point(orig, signal, u_per, t, center_freqs): #, u_per):
+def imf_select_change_point(orig, signal, u_per, t, center_freqs, fs, args): #, u_per):
     # change point detection
     #model = "l1"
     #model = "l2"
@@ -157,7 +239,9 @@ def imf_select_change_point(orig, signal, u_per, t, center_freqs): #, u_per):
             end = len(imf)
             time = start, end
 
-            comp = time, j
+            frq = det_imf_frq(imf, center_freqs[j], fs, args)
+
+            comp = time, j, frq
             per_segments.append(comp)
 
             # good enough, no change point detection required
@@ -193,18 +277,21 @@ def imf_select_change_point(orig, signal, u_per, t, center_freqs): #, u_per):
             if corr > 0.6:
                 time = start, end
 
-                comp = time, j
+                frq = det_imf_frq(imf, center_freqs[j], fs, args)
+
+                comp = time, j, frq
                 per_segments.append(comp)
 
     if per_segments:
-        plt.plot(t, signal)
+        plt.plot(t, orig)
 
         for p in per_segments:
             start = p[0][0]
             end = p[0][1]
             imf = u_per[p[1]]
 
-            plt.plot(t[start:end], imf[start:end], label=center_freqs[p[1]])
+            #plt.plot(t[start:end], imf[start:end], label=center_freqs[p[1]])
+            plt.plot(t[start:end], imf[start:end], label=p[2])
 
         plt.legend()
         plt.show()

@@ -36,6 +36,6 @@ def ftio_amd(
     )
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
-    amd(b_sampled, freq, bandwidth, time_b)
+    amd(b_sampled, freq, bandwidth, time_b, args)
 
     return prediction, df_out, share
