@@ -58,9 +58,7 @@ def binary_image_nprom(Zxx, n=3):
 
         prom_filtered = []
         if (len(peaks[0]) > n):
-            prom_sorted = np.argsort(prom)
-            for j in range (1,n+1):
-                prom_filtered.append(prom[prom_sorted[-j]])
+            prom_filtered = np.argpartition(prom, -3)[-3:]
         else:
             prom_filtered = prom
 
@@ -68,6 +66,7 @@ def binary_image_nprom(Zxx, n=3):
             for ind in range(0,len(prom_filtered)):
                 if prom_filtered[ind] > 0.01:
                     _ind = peaks[0][ind]
+                    print(_ind)
                     bin_im[i][_ind] = 255
 
     return bin_im
@@ -121,7 +120,7 @@ def binary_image_zscore_extended(Zxx, freq, args):
     return bin_im
 
 # https://www.geeksforgeeks.org/python-opencv-connected-component-labeling-and-analysis/
-def component_linking(image):
+def component_linking(image, fs, win_len):
     """
     Extracts individual signal components by connecting frequency peaks of binary image.
 
@@ -164,7 +163,13 @@ def component_linking(image):
         end = indices[-1]
         time = start, end
 
-        comp = time, freqs
+        freqs_mean = np.mean(freqs)
+        freqs_median = np.median(freqs)
+
+        freq_mean = freqs_mean * fs / win_len
+        freq_median = freqs_median * fs / win_len
+
+        comp = time, freq_mean, freq_median
         result.append(comp)
 
     filename = "cv2_image.jpg"
