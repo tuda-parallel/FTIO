@@ -77,7 +77,7 @@ def ftio_dft(
 
     #!  Find the dominant frequency
     (dominant_index, conf[1 : int(n / 2) + 1], outlier_text) = outlier_detection(
-        amp, frequencies, args
+        amp, frequencies, b_sampled, args
     )
 
     #  Ignore DC offset
