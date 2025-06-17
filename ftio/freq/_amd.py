@@ -87,8 +87,8 @@ def plot_imfs(signal, t, u, K, denoised=None):
     plt.show()
 
 def plot_imf_char(signal, t, fs, u, K, denoised=None):
-    fig, ax = plt.subplots(K+1)
-    ax[0].plot(t, signal)
+    fig, ax = plt.subplots(K+1,3)
+    ax[0][0].plot(t, signal)
 
     for i in range(1,K+1):
         analytic_signal = hilbert(u[i-1])
@@ -101,9 +101,9 @@ def plot_imf_char(signal, t, fs, u, K, denoised=None):
         else:
             end = len(t)
 
-        ax[i].plot(t[:end], u[i-1])
-        ax[i].plot(t[1:end], instantaneous_frequency, label="inst freq")
-        ax[i].plot(t[:end], amplitude_envelope, label="amp")
+        ax[i][0].plot(t[:end], u[i-1])
+        ax[i][1].plot(t[1:end], instantaneous_frequency, label="inst freq")
+        ax[i][2].plot(t[:end], amplitude_envelope, label="amp")
 
     plt.legend()
     plt.show()
@@ -124,27 +124,13 @@ def rm_nonperiodic(u, center_freqs, t):
 def det_imf_frq(imf, center_frq, fs, args):
     analytic_signal = hilbert(imf)
     amplitude_envelope = np.abs(analytic_signal)
-
-    ####
-
     instantaneous_phase = np.unwrap(np.angle(analytic_signal))
     instantaneous_frequency = np.diff(instantaneous_phase) / (2.0*np.pi) * fs
 
-    #length = len(imf)
-    #if len(instantaneous_frequency) < length:
-    #    length = len(instantaneous_frequency)
-    #if len(amplitude_envelope) < length:
-
-
     t = np.arange(0, len(imf))
 
-    #plt.plot(t, imf)
-    #plt.plot(t[1:], instantaneous_frequency, label="inst freq")
-    #plt.plot(t, amplitude_envelope, label="amp")
-
-    #plt.show()
-
-    ###
+    plt.plot(t[:-1], instantaneous_frequency)
+    plt.show()
 
     from scipy.fft import fft, ifft
 
@@ -154,24 +140,21 @@ def det_imf_frq(imf, center_frq, fs, args):
     T = 1.0 / 20.0
     xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
 
-    #plt.plot(xf[:30], 2.0/N * np.abs(yf[:N//2])[:30])
-    #plt.show()
+    yf2 = fft(imf)
+
+    plt.plot(xf[:40], 2.0/N * np.abs(yf[:N//2])[:40])
+    plt.plot(xf[:40], 2.0/N * np.abs(yf2[:N//2])[:40])
+    plt.show()
 
     # identify peak
     n = len(yf)
     freq_arr = fs * np.arange(0, n) / n
     indices = z_score(yf, freq_arr, args)[0]
 
-    #ind = indices[0]
-
     amp_frq = []
     amp_corr = []
 
-    #print("inidices peaks amp env")
-    #print(ind)
-
     for ind in indices:
-
         # correlation ifft & amplitude envelope
         amp_frq_arr = np.zeros(len(imf))
         amp_frq_arr[ind] = yf[ind]
@@ -179,11 +162,12 @@ def det_imf_frq(imf, center_frq, fs, args):
 
         corr = scc(amplitude_envelope, amp_cos).statistic
 
-        t = np.arange(0, len(imf))
+        plt.plot(t, imf)
+        plt.plot(t, amplitude_envelope)
+        plt.plot(amp_cos)
+        plt.show()
 
-        #plt.plot(t, amplitude_envelope)
-        #plt.plot(t, amp_cos)
-        #plt.show()
+        t = np.arange(0, len(imf))
 
         print("corr segm amp envel & cos")
         print(corr)
@@ -195,6 +179,12 @@ def det_imf_frq(imf, center_frq, fs, args):
             print(amp_frq)
 
     if not amp_frq:
+        yf = fft(imf)
+        peak = np.argmax(np.abs(yf)[1:])
+        est_imf_freq = peak * fs / len(imf)
+        print(est_imf_freq)
+        print(center_frq)
+        print("not amp frq")
         return center_frq
     elif len(amp_frq) == 1:
         return amp_frq[0]
@@ -245,6 +235,9 @@ def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
 
         # use max to save comp time, narrow band
         peak = np.argmax(np.abs(yf)[1:])
+        if (peak == 0):
+            # not periodic
+            continue
         est_frq = peak * fs / len(imf)
         est_per_time = 1 / est_frq
 
@@ -259,6 +252,7 @@ def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
         start = 0
         plt.plot(t, signal)
         flag = False
+        skip = int(est_per * overlap)
         while(ind+win_size < len(imf)):
             corr = pcc(signal[ind:ind+win_size], imf[ind:ind+win_size]).statistic
             if(corr > 0.65):
@@ -268,16 +262,35 @@ def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
                 comp_counter += 1
                 flag = True
             elif(corr <= 0.65 and flag):
-                comp = component(j, start, ind+win_size)
-                per_segments.append(comp)
+                print("not corr")
+                print(per_segments)
+                #print(per_segments[-1].index)
+                # TODO: find better solution
+                if(per_segments):
+                    print("exists")
+                    print(per_segments[-1].index)
+                if (per_segments and j == per_segments[-1].index and start < per_segments[-1].end):
+                        old_start = per_segments[-1].start
+                        del per_segments[-1]
+                        comp = component(j, old_start, ind+win_size-skip)
+                        per_segments.append(comp)
+                else:
+                    comp = component(j, start, ind+win_size-skip)
+                    per_segments.append(comp)
                 start = 0
                 flag = False
-            ind += int(est_per * overlap)
+            ind += skip
         if (flag):
             flag = False
             stop = len(imf)
-            comp = component(j, start, stop)
-            per_segments.append(comp)
+            if (per_segments and j == per_segments[-1].index and start < per_segments[-1].end):
+                old_start = per_segments[-1].start
+                del per_segments[-1]
+                comp = component(j, old_start, stop)
+                per_segments.append(comp)
+            else:
+                comp = component(j, start, stop)
+                per_segments.append(comp)
         plt.show()
 
     return per_segments
@@ -292,7 +305,9 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
         imf = u_per[j]
 
         corr = pcc(signal.astype(float), imf).statistic
-        if corr > 0.65:
+        print(corr)
+        # TODO: check all modes? choose best?
+        if corr > 0.7:
             est_frq = det_imf_frq(imf, center_freqs[j], fs, args)
             est_per_time = 1 / est_frq
             duration = t[-1] - t[0]
@@ -311,7 +326,7 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
     for comp in per_segments:
         imf = u_per[comp.index][comp.start:comp.end]
 
-        est_frq = det_imf_frq(imf, center_freqs[j], fs, args)
+        est_frq = det_imf_frq(imf, center_freqs[comp.index], fs, args)
         est_per_time = 1 / est_frq
         duration = t[comp.end-1] - t[comp.start]
 
