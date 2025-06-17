@@ -39,7 +39,7 @@ def vmd(signal, t, fs, args, denoise=False):
         center_freqs = omega[-1] * fs
         u_periodic, cen_freq_per = rm_nonperiodic(u, center_freqs, t)
 
-        imf_select_change_point(signal, signal_hat, u_periodic, t, cen_freq_per, fs, args)
+        imf_selection(signal, signal_hat, u_periodic, t, cen_freq_per, fs, args)
     else:
         u, u_hat, omega = VMD(signal, alpha, tau, K, DC, init, tol)
 
@@ -50,7 +50,7 @@ def vmd(signal, t, fs, args, denoise=False):
         center_freqs = omega[-1] * fs
         u_periodic, cen_freq_per = rm_nonperiodic(u, center_freqs, t)
 
-        imf_select_change_point(signal, signal, u_periodic, t, cen_freq_per, fs, args)
+        imf_selection(signal, signal, u_periodic, t, cen_freq_per, fs, args)
 
     #rel = imf_select_msm(signal, u_periodic)
 
@@ -268,22 +268,8 @@ def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
 
     return per_segments
 
-import ruptures as rpt
 
-def imf_select_change_point(orig, signal, u_per, t, center_freqs, fs, args): #, u_per):
-    # change point detection
-    #model = "l1"
-    #model = "l2"
-    #model = "normal"
-    model = "rbf"
-    #model = "cosine"
-    #model = "linear"
-    #model = "clinear"
-    #model = "rank"
-    #model = "ml"
-    #model = "ar"
-    #model = "l1"
-
+def imf_selection(orig, signal, u_per, t, center_freqs, fs, args): #, u_per):
     signal = signal.astype(float)
 
     for j in range(0, u_per.shape[0]):
@@ -312,7 +298,7 @@ def imf_select_change_point(orig, signal, u_per, t, center_freqs, fs, args): #, 
 
         est_frq = det_imf_frq(imf, center_freqs[j], fs, args)
         est_per_time = 1 / est_frq
-        duration = t[comp.end] - t[comp.start]
+        duration = t[comp.end-1] - t[comp.start]
 
         if duration > (3*est_per_time*0.9):
             time = comp.start, comp.end
@@ -321,41 +307,6 @@ def imf_select_change_point(orig, signal, u_per, t, center_freqs, fs, args): #, 
 
             confirmed_win.append(comp)
 
-    """
-        algo = rpt.Binseg(model=model).fit(imf)
-        #result = algo.predict(pen=5)
-        result = algo.predict(n_bkps=3)
-
-        #rpt.display(imf, result)
-        #plt.show()
-
-        if result[-1] == len(u_per[j]):
-            result = np.pad(result, (1,0), constant_values=(0,))
-            result[-1] = len(u_per[j])-1
-        else:
-            result = np.pad(result, (1,1), constant_values=(0, len(u_per[j])-1))
-        min_length = (1 / center_freqs[j]) * 2
-
-        for i in range(0, len(result)-1):
-            start = result[i]
-            end = result[i+1]
-
-            if (t[end] - t[start] < min_length):
-                continue
-
-            window = signal[start:end]
-            segment = imf[start:end]
-
-            #corr = scc(window, segment).statistic
-            corr = pcc(window.astype(float), segment.astype(float)).statistic
-            if corr > 0.65:
-                time = start, end
-
-                frq = det_imf_frq(imf, center_freqs[j], fs, args)
-
-                comp = time, j, frq
-                per_segments.append(comp)
-    """
     if confirmed_win:
         plt.plot(t, orig)
 
