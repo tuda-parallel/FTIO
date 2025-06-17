@@ -208,9 +208,65 @@ def imf_select_msm(signal, u_per):
 #def imf_select_multiple(signal, u_per):
     # TODO
 
-#def imf_select_windowed(signal, u_per):
+from collections import namedtuple
+component = namedtuple('component', ['index', 'start', 'end'])
+
+def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
     # window length
     # stationary subsignal: imf either ~constant or periodic
+
+    duration = t[-1] - t[0]
+
+    per_segments = []
+    comp_counter = 0
+
+    for j in range(0, u_per.shape[0]):
+        imf = u_per[j]
+
+        #analytic_signal = hilbert(imf)
+        #amplitude_envelope = np.abs(analytic_signal)
+
+        from scipy.fft import fft, ifft
+        yf = fft(imf)
+
+        # use max to save comp time, narrow band
+        peak = np.argmax(np.abs(yf)[1:])
+        est_frq = peak * fs / len(imf)
+        est_per_time = 1 / est_frq
+
+        est_per = len(imf) * (est_per_time / duration)
+        est_per = est_per.astype(int)
+
+        # arbitrary
+        win_size = 3 * est_per
+        win_size = win_size.astype(int)
+
+        ind = 0
+        start = 0
+        plt.plot(t, signal)
+        flag = False
+        while(ind+win_size < len(imf)):
+            corr = pcc(signal[ind:ind+win_size], imf[ind:ind+win_size]).statistic
+            if(corr > 0.65):
+                plt.plot(t[ind:ind+win_size], imf[ind:ind+win_size])
+            if (corr > 0.65 and not flag):
+                start = ind
+                comp_counter += 1
+                flag = True
+            elif(corr <= 0.65 and flag):
+                comp = component(j, start, ind+win_size)
+                per_segments.append(comp)
+                start = 0
+                flag = False
+            ind += int(est_per * overlap)
+        if (flag):
+            flag = False
+            stop = len(imf)
+            comp = component(j, start, stop)
+            per_segments.append(comp)
+        plt.show()
+
+    return per_segments
 
 import ruptures as rpt
 
@@ -228,26 +284,44 @@ def imf_select_change_point(orig, signal, u_per, t, center_freqs, fs, args): #, 
     #model = "ar"
     #model = "l1"
 
-    per_segments = []
+    signal = signal.astype(float)
 
     for j in range(0, u_per.shape[0]):
         imf = u_per[j]
 
         corr = pcc(signal.astype(float), imf).statistic
         if corr > 0.65:
-            start = 0
-            end = len(imf)
-            time = start, end
+            est_frq = det_imf_frq(imf, center_freqs[j], fs, args)
+            est_per_time = 1 / est_frq
+            duration = t[-1] - t[0]
 
-            frq = det_imf_frq(imf, center_freqs[j], fs, args)
-
-            comp = time, j, frq
-            per_segments.append(comp)
+            if duration > (3*est_per_time*0.9):
+                plt.plot(t[:len(imf)], imf, label=est_frq)
+                plt.show()
 
             # good enough, no change point detection required
             # single imf describes whole signal
             break
 
+    per_segments = imf_select_windowed(signal, t, u_per, fs)
+
+    confirmed_win = []
+
+    for comp in per_segments:
+        imf = u_per[comp.index][comp.start:comp.end]
+
+        est_frq = det_imf_frq(imf, center_freqs[j], fs, args)
+        est_per_time = 1 / est_frq
+        duration = t[comp.end] - t[comp.start]
+
+        if duration > (3*est_per_time*0.9):
+            time = comp.start, comp.end
+
+            comp = time, comp.index,  est_frq
+
+            confirmed_win.append(comp)
+
+    """
         algo = rpt.Binseg(model=model).fit(imf)
         #result = algo.predict(pen=5)
         result = algo.predict(n_bkps=3)
@@ -281,11 +355,11 @@ def imf_select_change_point(orig, signal, u_per, t, center_freqs, fs, args): #, 
 
                 comp = time, j, frq
                 per_segments.append(comp)
-
-    if per_segments:
+    """
+    if confirmed_win:
         plt.plot(t, orig)
 
-        for p in per_segments:
+        for p in confirmed_win:
             start = p[0][0]
             end = p[0][1]
             imf = u_per[p[1]]
