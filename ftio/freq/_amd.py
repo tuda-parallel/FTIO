@@ -39,7 +39,7 @@ def vmd(signal, t, fs, args, denoise=False):
         center_freqs = omega[-1] * fs
         u_periodic, cen_freq_per = rm_nonperiodic(u, center_freqs, t)
 
-        imf_selection(signal, signal_hat, u_periodic, t, cen_freq_per, fs, args)
+        components = imf_selection(signal_hat, u_periodic, t, cen_freq_per, fs, args)
     else:
         u, u_hat, omega = VMD(signal, alpha, tau, K, DC, init, tol)
 
@@ -50,7 +50,19 @@ def vmd(signal, t, fs, args, denoise=False):
         center_freqs = omega[-1] * fs
         u_periodic, cen_freq_per = rm_nonperiodic(u, center_freqs, t)
 
-        imf_selection(signal, signal, u_periodic, t, cen_freq_per, fs, args)
+        components = imf_selection(signal, u_periodic, t, cen_freq_per, fs, args)
+
+    plt.plot(t, signal)
+
+    for p in components:
+        start = p[0][0]
+        end = p[0][1]
+        imf = u_periodic[p[1]]
+
+        #plt.plot(t[start:end], imf[start:end], label=center_freqs[p[1]])
+        plt.plot(t[start:end], imf[start:end], label=p[2])
+    plt.legend()
+    plt.show()
 
     #rel = imf_select_msm(signal, u_periodic)
 
@@ -269,8 +281,10 @@ def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
     return per_segments
 
 
-def imf_selection(orig, signal, u_per, t, center_freqs, fs, args): #, u_per):
+def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
     signal = signal.astype(float)
+
+    confirmed_win = []
 
     for j in range(0, u_per.shape[0]):
         imf = u_per[j]
@@ -282,16 +296,15 @@ def imf_selection(orig, signal, u_per, t, center_freqs, fs, args): #, u_per):
             duration = t[-1] - t[0]
 
             if duration > (3*est_per_time*0.9):
-                plt.plot(t[:len(imf)], imf, label=est_frq)
-                plt.show()
+                # good enough, no cwindowed correlation checks required
+                # single imf describes whole signal
+                time = 0, len(imf)
+                comp = time, j,  est_frq
+                confirmed_win.append(comp)
 
-            # good enough, no change point detection required
-            # single imf describes whole signal
-            break
+                return confirmed_win
 
     per_segments = imf_select_windowed(signal, t, u_per, fs)
-
-    confirmed_win = []
 
     for comp in per_segments:
         imf = u_per[comp.index][comp.start:comp.end]
@@ -302,24 +315,11 @@ def imf_selection(orig, signal, u_per, t, center_freqs, fs, args): #, u_per):
 
         if duration > (3*est_per_time*0.9):
             time = comp.start, comp.end
-
             comp = time, comp.index,  est_frq
-
             confirmed_win.append(comp)
 
-    if confirmed_win:
-        plt.plot(t, orig)
+    return confirmed_win
 
-        for p in confirmed_win:
-            start = p[0][0]
-            end = p[0][1]
-            imf = u_per[p[1]]
-
-            #plt.plot(t[start:end], imf[start:end], label=center_freqs[p[1]])
-            plt.plot(t[start:end], imf[start:end], label=p[2])
-
-        plt.legend()
-        plt.show()
 
 
 
