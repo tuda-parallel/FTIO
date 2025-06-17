@@ -52,6 +52,8 @@ def vmd(signal, t, fs, args, denoise=False):
 
         components = imf_selection(signal, u_periodic, t, cen_freq_per, fs, args)
 
+    remove_zero(components, u_periodic)
+
     plt.plot(t, signal)
 
     for p in components:
@@ -320,7 +322,26 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
 
     return confirmed_win
 
+def remove_zero(components, u_per):
 
+    #for comp in components:
+    for i in range(0, len(components)):
+        imf = u_per[components[i][1]][components[i][0][0]:components[i][0][1]]
+        analytic_signal = hilbert(imf)
+        amplitude_envelope = np.abs(analytic_signal)
+
+        median_amp = np.median(amplitude_envelope)
+
+        # TODO: arbitrary threshold
+        rel_ind = np.nonzero(amplitude_envelope > median_amp*0.5)
+        for subarray in rel_ind:
+            if (len(subarray) < len(imf)):
+                if subarray[0] > 0:
+                    imf = imf[subarray[0]:]
+                    time = components[i][0][0]+subarray[0], components[i][0][1]
+                    components[i] = time, components[i][1], components[i][2]
+            # end not removed because of predictions and known boundary limitations
+            # TODO: handle arrays req to split
 
 
 
