@@ -38,7 +38,7 @@ from ftio.plot.cepstrum_plot import plot_cepstrum
 
 
 def outlier_detection(
-    amp: np.ndarray, freq_arr: np.ndarray, signal: np.ndarray, args
+    amp: np.ndarray, freq_arr: np.ndarray, signal: np.ndarray, phi: float, args
 ) -> tuple[list[float], np.ndarray, Panel]:
     """Find the outliers in the samples
 
@@ -56,7 +56,7 @@ def outlier_detection(
     methode = args.outlier
     text = ""
     if methode.lower() in ["z-score", "zscore"]:
-        dominant_index, conf, text = z_score(amp, freq_arr, signal, args)
+        dominant_index, conf, text = z_score(amp, freq_arr, signal, phi, args)
         title = "Z-score"
     elif methode.lower() in ["dbscan", "db-scan", "db"]:
         dominant_index, conf, text = db_scan(amp, freq_arr, args)
@@ -94,7 +94,7 @@ def outlier_detection(
 # ? Z-score
 # ?#################################
 def z_score(
-    amp: np.ndarray, freq_arr: np.ndarray, signal: np.ndarray, args
+    amp: np.ndarray, freq_arr: np.ndarray, signal: np.ndarray, phi: float, args
 ) -> tuple[list[float], np.ndarray, str]:
     """calculates the outliers using zscore
 
@@ -163,7 +163,7 @@ def z_score(
         # get dominant index
         dominant_index, msg = dominant(index, freq_arr, conf)
         text += msg
-        text += new_periodicity_score(amp, freq_arr, signal, args.freq, dominant_index)
+        text += new_periodicity_score(amp, freq_arr, signal, args.freq, phi, dominant_index)
 
     if "plotly" in args.engine:
         i = np.repeat(1, len(indices))
@@ -420,6 +420,7 @@ def new_periodicity_score(
     freq_arr: np.ndarray,
     signal: np.ndarray,
     sampling_freq: float,
+    phi: float,
     dominant_peak_indices: np.ndarray = None,
     peak_window_half_width: int = 3,
 ) -> tuple[str]:
@@ -490,8 +491,35 @@ def new_periodicity_score(
         dominant_peak_indices: np.ndarray,
         sampling_rate: float,
         signal: np.ndarray,
+        phi: float,
+        text: str,
     ) -> float:
-        return 0
+        for peak_idx in dominant_peak_indices:
+            peak_phi = phi[peak_idx]
+            t = (1/sampling_rate) * np.arange(0, len(signal), 1)
+            waveform = 1 + np.cos(2 * np.pi * freq_arr[peak_idx] * t - peak_phi)
+            print(freq_arr[peak_idx], peak_phi)
+            for i in range(len(signal)):
+                print(f"{i}, {signal[i]}, {waveform[i]}")
+            print(1/freq_arr[peak_idx])
+            text += f"[green]Correlation result for frequency {freq_arr[peak_idx]:.4f}\n"
+            text += f"[green]Overall correlation {correlation(waveform,signal):.4f}\n"
+            for i in range(1000):
+                begin = round(((i) * (1/freq_arr[peak_idx]) + (peak_phi / (2 * np.pi * freq_arr[peak_idx])))*sampling_rate)
+                end = round(((i+1) * (1/freq_arr[peak_idx]) + (peak_phi / (2 * np.pi * freq_arr[peak_idx])))*sampling_rate)
+                if begin < 0:
+                    begin = 0
+                if end > len(signal):
+                    end = len(signal)-1
+                    correlation_result=correlation(waveform[begin:end],signal[begin:end])
+                    text += f"[green]Correlation result for period {i:3d} with indices {begin:5d},{end:5d}: {correlation_result:.4f} \n"
+                    break
+                correlation_result=correlation(waveform[begin:end],signal[begin:end])
+                text += f"[green]Correlation result for period {i:3d} with indices {begin:5d},{end:5d}: {correlation_result:.4f} \n"
+
+
+            #print(np.abs(signal))
+        return text
         # if dominant_peak_indices is not None and dominant_peak_indices.size > 0:
         #     if sampling_rate <= 0:
         #         text += f"[yellow]Sampling rate invalid ({sampling_rate}), skipping sine correlation for all peaks.\n"
@@ -534,11 +562,7 @@ def new_periodicity_score(
     ps_score = compute_peak_sharpness(
         amp_tmp, dominant_peak_indices, peak_window_half_width
     )
-    text += str(
-        period_correlation(
-            amp_tmp, freq_arr, dominant_peak_indices, sampling_freq, signal
-        )
-    )
+    text += period_correlation(amp_tmp, freq_arr, dominant_peak_indices, sampling_freq, signal, phi, text)
 
     text += f"\n[blue]RPDE Score: {rpde_score:.4f}[/]\n"
     text += f"[blue]Spectral Flatness Score: {sf_score:.4f}[/]\n"
