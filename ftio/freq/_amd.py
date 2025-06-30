@@ -1,11 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from vmdpy import VMD
+from pysdkit import EFD
 
 from ftio.freq.anomaly_detection import z_score
 from ftio.freq.denoise import tfpf_wvd
 from ftio.freq.frq_verification import pcc, scc
 from scipy.signal import hilbert
+
+plot = True
 
 def amd(b_sampled, freq, bandwidth, time_b, args, method="vmd"):
     t_start = time_b[0]
@@ -13,8 +16,13 @@ def amd(b_sampled, freq, bandwidth, time_b, args, method="vmd"):
     N = len(b_sampled)
     t = np.linspace(t_start, t_end, N)
 
+    method = "vmd"
+
     if (method == "vmd"):
-        vmd(b_sampled, t, freq, args, denoise=True)
+        vmd(b_sampled, t, freq, args, denoise=False)
+
+    if (method == "efd"):
+        efd(b_sampled, t, freq, args, denoise=True)
 
 def vmd(signal, t, fs, args, denoise=False):
     # fixed parameters
@@ -70,6 +78,50 @@ def vmd(signal, t, fs, args, denoise=False):
 
     #analytic_signal = hilbert(u[1])
     #amplitude_envelope = np.abs(analytic_signal)
+
+def efd(signal, t, fs, args, denoise=False):
+    numIMFs = 10
+    efd = EFD(max_imfs=numIMFs)
+
+    # match modes to time windows
+    # sinusoidal -> does not work
+    # match highest energy contribution
+
+    if denoise:
+        signal_hat = tfpf_wvd(signal, fs, t)
+        signal_hat = tfpf_wvd(signal_hat, fs, t)
+
+        imfs, cerf = efd.fit_transform(signal_hat, return_all=True)
+        plot_imfs(signal, t, imfs, numIMFs, signal_hat)
+        print(cerf)
+
+        u_periodic, cen_freq_per = rm_nonperiodic(imfs, cerf, t)
+
+        components = imf_selection(signal_hat, u_periodic, t, cerf, fs, args)
+
+    else:
+        imfs, cerf = efd.fit_transform(signal, return_all=True)
+        plot_imfs(signal, t, imfs, numIMFs)
+        print(cerf)
+
+        u_periodic, cen_freq_per = rm_nonperiodic(imfs, center_freqs, t)
+
+        components = imf_selection(signal, u_periodic, t, cen_freq_per, fs, args)
+
+    remove_zero(components, u_periodic)
+
+    plt.plot(t, signal)
+
+    for p in components:
+        start = p[0][0]
+        end = p[0][1]
+        imf = u_periodic[p[1]]
+
+        #plt.plot(t[start:end], imf[start:end], label=center_freqs[p[1]])
+        plt.plot(t[start:end], imf[start:end], label=p[2])
+    plt.legend()
+    plt.show()
+
 
 def plot_imfs(signal, t, u, K, denoised=None):
     fig, ax = plt.subplots(K+1)
@@ -127,15 +179,10 @@ def det_imf_frq(imf, center_frq, fs, args):
     instantaneous_phase = np.unwrap(np.angle(analytic_signal))
     instantaneous_frequency = np.diff(instantaneous_phase) / (2.0*np.pi) * fs
 
-    t = np.arange(0, len(imf))
-
-    plt.plot(t[:-1], instantaneous_frequency)
-    plt.show()
-
     from scipy.fft import fft, ifft
 
     yf = fft(amplitude_envelope)
-
+    """
     N = len(imf)
     T = 1.0 / 20.0
     xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
@@ -145,7 +192,7 @@ def det_imf_frq(imf, center_frq, fs, args):
     plt.plot(xf[:40], 2.0/N * np.abs(yf[:N//2])[:40])
     plt.plot(xf[:40], 2.0/N * np.abs(yf2[:N//2])[:40])
     plt.show()
-
+    """
     # identify peak
     n = len(yf)
     freq_arr = fs * np.arange(0, n) / n
@@ -162,17 +209,38 @@ def det_imf_frq(imf, center_frq, fs, args):
 
         corr = scc(amplitude_envelope, amp_cos).statistic
 
-        plt.plot(t, imf)
-        plt.plot(t, amplitude_envelope)
-        plt.plot(amp_cos)
-        plt.show()
+        print(fs * ind / len(imf))
+        print(corr)
 
         t = np.arange(0, len(imf))
 
-        print("corr segm amp envel & cos")
-        print(corr)
+        from scipy.stats import entropy
+
+        print("entropy")
+        print(entropy(instantaneous_frequency))
+        print("std")
+        print(np.std(instantaneous_frequency))
+        print("var")
+        print(np.var(instantaneous_frequency))
+        
+        
+        plt.plot(t, imf)
+        plt.plot(t, amplitude_envelope)
+        plt.plot(t, amp_cos)
+        plt.show()
+
+        plt.plot(t[1:], instantaneous_frequency)
+        plt.show()
+
+        plt.plot(t, instantaneous_phase)
+        plt.show()
+        
+        #print("corr segm amp envel & cos")
+        #print(corr)
 
         if corr > 0.8:
+
+
             amp_frq.append(fs * ind / len(imf))
             amp_corr.append(corr)
             print("corr segm amp envel & cos > 0.8")
@@ -182,13 +250,17 @@ def det_imf_frq(imf, center_frq, fs, args):
         yf = fft(imf)
         peak = np.argmax(np.abs(yf)[1:])
         est_imf_freq = peak * fs / len(imf)
+        """
         print(est_imf_freq)
         print(center_frq)
+        """
         print("not amp frq")
         return center_frq
     elif len(amp_frq) == 1:
+        print("amp frq")
         return amp_frq[0]
     else:
+        print("ith amp frq")
         i = np.argmax(amp_corr)
         return amp_frq[i]
 
@@ -300,14 +372,16 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
     signal = signal.astype(float)
 
     confirmed_win = []
-
+    """
     for j in range(0, u_per.shape[0]):
         imf = u_per[j]
 
         corr = pcc(signal.astype(float), imf).statistic
         print(corr)
+        corr2 = scc(signal.astype(float), imf).statistic
+        print(corr2)
         # TODO: check all modes? choose best?
-        if corr > 0.7:
+        if corr > 0.65:
             est_frq = det_imf_frq(imf, center_freqs[j], fs, args)
             est_per_time = 1 / est_frq
             duration = t[-1] - t[0]
@@ -321,19 +395,33 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
 
                 return confirmed_win
 
+    import sys
+    sys.exit()
+    """
+
+
     per_segments = imf_select_windowed(signal, t, u_per, fs)
+    print("per segments")
+    print(per_segments)
+    print(len(per_segments))
 
     for comp in per_segments:
+        print(comp)
         imf = u_per[comp.index][comp.start:comp.end]
 
         est_frq = det_imf_frq(imf, center_freqs[comp.index], fs, args)
         est_per_time = 1 / est_frq
         duration = t[comp.end-1] - t[comp.start]
 
+        print(duration)
+
         if duration > (3*est_per_time*0.9):
             time = comp.start, comp.end
             comp = time, comp.index,  est_frq
             confirmed_win.append(comp)
+
+    print("confirmed win")
+    print(confirmed_win)
 
     return confirmed_win
 
