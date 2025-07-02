@@ -50,10 +50,16 @@ def astft(b_sampled, freq, b_oversampled, freq_over, bandwidth, time_b, args):
 
 # mix & match
 def astft_mnm(signal, freq, time_b, args, filtered=None):
+    import time
+
+    start = time.time()
     if filtered is None:
         win_len = cm5(signal)
     else:
         win_len = cm5(filtered)
+    end = time.time()
+    print("CM")
+    print(end - start)
 
     # sigma
     sigma = int(win_len / 2.35482)
@@ -63,13 +69,25 @@ def astft_mnm(signal, freq, time_b, args, filtered=None):
     else:
         signal_tfr, f, t = ptfr(filtered, freq, win_len, sigma)
 
+    start = time.time()
     #image = binary_image_nprom(signal_tfr, n=3)
     image = binary_image_zscore(signal_tfr, freq, args)
+    end = time.time()
+    print("binary")
+    print(end - start)
 
+    start = time.time()
     components = component_linking(image, freq, win_len)
+    end = time.time()
+    print("comp linking")
+    print(end - start)
 
     # simple astft
+    start = time.time()
     simple_astft(components, signal, filtered, freq, time_b, args)
+    end = time.time()
+    print("astft")
+    print(end - start)
 
 """
 Pei, S. C., & Huang, S. G. (2012).
