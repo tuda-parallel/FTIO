@@ -12,6 +12,7 @@ find = { }
 name = "ftio-hpc"
 dynamic = ["version"]
 dependencies = [
+    "numpy",
     "scikit-learn",
     "pyzmq",
     "numba",

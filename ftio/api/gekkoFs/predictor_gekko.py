@@ -5,12 +5,12 @@ from rich.console import Console
 import ftio.prediction.monitor as pm
 from ftio.api.gekkoFs.ftio_gekko import run
 from ftio.multiprocessing.async_process import handle_in_process
-from ftio.prediction.analysis import (
+from ftio.prediction.helper import export_extrap, get_dominant, print_data
+from ftio.prediction.online_analysis import (
     display_result,
     save_data,
     window_adaptation,
 )
-from ftio.prediction.helper import export_extrap, get_dominant, print_data
 from ftio.prediction.probability_analysis import find_probability
 from ftio.prediction.shared_resources import SharedResources
 

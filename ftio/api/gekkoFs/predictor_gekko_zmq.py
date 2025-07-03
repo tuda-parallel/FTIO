@@ -28,13 +28,13 @@ from ftio.api.gekkoFs.stage_data import (
 from ftio.freq.helper import MyConsole
 from ftio.multiprocessing.async_process import handle_in_process, join_procs
 from ftio.plot.plot_bandwidth import plot_bar_with_rich
-from ftio.prediction.analysis import (
+from ftio.prediction.helper import print_data  # , export_extrap
+from ftio.prediction.helper import get_dominant_and_conf
+from ftio.prediction.online_analysis import (
     display_result,
     save_data,
     window_adaptation,
 )
-from ftio.prediction.helper import print_data  # , export_extrap
-from ftio.prediction.helper import get_dominant_and_conf
 from ftio.prediction.probability_analysis import find_probability
 from ftio.prediction.processes_zmq import bind_socket, receive_messages
 from ftio.prediction.shared_resources import SharedResources
