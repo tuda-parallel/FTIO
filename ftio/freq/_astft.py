@@ -1,10 +1,3 @@
-"""
-TODO:
-OASTFT
-- use correct fs in stft
-- upgrade to ShortTimeFFT
-"""
-
 import math
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,7 +15,7 @@ from ftio.freq.concentration_measures import cm3, cm4, cm5
 from ftio.freq.denoise import tfpf_wvd
 from ftio.plot.plot_tf import plot_tf, plot_tf_contour
 
-def astft(b_sampled, freq, b_oversampled, freq_over, bandwidth, time_b, args):
+def astft(b_sampled, freq, bandwidth, time_b, args):
 
     denoise = False
 
@@ -33,33 +26,16 @@ def astft(b_sampled, freq, b_oversampled, freq_over, bandwidth, time_b, args):
 
     if denoise:
         signal_hat = tfpf_wvd(b_sampled, freq, t)
-
-    test, fs, time = test_signal("sinusoidal", noise=False)
-
-    #win_len = 200 #cm3(test)
-    #print(win_len)
-    #plot_tf(test, fs, time, win_len=350, step=0.1)
-    #plot_tf(test, fs, time, win_len, nfreqbins=80, step=0.1)
-    #astft_mnm(test, fs, time, args)
-
-    astft_mnm(b_sampled, freq, t, args) #, filtered=signal_hat)
-
-    #tf_samp = tfpf_wvd(test, fs, time)
-    #plot_tf(tf_samp, fs, time)
-    #decomp_vmd(tf_samp, time_b)
+        astft_3step(b_sampled, freq, t, args, filtered=signal_hat)
+    else:
+        astft_3step(b_sampled, freq, t, args)
 
 # mix & match
-def astft_mnm(signal, freq, time_b, args, filtered=None):
-    import time
-
-    start = time.time()
+def astft_3step(signal, freq, time_b, args, filtered=None):
     if filtered is None:
         win_len = cm5(signal)
     else:
         win_len = cm5(filtered)
-    end = time.time()
-    print("CM")
-    print(end - start)
 
     # sigma
     sigma = int(win_len / 2.35482)
@@ -69,60 +45,13 @@ def astft_mnm(signal, freq, time_b, args, filtered=None):
     else:
         signal_tfr, f, t = ptfr(filtered, freq, win_len, sigma)
 
-    start = time.time()
     #image = binary_image_nprom(signal_tfr, n=3)
     image = binary_image_zscore(signal_tfr, freq, args)
-    end = time.time()
-    print("binary")
-    print(end - start)
 
-    start = time.time()
     components = component_linking(image, freq, win_len)
-    end = time.time()
-    print("comp linking")
-    print(end - start)
 
     # simple astft
-    start = time.time()
     simple_astft(components, signal, filtered, freq, time_b, args)
-    end = time.time()
-    print("astft")
-    print(end - start)
-
-"""
-Pei, S. C., & Huang, S. G. (2012).
-STFT with adaptive window width based on the chirp rate.
-IEEE Transactions on Signal Processing, 60(8), 4065-4080.
-"""
-def astft_tf(x):
-    win_len = cm3(signal)
-
-"""
-Abdoush, Y., Pojani, G., & Corazza, G. E. (2019).
-Adaptive instantaneous frequency estimation of multicomponent signals
-based on linear time–frequency transforms.
-IEEE Transactions on Signal Processing, 67(12), 3100-3112
-"""
-def oastft(x):
-    # regular rate, ratio effective bandwidth and effective time duration
-    v_0 = regular_rate(x)
-
-    # (3/7)^(1/4) * 1/sqrt(2*pi*v_0)
-    sigma = 0.8091067 / (math.sqrt(2 * math.pi * v_0))
-
-    # FWHM: 2*sqrt(2*ln(2))*sigma = 2.35482*sigma
-    win_len = int(2.35482 * sigma)
-
-    # 1: construct a ptfr
-    x_ptfr = ptfr(x, win_len, sigma)
-
-    # 2: IFR estimation
-    # a: create binary image
-    image = binary_image(x_ptfr)
-    # b: component linking
-    components = component_linking(image)
-
-    # 3: multivariate window STFT
 
 def ptfr(x, fs, win_len, sigma):
     win = gaussian(win_len, sigma * win_len)
@@ -131,51 +60,6 @@ def ptfr(x, fs, win_len, sigma):
     Zxx = Zxx.transpose()
 
     return Zxx, f, t
-
-"""
-Abdoush, Y., Pojani, G., & Corazza, G. E. (2019).
-Adaptive instantaneous frequency estimation of multicomponent signals
-based on linear time–frequency transforms.
-IEEE Transactions on Signal Processing, 67(12), 3100-3112
-"""
-def regular_rate(x):
-    N = np.shape(x)[0]
-    yf = fft(x)
-    i_0 = int(- N/2)
-    i_max = int(N/2)
-
-    # k_0
-    k_0_num = 0
-    for k in range(i_0, i_max):
-        k_0_num = k_0_num + k * (abs(yf[k]) ** 2)
-    k_0_den = 0
-    for k in range(i_0, i_max):
-        k_0_den = k_0_den + abs(yf[k]) ** 2
-    k_0 = k_0_num / k_0_den
-
-    # n_0
-    n_0_num = 0
-    n_0_den = 0
-    for n in range(0, N):
-        n_0_num = n_0_num + n * (abs(x[n]) ** 2)
-        n_0_den = n_0_den + (abs(x[n]) ** 2)
-    n_0 = n_0_num / n_0_den
-
-    # b_eff
-    b_eff = 0
-    for k in range(i_0, i_max):
-        b_temp = ((k - k_0) ** 2) * (abs(yf[k]) ** 2)
-        b_eff = b_eff + b_temp
-
-    # t_eff
-    t_eff = 0
-    for n in range(0, N):
-        t_eff = t_eff + (n - n_0) ** 2 * (abs(x[n]) ** 2)
-
-    # v_0
-    v_0 = (b_eff / (t_eff * N)) ** 0.5
-
-    return v_0
 
 def test_signal(type="sinusoidal", noise=False):
     fs = 200

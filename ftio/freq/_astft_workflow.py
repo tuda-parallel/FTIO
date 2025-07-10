@@ -37,12 +37,8 @@ def ftio_astft(
         bandwidth, time_b, args.freq, args.verbose
     )
 
-    b_oversampled, freq_over = sample_data(
-        bandwidth, time_b, freq*30, args.verbose
-    )
-
     console.print(f"\n[cyan]Resampling finished:[/] {time.time() - tik:.3f} s")
 
-    astft(b_sampled, freq, b_oversampled, freq_over, bandwidth, time_b, args)
+    astft(b_sampled, freq, bandwidth, time_b, args)
 
     return prediction, df_out, share
