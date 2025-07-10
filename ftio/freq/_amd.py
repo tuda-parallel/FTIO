@@ -174,6 +174,126 @@ def rm_nonperiodic(u, center_freqs, t):
     return u_periodic, center_freqs[i:]
 
 def det_imf_frq(imf, center_frq, fs, args):
+    from scipy.fft import fft, ifft
+    # case 1: equals center frq
+    yf = fft(imf)
+
+    ind = np.argmax(np.abs(yf)[1:])+1
+
+    frq_arr = np.zeros(len(imf), dtype="complex")
+    frq_arr[ind] = yf[ind]
+    
+    if (yf[ind-1] > yf[ind-2] and yf[ind-1] > yf[ind+1]):
+        frq_arr[ind-1] = yf[ind-1]
+    elif (yf[ind+1] > yf[ind+2] and yf[ind+1] > yf[ind-1]):
+        frq_arr[ind+1] = yf[ind+1]
+    print(frq_arr[ind])
+    amp = ifft(frq_arr)
+
+    
+
+    corr = scc(imf, amp).statistic
+    print(corr)
+
+    t = np.arange(0, len(imf))
+    plt.plot(t, imf)
+    plt.plot(t, amp)
+    plt.show()
+
+    N = len(imf)
+    n_pad = N // 10
+
+    imf_padded = np.pad(imf, (n_pad, n_pad), 'reflect')
+
+    analytic_signal = hilbert(imf_padded)
+    amplitude_envelope = np.abs(analytic_signal)
+    instantaneous_phase = np.unwrap(np.angle(analytic_signal))
+    instantaneous_frequency = np.diff(instantaneous_phase) / (2.0*np.pi) * fs
+
+    
+
+    # recover unpadded
+    amp_env = amplitude_envelope[n_pad:-n_pad]
+    ifreq = instantaneous_frequency[n_pad:-n_pad]
+
+    fig, ax = plt.subplots(2)
+    ax[0].plot(t[:-1], ifreq)
+    ax[1].plot(t, amp_env)
+    plt.show()
+
+    if (np.std(ifreq) > 0.8):
+        print(np.std(ifreq))
+        print("removed")
+        #return -1
+
+    print("std")
+    print(np.std(ifreq))
+    print("var")
+    print(np.var(ifreq))
+
+    from scipy.fft import fft, ifft
+
+    yf = fft(amp_env)
+
+    # identify peak
+    freq_arr = fs * np.arange(0, N) / N
+    indices = z_score(yf, freq_arr, args)[0]
+
+    # TODO: argmax? monocomponent, safe some time
+
+    print(indices)
+
+    amp_frq = []
+    amp_corr = []
+
+    for ind in indices:
+        amp_frq_arr = np.zeros(len(imf), dtype="complex")
+        amp_frq_arr[ind] = yf[ind]
+        print(amp_frq_arr[ind])
+        amp_cos = ifft(amp_frq_arr)
+
+        corr = scc(amp_env, amp_cos).statistic
+
+        if (corr > 0.7):
+            return 
+
+        print("corr")
+        print(corr)
+
+        #print(type(amp_env[0]))
+        #print(type(amp_cos[0]))
+        #corr = pcc(amp_env, amp_cos).statistic
+
+        #print("corr")
+        #print(corr)
+
+        # plot
+        t = np.arange(0, len(imf))
+        plt.plot(t, imf)
+        plt.plot(t, amp_env)
+        plt.plot(t, amp_cos)
+        plt.show()
+
+        if corr > 0.8:
+            amp_frq.append(fs * ind / len(imf))
+            amp_corr.append(corr)
+            print("corr segm amp envel & cos > 0.8")
+            print(amp_frq)
+
+    if not amp_frq:
+        print("center frq")
+        print(center_frq)
+        return center_frq
+    elif len(amp_frq) == 1:
+        print("amp frq")
+        return amp_frq[0]
+    else:
+        print("ith amp frq")
+        i = np.argmax(amp_corr)
+        return amp_frq[i]
+
+
+def det_imf_frq_old(imf, center_frq, fs, args):
     analytic_signal = hilbert(imf)
     amplitude_envelope = np.abs(analytic_signal)
     instantaneous_phase = np.unwrap(np.angle(analytic_signal))
@@ -410,6 +530,8 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
         imf = u_per[comp.index][comp.start:comp.end]
 
         est_frq = det_imf_frq(imf, center_freqs[comp.index], fs, args)
+        if (est_frq == -1):
+            continue
         est_per_time = 1 / est_frq
         duration = t[comp.end-1] - t[comp.start]
 
