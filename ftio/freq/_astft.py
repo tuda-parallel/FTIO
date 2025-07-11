@@ -1,3 +1,4 @@
+from collections import namedtuple
 import math
 import matplotlib.pyplot as plt
 import numpy as np
@@ -38,9 +39,9 @@ def astft_3step(signal, freq, time_b, args, filtered=None):
         win_len = cm5(filtered, freq)
 
     if filtered is None:
-        signal_tfr, f, t = ptfr(signal, freq, win_len, sigma)
+        signal_tfr, f, t = ptfr(signal, freq, win_len)
     else:
-        signal_tfr, f, t = ptfr(filtered, freq, win_len, sigma)
+        signal_tfr, f, t = ptfr(filtered, freq, win_len)
 
     #image = binary_image_nprom(signal_tfr, n=3)
     image = binary_image_zscore(signal_tfr, freq, args)
@@ -50,7 +51,7 @@ def astft_3step(signal, freq, time_b, args, filtered=None):
     # simple astft
     simple_astft(components, signal, filtered, freq, time_b, args)
 
-def ptfr(x, fs, win_len, sigma):
+def ptfr(x, fs, win_len):
     win = boxcar(win_len)
     f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=(win_len-1))
     Zxx = Zxx.transpose()
@@ -105,10 +106,8 @@ def test_signal(type="sinusoidal", noise=False):
 
 def check_3_periods(signal, fs, exp_freq, est_period, start, end):
     win_len = (int)(3 * est_period)
-    print(win_len)
 
     # area where component is expected
-    # add 1.5, 1 bonus,
     bonus = est_period.astype(int)
     print(bonus)
     _start = start - bonus
@@ -194,7 +193,6 @@ def simple_astft(components, signal, filtered, fs, time_b, args):
     # merge interrupted components
     i = 0
     length = len(components)
-    #for i in range(0, length-1):
     while (i < length-1):
         if (components[i][1] == components[i+1][1]):
             est_period_time = 1/components[i][1] #/ fs
@@ -209,20 +207,16 @@ def simple_astft(components, signal, filtered, fs, time_b, args):
                 length -= 1
         i += 1
 
+    Component = namedtuple("Component", ["start", "end", "amp", "freq", "phase"])
+    per_comp = []
+
     for i in components:
         start = i[0][0]
         end = i[0][1] + 1
         window = signal[start:end]
         comp_length = i[0][1] - i[0][0]
 
-        # find correct window
-
-        # too long: time smearing
-        # too short: peak not dominant enough
-
-        # time
-        est_period_time = 1/i[1] #/ fs
-
+        est_period_time = 1/i[1]
         est_period = len(signal) * (est_period_time/duration)
 
         # skip too short components
@@ -259,116 +253,23 @@ def simple_astft(components, signal, filtered, fs, time_b, args):
             frqs = np.abs(yf[1:N//2])
             peak = np.argmax(frqs)+1
 
-            #arr = np.zeros(stop_frq-start_frq, dtype="complex")
-            #arr[peak] = yf[peak]
-            #iyf = ifft(arr)
-            #plt.plot(t[start_frq:stop_frq], iyf, label="ifft", linewidth=5)
-
             amp_final = np.abs(yf[peak]) / (stop_frq - start_frq)
             frq_final = peak * fs / (stop_frq - start_frq)
 
             # compute phase shift
-            # phi = -2 * pi * f * t_shift (no minus because shift to left)
-            #phi_shift = -2 * np.pi * frq_final * (t[start_frq]-t[fc[0]])
+            # phi = -2 * pi * f * t_shift
             phi_shift = - 2 * np.pi * frq_final * (t[start_frq - fc[0]])
-            phase_final2 = np.angle(yf[peak] * np.exp(1j*phi_shift))
-            phase_final = np.angle(yf[peak])
+            phase_final = np.angle(yf[peak] * np.exp(1j*phi_shift))
 
-            # fix phase
-            # wrong because of center?
+            comp_ext = Component(fc[0], fc[1], amp_final, frq_final, phase_final)
+            per_comp.append(comp_ext)
 
-            est_time = t[fc[0]:fc[1]]
-            #t_temp = np.linspace(0, t[fc[1]-fc[0]], fc[1]-fc[0], dtype=float)
-            #t_temp =  t[fc[0]:fc[1]]-fc[0]
-            t_temp = np.linspace(-over//2, (stop_frq-start_frq)+over//2, fc[1]-fc[0], dtype=float)
-            t_temp = np.linspace(t[start_frq], t[stop_frq], (stop_frq-start_frq), dtype=float, endpoint=True)
+    if per_comp:
+        plt.plot(t, signal)
 
-            #t_fc = np.linspace(t[fc[0]], t[fc[1]-1], fc[1]-fc[0], dtype=float, endpoint=True)
+        for p in per_comp:
+            estimate = p.amp * np.cos(2 * np.pi * p.freq * t + p.phase)
+            plt.plot(t[p.start:p.end], estimate[0:p.end-p.start], label=p.freq)
 
-            #est_final = amp_final * np.cos(2 * np.pi * frq_final * t_temp + phase_final)
-            #est_final = amp_final * np.cos(2 * np.pi * frq_final * t + phase_final)
-            #est_final = amp_final * np.cos(2 * np.pi * frq_final * t + phase_final) #- 1j * amp_final * np.sin(2 * np.pi * frq_final * t + phase_final)
-            #est_final2 = amp_final * np.cos(2 * np.pi * frq_final * t + phase_final)
-            #est_final2 = amp_final * np.cos(2 * np.pi * frq_final * t_temp + phase_final)
-            est_final3 = amp_final * np.cos(2 * np.pi * frq_final * t + phase_final2)
-
-            #est_final4 = amp_final * np.cos(2 * np.pi * frq_final * t_fc + phase_final - 1)
-            #est_final5 = amp_final * np.cos(2 * np.pi * frq_final * t_fc + phase_final2)
-
-            #est_final2 = amp_final * np.cos(2 * np.pi * frq_final * t_temp + phase_final)
-
-            arr = np.zeros(stop_frq - start_frq)
-            arr[peak] = yf[peak]
-            iyf = ifft(arr)
-
-            plt.plot(t,signal)
-            plt.plot(t[fc[0]:fc[1]], est_final3[0:fc[1]-fc[0]], label="fc, phase shift")
-            plt.legend()
-            plt.show()
-
-        # longest possible multiple: 
-        # -> implement both
-
-
-        #stft_win = est_period * 3
-        #while (stft_win+est_period < comp_length):
-        #    stft_win += est_period
-        #stft_win = stft_win.astype(int)
-        
-
-        # todo: add 1.5 of win len at each side, remove afgertwars 
-
-        #win = boxcar(stft_win) #gaussian(stft_win, 1) #, sigma * win_len)
-        #f, t, Zxx = stft(window, fs=fs, window=win, nperseg=stft_win, noverlap=(stft_win-1))
-
-        # find component ~ i[1] frequency
-        #exp_frq_bin = (i[1] * stft_win) / fs
-        #print(exp_frq_bin)
-
-
-        #T = 1.0 / 1000.0
-        #xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
-        #yf = 2.0/N * np.abs(Zxx[104][:N//2])
-
-        #plt.plot(xf, yf)
-        #plt.show()
-
-        # create array max values
-        #value_max = np.max(np.abs(Zxx)[:][1:], axis=0)
-        #print(value_max)
-
-        # create array index max value
-        #ind_max = np.argmax(np.abs(Zxx)[:], axis=0)
-        #print(ind_max)
-
-        #print(np.abs(Zxx)[:,1])
-
-
-        # extract components
-
-
-
-
-        # 
-
-        """
-        yf = fft(window)
-
-        n = len(yf)
-        freq_arr = fs * np.arange(0, n) / n
-        ind = z_score(yf, freq_arr, args)[0]
-        #ind = find_peaks(yf)[0]
-
-        for i in ind:
-            array = np.zeros(len(yf), dtype=np.complex128)
-            array[i] = yf[i]
-
-            yif = ifft(array)
-            ax.plot(t[start:end], yif)
-
-        print("end")
-
-        continue
-        """
-
-    #plt.show()
+        plt.legend()
+        plt.show()
