@@ -8,6 +8,8 @@ TODO:
 import numpy as np
 from scipy.fft import fft
 from scipy.fftpack import fftshift
+from scipy.signal import stft
+from scipy.signal.windows import boxcar
 
 """
 Pei, S. C., & Huang, S. G. (2012).
@@ -30,7 +32,7 @@ def normalize_fft(yf):
     #yf_norm = yf / np.max(yf)
     return yf_norm
 
-def cm3(x):
+def cm3(x, fs):
     win_len = min_win
 
     max_win = len(x)
@@ -42,21 +44,12 @@ def cm3(x):
     sum = np.zeros((L,), dtype=np.complex128)
 
     for j in range(0,L):
-        # zeropad
-        rem = len(x) % win_len
-        if (rem != 0):
-            x_padded = np.pad(x, (0, win_len-rem), 'constant')
-        else:
-            x_padded = x
+        win = boxcar(win_len)
+        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len//8)
+        Zxx = Zxx.transpose()
 
-        # nd array korrekte dim
-        rows = int(len(x_padded)/win_len) * 2 -1
-        output = np.empty(shape=(rows, win_len), dtype=np.complex128)
-
-        overlap = win_len//2
-        for i in range(0, rows):
-            windowed = x[overlap*i:overlap*i+win_len]
-            yf = fft(windowed)
+        for yf in Zxx:
+            #print(yf)
             yf_norm = normalize_fft(yf) ** alpha
             sum[j] = sum[j] + np.sum(yf_norm)
 
@@ -66,10 +59,9 @@ def cm3(x):
     peak = np.argmax(sum)
     final_win_len = min_win + p*peak
 
-    print(final_win_len)
     return final_win_len
 
-def cm4(x):
+def cm4(x, fs):
     win_len = min_win
 
     max_win = len(x)
@@ -81,21 +73,13 @@ def cm4(x):
     sum = np.zeros((L,), dtype=np.complex128)
 
     for j in range(0,L):
-        # zeropad
-        rem = len(x) % win_len
-        if (rem != 0):
-            x_padded = np.pad(x, (0, win_len-rem), 'constant')
-        else:
-            x_padded = x
+        win = boxcar(win_len)
+        #win = hann(win_len)
+        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len//8)
+        Zxx = Zxx.transpose()
 
-        # nd array korrekte dim
-        rows = int(len(x_padded)/win_len) * 2 -1
-        output = np.empty(shape=(rows, win_len), dtype=np.complex128)
-
-        overlap = win_len//2
-        for i in range(0, rows):
-            windowed = x[overlap*i:overlap*i+win_len]
-            yf = fft(windowed)
+        for yf in Zxx:
+            #print(yf)
             yf_norm = normalize_fft(yf) ** beta
             sum[j] = sum[j] + np.sum(yf_norm)
 
@@ -104,11 +88,9 @@ def cm4(x):
     peak = np.argmax(sum)
     final_win_len = min_win + p*peak
 
-    print(final_win_len)
-
     return final_win_len
 
-def cm5(x):
+def cm5(x, fs):
     win_len = min_win
 
     max_win = len(x)
@@ -120,24 +102,14 @@ def cm5(x):
     sum = np.zeros((L,), dtype=np.complex128)
 
     for j in range(0,L):
-        # zeropad
-        rem = len(x) % win_len
-        if (rem != 0):
-            x_padded = np.pad(x, (0, win_len-rem), 'constant')
-        else:
-            x_padded = x
+        win = boxcar(win_len)
+        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len//8)
+        Zxx = Zxx.transpose()
 
-        # nd array korrekte dim
-        rows = int(len(x_padded)/win_len) * 2 -1
-        output = np.empty(shape=(rows, win_len), dtype=np.complex128)
+        sum1 = 0.0
+        sum2 = 0.0
 
-        sum1 = 0
-        sum2 = 0
-
-        overlap = win_len//2
-        for i in range(0, rows):
-            windowed = x[overlap*i:overlap*i+win_len]
-            yf = fft(windowed)
+        for yf in Zxx:
             yf_norm = normalize_fft(yf)
             sum1 = sum1 + np.sum(yf_norm) ** beta
             sum2 = sum2 + np.sum(yf_norm) ** alpha
@@ -148,5 +120,4 @@ def cm5(x):
     peak = np.argmax(sum)
     final_win_len = min_win + p*peak
 
-    print(final_win_len)
     return final_win_len

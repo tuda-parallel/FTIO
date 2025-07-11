@@ -33,12 +33,9 @@ def astft(b_sampled, freq, bandwidth, time_b, args):
 # mix & match
 def astft_3step(signal, freq, time_b, args, filtered=None):
     if filtered is None:
-        win_len = cm5(signal)
+        win_len = cm5(signal, freq)
     else:
-        win_len = cm5(filtered)
-
-    # sigma
-    sigma = int(win_len / 2.35482)
+        win_len = cm5(filtered, freq)
 
     if filtered is None:
         signal_tfr, f, t = ptfr(signal, freq, win_len, sigma)
@@ -54,9 +51,8 @@ def astft_3step(signal, freq, time_b, args, filtered=None):
     simple_astft(components, signal, filtered, freq, time_b, args)
 
 def ptfr(x, fs, win_len, sigma):
-    win = gaussian(win_len, sigma * win_len)
+    win = boxcar(win_len)
     f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=(win_len-1))
-
     Zxx = Zxx.transpose()
 
     return Zxx, f, t
