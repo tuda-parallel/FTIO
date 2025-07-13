@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from vmdpy import VMD
 from pysdkit import EFD
 
+from ftio.freq._astft import check_3_periods
 from ftio.freq.anomaly_detection import z_score
 from ftio.freq.denoise import tfpf_wvd
 from ftio.freq.frq_verification import pcc, scc
@@ -16,7 +17,7 @@ def amd(b_sampled, freq, bandwidth, time_b, args, method="vmd"):
     N = len(b_sampled)
     t = np.linspace(t_start, t_end, N)
 
-    method = "vmd"
+    method = "efd"
 
     if (method == "vmd"):
         vmd(b_sampled, t, freq, args, denoise=False)
@@ -74,18 +75,16 @@ def vmd(signal, t, fs, args, denoise=False):
     plt.legend()
     plt.show()
 
+
+
     #rel = imf_select_msm(signal, u_periodic)
 
     #analytic_signal = hilbert(u[1])
     #amplitude_envelope = np.abs(analytic_signal)
 
 def efd(signal, t, fs, args, denoise=False):
-    numIMFs = 10
+    numIMFs = 8
     efd = EFD(max_imfs=numIMFs)
-
-    # match modes to time windows
-    # sinusoidal -> does not work
-    # match highest energy contribution
 
     if denoise:
         signal_hat = tfpf_wvd(signal, fs, t)
@@ -93,34 +92,81 @@ def efd(signal, t, fs, args, denoise=False):
 
         imfs, cerf = efd.fit_transform(signal_hat, return_all=True)
         plot_imfs(signal, t, imfs, numIMFs, signal_hat)
-        print(cerf)
-
-        u_periodic, cen_freq_per = rm_nonperiodic(imfs, cerf, t)
-
-        components = imf_selection(signal_hat, u_periodic, t, cerf, fs, args)
-
     else:
         imfs, cerf = efd.fit_transform(signal, return_all=True)
         plot_imfs(signal, t, imfs, numIMFs)
         print(cerf)
 
-        u_periodic, cen_freq_per = rm_nonperiodic(imfs, center_freqs, t)
+    # match modes to time windows
+    # sinusoidal -> does not work
+    # match highest energy contribution
 
-        components = imf_selection(signal, u_periodic, t, cen_freq_per, fs, args)
 
-    remove_zero(components, u_periodic)
+    imf_periodic, cen_freq_per = rm_nonperiodic(imfs, cerf, t)
+    imfs = imf_periodic
 
-    plt.plot(t, signal)
+    numIMFs = len(imf_periodic)
 
-    for p in components:
-        start = p[0][0]
-        end = p[0][1]
-        imf = u_periodic[p[1]]
+    # updated center freq
+    from scipy.fft import fft,ifft
+    cerf2 = np.empty(numIMFs)
+    for i in range (0, numIMFs):
+        yf = fft(imf_periodic[i])
+        ind = np.argmax(np.abs(yf[1:])) + 1
+        cerf2[i] = (ind * fs) / len(imf_periodic[i])
 
-        #plt.plot(t[start:end], imf[start:end], label=center_freqs[p[1]])
-        plt.plot(t[start:end], imf[start:end], label=p[2])
-    plt.legend()
-    plt.show()
+        frq_arr = np.zeros(len(imf_periodic[i]), dtype="complex")
+        frq_arr[ind] = yf[ind]
+        iyf = ifft(frq_arr)
+
+    per_segments = energy_windowed(signal, t, imfs, cerf2, fs)
+
+    duration = t[-1] - t[0]
+    from ftio.freq._astft import check_3_periods
+    for p in per_segments:
+        # i start stop
+
+        est_frq = cerf2[p[0]]
+        est_period_time = 1/cerf2[p[0]] #/ fs
+        est_period = len(imfs[0]) * (est_period_time/duration)
+
+        length = len(imfs[p[0]][p[1]:p[2]])
+        if (length > est_period*3*0.9):
+            # remove harmonics
+            start = p[1]
+            end = start + 3*est_period
+            while(end+est_period < p[2]):
+                end = end+est_period
+            end = end.astype(int)
+
+            yf = fft(signal[start:end])
+            N = end-start
+            freq_arr = fs * np.arange(0, N) / N
+            indices = z_score(yf, freq_arr, args)[0]
+
+            exp_frq_bin = (cerf2[p[0]] * N) / fs
+            exp_frq_bin = np.round(exp_frq_bin).astype(int)
+
+            for i in indices:
+                arr = np.zeros(N, dtype="complex")
+                arr[i] = yf[i]
+                iyf = ifft(arr)
+
+                plt.plot(t[start:end], imfs[p[0]][start:end])
+                plt.plot(t[start:end], iyf)
+                plt.show()
+
+                if (exp_frq_bin == i or exp_frq_bin-1 == i or exp_frq_bin+1 == i):
+                    comp = check_3_periods(imfs[p[0]], fs, est_frq, est_period, p[1], p[2])
+
+                    plt.plot(t, signal)
+                    #plt.plot(t[:-1], imfs[p[0]])
+                    for c in comp:
+                        plt.plot(t[c[0]:c[1]], imfs[p[0]][c[0]:c[1]])
+                    plt.show()
+
+                    break
+
 
 
 def plot_imfs(signal, t, u, K, denoised=None):
@@ -142,11 +188,18 @@ def plot_imf_char(signal, t, fs, u, K, denoised=None):
     fig, ax = plt.subplots(K+1,3)
     ax[0][0].plot(t, signal)
 
+    N = len(u[0])
+    n_pad = N // 10
+
     for i in range(1,K+1):
-        analytic_signal = hilbert(u[i-1])
+        imf_padded = np.pad(u[i-1], (n_pad, n_pad), 'reflect')
+        analytic_signal = hilbert(imf_padded)
         amplitude_envelope = np.abs(analytic_signal)
         instantaneous_phase = np.unwrap(np.angle(analytic_signal))
         instantaneous_frequency = np.diff(instantaneous_phase) / (2.0*np.pi) * fs
+
+        amp = amplitude_envelope[n_pad:-n_pad]
+        ifreq = instantaneous_frequency[n_pad:-n_pad]
 
         if len(u[i-1]) < len(t):
             end = len(u[i-1])
@@ -154,8 +207,8 @@ def plot_imf_char(signal, t, fs, u, K, denoised=None):
             end = len(t)
 
         ax[i][0].plot(t[:end], u[i-1])
-        ax[i][1].plot(t[1:end], instantaneous_frequency, label="inst freq")
-        ax[i][2].plot(t[:end], amplitude_envelope, label="amp")
+        ax[i][1].plot(t[1:end], ifreq, label="inst freq")
+        ax[i][2].plot(t[:end], amp, label="amp")
 
     plt.legend()
     plt.show()
@@ -487,6 +540,55 @@ def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
 
     return per_segments
 
+def energy_windowed(signal, t, imfs, cerf, fs, overlap=0.5):
+    duration = t[-1] - t[0]
+
+    # relevant segments in signal
+    rel_segments = []
+    comp_counter = 0
+
+    for i in range(0, imfs.shape[0]):
+    #for i in range(1, imfs.shape[0]):
+        energy = np.sum(np.abs(imfs[i])**2)
+
+        est_period_time = 1/cerf[i] #/ fs
+        est_period = len(imfs[i]) * (est_period_time/duration)
+
+        win_size = 3 * est_period
+        win_size = win_size.astype(int)
+
+        ind = 0
+        start = 0
+        flag = False
+        skip = int(est_period * overlap)
+        while(ind+win_size < len(imfs[i])):
+            energy_win = np.sum(np.abs(imfs[i][ind:ind+win_size])**2)
+
+            # division causes too small values
+            energy_scaled = energy_win*(len(imfs[i])/win_size)
+
+            # another arbitrary threshold
+            if (energy_scaled >= energy*0.95 and not flag):
+                print("start")
+                start = ind
+                comp_counter += 1
+                flag = True
+            elif(energy_scaled < energy*0.95 and flag):
+                print("stop")
+                comp = component(i, start, ind+win_size-skip)
+                rel_segments.append(comp)
+                start = 0
+                flag = False
+            ind += skip
+        # skip remainder
+        # due to end effects behavior at the ends is not always reliable
+        if (flag):
+            flag = False
+            stop = len(imfs[i])
+            comp = component(i, start, stop)
+            rel_segments.append(comp)
+
+    return rel_segments
 
 def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
     signal = signal.astype(float)
