@@ -17,7 +17,7 @@ def amd(b_sampled, freq, bandwidth, time_b, args, method="vmd"):
     N = len(b_sampled)
     t = np.linspace(t_start, t_end, N)
 
-    method = "efd"
+    method = "vmd"
 
     if (method == "vmd"):
         vmd(b_sampled, t, freq, args, denoise=False)
@@ -651,16 +651,24 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
 
 def remove_zero(components, u_per):
 
-    #for comp in components:
     for i in range(0, len(components)):
         imf = u_per[components[i][1]][components[i][0][0]:components[i][0][1]]
-        analytic_signal = hilbert(imf)
+
+        N = len(imf)
+        n_pad = N // 10
+
+        imf_padded = np.pad(imf, (n_pad, n_pad), 'reflect')
+
+        analytic_signal = hilbert(imf_padded)
         amplitude_envelope = np.abs(analytic_signal)
+
+        # recover unpadded
+        amp_env = amplitude_envelope[n_pad:-n_pad]
 
         median_amp = np.median(amplitude_envelope)
 
         # TODO: arbitrary threshold
-        rel_ind = np.nonzero(amplitude_envelope > median_amp*0.5)
+        rel_ind = np.nonzero(amp_env > median_amp*0.3)
         for subarray in rel_ind:
             if (len(subarray) < len(imf)):
                 if subarray[0] > 0:
@@ -669,7 +677,6 @@ def remove_zero(components, u_per):
                     components[i] = time, components[i][1], components[i][2]
             # end not removed because of predictions and known boundary limitations
             # TODO: handle arrays req to split
-
 
 
 
