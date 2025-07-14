@@ -273,3 +273,5 @@ def simple_astft(components, signal, filtered, fs, time_b, args):
 
         plt.legend()
         plt.show()
+
+    return per_comp

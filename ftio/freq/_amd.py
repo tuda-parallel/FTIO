@@ -3,11 +3,13 @@ import matplotlib.pyplot as plt
 from vmdpy import VMD
 from pysdkit import EFD
 
-from ftio.freq._astft import check_3_periods
+from ftio.freq._astft import check_3_periods, simple_astft
 from ftio.freq.anomaly_detection import z_score
 from ftio.freq.denoise import tfpf_wvd
 from ftio.freq.frq_verification import pcc, scc
+from scipy.fft import fft, ifft
 from scipy.signal import hilbert
+
 
 plot = True
 
@@ -20,10 +22,10 @@ def amd(b_sampled, freq, bandwidth, time_b, args, method="vmd"):
     method = "vmd"
 
     if (method == "vmd"):
-        vmd(b_sampled, t, freq, args, denoise=False)
+        vmd(b_sampled, t, freq, args, denoise=True)
 
     if (method == "efd"):
-        efd(b_sampled, t, freq, args, denoise=True)
+        efd(b_sampled, t, freq, args, denoise=False)
 
 def vmd(signal, t, fs, args, denoise=False):
     # fixed parameters
@@ -34,7 +36,7 @@ def vmd(signal, t, fs, args, denoise=False):
 
     # signal dependent parameters
     alpha = 5000       # bandwidth constraint
-    K = 8              # # modes
+    K = 3              # # modes
 
     if denoise:
         signal_hat = tfpf_wvd(signal, fs, t)
@@ -122,7 +124,7 @@ def efd(signal, t, fs, args, denoise=False):
     per_segments = energy_windowed(signal, t, imfs, cerf2, fs)
 
     duration = t[-1] - t[0]
-    from ftio.freq._astft import check_3_periods
+
     for p in per_segments:
         # i start stop
 
@@ -228,31 +230,8 @@ def rm_nonperiodic(u, center_freqs, t):
 
 def det_imf_frq(imf, center_frq, fs, args):
     from scipy.fft import fft, ifft
-    # case 1: equals center frq
-    yf = fft(imf)
-
-    ind = np.argmax(np.abs(yf)[1:])+1
-
-    frq_arr = np.zeros(len(imf), dtype="complex")
-    frq_arr[ind] = yf[ind]
-    
-    if (yf[ind-1] > yf[ind-2] and yf[ind-1] > yf[ind+1]):
-        frq_arr[ind-1] = yf[ind-1]
-    elif (yf[ind+1] > yf[ind+2] and yf[ind+1] > yf[ind-1]):
-        frq_arr[ind+1] = yf[ind+1]
-    print(frq_arr[ind])
-    amp = ifft(frq_arr)
-
-    
-
-    corr = scc(imf, amp).statistic
-    print(corr)
-
-    t = np.arange(0, len(imf))
-    plt.plot(t, imf)
-    plt.plot(t, amp)
-    plt.show()
-
+    #########################################################
+    # case 3 & 4: non-stationary
     N = len(imf)
     n_pad = N // 10
 
@@ -263,26 +242,66 @@ def det_imf_frq(imf, center_frq, fs, args):
     instantaneous_phase = np.unwrap(np.angle(analytic_signal))
     instantaneous_frequency = np.diff(instantaneous_phase) / (2.0*np.pi) * fs
 
-    
-
     # recover unpadded
     amp_env = amplitude_envelope[n_pad:-n_pad]
     ifreq = instantaneous_frequency[n_pad:-n_pad]
+
+    print("std")
+    print(np.std(ifreq))
+
+    if (np.std(ifreq) > 0.09):
+        print(np.std(ifreq))
+        print("removed")
+        return -1
+
+    #########################################################
+    # case 1: equals center frq
+    yf = fft(imf)
+
+    ind = np.argmax(np.abs(yf)[1:])+1
+    frq_arr = np.zeros(len(imf), dtype="complex")
+    frq_arr[ind] = yf[ind]
+    frq_est = ind * fs / len(imf)
+    
+    if (yf[ind-1] > yf[ind-2] and yf[ind-1] > yf[ind+1]):
+        frq_arr[ind-1] = yf[ind-1]
+        frq_est_2 = (ind-1) * fs / len(imf)
+        frq_weighted = frq_est*np.abs(yf[ind]) + frq_est_2*np.abs(yf[ind-1])
+        frq_est = frq_weighted / (np.abs(yf[ind]) + np.abs(yf[ind-1]))
+    elif (yf[ind+1] > yf[ind+2] and yf[ind+1] > yf[ind-1]):
+        frq_arr[ind+1] = yf[ind+1]
+        frq_est_2 = (ind+1) * fs / len(imf)
+        frq_weighted = frq_est*np.abs(yf[ind]) + frq_est_2*np.abs(yf[ind+1])
+        frq_est = frq_weighted / (np.abs(yf[ind]) + np.abs(yf[ind+1]))
+    print(frq_arr[ind])
+    amp = ifft(frq_arr)
+
+    corr = scc(imf, amp).statistic
+    print(corr)
+
+    if corr > 0.8:
+        print("estimates")
+        print(frq_est)
+        print(ind * fs / len(imf))
+        print(center_frq)
+        return frq_est
+
+
+
+    #########################################################
+    # case 2 multiple
+
+    t = np.arange(0, len(imf))
+    plt.plot(t, imf)
+    plt.plot(t, amp)
+    plt.show()
 
     fig, ax = plt.subplots(2)
     ax[0].plot(t[:-1], ifreq)
     ax[1].plot(t, amp_env)
     plt.show()
 
-    if (np.std(ifreq) > 0.8):
-        print(np.std(ifreq))
-        print("removed")
-        #return -1
-
-    print("std")
-    print(np.std(ifreq))
-    print("var")
-    print(np.var(ifreq))
+    
 
     from scipy.fft import fft, ifft
 
@@ -307,18 +326,8 @@ def det_imf_frq(imf, center_frq, fs, args):
 
         corr = scc(amp_env, amp_cos).statistic
 
-        if (corr > 0.7):
-            return 
-
         print("corr")
         print(corr)
-
-        #print(type(amp_env[0]))
-        #print(type(amp_cos[0]))
-        #corr = pcc(amp_env, amp_cos).statistic
-
-        #print("corr")
-        #print(corr)
 
         # plot
         t = np.arange(0, len(imf))
@@ -332,110 +341,9 @@ def det_imf_frq(imf, center_frq, fs, args):
             amp_corr.append(corr)
             print("corr segm amp envel & cos > 0.8")
             print(amp_frq)
+            return fs * ind / len(imf)
 
-    if not amp_frq:
-        print("center frq")
-        print(center_frq)
-        return center_frq
-    elif len(amp_frq) == 1:
-        print("amp frq")
-        return amp_frq[0]
-    else:
-        print("ith amp frq")
-        i = np.argmax(amp_corr)
-        return amp_frq[i]
-
-
-def det_imf_frq_old(imf, center_frq, fs, args):
-    analytic_signal = hilbert(imf)
-    amplitude_envelope = np.abs(analytic_signal)
-    instantaneous_phase = np.unwrap(np.angle(analytic_signal))
-    instantaneous_frequency = np.diff(instantaneous_phase) / (2.0*np.pi) * fs
-
-    from scipy.fft import fft, ifft
-
-    yf = fft(amplitude_envelope)
-    """
-    N = len(imf)
-    T = 1.0 / 20.0
-    xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
-
-    yf2 = fft(imf)
-
-    plt.plot(xf[:40], 2.0/N * np.abs(yf[:N//2])[:40])
-    plt.plot(xf[:40], 2.0/N * np.abs(yf2[:N//2])[:40])
-    plt.show()
-    """
-    # identify peak
-    n = len(yf)
-    freq_arr = fs * np.arange(0, n) / n
-    indices = z_score(yf, freq_arr, args)[0]
-
-    amp_frq = []
-    amp_corr = []
-
-    for ind in indices:
-        # correlation ifft & amplitude envelope
-        amp_frq_arr = np.zeros(len(imf))
-        amp_frq_arr[ind] = yf[ind]
-        amp_cos = ifft(amp_frq_arr)
-
-        corr = scc(amplitude_envelope, amp_cos).statistic
-
-        print(fs * ind / len(imf))
-        print(corr)
-
-        t = np.arange(0, len(imf))
-
-        from scipy.stats import entropy
-
-        print("entropy")
-        print(entropy(instantaneous_frequency))
-        print("std")
-        print(np.std(instantaneous_frequency))
-        print("var")
-        print(np.var(instantaneous_frequency))
-        
-        
-        plt.plot(t, imf)
-        plt.plot(t, amplitude_envelope)
-        plt.plot(t, amp_cos)
-        plt.show()
-
-        plt.plot(t[1:], instantaneous_frequency)
-        plt.show()
-
-        plt.plot(t, instantaneous_phase)
-        plt.show()
-        
-        #print("corr segm amp envel & cos")
-        #print(corr)
-
-        if corr > 0.8:
-
-
-            amp_frq.append(fs * ind / len(imf))
-            amp_corr.append(corr)
-            print("corr segm amp envel & cos > 0.8")
-            print(amp_frq)
-
-    if not amp_frq:
-        yf = fft(imf)
-        peak = np.argmax(np.abs(yf)[1:])
-        est_imf_freq = peak * fs / len(imf)
-        """
-        print(est_imf_freq)
-        print(center_frq)
-        """
-        print("not amp frq")
-        return center_frq
-    elif len(amp_frq) == 1:
-        print("amp frq")
-        return amp_frq[0]
-    else:
-        print("ith amp frq")
-        i = np.argmax(amp_corr)
-        return amp_frq[i]
+    return -1
 
 # most significant mode
 def imf_select_msm(signal, u_per):
@@ -594,7 +502,7 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
     signal = signal.astype(float)
 
     confirmed_win = []
-    """
+    
     for j in range(0, u_per.shape[0]):
         imf = u_per[j]
 
@@ -604,23 +512,23 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
         print(corr2)
         # TODO: check all modes? choose best?
         if corr > 0.65:
-            est_frq = det_imf_frq(imf, center_freqs[j], fs, args)
+            start = remove_zero_single_mode(imf)
+
+            est_frq = det_imf_frq(imf[start:], center_freqs[j], fs, args)
             est_per_time = 1 / est_frq
             duration = t[-1] - t[0]
 
             if duration > (3*est_per_time*0.9):
                 # good enough, no cwindowed correlation checks required
                 # single imf describes whole signal
-                time = 0, len(imf)
+                time = start, len(imf)
                 comp = time, j,  est_frq
                 confirmed_win.append(comp)
 
                 return confirmed_win
 
-    import sys
-    sys.exit()
-    """
-
+    #import sys
+    #sys.exit()
 
     per_segments = imf_select_windowed(signal, t, u_per, fs)
     print("per segments")
@@ -633,6 +541,57 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
 
         est_frq = det_imf_frq(imf, center_freqs[comp.index], fs, args)
         if (est_frq == -1):
+            # use ASTFT to extract components
+            """
+            from scipy.fft import fft, ifft
+            yf = fft(imf)
+            print(np.abs(yf)[:15])
+            print(np.abs(yf)[15:30])
+            print(np.abs(yf)[30:45])
+            print(np.argmax(np.abs(yf)))
+
+            frq_bin_center = (center_freqs[comp.index] * len(imf)) / fs
+            frq_bin_center = np.round(frq_bin_center).astype(int)
+
+            print(frq_bin_center)
+
+            N = len(imf)
+            T = 1.0 / 20.0
+            xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
+
+            plt.plot(xf[:60], 2.0/N * np.abs(yf[:N//2])[:60])
+            #plt.plot(xf[:40], 2.0/N * np.abs(yf2[:N//2])[:40])
+            plt.show()
+
+            #start 
+
+            #end
+
+            #center frq
+            """
+            add_comp = []
+
+            time = comp.start, comp.end
+            # half
+            frq_half = center_freqs[comp.index] / 2
+            c = time, frq_half, frq_half
+            add_comp.append(c)
+
+            # third
+            frq_third = center_freqs[comp.index] / 3
+            c = time, frq_third, frq_third
+            add_comp.append(c)
+
+            res = simple_astft(add_comp, signal, signal, fs, t, args)
+            print("ASTFT")
+            print(res)
+
+            for r in res:
+                time = r.start, r.end
+                c = time, comp.index, r.freq
+                confirmed_win.append(c)
+
+
             continue
         est_per_time = 1 / est_frq
         duration = t[comp.end-1] - t[comp.start]
@@ -678,5 +637,30 @@ def remove_zero(components, u_per):
             # end not removed because of predictions and known boundary limitations
             # TODO: handle arrays req to split
 
+def remove_zero_single_mode(imf):
 
+    N = len(imf)
+    n_pad = N // 10
+
+    imf_padded = np.pad(imf, (n_pad, n_pad), 'reflect')
+
+    analytic_signal = hilbert(imf_padded)
+    amplitude_envelope = np.abs(analytic_signal)
+
+    # recover unpadded
+    amp_env = amplitude_envelope[n_pad:-n_pad]
+
+    median_amp = np.median(amplitude_envelope)
+
+    # TODO: arbitrary threshold
+    rel_ind = np.nonzero(amp_env > median_amp*0.3)
+    print("rel_ind")
+    print(rel_ind)
+    for subarray in rel_ind:
+        if (len(subarray) < len(imf)):
+            if subarray[0] > 0:
+                return subarray[0]
+        # end not removed because of predictions and known boundary limitations
+        # TODO: handle arrays req to split
+    return 0
 
