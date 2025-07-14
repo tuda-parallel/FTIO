@@ -45,11 +45,10 @@ def cm3(x, fs):
 
     for j in range(0,L):
         win = boxcar(win_len)
-        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len//8)
+        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len//2)
         Zxx = Zxx.transpose()
 
         for yf in Zxx:
-            #print(yf)
             yf_norm = normalize_fft(yf) ** alpha
             sum[j] = sum[j] + np.sum(yf_norm)
 
@@ -75,11 +74,10 @@ def cm4(x, fs):
     for j in range(0,L):
         win = boxcar(win_len)
         #win = hann(win_len)
-        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len//8)
+        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len//2)
         Zxx = Zxx.transpose()
 
         for yf in Zxx:
-            #print(yf)
             yf_norm = normalize_fft(yf) ** beta
             sum[j] = sum[j] + np.sum(yf_norm)
 
@@ -103,7 +101,7 @@ def cm5(x, fs):
 
     for j in range(0,L):
         win = boxcar(win_len)
-        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len//8)
+        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len//2)
         Zxx = Zxx.transpose()
 
         sum1 = 0.0
