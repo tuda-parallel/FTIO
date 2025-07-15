@@ -15,6 +15,9 @@ from scipy.signal import hilbert
 plot = True
 
 def amd(b_sampled, freq, bandwidth, time_b, args, method="vmd"):
+    """
+    Identify periodic time windows with adaptive mode decomposition.
+    """
     t_start = time_b[0]
     t_end = time_b[-1]
     N = len(b_sampled)
@@ -29,6 +32,15 @@ def amd(b_sampled, freq, bandwidth, time_b, args, method="vmd"):
         efd(b_sampled, t, freq, args, denoise=False)
 
 def vmd(signal, t, fs, args, denoise=False):
+    """
+    Variational Mode Decomposition (VMD) based periodicity detection.
+
+    Parameters:
+    - signal: np.ndarray, input signal in the time domain.
+    - t: np.ndarray, time samples.
+    - fs: float, sampling frequency.
+    - denoise: bool, whether to apply TFPF.
+    """
     # fixed parameters
     tau = 0.           # noise-tolerance (no strict fidelity enforcement)
     DC = 0             # no DC part imposed
@@ -80,6 +92,15 @@ Component = namedtuple("Component", ["start", "end", "amp", "freq", "phase"])
 per_comp = []
 
 def efd(signal, t, fs, args, denoise=False):
+    """
+    Empirical Fourier decomposition (EFD) based periodicity detection.
+
+    Parameters:
+    - signal: np.ndarray, input signal in the time domain.
+    - t: np.ndarray, time samples.
+    - fs: float, sampling frequency.
+    - denoise: bool, whether to apply TFPF.
+    """
     numIMFs = 8
     efd = EFD(max_imfs=numIMFs)
 
@@ -164,6 +185,15 @@ def efd(signal, t, fs, args, denoise=False):
     print(res)
 
 def plot_imfs(signal, t, u, K, denoised=None):
+    """
+    Plot obtained modes.
+
+    Parameters:
+    - signal: np.ndarray, input signal in the time domain.
+    - t: np.ndarray, time samples.
+    - u: np.ndarray, intrinsic mode functions.
+    - K: int, number of modes.
+    """
     fig, ax = plt.subplots(K+1)
     ax[0].plot(t, signal)
 
@@ -179,6 +209,16 @@ def plot_imfs(signal, t, u, K, denoised=None):
     plt.show()
 
 def plot_imf_char(signal, t, fs, u, K, denoised=None):
+    """
+    Plot instantaneous frequency and amplitude envelope.
+
+    Parameters:
+    - signal: np.ndarray, input signal in the time domain.
+    - t: np.ndarray, time samples.
+    - fs: float, sampling frequency.
+    - u: np.ndarray, intrinsic mode functions.
+    - K: int, number of modes.
+    """
     fig, ax = plt.subplots(K+1,3)
     ax[0][0].plot(t, signal)
 
@@ -208,6 +248,14 @@ def plot_imf_char(signal, t, fs, u, K, denoised=None):
     plt.show()
 
 def rm_nonperiodic(u, center_freqs, t):
+    """
+    Remove trend component.
+
+    Parameters:
+    - u: np.ndarray, intrinsic mode functions.
+    - center_freqs: np.ndarray, center frequencies of modes.
+    - t: np.ndarray, time samples.
+    """
     duration = t[-1] - t[0]
 
     min_period = duration / 2
@@ -221,6 +269,14 @@ def rm_nonperiodic(u, center_freqs, t):
     return u_periodic, center_freqs[i:]
 
 def det_imf_frq(imf, center_frq, fs, args):
+    """
+    Determine frequence of IMF.
+
+    Parameters:
+    - imf: np.ndarray, intrinsic mode function.
+    - center_frq: float, center frequencies of modes.
+    - fs: float, sampling frequency.
+    """
     from scipy.fft import fft, ifft
     #########################################################
     # case 3 & 4: non-stationary
@@ -292,6 +348,15 @@ from collections import namedtuple
 component = namedtuple('component', ['index', 'start', 'end'])
 
 def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
+    """
+    Select relevant IMFs by selecting strongly correlated time windows.
+
+    Parameters:
+    - signal: np.ndarray, input signal in the time domain.
+    - t: np.ndarray, time samples.
+    - u_per: np.ndarray, intrinsic mode function without trend.
+    - fs: float, sampling frequency.
+    """
     # window length
     # stationary subsignal: imf either ~constant or periodic
 
@@ -362,6 +427,15 @@ def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
     return per_segments
 
 def energy_windowed(t, imfs, cerf, fs, overlap=0.5):
+    """
+    Select relevant IMFs by identifying high energy time windows.
+
+    Parameters:
+    - signal: np.ndarray, input signal in the time domain.
+    - imfs: np.ndarray, intrinsic mode functions.
+    - cerf: np.ndarray, center frequencies of modes.
+    - fs: float, sampling frequency.
+    """
     duration = t[-1] - t[0]
 
     # relevant segments in signal
@@ -411,6 +485,16 @@ def energy_windowed(t, imfs, cerf, fs, overlap=0.5):
     return rel_segments
 
 def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
+    """
+    Select relevant IMFs through correlation (VMD).
+
+    Parameters:
+    - signal: np.ndarray, input signal in the time domain.
+    - u_per: np.ndarray, intrinsic mode functions without trend.
+    - t: np.ndarray, time samples.
+    - center_freqs: np.ndarray, center frequencies of modes.
+    - fs: float, sampling frequency.
+    """
     signal = signal.astype(float)
 
     confirmed_win = []
