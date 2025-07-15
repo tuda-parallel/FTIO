@@ -109,7 +109,6 @@ def check_3_periods(signal, fs, exp_freq, est_period, start, end):
 
     # area where component is expected
     bonus = est_period.astype(int)
-    print(bonus)
     _start = start - bonus
     _end = end + bonus
     if _start < 0:
@@ -119,7 +118,7 @@ def check_3_periods(signal, fs, exp_freq, est_period, start, end):
 
     subsignal = signal[_start:_end]
 
-    win = boxcar(win_len) #gaussian(stft_win, 1) #, sigma * win_len)
+    win = boxcar(win_len)
     hop = 1
     f, t, Zxx = stft(subsignal, fs=fs, window=win, nperseg=win_len, noverlap=(win_len - hop))
 

@@ -64,14 +64,14 @@ def vmd(signal, t, fs, args, denoise=False):
 
         components = imf_selection(signal, u_periodic, t, cen_freq_per, fs, args)
 
-    plt.plot(t, signal)
+    print(components)
 
+    plt.plot(t, signal)
     for p in components:
         start = p[0][0]
         end = p[0][1]
         imf = u_periodic[p[1]]
 
-        #plt.plot(t[start:end], imf[start:end], label=center_freqs[p[1]])
         plt.plot(t[start:end], imf[start:end], label=p[2])
     plt.legend()
     plt.show()
@@ -93,7 +93,6 @@ def efd(signal, t, fs, args, denoise=False):
     else:
         imfs, cerf = efd.fit_transform(signal, return_all=True)
         plot_imfs(signal, t, imfs, numIMFs)
-        print(cerf)
 
     # match modes to time windows
     # sinusoidal -> does not work
@@ -150,18 +149,8 @@ def efd(signal, t, fs, args, denoise=False):
                 arr[i] = yf[i]
                 iyf = ifft(arr)
 
-                plt.plot(t[start:end], imfs[p[0]][start:end])
-                plt.plot(t[start:end], iyf)
-                plt.show()
-
                 if (exp_frq_bin == i or exp_frq_bin-1 == i or exp_frq_bin+1 == i):
                     comp = check_3_periods(imfs[p[0]], fs, est_frq, est_period, p[1], p[2])
-
-                    plt.plot(t, signal)
-                    #plt.plot(t[:-1], imfs[p[0]])
-                    for c in comp:
-                        plt.plot(t[c[0]:c[1]], imfs[p[0]][c[0]:c[1]])
-                    plt.show()
 
                     # collect potential components
                     time = p[1], p[2]
@@ -173,8 +162,6 @@ def efd(signal, t, fs, args, denoise=False):
     # apply astft
     res = simple_astft(pot_comp, signal, signal_hat, fs, t, args, merge=False)
     print(res)
-
-
 
 def plot_imfs(signal, t, u, K, denoised=None):
     fig, ax = plt.subplots(K+1)
@@ -251,12 +238,7 @@ def det_imf_frq(imf, center_frq, fs, args):
     amp_env = amplitude_envelope[n_pad:-n_pad]
     ifreq = instantaneous_frequency[n_pad:-n_pad]
 
-    print("std")
-    print(np.std(ifreq))
-
     if (np.std(ifreq) > 0.04):
-        print(np.std(ifreq))
-        print("removed")
         return -1
 
     #########################################################
@@ -278,97 +260,33 @@ def det_imf_frq(imf, center_frq, fs, args):
         frq_est_2 = (ind+1) * fs / len(imf)
         frq_weighted = frq_est*np.abs(yf[ind]) + frq_est_2*np.abs(yf[ind+1])
         frq_est = frq_weighted / (np.abs(yf[ind]) + np.abs(yf[ind+1]))
-    print(frq_arr[ind])
     amp = ifft(frq_arr)
 
     corr = scc(imf, amp).statistic
-    print(corr)
 
     if corr > 0.8:
-        print("estimates")
-        print(frq_est)
-        print(ind * fs / len(imf))
-        print(center_frq)
         return frq_est
-
-
 
     #########################################################
     # case 2 multiple
-
-    t = np.arange(0, len(imf))
-    plt.plot(t, imf)
-    plt.plot(t, amp)
-    plt.show()
-
-    fig, ax = plt.subplots(2)
-    ax[0].plot(t[:-1], ifreq)
-    ax[1].plot(t, amp_env)
-    plt.show()
-
-    
-
     from scipy.fft import fft, ifft
-
     yf = fft(amp_env)
 
     # identify peak
     freq_arr = fs * np.arange(0, N) / N
     indices = z_score(yf, freq_arr, args)[0]
 
-    # TODO: argmax? monocomponent, safe some time
-
-    print(indices)
-
-    amp_frq = []
-    amp_corr = []
-
     for ind in indices:
         amp_frq_arr = np.zeros(len(imf), dtype="complex")
         amp_frq_arr[ind] = yf[ind]
-        print(amp_frq_arr[ind])
         amp_cos = ifft(amp_frq_arr)
 
         corr = scc(amp_env, amp_cos).statistic
 
-        print("corr")
-        print(corr)
-
-        # plot
-        t = np.arange(0, len(imf))
-        plt.plot(t, imf)
-        plt.plot(t, amp_env)
-        plt.plot(t, amp_cos)
-        plt.show()
-
         if corr > 0.8:
-            amp_frq.append(fs * ind / len(imf))
-            amp_corr.append(corr)
-            print("corr segm amp envel & cos > 0.8")
-            print(amp_frq)
             return fs * ind / len(imf)
 
     return -1
-
-# most significant mode
-def imf_select_msm(signal, u_per):
-    corr_stats = np.empty(u_per.shape[0])
-    for i in range(0, u_per.shape[0]):
-        corr_stats[i] = scc(signal, u_per[i]).statistic
-
-    print(corr_stats)
-
-    best = np.max(corr_stats)
-    if best > 0.6:
-        ind = np.argmax(corr_stats)
-        return u_per[ind]
-
-    """
-    else: non-stationary, but possibly stationary in smaller segments
-    """
-
-#def imf_select_multiple(signal, u_per):
-    # TODO
 
 from collections import namedtuple
 component = namedtuple('component', ['index', 'start', 'end'])
@@ -408,25 +326,16 @@ def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
 
         ind = 0
         start = 0
-        plt.plot(t, signal)
         flag = False
         skip = int(est_per * overlap)
         while(ind+win_size < len(imf)):
             corr = pcc(signal[ind:ind+win_size], imf[ind:ind+win_size]).statistic
-            if(corr > 0.65):
-                plt.plot(t[ind:ind+win_size], imf[ind:ind+win_size])
             if (corr > 0.65 and not flag):
                 start = ind
                 comp_counter += 1
                 flag = True
             elif(corr <= 0.65 and flag):
-                print("not corr")
-                print(per_segments)
-                #print(per_segments[-1].index)
                 # TODO: find better solution
-                if(per_segments):
-                    print("exists")
-                    print(per_segments[-1].index)
                 if (per_segments and j == per_segments[-1].index and start < per_segments[-1].end):
                         old_start = per_segments[-1].start
                         del per_segments[-1]
@@ -449,7 +358,6 @@ def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
             else:
                 comp = component(j, start, stop)
                 per_segments.append(comp)
-        plt.show()
 
     return per_segments
 
@@ -482,12 +390,10 @@ def energy_windowed(t, imfs, cerf, fs, overlap=0.5):
 
             # another arbitrary threshold
             if (energy_scaled >= energy*0.95 and not flag):
-                print("start")
                 start = ind
                 comp_counter += 1
                 flag = True
             elif(energy_scaled < energy*0.95 and flag):
-                print("stop")
                 comp = component(i, start, ind+win_size-skip)
                 rel_segments.append(comp)
                 start = 0
@@ -508,14 +414,10 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
     signal = signal.astype(float)
 
     confirmed_win = []
-    
     for j in range(0, u_per.shape[0]):
         imf = u_per[j]
 
         corr = pcc(signal.astype(float), imf).statistic
-        print(corr)
-        corr2 = scc(signal.astype(float), imf).statistic
-        print(corr2)
         # TODO: check all modes? choose best?
         if corr > 0.65:
             start = remove_zero_single_mode(imf)
@@ -533,16 +435,9 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
 
                 return confirmed_win
 
-    #import sys
-    #sys.exit()
-
     per_segments = imf_select_windowed(signal, t, u_per, fs)
-    print("per segments")
-    print(per_segments)
-    print(len(per_segments))
 
     for comp in per_segments:
-        print(comp)
         imf = u_per[comp.index][comp.start:comp.end]
 
         est_frq = det_imf_frq(imf, center_freqs[comp.index], fs, args)
@@ -579,9 +474,6 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
             time = comp.start, comp.end
             comp = time, comp.index,  est_frq
             confirmed_win.append(comp)
-
-    print("confirmed win")
-    print(confirmed_win)
 
     return confirmed_win
 
@@ -631,8 +523,6 @@ def remove_zero_single_mode(imf):
 
     # TODO: arbitrary threshold
     rel_ind = np.nonzero(amp_env > median_amp*0.3)
-    print("rel_ind")
-    print(rel_ind)
     for subarray in rel_ind:
         if (len(subarray) < len(imf)):
             if subarray[0] > 0:
