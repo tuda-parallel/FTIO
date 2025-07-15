@@ -177,7 +177,7 @@ def check_3_periods(signal, fs, exp_freq, est_period, start, end):
 
 from scipy.signal import find_peaks
 
-def simple_astft(components, signal, filtered, fs, time_b, args):
+def simple_astft(components, signal, filtered, fs, time_b, args, merge=True):
     t_start = time_b[0]
     t_end = time_b[-1]
 
@@ -190,22 +190,23 @@ def simple_astft(components, signal, filtered, fs, time_b, args):
         #ax.plot(t, filtered)
         signal = filtered
 
-    # merge interrupted components
-    i = 0
-    length = len(components)
-    while (i < length-1):
-        if (components[i][1] == components[i+1][1]):
-            est_period_time = 1/components[i][1] #/ fs
-            est_period = len(signal) * (est_period_time/duration)
+    if merge:
+        # merge interrupted components
+        i = 0
+        length = len(components)
+        while (i < length-1):
+            if (components[i][1] == components[i+1][1]):
+                est_period_time = 1/components[i][1] #/ fs
+                est_period = len(signal) * (est_period_time/duration)
 
-            # end - start
-            dist = components[i+1][0][0] - components[i][0][1]
-            if (dist < est_period):
-                time = components[i][0][0], components[i+1][0][1]
-                components[i] = time, components[i][1], components[2] 
-                del components[i+1]
-                length -= 1
-        i += 1
+                # end - start
+                dist = components[i+1][0][0] - components[i][0][1]
+                if (dist < est_period):
+                    time = components[i][0][0], components[i+1][0][1]
+                    components[i] = time, components[i][1], components[2]
+                    del components[i+1]
+                    length -= 1
+            i += 1
 
     Component = namedtuple("Component", ["start", "end", "amp", "freq", "phase"])
     per_comp = []
@@ -251,7 +252,10 @@ def simple_astft(components, signal, filtered, fs, time_b, args):
             yf = fft(signal[start_frq:stop_frq])
 
             frqs = np.abs(yf[1:N//2])
-            peak = np.argmax(frqs)+1
+            exp_frq_bin = (i[1] * (stop_frq-start_frq)) / fs
+            exp_frq_bin = exp_frq_bin.astype(int)
+            peak = np.argmax(frqs[exp_frq_bin-2:exp_frq_bin+2])
+            peak = peak + (exp_frq_bin-2) + 1
 
             amp_final = np.abs(yf[peak]) / (stop_frq - start_frq)
             frq_final = peak * fs / (stop_frq - start_frq)
@@ -261,8 +265,23 @@ def simple_astft(components, signal, filtered, fs, time_b, args):
             phi_shift = - 2 * np.pi * frq_final * (t[start_frq - fc[0]])
             phase_final = np.angle(yf[peak] * np.exp(1j*phi_shift))
 
-            comp_ext = Component(fc[0], fc[1], amp_final, frq_final, phase_final)
-            per_comp.append(comp_ext)
+            # merge components with same frequency and phase
+            merged = False
+            for c in per_comp:
+                if (c.freq == frq_final and c.end > fc[0]):
+                    # phase
+                    phi_shift_comp = - 2 * np.pi * frq_final * (t[start_frq - c.start])
+                    phase_comp = np.angle(yf[peak] * np.exp(1j*phi_shift_comp))
+
+                    # TODO: modulo pi?, threshold?
+                    if (np.abs(c.phase - phase_comp) < 0.001):
+                        c.end = fc[1]
+                        merged = True
+                        break
+
+            if not merged:
+                comp_ext = Component(fc[0], fc[1], amp_final, frq_final, phase_final)
+                per_comp.append(comp_ext)
 
     if per_comp:
         plt.plot(t, signal)
