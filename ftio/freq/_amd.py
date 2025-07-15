@@ -1,3 +1,4 @@
+from collections import namedtuple
 import numpy as np
 import matplotlib.pyplot as plt
 from vmdpy import VMD
@@ -36,7 +37,7 @@ def vmd(signal, t, fs, args, denoise=False):
 
     # signal dependent parameters
     alpha = 5000       # bandwidth constraint
-    K = 3              # # modes
+    K = 8              # # modes
 
     if denoise:
         signal_hat = tfpf_wvd(signal, fs, t)
@@ -63,8 +64,6 @@ def vmd(signal, t, fs, args, denoise=False):
 
         components = imf_selection(signal, u_periodic, t, cen_freq_per, fs, args)
 
-    remove_zero(components, u_periodic)
-
     plt.plot(t, signal)
 
     for p in components:
@@ -77,17 +76,14 @@ def vmd(signal, t, fs, args, denoise=False):
     plt.legend()
     plt.show()
 
-
-
-    #rel = imf_select_msm(signal, u_periodic)
-
-    #analytic_signal = hilbert(u[1])
-    #amplitude_envelope = np.abs(analytic_signal)
+Component = namedtuple("Component", ["start", "end", "amp", "freq", "phase"])
+per_comp = []
 
 def efd(signal, t, fs, args, denoise=False):
     numIMFs = 8
     efd = EFD(max_imfs=numIMFs)
 
+    signal_hat = None
     if denoise:
         signal_hat = tfpf_wvd(signal, fs, t)
         signal_hat = tfpf_wvd(signal_hat, fs, t)
@@ -103,32 +99,28 @@ def efd(signal, t, fs, args, denoise=False):
     # sinusoidal -> does not work
     # match highest energy contribution
 
-
-    imf_periodic, cen_freq_per = rm_nonperiodic(imfs, cerf, t)
-    imfs = imf_periodic
-
-    numIMFs = len(imf_periodic)
-
     # updated center freq
     from scipy.fft import fft,ifft
     cerf2 = np.empty(numIMFs)
     for i in range (0, numIMFs):
-        yf = fft(imf_periodic[i])
+        yf = fft(imfs[i])
         ind = np.argmax(np.abs(yf[1:])) + 1
-        cerf2[i] = (ind * fs) / len(imf_periodic[i])
+        cerf2[i] = (ind * fs) / len(imfs[i])
 
-        frq_arr = np.zeros(len(imf_periodic[i]), dtype="complex")
+        frq_arr = np.zeros(len(imfs[i]), dtype="complex")
         frq_arr[ind] = yf[ind]
         iyf = ifft(frq_arr)
 
-    per_segments = energy_windowed(signal, t, imfs, cerf2, fs)
+    per_segments = energy_windowed(t, imfs, cerf2, fs)
+
+    # collect potential components
+    pot_comp = []
 
     duration = t[-1] - t[0]
-
     for p in per_segments:
         # i start stop
 
-        est_frq = cerf2[p[0]]
+        est_frq = cerf2[p.index]
         est_period_time = 1/cerf2[p[0]] #/ fs
         est_period = len(imfs[0]) * (est_period_time/duration)
 
@@ -141,7 +133,11 @@ def efd(signal, t, fs, args, denoise=False):
                 end = end+est_period
             end = end.astype(int)
 
-            yf = fft(signal[start:end])
+            if denoise:
+                yf = fft(signal_hat[start:end])
+            else:
+                yf = fft(signal[start:end])
+
             N = end-start
             freq_arr = fs * np.arange(0, N) / N
             indices = z_score(yf, freq_arr, args)[0]
@@ -167,7 +163,16 @@ def efd(signal, t, fs, args, denoise=False):
                         plt.plot(t[c[0]:c[1]], imfs[p[0]][c[0]:c[1]])
                     plt.show()
 
+                    # collect potential components
+                    time = p[1], p[2]
+                    c = time, est_frq, est_frq
+                    pot_comp.append(c)
+
                     break
+
+    # apply astft
+    res = simple_astft(pot_comp, signal, signal_hat, fs, t, args, merge=False)
+    print(res)
 
 
 
@@ -249,7 +254,7 @@ def det_imf_frq(imf, center_frq, fs, args):
     print("std")
     print(np.std(ifreq))
 
-    if (np.std(ifreq) > 0.09):
+    if (np.std(ifreq) > 0.04):
         print(np.std(ifreq))
         print("removed")
         return -1
@@ -448,7 +453,7 @@ def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
 
     return per_segments
 
-def energy_windowed(signal, t, imfs, cerf, fs, overlap=0.5):
+def energy_windowed(t, imfs, cerf, fs, overlap=0.5):
     duration = t[-1] - t[0]
 
     # relevant segments in signal
@@ -496,6 +501,7 @@ def energy_windowed(signal, t, imfs, cerf, fs, overlap=0.5):
             comp = component(i, start, stop)
             rel_segments.append(comp)
 
+
     return rel_segments
 
 def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
@@ -542,36 +548,13 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
         est_frq = det_imf_frq(imf, center_freqs[comp.index], fs, args)
         if (est_frq == -1):
             # use ASTFT to extract components
-            """
-            from scipy.fft import fft, ifft
-            yf = fft(imf)
-            print(np.abs(yf)[:15])
-            print(np.abs(yf)[15:30])
-            print(np.abs(yf)[30:45])
-            print(np.argmax(np.abs(yf)))
-
-            frq_bin_center = (center_freqs[comp.index] * len(imf)) / fs
-            frq_bin_center = np.round(frq_bin_center).astype(int)
-
-            print(frq_bin_center)
-
-            N = len(imf)
-            T = 1.0 / 20.0
-            xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
-
-            plt.plot(xf[:60], 2.0/N * np.abs(yf[:N//2])[:60])
-            #plt.plot(xf[:40], 2.0/N * np.abs(yf2[:N//2])[:40])
-            plt.show()
-
-            #start 
-
-            #end
-
-            #center frq
-            """
             add_comp = []
 
             time = comp.start, comp.end
+            frq = center_freqs[comp.index]
+            c = time, frq, frq
+            add_comp.append(c)
+
             # half
             frq_half = center_freqs[comp.index] / 2
             c = time, frq_half, frq_half
@@ -583,20 +566,14 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
             add_comp.append(c)
 
             res = simple_astft(add_comp, signal, signal, fs, t, args)
-            print("ASTFT")
-            print(res)
-
             for r in res:
                 time = r.start, r.end
                 c = time, comp.index, r.freq
                 confirmed_win.append(c)
-
-
             continue
+
         est_per_time = 1 / est_frq
         duration = t[comp.end-1] - t[comp.start]
-
-        print(duration)
 
         if duration > (3*est_per_time*0.9):
             time = comp.start, comp.end
