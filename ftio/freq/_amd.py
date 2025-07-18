@@ -23,7 +23,7 @@ def amd(b_sampled, freq, bandwidth, time_b, args, method="vmd"):
     N = len(b_sampled)
     t = np.linspace(t_start, t_end, N)
 
-    method = "vmd"
+    method = "efd"
 
     if (method == "vmd"):
         vmd(b_sampled, t, freq, args, denoise=True)
@@ -78,13 +78,15 @@ def vmd(signal, t, fs, args, denoise=False):
 
     print(components)
 
+
     plt.plot(t, signal)
     for p in components:
         start = p[0][0]
         end = p[0][1]
         imf = u_periodic[p[1]]
 
-        plt.plot(t[start:end], imf[start:end], label=p[2])
+        plt.plot(t[start:end], imf[start:end], label=round(p[2], 3))
+
     plt.legend()
     plt.show()
 
@@ -127,7 +129,7 @@ def efd(signal, t, fs, args, denoise=False):
         ind = np.argmax(np.abs(yf[1:])) + 1
         cerf2[i] = (ind * fs) / len(imfs[i])
 
-        frq_arr = np.zeros(len(imfs[i]), dtype="complex")
+        frq_arr = np.zeros(len(imfs[i]), dtype=complex)
         frq_arr[ind] = yf[ind]
         iyf = ifft(frq_arr)
 
@@ -166,22 +168,20 @@ def efd(signal, t, fs, args, denoise=False):
             exp_frq_bin = np.round(exp_frq_bin).astype(int)
 
             for i in indices:
-                arr = np.zeros(N, dtype="complex")
+                arr = np.zeros(N, dtype=complex)
                 arr[i] = yf[i]
                 iyf = ifft(arr)
 
                 if (exp_frq_bin == i or exp_frq_bin-1 == i or exp_frq_bin+1 == i):
-                    comp = check_3_periods(imfs[p[0]], fs, est_frq, est_period, p[1], p[2])
-
                     # collect potential components
                     time = p[1], p[2]
-                    c = time, est_frq, est_frq
+                    c = time, est_frq, est_frq, p[0]
                     pot_comp.append(c)
 
                     break
 
     # apply astft
-    res = simple_astft(pot_comp, signal, signal_hat, fs, t, args, merge=False)
+    res = simple_astft(pot_comp, signal, signal_hat, fs, t, args, merge=False, imfs=imfs)
     print(res)
 
 def plot_imfs(signal, t, u, K, denoised=None):

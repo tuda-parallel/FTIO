@@ -174,9 +174,100 @@ def check_3_periods(signal, fs, exp_freq, est_period, start, end):
 
     return final_comp
 
+def frq_refinement(signal, start, end, frq_est, fs, duration):
+    est_period_time = 1/frq_est
+    est_period = len(signal) * (est_period_time/duration)
+
+    end_per = start + 3*est_period
+    while (end_per + est_period < end):
+        end_per += est_period
+    end_per = end_per.astype(int)
+
+    # center window
+    over = end - end_per
+    start_per = start + over // 2
+    end_per += over // 2
+
+    yf = fft(signal[start_per:end_per])
+
+    frqs = np.abs(yf[1:len(yf)//2])
+    exp_frq_bin = (frq_est * (end_per-start_per)) / fs
+    exp_frq_bin = exp_frq_bin.astype(int)
+
+    ind = np.argmax(frqs[exp_frq_bin-2:exp_frq_bin+2])
+    ind = ind + (exp_frq_bin-2) + 1
+
+    frq_est_ref = ind * fs / len(yf)
+    magn = np.abs(yf[ind])
+
+    if (ind > 1 and np.abs(yf[ind-1]) > np.abs(yf[ind-2]) and np.abs(yf[ind-1]) > np.abs(yf[ind+1])):
+        frq_est_ref2 = (ind-1) * fs / len(yf)
+        frq_weighted = frq_est_ref*np.abs(yf[ind]) + frq_est_ref2*np.abs(yf[ind-1])
+        frq_est_ref = frq_weighted / (np.abs(yf[ind]) + np.abs(yf[ind-1]))
+    elif (np.abs(yf[ind+1]) > np.abs(yf[ind+2]) and np.abs(yf[ind+1]) > np.abs(yf[ind-1])):
+        frq_est_ref2 = (ind+1) * fs / len(yf)
+        frq_weighted = frq_est_ref*np.abs(yf[ind]) + frq_est_ref2*np.abs(yf[ind+1])
+        frq_est_ref = frq_weighted / (np.abs(yf[ind]) + np.abs(yf[ind+1]))
+
+    if (np.abs(1 - (frq_est/frq_est_ref)) < 0.005):
+        return yf, ind, start_per, end_per
+
+    frq_est = frq_est_ref
+    # don't move too far away from PTFR frequency
+    maxiter = 3
+    for i in range(0, maxiter):
+        yf_old = yf
+        ind_old = ind
+        start_per_old = start_per
+        end_per_old = end_per
+        magn_old = magn
+        frq_est = frq_est_ref
+
+        est_period_time = 1/frq_est
+        est_period = len(signal) * (est_period_time/duration)
+
+        end_per = start + 3*est_period
+        while (end_per + est_period < end):
+            end_per += est_period
+        end_per = end_per.astype(int)
+
+        # center window
+        over = end - end_per
+        start_per = start + over // 2
+        end_per += over // 2
+
+        yf = fft(signal[start_per:end_per])
+
+        frqs = np.abs(yf[1:len(yf)//2])
+        exp_frq_bin = (frq_est * (end_per-start_per)) / fs
+        exp_frq_bin = exp_frq_bin.astype(int)
+
+        ind = np.argmax(frqs[exp_frq_bin-2:exp_frq_bin+2])
+        ind = ind + (exp_frq_bin-2) + 1
+
+        frq_est_ref = ind * fs / len(yf)
+        magn = np.abs(yf[ind])
+
+        if (ind > 1 and np.abs(yf[ind-1]) > np.abs(yf[ind-2]) and np.abs(yf[ind-1]) > np.abs(yf[ind+1])):
+            frq_est_ref2 = (ind-1) * fs / len(yf)
+            frq_weighted = frq_est_ref*np.abs(yf[ind]) + frq_est_ref2*np.abs(yf[ind-1])
+            frq_est_ref = frq_weighted / (np.abs(yf[ind]) + np.abs(yf[ind-1]))
+        elif (np.abs(yf[ind+1]) > np.abs(yf[ind+2]) and np.abs(yf[ind+1]) > np.abs(yf[ind-1])):
+            frq_est_ref2 = (ind+1) * fs / len(yf)
+            frq_weighted = frq_est_ref*np.abs(yf[ind]) + frq_est_ref2*np.abs(yf[ind+1])
+            frq_est_ref = frq_weighted / (np.abs(yf[ind]) + np.abs(yf[ind+1]))
+
+        if (magn < magn_old):
+            return yf_old, ind_old, start_per_old, end_per_old
+
+    return yf, ind, start_per, end_per
+
 from scipy.signal import find_peaks
 
-def simple_astft(components, signal, filtered, fs, time_b, args, merge=True):
+def simple_astft(components, signal, filtered, fs, time_b, args, merge=True, imfs=None):
+
+    signal_plot = signal
+
     t_start = time_b[0]
     t_end = time_b[-1]
 
@@ -237,24 +328,10 @@ def simple_astft(components, signal, filtered, fs, time_b, args, merge=True):
 
         for fc in final_components:
             # retrieve final frq est & functional from longest possible multiple
-            start_frq = fc[0]
-            period = est_period.astype(int)
-            stop_frq = start_frq + 3*period
-            while (stop_frq + period < fc[1]):
-                stop_frq += period
-
-            # center window
-            over = fc[1] - stop_frq
-            start_frq += over // 2
-            stop_frq += over // 2
-
-            yf = fft(signal[start_frq:stop_frq])
-
-            frqs = np.abs(yf[1:N//2])
-            exp_frq_bin = (i[1] * (stop_frq-start_frq)) / fs
-            exp_frq_bin = exp_frq_bin.astype(int)
-            peak = np.argmax(frqs[exp_frq_bin-2:exp_frq_bin+2])
-            peak = peak + (exp_frq_bin-2) + 1
+            if imfs is None:
+                yf, peak, start_frq, stop_frq = frq_refinement(signal, fc[0], fc[1], i[1], fs, duration)
+            else:
+                yf, peak, start_frq, stop_frq = frq_refinement(imfs[i[3]], fc[0], fc[1], i[1], fs, duration)
 
             amp_final = np.abs(yf[peak]) / (stop_frq - start_frq)
             frq_final = peak * fs / (stop_frq - start_frq)
@@ -283,7 +360,7 @@ def simple_astft(components, signal, filtered, fs, time_b, args, merge=True):
                 per_comp.append(comp_ext)
 
     if per_comp:
-        plt.plot(t, signal)
+        plt.plot(t, signal_plot)
 
         for p in per_comp:
             estimate = p.amp * np.cos(2 * np.pi * p.freq * t + p.phase)
