@@ -78,14 +78,13 @@ def vmd(signal, t, fs, args, denoise=False):
 
     print(components)
 
-
     plt.plot(t, signal)
     for p in components:
         start = p[0][0]
         end = p[0][1]
         imf = u_periodic[p[1]]
 
-        plt.plot(t[start:end], imf[start:end], label=round(p[2], 3))
+        plt.plot(t[start:end], imf[start:end], label=round(p[2], 6))
 
     plt.legend()
     plt.show()
@@ -103,6 +102,7 @@ def efd(signal, t, fs, args, denoise=False):
     - fs: float, sampling frequency.
     - denoise: bool, whether to apply TFPF.
     """
+
     numIMFs = 8
     efd = EFD(max_imfs=numIMFs)
 
@@ -281,7 +281,10 @@ def det_imf_frq(imf, center_frq, fs, args):
     #########################################################
     # case 3 & 4: non-stationary
     N = len(imf)
-    n_pad = N // 10
+    if N > 10:
+        n_pad = N // 10
+    else:
+        n_pad = 3
 
     imf_padded = np.pad(imf, (n_pad, n_pad), 'reflect')
 
@@ -306,12 +309,12 @@ def det_imf_frq(imf, center_frq, fs, args):
     frq_arr[ind] = yf[ind]
     frq_est = ind * fs / len(imf)
     
-    if (yf[ind-1] > yf[ind-2] and yf[ind-1] > yf[ind+1]):
+    if (np.abs(yf[ind-1]) > np.abs(yf[ind-2]) and np.abs(yf[ind-1]) > np.abs(yf[ind+1])):
         frq_arr[ind-1] = yf[ind-1]
         frq_est_2 = (ind-1) * fs / len(imf)
         frq_weighted = frq_est*np.abs(yf[ind]) + frq_est_2*np.abs(yf[ind-1])
         frq_est = frq_weighted / (np.abs(yf[ind]) + np.abs(yf[ind-1]))
-    elif (yf[ind+1] > yf[ind+2] and yf[ind+1] > yf[ind-1]):
+    elif (np.abs(yf[ind+1]) > np.abs(yf[ind+2]) and np.abs(yf[ind+1]) > np.abs(yf[ind-1])):
         frq_arr[ind+1] = yf[ind+1]
         frq_est_2 = (ind+1) * fs / len(imf)
         frq_weighted = frq_est*np.abs(yf[ind]) + frq_est_2*np.abs(yf[ind+1])
@@ -507,6 +510,8 @@ def imf_selection(signal, u_per, t, center_freqs, fs, args): #, u_per):
             start = remove_zero_single_mode(imf)
 
             est_frq = det_imf_frq(imf[start:], center_freqs[j], fs, args)
+            if (est_frq == -1):
+                continue
             est_per_time = 1 / est_frq
             duration = t[-1] - t[0]
 

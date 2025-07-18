@@ -133,20 +133,20 @@ def check_3_periods(signal, fs, exp_freq, est_period, start, end):
         yf = Zxx[:exp_frq_bin+3,i].transpose()
         yf = np.abs(yf)
         # check if expected freq is peak
-        if (yf[exp_frq_bin] > yf[exp_frq_bin-1] and yf[exp_frq_bin] > yf[exp_frq_bin+1]):
+        if (exp_frq_bin > 1 and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin-1]) and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin+1])):
             if not flag:
                 start = i
                 flag = True
             continue
         # or if expected + neighbor are peak
         # additional peak afterwards
-        elif (yf[exp_frq_bin] > yf[exp_frq_bin-1] and yf[exp_frq_bin] > yf[exp_frq_bin+2] and yf[exp_frq_bin+1] > yf[exp_frq_bin-1] and yf[exp_frq_bin+1] > yf[exp_frq_bin+2]):
+        elif (len(yf) > exp_frq_bin+2 and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin-1]) and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin+2]) and np.abs(yf[exp_frq_bin+1]) > np.abs(yf[exp_frq_bin-1]) and np.abs(yf[exp_frq_bin+1]) > np.abs(yf[exp_frq_bin+2])):
             if not flag:
                 start = i
                 flag = True
             continue
         # additional peak before
-        elif (yf[exp_frq_bin] > yf[exp_frq_bin+1] and yf[exp_frq_bin] > yf[exp_frq_bin-2] and yf[exp_frq_bin-1] > yf[exp_frq_bin+1] and yf[exp_frq_bin-1] > yf[exp_frq_bin-2]):
+        elif (np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin+1]) and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin-2]) and np.abs(yf[exp_frq_bin-1]) > np.abs(yf[exp_frq_bin+1]) and np.abs(yf[exp_frq_bin-1]) > np.abs(yf[exp_frq_bin-2])):
             if not flag:
                 start = i
                 flag = True
