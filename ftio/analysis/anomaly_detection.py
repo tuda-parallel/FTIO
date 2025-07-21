@@ -290,9 +290,9 @@ def isolation_forest(
         amp = amp * amp / len(amp)
         text = "[green]Spectrum[/]: Power spectrum\n"
 
-    indecies = np.arange(1, int(len(amp) / 2) + 1)
-    amp_tmp = np.array(2 * amp[indecies])
-    freq_arr_tmp = np.array(freq_arr[indecies])
+    indices = np.arange(1, int(len(amp) / 2) + 1)
+    amp_tmp = np.array(2 * amp[indices])
+    freq_arr_tmp = np.array(freq_arr[indices])
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
     #! norm over sum for amplitude with power spectrum
@@ -303,14 +303,15 @@ def isolation_forest(
     # model = IsolationForest(warm_start=True)
     model.fit(d)
     conf = model.decision_function(d)
+    conf = norm_conf(conf)
     dominant_index = model.predict(d)
 
     if "plotly" in args.engine:
-        plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d)
+        plot_outliers(args, freq_arr, amp, indices, conf, dominant_index, d)
         plot_decision_boundaries(model, d, conf)
 
     clean_index, _, msg = remove_harmonics(
-        freq_arr, amp_tmp, indecies[dominant_index == -1]
+        freq_arr, amp_tmp, indices[dominant_index == -1]
     )
     dominant_index, text_d = dominant(clean_index, freq_arr, conf)
 
@@ -338,9 +339,9 @@ def lof(
         amp = amp * amp / len(amp)
         text = "[green]Spectrum[/]: Power spectrum\n"
 
-    indecies = np.arange(1, int(len(amp) / 2) + 1)
-    amp_tmp = np.array(2 * amp[indecies])
-    freq_arr_tmp = np.array(freq_arr[indecies])
+    indices = np.arange(1, int(len(amp) / 2) + 1)
+    amp_tmp = np.array(2 * amp[indices])
+    freq_arr_tmp = np.array(freq_arr[indices])
 
     # norm the data
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
@@ -351,15 +352,14 @@ def lof(
     model.fit(d)
     conf = model.decision_function(d)
     dominant_index = model.predict(d)
-    # conf is between [-1,1]. Scale this to [0,1]
-    conf = -1 * (conf - 1) / 2
+    conf = norm_conf(conf)
 
     # plot
     if "plotly" in args.engine:
-        plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d)
+        plot_outliers(args, freq_arr, amp, indices, conf, dominant_index, d)
 
     clean_index, _, msg = remove_harmonics(
-        freq_arr, amp_tmp, indecies[dominant_index == -1]
+        freq_arr, amp_tmp, indices[dominant_index == -1]
     )
     dominant_index, text_d = dominant(clean_index, freq_arr, conf)
 
@@ -387,28 +387,39 @@ def peaks(
         amp = amp * amp / len(amp)
         text = "[green]Spectrum[/]: Power spectrum\n"
 
-    indecies = np.arange(1, int(len(amp) / 2) + 1)
-    amp_tmp = np.array(2 * amp[indecies])
-    freq_arr_tmp = np.array(freq_arr[indecies])
-
-    # norm the data
+    indices = np.arange(1, int(len(amp) / 2) + 1)
+    amp_tmp = np.array(2 * amp[indices])
+    freq_arr_tmp = np.array(freq_arr[indices])
+    # Normalize the data
+    # Option 1: normalize amplitude by max value (commented out)
     # d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.max())).T
-    #! norm over sum for amplitude with power spectrum
+
+    # Option 2: normalize amplitude by total sum (power spectrum normalization)
     d = np.vstack((freq_arr_tmp / freq_arr_tmp.max(), amp_tmp / amp_tmp.sum())).T
 
-    limit = 1.2 * np.mean(d[:, 1])
-    found_peaks, _ = find_peaks(d[:, 1], height=limit if limit > 0.2 else 0.2)
-    conf = np.zeros(len(d[:, 1]))
+    # Threshold for peak detection
+    # limit = args.tol * np.mean(d[:, 1])
+    limit = args.tol * np.max(d[:, 1])
+    # threshold = limit  # if limit > 0.2 else 0.2
+
+    # Detect peaks in normalized amplitude
+    found_peaks, _ = find_peaks(d[:, 1], height=limit)
+    # print(f"Found peaks: {found_peaks}")
+
+    # Create binary confidence mask (1 for peaks, 0 elsewhere)
+    conf = np.zeros(len(d[:, 1]), dtype=int)
     conf[found_peaks] = 1
-    dominant_index = np.zeros(len(d[:, 1]))
+
+    # Mark peak indices with -1 in dominant_index array
+    dominant_index = np.repeat(1, len(d[:, 1]))
     dominant_index[found_peaks] = -1
 
     # plot
     if "plotly" in args.engine:
-        plot_outliers(args, freq_arr, amp, indecies, conf, dominant_index, d)
+        plot_outliers(args, freq_arr, amp, indices, conf, dominant_index, d)
 
     clean_index, _, msg = remove_harmonics(
-        freq_arr, amp_tmp, indecies[dominant_index == -1]
+        freq_arr, amp_tmp, indices[dominant_index == -1]
     )
     dominant_index, text_d = dominant(clean_index, freq_arr, conf)
 
@@ -645,3 +656,20 @@ def remove_harmonics(freq_arr, amp_tmp, index_list) -> tuple[np.ndarray, list, s
         else:
             seen.append(ind)
     return np.array(seen), removed, msg
+
+
+def norm_conf(conf: np.ndarray):
+    # Normalize so that 1.0 = strongest outlier, 0.0 = strongest inlier
+    conf_min = conf.min()
+    conf_max = conf.max()
+
+    if conf_min == conf_max:
+        # All values are the same; treat all as neutral (e.g., 0.0 outlier score)
+        conf = np.zeros_like(conf)
+    elif conf_min == 0:
+        # Avoid division by zero when conf_min is 0
+        conf = 1.0 - (conf / conf_max)
+    else:
+        conf = (conf_max - conf) / (conf_max - conf_min)
+
+    return conf

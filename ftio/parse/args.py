@@ -154,9 +154,9 @@ Full documentation:
         parser.add_argument(
             "-o",
             "--outlier",
-            choices=["z-score", "dbscan", "forest", "lof"],
+            choices=["z-score", "dbscan", "forest", "lof", "peak"],
             type=str,
-            help="outlier detection method: Z-score (default), DB-Scan, Isolation_forest, or LOF",
+            help="outlier detection method: Z-score (default), DB-Scan, Isolation_forest, LOF, find_peaks (from sci-pi)",
         )
         parser.set_defaults(outlier="Z-score")
         parser.add_argument(
