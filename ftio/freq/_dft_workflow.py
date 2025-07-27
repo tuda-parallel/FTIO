@@ -8,6 +8,7 @@ from rich.console import Group
 from rich.panel import Panel
 
 from ftio.analysis.anomaly_detection import outlier_detection
+from ftio.analysis.periodicity_analysis import new_periodicity_scores
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft import dft
 from ftio.freq._filter import filter_signal
@@ -77,7 +78,7 @@ def ftio_dft(
 
     #!  Find the dominant frequency
     (dominant_index, conf[1 : int(n / 2) + 1], outlier_text) = outlier_detection(
-        amp, frequencies, b_sampled, phi, args
+        amp, frequencies, args
     )
 
     #  Ignore DC offset
@@ -110,6 +111,13 @@ def ftio_dft(
             "amp": amp[top_candidates[0:n_freq]],
             "phi": phi[top_candidates[0:n_freq]],
         }
+
+    periodicity_score = new_periodicity_scores(
+        amp, b_sampled, prediction, args
+    )
+    new_outlier_text = str(outlier_text.renderable) + "\n" + periodicity_score
+    outlier_text = Panel(new_outlier_text)
+    
 
     t_sampled = time_stamps[0] + np.arange(0, n) * 1 / args.freq
     #! Fourier fit if set
