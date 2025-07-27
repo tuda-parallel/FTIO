@@ -81,7 +81,7 @@ def outlier_detection(
         title=title,
         title_align="left",
     )
-    
+
     return dominant_index, conf, text
 
 

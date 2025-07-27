@@ -112,12 +112,9 @@ def ftio_dft(
             "phi": phi[top_candidates[0:n_freq]],
         }
 
-    periodicity_score = new_periodicity_scores(
-        amp, b_sampled, prediction, args
-    )
+    periodicity_score = new_periodicity_scores(amp, b_sampled, prediction, args)
     new_outlier_text = str(outlier_text.renderable) + "\n" + periodicity_score
     outlier_text = Panel(new_outlier_text)
-    
 
     t_sampled = time_stamps[0] + np.arange(0, n) * 1 / args.freq
     #! Fourier fit if set

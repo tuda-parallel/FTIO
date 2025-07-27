@@ -22,7 +22,6 @@ from rich.panel import Panel
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-
 # find_peaks
 from scipy.signal import find_peaks
 from scipy.stats import kurtosis
@@ -38,6 +37,7 @@ from sklearn.neighbors import LocalOutlierFactor, NearestNeighbors
 from ftio.analysis._correlation import correlation
 from ftio.plot.anomaly_plot import plot_decision_boundaries, plot_outliers
 from ftio.plot.cepstrum_plot import plot_cepstrum
+
 
 def new_periodicity_scores(
     amp: np.ndarray,
@@ -61,24 +61,18 @@ def new_periodicity_scores(
             start_idx = max(0, peak_idx - window_half_width)
             end_idx = min(len(spectrum_amp), peak_idx + window_half_width + 1)
             peak_window_spectrum = spectrum_amp[start_idx:end_idx]
-            if (
-                peak_window_spectrum.size < 4
-            ): 
-                sharpness_scores.append(-2.0)  
+            if peak_window_spectrum.size < 4:
+                sharpness_scores.append(-2.0)
                 continue
-            if np.std(peak_window_spectrum) < 1e-9:  
-                sharpness_scores.append(
-                    -2.0
-                ) 
+            if np.std(peak_window_spectrum) < 1e-9:
+                sharpness_scores.append(-2.0)
                 continue
             k = kurtosis(peak_window_spectrum, fisher=True, bias=False)
             sharpness_scores.append(k)
-        if (
-            not sharpness_scores
-        ):  
+        if not sharpness_scores:
             return -2.0
 
-        return float(np.mean(sharpness_scores))  
+        return float(np.mean(sharpness_scores))
 
     def compute_rpde(freq_arr: np.ndarray) -> float:
         safe_array = np.where(freq_arr <= 0, 1e-12, freq_arr)
@@ -120,7 +114,7 @@ def new_periodicity_scores(
         dt = 1 / sampling_rate
         t = start_time + dt * np.arange(len(signal))
         waveform = np.cos(2 * np.pi * freq * t + phi)
-        
+
         period = 1 / freq
         phase_offset = phi / (2 * np.pi * freq)
         i = 0
@@ -132,7 +126,7 @@ def new_periodicity_scores(
                 i += 1
                 continue
             begin = max(begin, 0)
-            end = min(end, len(signal)-1)
+            end = min(end, len(signal) - 1)
             correlation_result = correlation(waveform[begin:end], signal[begin:end])
             text += (
                 f"[green]Correlation for period {i:3d} with indices {begin:5d},{end:5d}: "
@@ -155,7 +149,7 @@ def new_periodicity_scores(
         dt = 1 / sampling_rate
         t = start_time + dt * np.arange(len(signal))
         waveform = np.cos(2 * np.pi * freq * t + phi)
-        
+
         period = 1 / freq
         phase_offset = phi / (2 * np.pi * freq)
 
@@ -183,7 +177,9 @@ def new_periodicity_scores(
 
         results = []
         with ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = [executor.submit(compute_correlation, interval) for interval in intervals]
+            futures = [
+                executor.submit(compute_correlation, interval) for interval in intervals
+            ]
             for future in as_completed(futures):
                 results.append(future.result())
 
@@ -196,14 +192,14 @@ def new_periodicity_scores(
                 f"[black]{corr_res:.4f} \n"
             )
         return text
-    
+
     periodicity_detection_method = args.periodicity_detection.lower()
-    
+
     rpde = periodicity_detection_method == "rpde"
     sf = periodicity_detection_method == "sf"
     corr = periodicity_detection_method == "corr"
     ind = periodicity_detection_method == "ind"
-    
+
     if args.psd:
         amp = amp * amp / len(amp)
         text = "[green]Spectrum[/]: Power spectrum\n"
@@ -213,23 +209,23 @@ def new_periodicity_scores(
     amp_tmp = amp_tmp / amp_tmp.sum() if amp_tmp.sum() > 0 else amp_tmp
 
     text = ""
-    if(rpde or sf or corr or ind):
-        text +=  f"\n[black]Periodicity Detection[/]"
-    if(rpde):
-        text +=  f"\n[green]RPDE Score: [black]{compute_rpde(amp_tmp):.4f}[/]\n"
-    if(sf):
-        text +=  f"\n[green]Spectral Flatness Score: [black]{compute_spectral_flatness(amp_tmp):.4f}[/]\n"
+    if rpde or sf or corr or ind:
+        text += f"\n[black]Periodicity Detection[/]"
+    if rpde:
+        text += f"\n[green]RPDE Score: [black]{compute_rpde(amp_tmp):.4f}[/]\n"
+    if sf:
+        text += f"\n[green]Spectral Flatness Score: [black]{compute_spectral_flatness(amp_tmp):.4f}[/]\n"
     if corr and len(prediction.dominant_freq) != 0:
         dominant_freq = prediction.dominant_freq[0]
         sampling_freq = prediction.freq
         phi = prediction.phi[0]
         start_time = prediction.t_start
-        text +=  f"\n[green]Correlation Score: [black]{signal_correlation(dominant_freq, sampling_freq, signal, phi, start_time)}[/]\n"
+        text += f"\n[green]Correlation Score: [black]{signal_correlation(dominant_freq, sampling_freq, signal, phi, start_time)}[/]\n"
     if ind and len(prediction.dominant_freq) != 0:
         dominant_freq = prediction.dominant_freq[0]
         sampling_freq = prediction.freq
         phi = prediction.phi[0]
         start_time = prediction.t_start
-        text +=  f"\n{ind_period_correlation(dominant_freq, sampling_freq, signal, phi, start_time)}[/]\n"
-    
+        text += f"\n{ind_period_correlation(dominant_freq, sampling_freq, signal, phi, start_time)}[/]\n"
+
     return text
