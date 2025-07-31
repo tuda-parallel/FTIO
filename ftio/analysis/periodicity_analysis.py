@@ -193,6 +193,9 @@ def new_periodicity_scores(
             )
         return text
 
+    text = ""
+    if args.periodicity_detection == False:
+        return text
     periodicity_detection_method = args.periodicity_detection.lower()
 
     rpde = periodicity_detection_method == "rpde"
@@ -208,24 +211,25 @@ def new_periodicity_scores(
     # norm the data
     amp_tmp = amp_tmp / amp_tmp.sum() if amp_tmp.sum() > 0 else amp_tmp
 
-    text = ""
     if rpde or sf or corr or ind:
-        text += f"\n[black]Periodicity Detection[/]"
+        text += f"\n[black]Periodicity Detection[/]\n"
     if rpde:
         text += f"\n[green]RPDE Score: [black]{compute_rpde(amp_tmp):.4f}[/]\n"
     if sf:
         text += f"\n[green]Spectral Flatness Score: [black]{compute_spectral_flatness(amp_tmp):.4f}[/]\n"
     if corr and len(prediction.dominant_freq) != 0:
-        dominant_freq = prediction.dominant_freq[0]
         sampling_freq = prediction.freq
-        phi = prediction.phi[0]
         start_time = prediction.t_start
-        text += f"\n[green]Correlation Score: [black]{signal_correlation(dominant_freq, sampling_freq, signal, phi, start_time)}[/]\n"
+        for dominant_freq, phi in zip(prediction.dominant_freq, prediction.phi):
+            text += f"\n[green]Correlation Score for Frequency [blue]{dominant_freq:.4f}: [black]{signal_correlation(dominant_freq, sampling_freq, signal, phi, start_time)}[/]\n"
     if ind and len(prediction.dominant_freq) != 0:
         dominant_freq = prediction.dominant_freq[0]
         sampling_freq = prediction.freq
         phi = prediction.phi[0]
         start_time = prediction.t_start
+        text += (
+            f"\nIndividual Period Correlation for Frequency [blue]:{dominant_freq:.4f}[/]"
+        )
         text += f"\n{ind_period_correlation(dominant_freq, sampling_freq, signal, phi, start_time)}[/]\n"
 
     return text
