@@ -160,6 +160,20 @@ Full documentation:
         )
         parser.set_defaults(outlier="Z-score")
         parser.add_argument(
+            "-p",
+            "--periodicity_detection",
+            choices=["rpde", "sf", "corr", "ind"],
+            type=str,
+            help="periodicity detection method after outlier detection: RPDE, Spectral flatness, Correlation, Correlation for individual periods. Default: none",
+        )
+        parser.set_defaults(periodicity_detection=None)
+        parser.add_argument(
+            "-ce",
+            "--cepstrum",
+            action="store_true",
+            help="enable Cepstrum plotting for the DFT",
+        )
+        parser.add_argument(
             "-le",
             "--level",
             dest="level",
@@ -213,7 +227,7 @@ Full documentation:
         )
         parser.set_defaults(fourier_fit=False)
         parser.add_argument(
-            "-c",
+            "-au",
             "--autocorrelation",
             dest="autocorrelation",
             action="store_true",

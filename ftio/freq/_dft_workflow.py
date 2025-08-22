@@ -8,6 +8,7 @@ from rich.console import Group
 from rich.panel import Panel
 
 from ftio.analysis.anomaly_detection import outlier_detection
+from ftio.analysis.periodicity_analysis import new_periodicity_scores
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft import dft
 from ftio.freq._filter import filter_signal
@@ -63,7 +64,14 @@ def ftio_dft(
 
     #!  Perform DFT
     tik = time.time()
-    console.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
+    if args.periodicity_detection:
+        console.print(
+            f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
+        )
+    else:
+        console.print(
+            f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier} + {args.periodicity_detection}\n"
+        )
     n = len(b_sampled)
     frequencies = args.freq * np.arange(0, n) / n
     X = dft(b_sampled)
@@ -90,6 +98,8 @@ def ftio_dft(
     #! Assign data
     prediction.dominant_freq = frequencies[dominant_index]
     prediction.conf = conf[dominant_index]
+    if args.periodicity_detection is not None:
+        prediction.periodicity = conf[dominant_index]
     prediction.amp = amp[dominant_index]
     prediction.phi = phi[dominant_index]
     prediction.t_start = time_stamps[0]
@@ -107,9 +117,12 @@ def ftio_dft(
         prediction.top_freqs = {
             "freq": frequencies[top_candidates[0:n_freq]],
             "conf": conf[top_candidates[0:n_freq]],
+            "periodicity": conf[top_candidates[0:n_freq]],
             "amp": amp[top_candidates[0:n_freq]],
             "phi": phi[top_candidates[0:n_freq]],
         }
+
+    periodicity_score = new_periodicity_scores(amp, b_sampled, prediction, args)
 
     t_sampled = time_stamps[0] + np.arange(0, n) * 1 / args.freq
     #! Fourier fit if set
@@ -140,7 +153,7 @@ def ftio_dft(
 
     precision_text = ""
     # precision_text = precision_dft(amp, phi, dominant_index, b_sampled, t_sampled, frequencies, args.engine)
-    text = Group(text, outlier_text, precision_text[:-1])
+    text = Group(text, outlier_text, periodicity_score, precision_text[:-1])
 
     console.print(
         Panel.fit(

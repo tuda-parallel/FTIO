@@ -18,7 +18,7 @@ def test_ftio_core_no_input():
 
 def test_ftio_core_no_input_autocorrelation():
     """Test the core functionality of ftio with no input and autocorrelation."""
-    args = parse_args(["-e", "no", "-c"], "ftio")
+    args = parse_args(["-e", "no", "-au"], "ftio")
     _ = core({}, args)
     assert True
 
@@ -39,7 +39,7 @@ def test_ftio_core():
 def test_ftio_core_autocorrelation():
     """Test the core functionality of ftio with autocorrelation."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
-    args = ["ftio", file, "-e", "no", "-c"]
+    args = ["ftio", file, "-e", "no", "-au"]
     _ = core({}, args)
     assert True
 

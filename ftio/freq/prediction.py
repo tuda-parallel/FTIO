@@ -9,6 +9,7 @@ class Prediction:
         source (str): The name or type of transformation used to generate predictions.
         dominant_freq (np.ndarray): Array of dominant frequencies identified in the data.
         conf (np.ndarray): Confidence values associated with each dominant frequency.
+        periodicity (np.ndarray): Periodicity score results for each frequency.
         amp (np.ndarray): Amplitudes corresponding to each dominant frequency.
         phi (np.ndarray): Phase angles for each dominant frequency.
         t_start (float): Start time index or timestamp for the prediction interval.
@@ -35,6 +36,7 @@ class Prediction:
         self._source = transformation
         self._dominant_freq = np.array([])
         self._conf = np.array([])
+        self._periodicity = np.array([])
         self._amp = np.array([])
         self._phi = np.array([])
         self._t_start = t_start
@@ -88,6 +90,23 @@ class Prediction:
                 "conf must be a numpy ndarray, list convertible to ndarray, or a numeric scalar"
             )
         self._conf = value
+
+    @property
+    def periodicity(self):
+        return self._periodicity
+
+    @periodicity.setter
+    def periodicity(self, value):
+        # same logic as dominant_freq
+        if np.isscalar(value):
+            value = np.array([value])
+        elif isinstance(value, list):
+            value = np.array(value)
+        if not isinstance(value, np.ndarray):
+            raise TypeError(
+                "periodicity must be a numpy ndarray, list convertible to ndarray, or a numeric scalar"
+            )
+        self._periodicity = value
 
     @property
     def amp(self):
@@ -271,6 +290,14 @@ class Prediction:
                 out_conf = self._conf[dominant_index]
         return out_freq, out_conf
 
+    def get_periodicity(self) -> float:
+        out_periodicity = np.nan
+        if len(self._periodicity) > 0:
+            dominant_index = self.get_dominant_index()
+            if dominant_index is not None:
+                out_periodicity = self._periodicity[dominant_index]
+        return out_periodicity
+
     def get_dominant_freq(self) -> float:
         """
         Return the dominant frequency
@@ -409,6 +436,12 @@ class Prediction:
                     f"[cyan]Confidence:[/] {color_pred(c_d)}"
                     f"{np.round(c_d * 100, 2)}[/] %\n"
                 )
+                periodicity = self.get_periodicity()
+                if not np.isnan(periodicity):
+                    text += (
+                        f"[cyan]Periodicity:[/] {color_pred(periodicity)}"
+                        f"{np.round(periodicity * 100, 2)}[/] %\n"
+                    )
             else:
                 text = (
                     "[cyan underline]Prediction results:[/]\n"
@@ -439,6 +472,7 @@ class Prediction:
             "source": self._source,
             "dominant_freq": self._dominant_freq,
             "conf": self._conf,
+            "periodicity": self._periodicity,
             "amp": self._amp,
             "phi": self._phi,
             "t_start": self.t_start,

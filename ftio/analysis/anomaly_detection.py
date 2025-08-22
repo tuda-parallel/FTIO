@@ -30,6 +30,7 @@ from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor, NearestNeighbors
 
 from ftio.plot.anomaly_plot import plot_decision_boundaries, plot_outliers
+from ftio.plot.cepstrum_plot import plot_cepstrum
 
 
 def outlier_detection(
@@ -164,6 +165,8 @@ def z_score(
         if len(dominant_index) != 0:
             i[np.array(dominant_index) - 1] = -1
         plot_outliers(args, freq_arr, amp, indices, conf, i)
+        if args.cepstrum:
+            plot_cepstrum(args, freq_arr, amp, indices)
 
     return dominant_index, conf, text
 
