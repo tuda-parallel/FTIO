@@ -643,7 +643,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 additional_arguments += get_env(settings, "mpi")
 
         call = (
-            f" time  mpiexec -np {settings.procs_app} --oversubscribe "
+            f" time  mpiexec -np {int(settings.procs_app)} --oversubscribe "
             f"{additional_arguments} {settings.app_call} {settings.app_flags}"
         )
 

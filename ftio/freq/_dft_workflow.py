@@ -64,7 +64,7 @@ def ftio_dft(
 
     #!  Perform DFT
     tik = time.time()
-    if args.periodicity_detection == False:
+    if args.periodicity_detection:
         console.print(
             f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
         )
@@ -98,7 +98,7 @@ def ftio_dft(
     #! Assign data
     prediction.dominant_freq = frequencies[dominant_index]
     prediction.conf = conf[dominant_index]
-    if args.periodicity_detection != False:
+    if args.periodicity_detection is not None:
         prediction.periodicity = conf[dominant_index]
     prediction.amp = amp[dominant_index]
     prediction.phi = phi[dominant_index]

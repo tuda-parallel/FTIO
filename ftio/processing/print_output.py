@@ -50,8 +50,7 @@ def display_prediction(
                 * 100,
                 2,
             )
-            periodicity_array = np.empty(0)
-            if len(prediction._periodicity) > 0:
+            if prediction.periodicity is not None and prediction.periodicity.size > 0:
                 periodicity_array = np.round(
                     np.where(
                         np.isinf(prediction.top_freqs["periodicity"]),
@@ -61,41 +60,52 @@ def display_prediction(
                     * 100,
                     2,
                 )
+            else:
+                periodicity_array = np.array([])
             amp_array = prediction.top_freqs["amp"]
             phi_array = prediction.top_freqs["phi"]
 
             table = Table(show_header=True, header_style="bold cyan")
-            table.add_column("Freq (Hz)", justify="right", style="white", no_wrap=True)
-            table.add_column("Conf. (%)", justify="right", style="white", no_wrap=True)
+
+            columns = [
+                ("Freq (Hz)", "right"),
+                ("Conf. (%)", "right"),
+            ]
+
             if len(periodicity_array) > 0:
-                table.add_column(
-                    "Periodicity (%)", justify="right", style="white", no_wrap=True
-                )
-            table.add_column("Amplitude", justify="right", style="white", no_wrap=True)
-            table.add_column("Phi", justify="right", style="white", no_wrap=True)
-            table.add_column("Cosine Wave", justify="right", style="white", no_wrap=True)
+                columns.append(("Periodicity (%)", "right"))
+
+            columns.extend(
+                [
+                    ("Amplitude", "right"),
+                    ("Phi", "right"),
+                    ("Cosine Wave", "right"),
+                ]
+            )
+
+            for col_name, justify in columns:
+                table.add_column(col_name, justify=justify, style="white", no_wrap=True)
 
             description = ""
             # Add frequency data
             for i, freq in enumerate(freq_array):
                 wave_name = prediction.get_wave_name(freq, amp_array[i], phi_array[i])
+                row = [
+                    f"{freq:.3e}",
+                    f"{conf_array[i]:.2f}",
+                ]
+
                 if len(periodicity_array) > 0:
-                    table.add_row(
-                        f"{freq:.3e}",
-                        f"{conf_array[i]:.2f}",
-                        f"{periodicity_array[i]:.2f}",
+                    row.append(f"{periodicity_array[i]:.2f}")
+
+                row.extend(
+                    [
                         f"{amp_array[i]:.3e}",
                         f"{phi_array[i]:.3e}",
                         wave_name,
-                    )
-                else:
-                    table.add_row(
-                        f"{freq:.3e}",
-                        f"{conf_array[i]:.2f}",
-                        f"{amp_array[i]:.3e}",
-                        f"{phi_array[i]:.3e}",
-                        wave_name,
-                    )
+                    ]
+                )
+                table.add_row(*row)
                 if i == 0:
                     description = wave_name
                 else:

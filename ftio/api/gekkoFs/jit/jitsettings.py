@@ -590,12 +590,15 @@ class JitSettings:
                 pass
 
             if "dlio" in self.app:
-                self.stage_in_path = "/d/github/dlio_benchmark/data"
                 # generate data with
+                # self.stage_in_path = "/d/github/dlio_benchmark/data"
+                workload = " workload=resnet50_small_a100_pytorch "
                 if self.exclude_daemon:
                     self.app_flags = (
                         f"{workload} "
-                        f"++workload.workflow.generate_data=False ++workload.workflow.train=True ++workload.workflow.checkpoint=True "  # ++workload.workflow.evaluation=True "
+                        f"++workload.workflow.generate_data=False "
+                        # f"++workload.workflow.generate_data=True "
+                        f"++workload.workflow.train=True ++workload.workflow.checkpoint=True "
                         f"++workload.dataset.data_folder={self.run_dir}/data/jit ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/jit "
                         f"++workload.output.output_folder={self.run_dir}/hydra_log/jit "
                     )
@@ -610,20 +613,20 @@ class JitSettings:
                 else:
                     self.app_flags = (
                         f"{workload} "
-                        f"++workload.workflow.generate_data=False ++workload.workflow.train=True ++workload.workflow.checkpoint=False "  # ++workload.workflow.evaluation=True "
+                        f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True "  # ++workload.workflow.evaluation=True "
                         f"++workload.dataset.data_folder={self.gkfs_mntdir}/data/jit ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints/jit "
                         f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log/jit "
                     )
-                    self.pre_app_call = [
-                        # f"cd {self.gkfs_mntdir}",
-                        (
-                            f"mpirun -np 8 dlio_benchmark "
-                            f"{workload} "
-                            f"++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.workflow.checkpoint=True "  # ++workload.workflow.evaluation=True "
-                            f"++workload.dataset.data_folder={self.gkfs_mntdir}/data/jit ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints/jit "
-                            f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log/jit "
-                        )
-                    ]
+                    # self.pre_app_call = [
+                    #     # f"cd {self.gkfs_mntdir}",
+                    #     (
+                    #         f"mpirun -np 8 dlio_benchmark "
+                    #         f"{workload} "
+                    #         f"++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.workflow.checkpoint=True "  # ++workload.workflow.evaluation=True "
+                    #         f"++workload.dataset.data_folder={self.gkfs_mntdir}/data/jit ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints/jit "
+                    #         f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log/jit "
+                    #     )
+                    # ]
                     self.post_app_call = ""
                 # ├─ Nek5000
             elif "nek" in self.app:

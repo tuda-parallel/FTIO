@@ -102,40 +102,6 @@ def new_periodicity_scores(
         correlation_result = correlation(waveform, signal)
         return correlation_result
 
-    # def ind_period_correlation(
-    #     freq: float,
-    #     sampling_rate: float,
-    #     signal: np.ndarray,
-    #     phi: float,
-    #     start_time: float,
-    #     text: str = "",
-    # ) -> float:
-    #     dt = 1 / sampling_rate
-    #     t = start_time + dt * np.arange(len(signal))
-    #     waveform = np.cos(2 * np.pi * freq * t + phi)
-
-    #     period = 1 / freq
-    #     phase_offset = phi / (2 * np.pi * freq)
-    #     i = 0
-    #     while True:
-    #         center_time = (i * period) - start_time - phase_offset
-    #         begin = round((center_time - 0.5 * period) * sampling_rate)
-    #         end = round((center_time + 0.5 * period) * sampling_rate)
-    #         if end < 1:
-    #             i += 1
-    #             continue
-    #         begin = max(begin, 0)
-    #         end = min(end, len(signal) - 1)
-    #         correlation_result = correlation(waveform[begin:end], signal[begin:end])
-    #         text += (
-    #             f"[green]Correlation for period {i:3d} with indices {begin:5d},{end:5d}: "
-    #             f"[black]{correlation_result:.4f} \n"
-    #         )
-    #         if end >= len(signal) - 1:
-    #             break
-    #         i += 1
-    #     return text
-
     def ind_period_correlation(
         freq: float,
         sampling_rate: float,
@@ -143,7 +109,7 @@ def new_periodicity_scores(
         phi: float,
         start_time: float,
         text: str = "",
-    ) -> Tuple[float, str]:
+    ) -> tuple[float, str]:
         """
         Calculates a length-weighted correlation for a signal.
 
@@ -218,7 +184,7 @@ def new_periodicity_scores(
         phi: float,
         start_time: float,
         text: str = "",
-    ) -> Tuple[float, str]:
+    ) -> tuple[float, str]:
         """
         The function iterates through the signal period by period, calculating the
         correlation for each. It then computes a final weighted average of these
@@ -365,98 +331,92 @@ def new_periodicity_scores(
         return text
 
     text = ""
-    if args.periodicity_detection == False:
-        return text
-    periodicity_detection_method = args.periodicity_detection.lower()
+    if args.periodicity_detection:
+        if args.psd:
+            amp = amp * amp / len(amp)
+            # text = "[green]Spectrum[/]: Power spectrum\n"
+        indices = np.arange(1, int(len(amp) / 2) + 1)
+        amp_tmp = np.array(2 * amp[indices])
+        # norm the data
+        amp_tmp = amp_tmp / amp_tmp.sum() if amp_tmp.sum() > 0 else amp_tmp
 
-    rpde = periodicity_detection_method == "rpde"
-    sf = periodicity_detection_method == "sf"
-    corr = periodicity_detection_method == "corr"
-    ind = periodicity_detection_method == "ind"
-
-    if args.psd:
-        amp = amp * amp / len(amp)
-        # text = "[green]Spectrum[/]: Power spectrum\n"
-    indices = np.arange(1, int(len(amp) / 2) + 1)
-    amp_tmp = np.array(2 * amp[indices])
-    # norm the data
-    amp_tmp = amp_tmp / amp_tmp.sum() if amp_tmp.sum() > 0 else amp_tmp
-
-    # if rpde or sf or corr or ind:
-    # text += f"\n[black]Periodicity Detection[/]\n"
-    if rpde:
-        rpde_score = compute_rpde(amp_tmp)
-        text += f"\n[green]RPDE score: [black]{rpde_score:.4f}[/]\n"
-        prediction.periodicity = rpde_score
-        if args.n_freq > 0:
-            prediction.top_freqs["periodicity"] = np.full(
-                len(prediction.top_freqs["freq"]), rpde_score
-            )
-    if sf:
-        sf_score = compute_spectral_flatness(amp_tmp)
-        text += f"\n[green]Spectral flatness score: [black]{sf_score:.4f}[/]\n"
-        prediction.periodicity = sf_score
-        if args.n_freq > 0:
-            prediction.top_freqs["periodicity"] = np.full(
-                len(prediction.top_freqs["freq"]), sf_score
-            )
-    if corr and len(prediction.dominant_freq) != 0:
-        sampling_freq = prediction.freq
-        start_time = prediction.t_start
-        if args.n_freq > 0:
-            for i, (dominant_freq, phi) in enumerate(
-                zip(prediction.top_freqs["freq"], prediction.top_freqs["phi"])
-            ):
-                score = signal_correlation(
-                    dominant_freq, sampling_freq, signal, phi, start_time
+        if "rpde" in args.periodicity_detection.lower():
+            rpde_score = compute_rpde(amp_tmp)
+            text += f"\n[green]RPDE score: [black]{rpde_score:.4f}[/]\n"
+            prediction.periodicity = rpde_score
+            if args.n_freq > 0:
+                prediction.top_freqs["periodicity"] = np.full(
+                    len(prediction.top_freqs["freq"]), rpde_score
                 )
-                prediction.top_freqs["periodicity"][i] = score
+        if "sf" in args.periodicity_detection.lower():
+            sf_score = compute_spectral_flatness(amp_tmp)
+            text += f"\n[green]Spectral flatness score: [black]{sf_score:.4f}[/]\n"
+            prediction.periodicity = sf_score
+            if args.n_freq > 0:
+                prediction.top_freqs["periodicity"] = np.full(
+                    len(prediction.top_freqs["freq"]), sf_score
+                )
+        if (
+            "corr" in args.periodicity_detection.lower()
+            and len(prediction.dominant_freq) != 0
+        ):
+            sampling_freq = prediction.freq
+            start_time = prediction.t_start
+            if args.n_freq > 0:
+                for i, (dominant_freq, phi) in enumerate(
+                    zip(prediction.top_freqs["freq"], prediction.top_freqs["phi"])
+                ):
+                    score = signal_correlation(
+                        dominant_freq, sampling_freq, signal, phi, start_time
+                    )
+                    prediction.top_freqs["periodicity"][i] = score
+                    text += (
+                        f"[green]Overall correlation score for frequency {dominant_freq:.4f}Hz: "
+                        f"[black]{score:.4f}[/]\n"
+                    )
+                prediction.periodicity = prediction.top_freqs["periodicity"][0]
+            else:
+                freq, phi = prediction.dominant_freq[0], prediction.phi[0]
+                score = signal_correlation(freq, sampling_freq, signal, phi, start_time)
+                prediction.periodicity = score
                 text += (
-                    f"[green]Overall correlation score for frequency {dominant_freq:.4f}Hz: "
+                    f"[green]Overall correlation score for frequency {freq:.4f}Hz: "
                     f"[black]{score:.4f}[/]\n"
                 )
-            prediction.periodicity = prediction.top_freqs["periodicity"][0]
-        else:
-            freq, phi = prediction.dominant_freq[0], prediction.phi[0]
-            score = signal_correlation(freq, sampling_freq, signal, phi, start_time)
-            prediction.periodicity = score
-            text += (
-                f"[green]Overall correlation score for frequency {freq:.4f}Hz: "
-                f"[black]{score:.4f}[/]\n"
-            )
-    if ind and len(prediction.dominant_freq) != 0:
-        sampling_freq = prediction.freq
-        start_time = prediction.t_start
-        if args.n_freq > 0:
-            for i, (dominant_freq, phi) in enumerate(
-                zip(prediction.top_freqs["freq"], prediction.top_freqs["phi"])
-            ):
-                print(dominant_freq)
+        if (
+            "ind" in args.periodicity_detection.lower()
+            and len(prediction.dominant_freq) != 0
+        ):
+            sampling_freq = prediction.freq
+            start_time = prediction.t_start
+            if args.n_freq > 0:
+                for i, (dominant_freq, phi) in enumerate(
+                    zip(prediction.top_freqs["freq"], prediction.top_freqs["phi"])
+                ):
+                    print(dominant_freq)
+                    score, new_text = weighted_ind_period_correlation(
+                        dominant_freq, sampling_freq, signal, phi, start_time
+                    )
+                    prediction.top_freqs["periodicity"][i] = score
+                    text += f"[green]Individual correlation score for frequency {dominant_freq:.4f}Hz:[/]\n"
+                    text += new_text
+                prediction.periodicity = prediction.top_freqs["periodicity"][0]
+            else:
+                freq, phi = prediction.dominant_freq[0], prediction.phi[0]
                 score, new_text = weighted_ind_period_correlation(
-                    dominant_freq, sampling_freq, signal, phi, start_time
+                    freq, sampling_freq, signal, phi, start_time
                 )
-                prediction.top_freqs["periodicity"][i] = score
-                text += f"[green]Individual correlation score for frequency {dominant_freq:.4f}Hz:[/]\n"
+                prediction.periodicity = score
+                text += f"[green]Individual correlation score for frequency {freq:.4f}Hz:[/]\n"
                 text += new_text
-            prediction.periodicity = prediction.top_freqs["periodicity"][0]
-        else:
-            freq, phi = prediction.dominant_freq[0], prediction.phi[0]
-            score, new_text = weighted_ind_period_correlation(
-                freq, sampling_freq, signal, phi, start_time
-            )
-            prediction.periodicity = score
-            text += (
-                f"[green]Individual correlation score for frequency {freq:.4f}Hz:[/]\n"
-            )
-            text += new_text
 
-    title = "Periodicity Analysis"
+        title = "Periodicity Analysis"
 
-    text = Panel.fit(
-        text[:-1],
-        style="white",
-        border_style="green",
-        title=title,
-        title_align="left",
-    )
+        text = Panel.fit(
+            text[:-1],
+            style="white",
+            border_style="green",
+            title=title,
+            title_align="left",
+        )
     return text

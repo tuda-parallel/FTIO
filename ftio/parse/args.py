@@ -166,7 +166,7 @@ Full documentation:
             type=str,
             help="periodicity detection method after outlier detection: RPDE, Spectral flatness, Correlation, Correlation for individual periods. Default: none",
         )
-        parser.set_defaults(periodicity_detection=False)
+        parser.set_defaults(periodicity_detection=None)
         parser.add_argument(
             "-ce",
             "--cepstrum",
