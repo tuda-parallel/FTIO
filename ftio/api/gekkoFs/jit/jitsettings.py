@@ -50,7 +50,7 @@ class JitSettings:
         self.dir = ""
         self.cluster = False
         self.ignore_mtime = False
-        self.parallel_move = False
+        self.parallel_move = True #False
         self.lock_generator = False
         self.lock_consumer = False
         self.adaptive = "cancel"

@@ -480,7 +480,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
 
             #  give ftio slightly more time to finish moving
             if not settings.exclude_ftio:
-                jit_print("[cyan]>> Shuting down FTIO as application finished")
+                jit_print("[cyan]>> Shutting down FTIO as application finished")
                 shut_down(settings, "FTIO", settings.ftio_pid)
 
             jit_move(settings)

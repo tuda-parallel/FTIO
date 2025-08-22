@@ -65,8 +65,9 @@ def move_files_os(
 
     # Iterate over all items in the source directory
     files = get_files(args)
+    CONSOLE.print(f"[bold green][Trigger][/][green] {len(files)} files to move[/]\n")
     if args.debug:
-        f"[bold green][Trigger][/][green] Files are:\n {files}[/]\n"
+        CONSOLE.print(f"[bold green][Trigger][/][green] Files are:\n {files}[/]\n")
 
     # Ensure the target directory exists
     os.makedirs(args.stage_out_path, exist_ok=True)
@@ -125,7 +126,7 @@ def move_file(args: argparse.Namespace, file_name: str, period: float = 0) -> No
         args (argparse.Namespace): Parsed command line arguments.
         file_name (str): Name of the file to stage out.
     """
-    threshold = period / 2  # the io took half the time
+    threshold = period / 2  # the IO took half the time
     threshold = max(threshold, 10)
     fast = False  # fast copy still has an error with the preload
 
@@ -143,6 +144,10 @@ def move_file(args: argparse.Namespace, file_name: str, period: float = 0) -> No
             fast_chunk_copy_file(args, file_name, threads=4)
         else:
             copy_file_and_unlink(args, file_name)
+
+        CONSOLE.print(
+            f"[bold green][Trigger][/][yellow]: {len(files_in_progress)} files still in the queue."
+        )
     else:
         CONSOLE.print(
             f"[bold green][Trigger][/][yellow]: {file_name} is too new (last modified {modification_time:.3})[/]\n"
