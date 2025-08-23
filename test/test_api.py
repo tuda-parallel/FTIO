@@ -81,3 +81,7 @@ def test_api():
     display_prediction(args, prediction)
     analysis_figures.show()
     assert True
+
+
+if __name__ == "__main__":
+    test_api()

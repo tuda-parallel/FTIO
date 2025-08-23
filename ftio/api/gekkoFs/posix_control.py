@@ -54,9 +54,6 @@ def move_files_os(
     if not os.path.exists(args.stage_out_path):
         os.makedirs(args.stage_out_path)
 
-    if args.parallel_move:
-        parallel = True
-
     regex = None
     # Compile the regex pattern if provided
     if args.regex:
@@ -65,7 +62,14 @@ def move_files_os(
 
     # Iterate over all items in the source directory
     files = get_files(args)
-    CONSOLE.print(f"[bold green][Trigger][/][green] {len(files)} files to move[/]\n")
+    if args.parallel_move:
+        parallel = True
+        text = (
+            f"[bold green][Trigger][/][green] {len(files)} files to move in parallel[/]\n"
+        )
+    else:
+        text = f"[bold green][Trigger][/][green] {len(files)} files to move[/]\n"
+    CONSOLE.print(text)
     if args.debug:
         CONSOLE.print(f"[bold green][Trigger][/][green] Files are:\n {files}[/]\n")
 
@@ -89,7 +93,8 @@ def move_files_os(
                     CONSOLE.print(f"[bold green][Trigger][/]:  Ignored {file_name}")
     else:
         futures = {}
-        with ProcessPoolExecutor(max_workers=5) as executor:
+        workers = 10
+        with ProcessPoolExecutor(max_workers=workers) as executor:
             # Submit tasks to the executor
             for i, file_name in enumerate(files):
                 if regex and regex.match(file_name):
@@ -105,6 +110,10 @@ def move_files_os(
                 else:
                     if args.debug:
                         CONSOLE.print(f"[bold green][Trigger][/]:  Ignored {file_name}")
+            CONSOLE.print(
+                f"[bold green][Trigger][/]: Finished submitting {len(futures)} futures. "
+                f"Using {workers} workers for processing"
+            )
 
             # Process results as they complete
             for future in as_completed(futures):
