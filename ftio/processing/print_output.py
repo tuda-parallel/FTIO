@@ -33,7 +33,7 @@ def display_prediction(
         return
 
     console = MyConsole()
-    # Display results if prediction is available
+    # Display results if a prediction is available
     console.info(prediction.disp_dominant_freq_and_conf() + prediction.disp_ranges())
 
     # If -n is provided, print the top frequencies with their confidence and amplitude in a table

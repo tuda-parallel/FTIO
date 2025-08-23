@@ -50,7 +50,7 @@ class JitSettings:
         self.dir = ""
         self.cluster = False
         self.ignore_mtime = False
-        self.parallel_move = False
+        self.parallel_move = True  # False
         self.lock_generator = False
         self.lock_consumer = False
         self.adaptive = "cancel"
@@ -399,12 +399,14 @@ class JitSettings:
         elif "dlio" in self.app:
             self.app_call = "dlio_benchmark"
             self.run_dir = "."
+            # workload = " workload=cosmoflow_a100 "
             # workload = " workload=bert "
             # workload = " workload=bert_small "
             # workload = " workload=unet3d_my_a100 "
             # workload = " workload=resnet50_my_a100 "
             # workload = " workload=llama_my_7b_zero3 "
             workload = " workload=resnet50_my_a100_pytorch "
+            # workload = " workload=resnet50_my_a100_pytorch_small "
 
             self.app_flags = (
                 f"{workload} "

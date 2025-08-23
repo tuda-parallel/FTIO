@@ -66,7 +66,7 @@ def ftio_wavelet_disc(
     # ! Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
-    b_sampled, args.freq = sample_data(bandwidth, time_stamps, args.freq, args.verbose)
+    b_sampled, args.freq = sample_data(bandwidth, time_stamps, args)
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
     # b_sampled = logicize(b_sampled)

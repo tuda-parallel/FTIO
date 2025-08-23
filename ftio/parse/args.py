@@ -96,7 +96,7 @@ Full documentation:
             "--freq",
             dest="freq",
             type=float,
-            help="specifies the sampling rate with which the continuous signal is discretized (default=10Hz). This directly affects the highest captured frequency (Nyquist). The value is specified in Hz. In case this value is set to -1, the auto mode is launched which sets the sampling frequency automatically to the smallest change in the bandwidth detected. Note that the lowest allowed frequency in the auto mode is 2000 Hz",
+            help="specifies the sampling rate with which the continuous signal is discretized (default=10Hz). This directly affects the highest captured frequency (Nyquist). The value is specified in Hz. In case this value is set to -1, the auto mode is launched which sets the sampling frequency automatically to the smallest change in the bandwidth detected. Note that the lowest allowed frequency in the auto mode determine by the `memory_limit`",
         )
         parser.add_argument(
             "-e",
@@ -114,9 +114,15 @@ Full documentation:
             "--freq",
             dest="freq",
             type=float,
-            help="specifies the sampling rate with which the continuous signal is discretized (default=10Hz). This directly affects the highest captured frequency (Nyquist). The value is specified in Hz. In case this value is set to -1, the auto mode is launched which sets the sampling frequency automatically to the smallest change in the bandwidth detected. Note that the lowest allowed frequency in the auto mode is 2000 Hz",
+            help="specifies the sampling rate with which the continuous signal is discretized (default=10Hz). This directly affects the highest captured frequency (Nyquist). The value is specified in Hz. In case this value is set to -1, the auto mode is launched which sets the sampling frequency automatically to the smallest change in the bandwidth detected. Note that the lowest allowed frequency in the auto mode determine by the `memory_limit`",
         )
         parser.set_defaults(freq=10)
+        parser.add_argument(
+            "--memory_limit",
+            type=float,
+            default=0.5,
+            help="Memory limit in GB during discretization in case `freq` is passed with -1. Default is 0.5 GB.",
+        )
         parser.add_argument(
             "-ts",
             "--ts",
