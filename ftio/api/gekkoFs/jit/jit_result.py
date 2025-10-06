@@ -146,7 +146,7 @@ class JitResult:
         # Update text formatting
         fig.update_traces(
             textposition="inside",
-            texttemplate="%{text:.2f}",
+            texttemplate="%{text:.1f}",
             textfont_size=18,  # Increased font size
             textangle=0,
             textfont=dict(color="white"),
@@ -189,13 +189,14 @@ class JitResult:
             fig.update_traces(
                 textposition="inside",
                 texttemplate="%{text:.2f}",
-                textfont_size=18,  # Increased font size
-                textangle=0,
+                textfont_size=11,  # Increased font size
+                textangle=45,
                 textfont=dict(color="white"),
             )
 
         # Comment out to see all text
-        fig.update_layout(uniformtext_minsize=10, uniformtext_mode="hide")
+        # fig.update_layout(uniformtext_minsize=10, uniformtext_mode="hide")
+        fig.update_layout(uniformtext_minsize=11, uniformtext_mode="hide")
 
         # Update layout with larger font sizes
         fig.update_layout(
@@ -205,26 +206,64 @@ class JitResult:
             title=title,
             barmode=barmode,
             title_font_size=24,  # Increased title font size
-            width=1000 + 100 * len(self.node),
-            height=550,
-            xaxis=dict(title_font=dict(size=24)),  # Increased x-axis title font size
-            yaxis=dict(title_font=dict(size=24)),  # Increased y-axis title font size
+            width=500 + 100 * len(self.node),
+            height=500,
+            xaxis=dict(title_font=dict(size=20)),  # Increased x-axis title font size
+            yaxis=dict(title_font=dict(size=20)),  # Increased y-axis title font size
             legend=dict(
-                font=dict(size=20),  # Increased legend font size
+                font=dict(size=22),  # Increased legend font size
             ),
         )
-
-        format_plot_and_ticks(fig, x_minor=False, font_size=20)
+        format_plot_and_ticks(fig, x_minor=False, font_size=16)
         fig.update_layout(
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
-                y=0.88,
-                xanchor="right",
-                # x=0.005#
-                x=0.997,
+                y=0.84,
+                xanchor="left",
+                x=0.005,
+                # xanchor="right",
+                # x=0.997,
             )
         )
+        # fig.update_traces(
+        #     textposition="inside",
+        #     texttemplate="%{text:.2f}",
+        #     textfont_size=20,  # Increased font size
+        #     textangle=0,
+        #     textfont=dict(color="white"),
+        # )
+
+        # fig.update_layout(uniformtext_minsize=13, uniformtext_mode="hide")
+
+        # # Update layout with larger font sizes
+        # fig.update_layout(
+        #     yaxis_title="Time (s)",
+        #     xaxis_title=f"Experimental Runs with # Nodes",
+        #     showlegend=True,
+        #     title=title,
+        #     barmode=barmode,
+        #     title_font_size=24,  # Increased title font size
+        #     width=1000 + 100 * len(self.node),
+        #     height=550,
+        #     xaxis=dict(title_font=dict(size=24)),  # Increased x-axis title font size
+        #     yaxis=dict(title_font=dict(size=24)),  # Increased y-axis title font size
+        #     legend=dict(
+        #         font=dict(size=20),  # Increased legend font size
+        #     ),
+        # )
+        # format_plot_and_ticks(fig, x_minor=False, font_size=20)
+        # fig.update_layout(
+        #     legend=dict(
+        #         orientation="h",
+        #         yanchor="bottom",
+        #         y=0.87,
+        #         xanchor="left",
+        #         x=0.005,
+        #         # xanchor="right",
+        #         # x=0.997,
+        #     )
+        # )
 
         fig.show()
 
@@ -547,11 +586,11 @@ def highlight_row(values, chunks, min_value=None, max_value=None):
 
         # Add the division information (using correct chunks elements)
         if i == 0:
-            formatted += f"[cyan] ({chunks[2]:.1f}/{chunks[0]:.1f} -- [{color}]{100*(chunks[2]-chunks[0])/chunks[2] if chunks[2] > 0 else 0:.2f}%[/])"
+            formatted += f"[cyan]({chunks[2]:.1f}/{chunks[0]:.1f} -- [{color}]{100*(chunks[2]-chunks[0])/chunks[2] if chunks[2] > 0 else 0:.2f}%[/])"
         elif i == 1:
-            formatted += f"[cyan] ({chunks[2]:.1f}/{chunks[1]:.1f} -- [{color}]{100*(chunks[2]-chunks[1])/chunks[2] if chunks[2] > 0 else 0:.2f}%[/])"
+            formatted += f"[cyan]({chunks[2]:.1f}/{chunks[1]:.1f} -- [{color}]{100*(chunks[2]-chunks[1])/chunks[2] if chunks[2] > 0 else 0:.2f}%[/])"
         elif i == 2:
-            formatted += f"[cyan] ({chunks[1]:.1f}/{chunks[0]:.1f} -- [{color}]{100*(chunks[1]-chunks[0])/chunks[1] if chunks[1] > 0 else 0:.2f}%[/])"
+            formatted += f"[cyan]({chunks[1]:.1f}/{chunks[0]:.1f} -- [{color}]{100*(chunks[1]-chunks[0])/chunks[1] if chunks[1] > 0 else 0:.2f}%[/])"
 
         result.append(formatted)
     return result

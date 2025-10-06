@@ -16,7 +16,7 @@ import argparse
 import os
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import Queue
 
 import numpy as np
@@ -39,7 +39,7 @@ def stage_files(args: argparse.Namespace, latest_prediction: dict) -> None:
     """
     period = 1 / latest_prediction["freq"] if latest_prediction["freq"] > 0 else 0
     text = f"frequency: {latest_prediction['freq']}\nperiod: {period} \nconfidence: {latest_prediction['conf']}\nprobability: {latest_prediction['probability']}\n"
-    CONSOLE.print(f"[bold green][Trigger][/][green] {text}\n")
+    CONSOLE.print(f"[bold green][Trigger][/][green]{text}\n")
     if args.cargo:
         move_files_cargo(args, period=period)
     else:  # standard move
@@ -83,7 +83,7 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
     """
 
     # if set to skip, the trigger will skip the latest_prediction if a new one is available
-    # if set to cancel, the latest latest_prediction is canaled
+    # if set to cancel, the latest latest_prediction is canceled
     # if empty, cargo is triggered with each latest_prediction
     # adaptive = ""
     # adaptive = "skip"
@@ -91,7 +91,7 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
     not_in_time = 0
     skipped = 0
     cancel_counter = 0
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ProcessPoolExecutor(max_workers=5) as executor:
         while True:
             try:
                 if not sync_trigger.empty():
@@ -106,12 +106,12 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                         #     continue
 
                         # ? 2) Time analysis to find the right instance when to send the data
-                        target_time = (
-                            latest_prediction["t_end"] + 1 / latest_prediction["freq"]
+                        target_time = latest_prediction["t_end"] + 1 / (
+                            latest_prediction["freq"] * 2
                         )
                         gkfs_elapsed_time = (
                             latest_prediction["t_flush"] + t
-                        )  # t  is the waiting time in this function. t_flush contains the overhead of ftio + when the data was flushed from gekko
+                        )  # t is the waiting time in this function. t_flush contains the overhead of ftio + when the data was flushed from gekko
                         remaining_time = target_time - gkfs_elapsed_time
                         CONSOLE.print(
                             f"[bold green][Trigger {latest_prediction['source']}][/][green]\n"
@@ -124,7 +124,7 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                             countdown = time.time() + remaining_time
                             # wait till the time elapses:
                             while time.time() < countdown:
-                                # ? 3) While waiting cancel new latest_prediction is available
+                                # ? 3) While waiting, cancel new latest_prediction is available
                                 condition = True
                                 if adaptive:
                                     if not sync_trigger.empty():
@@ -136,11 +136,11 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                                                 if not condition:
                                                     condition = True  # continue waiting until the time ends
                                                     CONSOLE.print(
-                                                        f"[bold green][Trigger][/][yellow] Too many skips, staging data out in {time.time() < countdown} s[/]\n"
+                                                        f"[bold green][Trigger][/][yellow]Too many skips, staging data out in {time.time() < countdown} s[/]\n"
                                                     )
                                             else:
                                                 CONSOLE.print(
-                                                    f"[bold green][Trigger][/][yellow] Skipping, new latest_prediction is ready (skipped: {skipped})[/]\n"
+                                                    f"[bold green][Trigger][/][yellow]Skipping, new latest_prediction is ready (skipped: {skipped})[/]\n"
                                                 )
                                                 break  # no need to wait
                                     else:
@@ -149,7 +149,7 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                                         # used only for counting
                                         cancel_counter += 1
                                         CONSOLE.print(
-                                            f"[bold green][Trigger][/][yellow] Canceled incoming latest_prediction {cancel_counter}[/]\n"
+                                            f"[bold green][Trigger][/][yellow]Canceled incoming latest_prediction {cancel_counter}[/]\n"
                                         )
                                 time.sleep(0.01)
 
@@ -166,13 +166,13 @@ def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
                             not_in_time += 1
                             if not_in_time == 3:
                                 CONSOLE.print(
-                                    "[bold green][Trigger][/][yellow] Not in time 3 times, triggering flush[/]\n"
+                                    "[bold green][Trigger][/][yellow]Not in time 3 times, triggering flush[/]\n"
                                 )
                                 stage_files(args, latest_prediction)
                                 not_in_time = 0
                             else:
                                 CONSOLE.print(
-                                    "[bold green][Trigger][/][yellow] Skipping, not in time[/]\n"
+                                    "[bold green][Trigger][/][yellow]Skipping, not in time[/]\n"
                                 )
 
                 time.sleep(0.01)
@@ -190,13 +190,14 @@ def move_files_cargo(args: argparse.Namespace, period: float = 0) -> None:
 
     """
     if period != 0 and args.ignore_mtime:
+        # threshold = period / 2  # the io took half the time
         threshold = period / 2  # the io took half the time
-        threshold = max(threshold, 10)
+        threshold = max(threshold, 5)
         call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run --mtime {int(threshold)}"
     else:
         call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
 
-    CONSOLE.print(f"[bold green][Trigger][/][green] {call}")
+    CONSOLE.print(f"[bold green][Trigger][/][green]{call}")
     os.system(call)
 
 

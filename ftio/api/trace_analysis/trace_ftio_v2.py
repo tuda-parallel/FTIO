@@ -158,7 +158,7 @@ def get_path(argv, verbose=True):
         full_path = f"{os.getcwd()}/data_2.csv"
 
     if verbose:
-        console.print(f"[green] current file: {full_path}[/]")
+        console.print(f"[green]current file: {full_path}[/]")
 
     return full_path
 

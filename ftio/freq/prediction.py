@@ -432,7 +432,7 @@ class Prediction:
             if not np.isnan(f_d):
                 text = (
                     f"[cyan underline]Prediction results:[/]\n[cyan]Frequency:[/] {f_d:.3e} Hz"
-                    f"[cyan] ->[/] {np.round(1/f_d, 4)} s\n"
+                    f"[cyan]->[/] {np.round(1/f_d, 4)} s\n"
                     f"[cyan]Confidence:[/] {color_pred(c_d)}"
                     f"{np.round(c_d * 100, 2)}[/] %\n"
                 )

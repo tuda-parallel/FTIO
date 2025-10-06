@@ -5,13 +5,13 @@ import glob
 import numpy as np
 import plotly.graph_objects as go
 
+from ftio.freq.prediction import Prediction
 from ftio.api.gekkoFs.parse_gekko import parse
 from ftio.cli.ftio_core import core
 from ftio.freq.helper import MyConsole
 from ftio.multiprocessing.async_process import handle_in_process
 from ftio.parse.args import parse_args
-from ftio.parse.bandwidth import overlap
-from ftio.plot.freq_plot import convert_and_plot
+from ftio.parse.bandwidth import overlap, overlap_two_series
 from ftio.plot.helper import format_plot
 from ftio.plot.units import set_unit
 from ftio.prediction.helper import dump_json
@@ -23,13 +23,14 @@ CONSOLE.set(True)
 
 def run(
     files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app=[], t_app=[]
-) -> tuple[dict, argparse.Namespace, dict]:  # "0.01"] ):
-    """Executes ftio on list of files_or_msgs.
+) -> tuple[Prediction, argparse.Namespace, float]:  # "0.01"] ):
+    """Executes ftio on a list of files_or_msgs.
 
     Args:
-        files_or_msgs (list): _description_
-        argv: command line arguments from ftio
-        data_rank
+        files_or_msgs (list): list with msgpack msg or json files
+        argv: command line arguments for ftio
+        b_app: app level bandwidth
+        t_app: app level timestamps
     """
 
     # parse args
@@ -38,58 +39,67 @@ def run(
 
     # Set up data
     data_rank = {
-        "avg_thruput_mib": [],
-        "end_t_micro": [],
-        "start_t_micro": [],
+        "avg_throughput": [],
+        "t_end": [],
+        "t_start": [],
         "hostname": "",
         "pid": 0,
         "io_type": "",
         "req_size": [],
         "total_bytes": 0,
         "total_iops": 0,
-        "flush_t": 0,
+        "t_flush": 0.0,
     }
 
     # 1) overlap for rank level metrics
     for file_or_msg in files_or_msgs:
         # print(files_or_msgs.index(file_or_msg))
-        data_rank, ext = parse(file_or_msg, data_rank, io_type=args.mode[0])
+        data_rank, ext = parse(
+            file_or_msg, data_rank, io_type=args.mode[0], debug_level=0
+        )
         # print(data_rank)
 
     # 2) exit if no new data
-    if not data_rank["avg_thruput_mib"]:
+    if not data_rank["avg_throughput"]:
         data_rank, ext = parse(file_or_msg, data_rank, io_type="read")
         # print(data_rank)
-        if not data_rank["avg_thruput_mib"]:
+        if not data_rank["avg_throughput"]:
             CONSOLE.print("[red]Terminating prediction (no data passed) [/]")
         else:
             CONSOLE.print("[red]Read data passed -- ignoring [/]")
         exit(0)
 
     # 3) Scale if JSON or MsgPack
-    scale = [1, 1, 1]
-    if "JSON" in ext.upper():
-        scale = [1.07 * 1e6, 1e-3, 1e-3]
-    elif any(x in ext.upper() for x in ["MSG", "ZMQ"]):
-        # scale = [1, 1e-6, 1e-6]
-        scale = [1e6, 1e-6, 1e-6]
-
-    b_rank = np.array(data_rank["avg_thruput_mib"]) * scale[0]
-    t_rank_s = np.array(data_rank["start_t_micro"]) * scale[1]
-    t_rank_e = np.array(data_rank["end_t_micro"]) * scale[2]
-    if "flush_t" in data_rank:
-        data_rank["flush_t"] = data_rank["flush_t"] * scale[2]
+    b_rank = np.array(data_rank["avg_throughput"])
+    t_rank_s = np.array(data_rank["t_start"])
+    t_rank_e = np.array(data_rank["t_end"])
 
     # 4) app level bandwidth
     b, t = overlap(b_rank, t_rank_s, t_rank_e)
 
-    # 5) Extend for ZMQ
-    if "ZMQ" in ext.upper():  # or use args.zmq
+    # Debug
+    dt = np.diff(t)  # time intervals
+    bytes_total = np.sum(b[:-1] * dt)  # total bytes
+    print(
+        f"Total transferred in this burst: {bytes_total:.0f} bytes ({bytes_total/1e9:.3f} GB)"
+    )
+
+    # # 5) Extend for ZMQ
+    if "ZMQ" in ext.upper():
         # extend data
         b_app.extend(b)
         t_app.extend(t)
         b = np.array(b_app[:])
         t = np.array(t_app[:])
+        # print(f"App Bandwidth: {b_app}")
+        # print(f"App Time: {t_app}")
+        # 5) overlap with app bandwdith so far
+        # b, t = overlap_two_series(b_app[:], t_app[:], b, t)
+        # t_app = t.tolist()
+        # b_app = b.tolist()
+        # print(f"App Bandwidth: {b_app}")
+        # print(f"App Time: {t_app}")
+
     else:
         b = np.array(list(b))
         t = np.array(list(t))
@@ -130,7 +140,7 @@ def run(
     analysis_figures.show()
     process.join()
 
-    return prediction, args, data_rank["flush_t"]
+    return prediction, args, data_rank["t_flush"]
 
 
 if __name__ == "__main__":

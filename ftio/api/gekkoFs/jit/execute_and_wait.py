@@ -24,6 +24,7 @@ from rich.markup import escape
 from rich.panel import Panel
 from rich.status import Status
 
+from ftio.api.gekkoFs.jit.logger import Logger
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.setup_helper import (
     check,
@@ -34,6 +35,12 @@ from ftio.api.gekkoFs.jit.setup_helper import (
 
 console = Console()
 TERMINAL_WIDTH = console.size.width
+JIT_LOGGER = Logger(prefix="jit").get()
+DAEMON_LOGGER = Logger(prefix="daemon").get()
+PROXY_LOGGER = Logger(prefix="proxy").get()
+DLIO_LOGGER = Logger(prefix="dlio").get()
+FTIO_LOGGER = Logger(prefix="ftio").get()
+ERROR_LOGGER = Logger(prefix="error").get()
 
 
 def execute_block(call: str, raise_exception: bool = True, dry_run=False) -> str:
@@ -47,7 +54,7 @@ def execute_block(call: str, raise_exception: bool = True, dry_run=False) -> str
     Returns:
         str: output of the executed call
     """
-    jit_print(f">> Executing {call}")
+    jit_print(f"Executing {call}")
     if dry_run:
         print(call)
         return ""
@@ -68,10 +75,10 @@ def execute_block(call: str, raise_exception: bool = True, dry_run=False) -> str
         out = out.stdout
     except subprocess.CalledProcessError as e:
         error_message = (
-            f"[red]Command failed:[/red] {call}\n"
-            f"[red]Exit code:[/red] {e.returncode}\n"
-            f"[red]Output:[/red] {e.stdout.strip()}\n"
-            f"[red]Error:[/red] {e.stderr.strip()}"
+            f"[red]Command failed:[/red]{call}\n"
+            f"[red]Exit code:[/red]{e.returncode}\n"
+            f"[red]Output:[/red]{e.stdout.strip()}\n"
+            f"[red]Error:[/red]{e.stderr.strip()}"
         )
         console.print(f"[red]{error_message}\n[/]")
         if raise_exception:
@@ -91,7 +98,7 @@ def execute_block_and_log(call: str, log_file: str) -> float:
     Returns:
         float: execution time of the call
     """
-    log_message = f">> Executing command: {call}\n"
+    log_message = f" Executing command: {call}\n"
     jit_print("[cyan]" + log_message)
     start = time.time()
     end = start
@@ -110,10 +117,10 @@ def execute_block_and_log(call: str, log_file: str) -> float:
     except subprocess.CalledProcessError as e:
         log_message += f"Error:\n{e.stderr}\n"
         error_message = (
-            f"[red]Command failed:[/red] {call}\n"
-            f"[red]Exit code:[/red] {e.returncode}\n"
-            f"[red]Output:[/red] {e.stdout.strip()}\n"
-            f"[red]Error:[/red] {e.stderr.strip()}"
+            f"[red]Command failed:[/red]{call}\n"
+            f"[red]Exit code:[/red]{e.returncode}\n"
+            f"[red]Output:[/red]{e.stdout.strip()}\n"
+            f"[red]Error:[/red]{e.stderr.strip()}"
         )
         console.print(f"[red]{error_message}[/]")
         raise
@@ -170,9 +177,9 @@ def execute_background(
     Returns:
         subprocess.Popen: process object
     """
-    jit_print(f"[cyan]>> Executing {call}")
+    jit_print(f"[cyan]Executing {call}")
     with open(log_file, "a") as file:
-        file.write(f">> Executing {call}")
+        file.write(f" Executing {call}")
 
     if dry_run:
         print(call)
@@ -180,9 +187,9 @@ def execute_background(
         return subprocess.Popen(call, shell=True, executable="/bin/bash")
 
     # if log_file and log_err_file:
-    #     call = f"{call} >> {log_file} 2>> {log_err_file}"
+    #     call = f"{call}  {log_file} 2 {log_err_file}"
     # elif log_file:
-    #     call = f"{call} >> {log_file}"
+    #     call = f"{call}  {log_file}"
     # else:
     #     pass
     # print(call)
@@ -272,7 +279,7 @@ def execute_background_and_log_in_process(
     _, stderr = process.communicate()
     if process.returncode != 0:
         console.print(f"[red]Error executing command:{call}")
-        console.print(f"[red] Error was:\n{stderr}")
+        console.print(f"[red]Error was:\n{stderr}")
     else:
         pass
 
@@ -307,7 +314,7 @@ def execute_background_and_wait_line(
         stdout, stderr = process.communicate()
         if process.returncode != 0:
             console.print(f"[red]Error executing command:{call}")
-            console.print(f"[red] Error was:\n{stderr}")
+            console.print(f"[red]Error was:\n{stderr}")
         else:
             # console.print(stdout, style="bold green")
             pass
@@ -411,14 +418,14 @@ def end_of_transfer(
                                     if name in content:
                                         monitored_files.remove(name)
                                         jit_print(
-                                            f"[cyan]>> finished moving '{name}'. Remaining files ({len(monitored_files)})",
+                                            f"[cyan]finished moving '{name}'. Remaining files ({len(monitored_files)})",
                                             True,
                                         )
                                         console.print(
                                             f"Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}"
                                         )
                                         jit_print(
-                                            f"[cyan]>> Files in mount dir {monitored_files}",
+                                            f"[cyan]Files in mount dir {monitored_files}",
                                             True,
                                         )
                                         status.update(
@@ -434,7 +441,7 @@ def end_of_transfer(
                         )
                         if hits > 4:
                             if stuck:
-                                jit_print("[cyan]>> Stuck? Triggering cargo again\n")
+                                jit_print("[cyan]Stuck? Triggering cargo again\n")
                                 _ = execute_background(
                                     call,
                                     settings.cargo_log,
@@ -442,15 +449,15 @@ def end_of_transfer(
                                 )
                                 stuck = False
                         if hits > limit:
-                            jit_print("[cyan]>> Stopping stage out\n")
+                            jit_print("[cyan]Stopping stage out\n")
                             return
                 # All monitored files have been processed
                 timestamp = get_time()
                 status.update(
-                    f"\n[bold green]JIT [cyan]>> finished moving all files at  [{timestamp}]"
+                    f"\n[bold green]JIT [cyan]finished moving all files at  [{timestamp}]"
                 )
                 jit_print(
-                    f"\n[cyan]>> finished moving all files at [{timestamp}]",
+                    f"\n[cyan]finished moving all files at [{timestamp}]",
                     True,
                 )
 
@@ -507,7 +514,7 @@ def end_of_transfer_online(
 
                 if passed_time >= timeout:
                     status.update("Timeout reached")
-                    jit_print("[bold red]>> Timeout reached[/]")
+                    jit_print("[bold red]Timeout reached[/]")
                     break
                 if repeated_trigger:
                     hit += 1
@@ -516,21 +523,21 @@ def end_of_transfer_online(
                         monitored_files
                     ):
                         jit_print(
-                            f"[cyan]>> Stucked for {stuck_time} sec. Triggering cargo again\n"
+                            f"[cyan]Stucked for {stuck_time} sec. Triggering cargo again\n"
                         )
                         _ = execute_background(
                             call, settings.cargo_log, settings.cargo_err
                         )
                         last_cargo_time = time.time()
                         stuck_time = stuck_time * 2
-                        jit_print(f"[cyan]>> Stucked increased to {stuck_time}\n")
+                        jit_print(f"[cyan]Stucked increased to {stuck_time}\n")
                         if n < 10:
                             status.update(
-                                f">> Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}"
+                                f" Waiting for {len(monitored_files)} more files to be deleted: {monitored_files}"
                             )
                         else:
                             status.update(
-                                f">> Waiting for {len(monitored_files)} more files to be deleted"
+                                f" Waiting for {len(monitored_files)} more files to be deleted"
                             )
                         hit = 0
                         if "Transfer finished for []" in last_lines:
@@ -542,12 +549,13 @@ def end_of_transfer_online(
 
             timestamp = get_time()
             status.update(
-                f"\n[bold green]JIT [cyan]>> finished moving all files at [{timestamp}] after {time.time() - start:.2f} seconds"
+                f"\n[bold green]JIT [cyan]finished moving all files at [{timestamp}] after {time.time() - start:.2f} seconds"
             )
             jit_print(
-                f"\n[cyan]>> finished moving all files at [{timestamp}] after {time.time() - start:.2f} seconds",
+                f"\n[cyan]finished moving all files at [{timestamp}] after {time.time() - start:.2f} seconds",
                 True,
             )
+    print("\n")
 
 
 def get_files(settings: JitSettings, verbose=True):
@@ -568,9 +576,9 @@ def get_files(settings: JitSettings, verbose=True):
         #     files = subprocess.check_output(command_ls, shell=True, text=True)
         # except subprocess.CalledProcessError as e:
         #     if settings.debug_lvl > 1:
-        #         console.print(f"[red] >> Error using find, trying ls:\n{e}[/]")
+        #         console.print(f"[red] Error using find, trying ls:\n{e}[/]")
         #     else:
-        #         console.print("[red] >> Error using find, trying ls[/]"
+        #         console.print("[red] Error using find, trying ls[/]"
         command_ls = flaged_call(
             settings, f" ls -R {settings.gkfs_mntdir}", exclude=["ftio"]
         )
@@ -593,17 +601,17 @@ def get_files(settings: JitSettings, verbose=True):
             #     cmd = flaged_call(settings, f" du -sh {settings.gkfs_mntdir}", exclude=["ftio"])
             #     # cmd = flaged_call(settings, f" du -sh {settings.gkfs_mntdir} | cut -f1", exclude=["ftio"])
             #     file_size = subprocess.check_output(cmd, shell=True, text=True)
-            #     console.print(f"\n[cyan] >> Files are ({file_size}):\n{files}[/]")
+            #     console.print(f"\n[cyan]Files are ({file_size}):\n{files}[/]")
             # except subprocess.CalledProcessError:
-            console.print(f"\n[cyan] >> Files are:\n{files}[/]")
+            console.print(f"\n[cyan]Files are:\n{files}[/]")
         if verbose or settings.debug_lvl > 2:
             timestamp = get_time()
-            console.print(f"[cyan]>> Files that need to be stage out: [{timestamp}][/]")
+            console.print(f"[cyan]Files that need to be stage out: [{timestamp}][/]")
             for i, f in enumerate(monitored_files):
                 console.print(f"[cyan]{i}. {f}[/]")
 
     except Exception as e:
-        console.print(f"[red] >> Error listing files script:\n{e}[/]")
+        console.print(f"[red] Error listing files script:\n{e}[/]")
 
     return monitored_files
 
@@ -635,15 +643,105 @@ def files_filtered(list_of_files: list[str], regex_pattern, verbose=True) -> lis
             while "/" in regex_pattern:
                 regex_pattern = regex_pattern.split("/", 1)[1]
             if verbose:
-                jit_print(f"[cyan]>> Cleaned Regex pattern to: {regex_pattern} ")
+                jit_print(f"[cyan]Cleaned Regex pattern to: {regex_pattern} ")
         regex = re.compile(regex_pattern)
 
         for f in list_of_files:
             if regex.match(f):
-                # jit_print(f"[yellow]>> Ignoring: {f} ")
+                # jit_print(f"[yellow]Ignoring: {f} ")
                 monitored_files.append(f)
 
     return monitored_files
+
+
+#
+# def print_file(file, src=""):
+#     """Continuously monitors the log file for new lines and prints them.
+#
+#     Args:
+#         file (str): absolute file path
+#         src (str): source of the file for colored output
+#     """
+#     color = ""
+#     close = ""
+#     newline = True
+#     wait_time = 0.05
+#     if src:
+#         if "daemon" in src.lower():
+#             color = "[deep_pink1]"
+#             wait_time = 0.1
+#         elif "proxy" in src.lower():
+#             color = "[purple4]"
+#             wait_time = 0.1
+#         elif any(keyword in src.lower() for keyword in ["dlio", "lammp"]):
+#             color = "[gold3]"
+#             wait_time = 0.1
+#         elif "ftio" in src.lower():
+#             color = "[deep_sky_blue1]"
+#             wait_time = 0.1
+#         elif "error" in src.lower():
+#             color = "[red]"
+#             wait_time = 0.1
+#
+#         if color:
+#             close = "[/]"
+#             newline = "\n"
+#
+#     while not os.path.exists(file):
+#         if "error" in src.lower():
+#             time.sleep(0.1)
+#         else:
+#             with console.status(
+#                 f"[bold green]Waiting for {file} to appear ..."
+#             ) as status:
+#                 time.sleep(0.1)
+#
+#     with open(file, "r") as file:
+#         # Go to the end of the file
+#         file.seek(0, os.SEEK_END)
+#         buffer = []
+#         last_print_time = time.time()
+#
+#         while True:
+#             line = file.readline()
+#             if line:
+#                 buffer.append(line.rstrip())
+#             else:
+#                 # If there's no new line, wait briefly
+#                 time.sleep(wait_time)
+#
+#             # Group and print the buffered lines every 0.1 seconds
+#             current_time = time.time()
+#             if current_time - last_print_time >= wait_time and buffer:
+#                 # Print grouped lines
+#                 content = "\n".join(buffer)
+#                 buffer.clear()
+#                 last_print_time = current_time
+#
+#                 if not src or "cargo" in src:
+#                     print(content)
+#                 else:
+#                     if newline:
+#                         console.print("\n", end="")
+#                     # console.print(
+#                     #     Panel(
+#                     #         color  + escape(content) + close,
+#                     #         title= color + src.capitalize() + close,
+#                     #         style="white",
+#                     #         border_style="white",
+#                     #         title_align="left",
+#                     #         width=TERMINAL_WIDTH
+#                     #     )
+#                     # )
+#                     console.print(
+#                         Panel.fit(
+#                             color + escape(content) + close,
+#                             title=color + src.upper() + close,
+#                             style="white",
+#                             border_style="white",
+#                             title_align="left",
+#                         )
+#                     )
 
 
 def print_file(file, src=""):
@@ -653,30 +751,30 @@ def print_file(file, src=""):
         file (str): absolute file path
         src (str): source of the file for colored output
     """
-    color = ""
+    logger = JIT_LOGGER
     close = ""
     newline = True
-    wait_time = 0.05
+    wait_time = 0.0
     if src:
         if "daemon" in src.lower():
-            color = "[deep_pink1]"
-            wait_time = 0.1
-        elif "proxy" in src.lower():
-            color = "[purple4]"
-            wait_time = 0.1
-        elif any(keyword in src.lower() for keyword in ["dlio", "lammp"]):
-            color = "[gold3]"
-            wait_time = 0.1
-        elif "ftio" in src.lower():
-            color = "[deep_sky_blue1]"
-            wait_time = 0.1
-        elif "error" in src.lower():
-            color = "[red]"
-            wait_time = 0.1
+            logger = DAEMON_LOGGER
+            wait_time = 0.2
 
-        if color:
-            close = "[/]"
-            newline = "\n"
+        elif "proxy" in src.lower():
+            logger = PROXY_LOGGER
+            wait_time = 0.2
+
+        elif any(keyword in src.lower() for keyword in ["dlio", "lammp"]):
+            logger = DLIO_LOGGER
+            wait_time = 0.2
+
+        elif "ftio" in src.lower():
+            logger = FTIO_LOGGER
+            wait_time = 0.2
+
+        elif "error" in src.lower():
+            logger = ERROR_LOGGER
+            wait_time = 0.2
 
     while not os.path.exists(file):
         if "error" in src.lower():
@@ -705,34 +803,26 @@ def print_file(file, src=""):
             current_time = time.time()
             if current_time - last_print_time >= wait_time and buffer:
                 # Print grouped lines
-                content = "\n".join(buffer)
+                # content = "\n".join(buffer)
+                content = "\n".join(buffer).rstrip()
                 buffer.clear()
                 last_print_time = current_time
 
                 if not src or "cargo" in src:
                     print(content)
                 else:
-                    if newline:
-                        console.print("\n", end="")
-                    # console.print(
-                    #     Panel(
-                    #         color  + escape(content) + close,
-                    #         title= color + src.capitalize() + close,
-                    #         style="white",
-                    #         border_style="white",
-                    #         title_align="left",
-                    #         width=TERMINAL_WIDTH
-                    #     )
-                    # )
-                    console.print(
-                        Panel.fit(
-                            color + escape(content) + close,
-                            title=color + src.upper() + close,
-                            style="white",
-                            border_style="white",
-                            title_align="left",
-                        )
-                    )
+                    if "error" in src.lower() and not any(
+                        keyword in src.lower() for keyword in ["dlio", "lammp"]
+                    ):
+                        logger.error("\n" + content)
+                    elif (
+                        any(keyword in src.lower() for keyword in ["dlio", "lammp"])
+                        or newline
+                        or "Bandwidth Plot" in content
+                    ):
+                        logger.info("\n" + content)
+                    else:
+                        logger.info(content)
 
 
 def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
@@ -754,7 +844,7 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
             passed_time = int(time.time() - start_time)
             if passed_time >= timeout:
                 status.update("Timeout reached")
-                jit_print("[bold red]>> Timeout reached[/]")
+                jit_print("[bold red] Timeout reached[/]")
                 return
 
             status.update(
@@ -763,8 +853,9 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
             time.sleep(0.1)  # Wait for 1 second before checking again
 
         # When the file is created, update the status
-        status.update(f"{filename} has been created.")
-        jit_print(f">> {filename} has been created.", True)
+        status.update(f"{filename} has been created.\n")
+        # print("\n")
+        jit_print(f"{filename} has been created.", True)
 
 
 def wait_for_line(
@@ -816,7 +907,7 @@ def wait_for_line(
                     passed_time = int(time.time() - start_time)
                     if passed_time >= timeout:
                         status.update("Timeout reached.")
-                        jit_print("[bold red]>> Timeout reached[/]", True)
+                        jit_print("[bold red] Timeout reached[/]", True)
                         success = False
                         break
                     status.update(f"[cyan]{msg} ({passed_time}/{timeout})")
@@ -825,7 +916,7 @@ def wait_for_line(
                 if target_line in line:
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     status.update(f"Found target line: '{target_line}'")
-                    jit_print(f"[cyan]>> Stopped waiting at [{timestamp}]", True)
+                    jit_print(f"[cyan]Stopped waiting at [{timestamp}]")
                     break
         return success
 

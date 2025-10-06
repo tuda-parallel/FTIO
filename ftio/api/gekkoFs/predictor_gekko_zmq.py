@@ -80,9 +80,9 @@ def main(args: list[str] = sys.argv[1:]) -> None:
 
     # Loop and predict if changes occur
     try:
-        with CONSOLE.status("[green] started\n", spinner="arrow3") as status:
+        with CONSOLE.status("[green]started\n", spinner="arrow3") as status:
             while True:
-                procs = join_procs(procs)
+                procs = join_procs(procs, False)
 
                 # get all messages
                 msgs, ranks = receive_messages(socket, poller)

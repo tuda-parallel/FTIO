@@ -175,7 +175,7 @@ def ftio_wavelet_disc(
                 analyze_correlation(
                     args, prediction, coefficients_upsampled[index], t_sampled
                 )
-                console.print(f"[green] {index} completed[/]")
+                console.print(f"[green]{index} completed[/]")
             exit()
 
     # ? Option 3: Find intersection between DWT and DFT

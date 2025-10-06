@@ -53,7 +53,7 @@ def quick_ftio(
     # plot and print info
     analysis_figures.show()
     if verbose and len(msg) > 0:
-        console.print(f"[green]>> Prediction for {msg}[/]")
+        console.print(f"[green]Prediction for {msg}[/]")
         display_prediction(args, prediction)
 
     return prediction
