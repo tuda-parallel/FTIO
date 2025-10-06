@@ -27,7 +27,7 @@ from concurrent.futures import (
 )
 
 from ftio.api.gekkoFs.file_queue import FileQueue
-from ftio.api.gekkoFs.gekko_helper import preloaded_call, get_modification_time
+from ftio.api.gekkoFs.gekko_helper import get_modification_time, preloaded_call
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.freq.helper import MyConsole
 

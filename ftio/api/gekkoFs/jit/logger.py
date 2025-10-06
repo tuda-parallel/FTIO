@@ -1,5 +1,5 @@
-import logging
 import importlib.util
+import logging
 import os
 
 COLORLOG_AVAILABLE = importlib.util.find_spec("colorlog") is not None

@@ -5,10 +5,10 @@ import glob
 import numpy as np
 import plotly.graph_objects as go
 
-from ftio.freq.prediction import Prediction
 from ftio.api.gekkoFs.parse_gekko import parse
 from ftio.cli.ftio_core import core
 from ftio.freq.helper import MyConsole
+from ftio.freq.prediction import Prediction
 from ftio.multiprocessing.async_process import handle_in_process
 from ftio.parse.args import parse_args
 from ftio.parse.bandwidth import overlap, overlap_two_series

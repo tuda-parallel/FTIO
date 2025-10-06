@@ -24,9 +24,9 @@ from datetime import datetime
 
 from rich.console import Console
 
-from ftio.api.gekkoFs.jit.logger import Logger
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.jittime import JitTime
+from ftio.api.gekkoFs.jit.logger import Logger
 
 console = Console()
 jit_logger = Logger(prefix="JIT").get()

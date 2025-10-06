@@ -24,8 +24,8 @@ from rich.markup import escape
 from rich.panel import Panel
 from rich.status import Status
 
-from ftio.api.gekkoFs.jit.logger import Logger
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
+from ftio.api.gekkoFs.jit.logger import Logger
 from ftio.api.gekkoFs.jit.setup_helper import (
     check,
     flaged_call,
