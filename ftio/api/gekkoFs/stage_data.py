@@ -21,6 +21,7 @@ from multiprocessing import Queue
 
 import numpy as np
 
+from ftio.api.gekkoFs.gekko_helper import preloaded_call
 from ftio.api.gekkoFs.posix_control import move_files_os
 from ftio.freq.helper import MyConsole
 from ftio.parse.args import parse_args
@@ -73,7 +74,82 @@ def setup_cargo(args: argparse.Namespace) -> None:
         # 5. Do a stage out outside FTIO with cargo_ftio --run
 
 
-def trigger_cargo(sync_trigger: Queue, args: argparse.Namespace) -> None:
+def trigger_flush(sync_trigger: Queue, args: argparse.Namespace) -> None:
+    """
+    Sends cargo calls by extracting predictions from `sync_trigger` and examining them.
+
+    Args:
+        sync_trigger (Queue): A queue from multiprocessing.Manager containing predictions.
+        args (Namespace): Parsed command line arguments.
+    """
+    if "flush" in args.strategy:
+        strategy_avoid_interference(sync_trigger, args)
+    elif "job_end" in args.strategy:
+        pass
+    elif "buffer_size" in args.strategy:
+        pass
+    else:
+        raise ValueError("Unknown strategy")
+
+
+def strategy_job_end(sync_trigger: Queue, args: argparse.Namespace) -> None:
+    with ProcessPoolExecutor(max_workers=2) as executor:
+        while True:
+            try:
+                if not sync_trigger.empty():
+                    latest_prediction = sync_trigger.get()
+                    deadline = args.job_time
+                    if not np.isnan(latest_prediction["freq"]):
+                        t = time.time() - latest_prediction["t_wait"]
+                        gkfs_elapsed_time = latest_prediction["t_flush"] + t
+                        next_flush_time = latest_prediction["t_end"] + 1 / (
+                            latest_prediction["freq"] * 2
+                        )
+                        # 1) do we have enough time to flush?
+                        remaining_time = 0.8 * deadline - (
+                            gkfs_elapsed_time + next_flush_time
+                        )
+                        # 2)
+                        t_s = latest_prediction["t_start"]
+                        t_e = latest_prediction["t_end"]
+                        n_phases = (t_e - t_s) * latest_prediction["freq"]
+                        avr_time_per_phase = gkfs_elapsed_time / n_phases
+
+                        if (
+                            remaining_time <= 0
+                            or gkfs_elapsed_time + avr_time_per_phase > deadline
+                        ):
+                            _ = executor.submit(stage_files, args, latest_prediction)
+                time.sleep(0.01)
+            except KeyboardInterrupt:
+                exit()
+
+
+def strategy_buffer_size(sync_trigger: Queue, args: argparse.Namespace) -> None:
+    with ProcessPoolExecutor(max_workers=2) as executor:
+        while True:
+            try:
+                if not sync_trigger.empty():
+                    latest_prediction = sync_trigger.get()
+                    size_call = f"du -sb {args.gkfs_mntdir}/*"
+                    output = preloaded_call(args, size_call)
+                    buffer_occupation = sum(
+                        int(line.split()[0]) for line in output.splitlines()
+                    )
+                    if not np.isnan(latest_prediction["freq"]):
+                        total_size = latest_prediction["total_bytes"]
+                        t_s = latest_prediction["t_start"]
+                        t_e = latest_prediction["t_end"]
+                        n_phases = (t_e - t_s) * latest_prediction["freq"]
+                        avr_bytes = int(total_size / float(n_phases))
+                        if avr_bytes + buffer_occupation > args.buffer_size:
+                            _ = executor.submit(stage_files, args, latest_prediction)
+                time.sleep(0.01)
+            except KeyboardInterrupt:
+                exit()
+
+
+def strategy_avoid_interference(sync_trigger: Queue, args: argparse.Namespace) -> None:
     """
     Sends cargo calls by extracting predictions from `sync_trigger` and examining them.
 
@@ -331,6 +407,32 @@ def parse_args_data_stager(
         type=str,
         default=None,
         help="Mount directory for GekkoFs.",
+    )
+    parser.add_argument(
+        "--strategy",
+        type=str,
+        choices=["flush", "job_end", "buffer_size"],
+        default="flush",
+        help="Flushing strategy: 'flush' (immediate), 'job_end' (wait until job finishes), or 'buffer_size' (flush after reaching given size).",
+    )
+    parser.add_argument(
+        "--job_time",
+        type=int,
+        default=0,
+        help="Time in seconds required for strategy 'job_end'.",
+    )
+    parser.add_argument(
+        "--buffer_size",
+        type=int,
+        default=0,
+        help="Buffer size in bytes required for strategy 'buffer_size'.",
+    )
+    parser.add_argument(
+        "--flush_call",
+        type=str,
+        choices=["cp", "tar"],
+        default="cp",
+        help="Flushing method: 'cp' to copy files or 'tar' to compress them.",
     )
 
     # Parse the arguments

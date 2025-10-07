@@ -15,6 +15,8 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 import sys
 import time
 
+import numpy as np
+
 # import numpy as np
 import zmq
 from rich.console import Console
@@ -23,7 +25,7 @@ from ftio.api.gekkoFs.ftio_gekko import run
 from ftio.api.gekkoFs.stage_data import (
     parse_args_data_stager,
     setup_cargo,
-    trigger_cargo,
+    trigger_flush,
 )
 from ftio.freq.helper import MyConsole
 from ftio.multiprocessing.async_process import handle_in_process, join_procs
@@ -74,7 +76,7 @@ def main(args: list[str] = sys.argv[1:]) -> None:
 
     # for Cargo trigger process:
     trigger = handle_in_process(
-        trigger_cargo,
+        trigger_flush,
         args=(shared_resources.sync_trigger, data_stager_args),
     )
 
@@ -161,6 +163,12 @@ def prediction_zmq_process(
             probability = p.p_freq_given_periodic
             break
 
+    # total bytes and average bytes per phase
+    if not np.isnan(freq):
+        total_bytes = prediction.total_bytes
+    else:
+        total_bytes = 0
+
     # send data to trigger proc
     console.print(
         f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Added data to trigger queue"
@@ -174,6 +182,7 @@ def prediction_zmq_process(
             "freq": freq,
             "conf": conf,
             "probability": probability,
+            "total_bytes": total_bytes,
             "source": f"#{shared_resources.count.value}",
         }
     )

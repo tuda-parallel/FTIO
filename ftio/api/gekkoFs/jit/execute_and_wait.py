@@ -854,8 +854,8 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
 
         # When the file is created, update the status
         status.update(f"{filename} has been created.\n")
-        # print("\n")
-        jit_print(f"{filename} has been created.", True)
+        print("\n")
+        jit_print(f"{filename} has been created.")
 
 
 def wait_for_line(

@@ -31,6 +31,12 @@ class JitSettings:
         # can be controlled through command line arguments see jit -h)
         self.app = ""
 
+        # flushing strategies:
+        self.strategy = "flush"  # options are "flush", "job_end", and "buffer_size"
+        self.job_time = 0  # time in seconds required for strategy "job_end"
+        self.buffer_size = 0  # Size in bytes required for strategy "buffer_size"
+        self.flush_call = "cp"  # decide if compress (tar) or copy (cp)
+
         # flags
         ##############
         self.set_tasks_affinity = True  # required for ls and cp
@@ -202,7 +208,7 @@ class JitSettings:
             self.procs_ftio = self.procs
             self.procs_app = int(np.floor(self.procs / 2))
         else:
-            self.procs = os.cpu_count() / 2 if os.cpu_count() else 4
+            self.procs = 2  # os.cpu_count() / 2 if os.cpu_count() else 4
             self.procs_daemon = 1
             self.procs_proxy = 1
             self.procs_cargo = 2
@@ -557,8 +563,10 @@ class JitSettings:
             self.regex_stage_in_match = ".*"
         # ├─ DLIO
         elif "dlio" in self.app_call:
-            self.regex_flush_match = ".*/(checkpoints)/.*\\.pt$"
-            self.regex_stage_out_match = ".*/(checkpoints)/.*\\.pt$"
+            # self.regex_flush_match = ".*/(checkpoints)/.*\\.pt$"
+            # self.regex_stage_out_match = ".*/(checkpoints)/.*\\.pt$"
+            self.regex_flush_match = ".*/(checkpoints)/.*"
+            self.regex_stage_out_match = ".*/(checkpoints)/.*"
             self.regex_stage_in_match = ".*"
         # ├─ LAMMPS
         elif "lmp" in self.app_call:

@@ -73,9 +73,10 @@ def start_gekko_daemon(settings: JitSettings) -> None:
         init_gekko(settings)
 
         if settings.use_mpirun:
-            debug_flag = f"-x GKFS_DAEMON_LOG_LEVEL=err -x GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern"
-            # if settings.debug_lvl > 0:
-            # debug_flag = debug_flag.replace("=err", "=trace")
+            debug_flag = f"-x GKFS_DAEMON_LOG_LEVEL=off -x GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern"
+            if settings.debug_lvl > 0:
+                # debug_flag = debug_flag.replace("=err", "=trace")
+                debug_flag = debug_flag.replace("=none", "=err")
         else:
             debug_flag = f"--export=ALL,GKFS_DAEMON_LOG_LEVEL=err,GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern"
             if settings.debug_lvl > 0:
@@ -323,10 +324,10 @@ def start_ftio(settings: JitSettings) -> None:
                 f"--ld_preload {settings.gkfs_intercept} --host_file {settings.gkfs_hostfile} --gkfs_mntdir {settings.gkfs_mntdir} "
             )
 
-            if settings.regex_match:
+            if settings.adaptive:
                 ftio_data_staget_args += f"--adaptive '{settings.adaptive}' "
 
-            if settings.adaptive:
+            if settings.regex_match:
                 ftio_data_staget_args += f"--regex '{settings.regex_match}' "
 
             if settings.ignore_mtime:
@@ -337,6 +338,18 @@ def start_ftio(settings: JitSettings) -> None:
 
             if settings.debug_lvl > 0:
                 ftio_data_staget_args += "--debug "
+
+            if settings.strategy:
+                ftio_data_staget_args += f"--strategy '{settings.strategy}' "
+
+            if settings.job_time:
+                ftio_data_staget_args += f"--job_time '{settings.job_time}' "
+
+            if settings.buffer_size:
+                ftio_data_staget_args += f"--buffer_size '{settings.buffer_size}' "
+
+            if settings.flush_call:
+                ftio_data_staget_args += f"--flush_call '{settings.flush_call}' "
 
         else:
             ftio_data_staget_args += (
@@ -596,7 +609,8 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 if settings.debug_lvl > 0:
                     log_modules = "all"
                 else:
-                    log_modules = "info,warnings,errors"
+                    # log_modules = "info,warnings,errors"
+                    log_modules = "none"
                 additional_arguments += (
                     f"-x LIBGKFS_LOG={log_modules} "
                     f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "

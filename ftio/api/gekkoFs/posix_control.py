@@ -74,11 +74,49 @@ def move_files_os(
     # items_to_submit = get_items_to_submit(files, args, "files")
     items_to_submit = get_items_to_submit(files, args, "folder")
 
+    if "cp" in args.flush_call:
+        flush_using_cp(args, parallel, items_to_submit, period)
+    else:  # flush using tar
+        flush_using_tar(args, items_to_submit)
+
+
+def flush_using_tar(args: argparse.Namespace, items_to_submit: list[str] = []):
+    tar_cmd = f"tar -rf {args.stage_out_path}/data.tar {' '.join(items_to_submit)}"
+    CONSOLE.print(
+        f"[bold green][Trigger][/] taring {len(items_to_submit)} items to {args.stage_out_path})\n"
+    )
+    start = time.time()
+    preloaded_call(args, tar_cmd)
+    tar_time = time.time() - start
+    CONSOLE.print(
+        f"[bold green][Trigger][/] Finished taring {len(items_to_submit)} items to {args.stage_out_path})\n"
+    )
+    start = time.time()
+    delete_items(args, items_to_submit)
+    CONSOLE.print(
+        f"[bold green][Trigger][/][green]: Tar time for {len(items_to_submit)}: tarred in {tar_time} s, "
+        f"deleted in {time.time()-start} s[/]\n"
+    )
+
+
+def flush_using_cp(
+    args: argparse.Namespace, parallel: bool, items_to_submit: list[str], period: float
+):
+    """
+    Submits file processing tasks to a ProcessPoolExecutor and tracks progress, ensuring no
+    duplicate or ignored items are processed.
+    Args:
+        args (argparse.Namespace): Command-line arguments namespace.
+        parallel (bool): Boolean flag indicating whether to use parallel processing.
+        items_to_submit (list[str]): List of items (file paths) that need to be processed.
+        period (float): Time interval in seconds between task executions.
+    Returns:
+        None
+    """
     # Step 3: Submit tasks to the executor ((only move the files if they are not
     # already in progress
     futures: dict = {}
     num_workers = 1 if not parallel else 10
-
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
         for idx, item in enumerate(items_to_submit):
             # check that the item is not in progress and not  not in the ignored list
@@ -275,6 +313,47 @@ def copy_file_and_unlink(args: argparse.Namespace, item: str) -> None:
     )
 
 
+def delete_items(args: argparse.Namespace, items: list[str]) -> None:
+    """
+    Deletes a list of files or folders from the source.
+
+    Args:
+        args (argparse.Namespace): Parsed command line arguments.
+        items (list[str]): List of file or folder paths to delete.
+    """
+    for item in items:
+        start = time.time()
+        CONSOLE.print(f"[bold green][Trigger][/] Removing {item} from source\n")
+
+        # Choose deletion command based on type
+        if "." in item.split("/")[-1]:  # assume file
+            remove_cmd = f"unlink {item}"
+        else:  # assume folder
+            remove_cmd = f"find {item} -type f -exec unlink {{}} \\; && rm -rf {item}"
+
+        try:
+            preloaded_call(args, remove_cmd)
+            elapsed = time.time() - start
+            CONSOLE.print(
+                f"[bold green][Trigger][/] Successfully removed {item} in {elapsed:.2f}s\n"
+            )
+
+        except Exception as e:
+            CONSOLE.print(
+                f"[bold red][Trigger][/] Exception during deletion of {item}: {e}\n"
+            )
+            try:
+                # fallback: try file-only unlink for directories
+                remove_cmd = f"find {item} -type f -exec unlink {{}} \\;"
+                preloaded_call(args, remove_cmd)
+            except Exception as e2:
+                CONSOLE.print(
+                    f"[bold red][Trigger][/] Fallback deletion also failed for {item}: {e2}\n"
+                )
+                files_in_progress.put_ignore(args, item)
+                CONSOLE.print(f"[bold yellow][Trigger][/] Added {item} to ignore queue\n")
+
+
 def get_files(args: argparse.Namespace) -> list[str]:
     """
     Retrieves a list of files from the GekkoFS mount directory.
@@ -437,6 +516,8 @@ def jit_move(settings: JitSettings) -> None:
         "--gkfs_mntdir",
         str(settings.gkfs_mntdir),
         "--ignore_mtime",
+        "--flush_call",
+        str(settings.flush_call),
     ]
     if settings.regex_match:
         args += ["--regex", f"{str(settings.regex_match)}"]
@@ -500,6 +581,33 @@ def jit_move(settings: JitSettings) -> None:
         help="Adaptive flag for flushing",
         default="cancel",
         choices={"skip", "cancel", ""},
+    )
+
+    parser.add_argument(
+        "--strategy",
+        type=str,
+        choices=["flush", "job_end", "buffer_size"],
+        default="flush",
+        help="Flushing strategy: 'flush' (immediate), 'job_end' (wait until job finishes), or 'buffer_size' (flush after reaching given size).",
+    )
+    parser.add_argument(
+        "--job_time",
+        type=int,
+        default=0,
+        help="Time in seconds required for strategy 'job_end'.",
+    )
+    parser.add_argument(
+        "--buffer_size",
+        type=int,
+        default=0,
+        help="Buffer size in bytes required for strategy 'buffer_size'.",
+    )
+    parser.add_argument(
+        "--flush_call",
+        type=str,
+        choices=["cp", "tar"],
+        default="cp",
+        help="Flushing method: 'cp' to copy files or 'tar' to compress them.",
     )
 
     # Parse and call mover
