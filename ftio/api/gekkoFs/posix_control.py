@@ -56,11 +56,8 @@ def move_files_os(
 
     # Iterate over all items in the source directory
     files = get_files(args)
-    if args.parallel_move:
-        parallel = True
-        text = (
-            f"[bold green][Trigger][/] {len(files)} files flagged to move in parallel\n"
-        )
+    if args.parallel_move_threads > 0:
+        text = f"[bold green][Trigger][/] {len(files)} files flagged to move in parallel with {args.parallel_move_threads} threads\n"
     else:
         text = f"[bold green][Trigger][/] {len(files)} files flagged to move\n"
     CONSOLE.print(text)
@@ -75,7 +72,7 @@ def move_files_os(
     items_to_submit = get_items_to_submit(files, args, "folder")
 
     if "cp" in args.flush_call:
-        flush_using_cp(args, parallel, items_to_submit, period)
+        flush_using_cp(args, items_to_submit, period)
     else:  # flush using tar
         flush_using_tar(args, items_to_submit)
 
@@ -99,15 +96,12 @@ def flush_using_tar(args: argparse.Namespace, items_to_submit: list[str] = []):
     )
 
 
-def flush_using_cp(
-    args: argparse.Namespace, parallel: bool, items_to_submit: list[str], period: float
-):
+def flush_using_cp(args: argparse.Namespace, items_to_submit: list[str], period: float):
     """
     Submits file processing tasks to a ProcessPoolExecutor and tracks progress, ensuring no
     duplicate or ignored items are processed.
     Args:
         args (argparse.Namespace): Command-line arguments namespace.
-        parallel (bool): Boolean flag indicating whether to use parallel processing.
         items_to_submit (list[str]): List of items (file paths) that need to be processed.
         period (float): Time interval in seconds between task executions.
     Returns:
@@ -116,7 +110,7 @@ def flush_using_cp(
     # Step 3: Submit tasks to the executor ((only move the files if they are not
     # already in progress
     futures: dict = {}
-    num_workers = 1 if not parallel else 10
+    num_workers = args.parallel_move_threads
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
         for idx, item in enumerate(items_to_submit):
             # check that the item is not in progress and not  not in the ignored list
@@ -522,8 +516,8 @@ def jit_move(settings: JitSettings) -> None:
     if settings.regex_match:
         args += ["--regex", f"{str(settings.regex_match)}"]
 
-    if settings.parallel_move:
-        args += ["--parallel_move"]
+    if settings.parallel_move_threads > 0:
+        args += ["--parallel_move_threads", f"{str(settings.parallel_move_threads)}"]
 
     if settings.debug_lvl > 0:
         args += ["--debug"]
@@ -567,7 +561,7 @@ def jit_move(settings: JitSettings) -> None:
         help="Mount directory for GekkoFs.",
     )
     parser.add_argument("--ignore_mtime", action="store_true", default=True)
-    parser.add_argument("--parallel_move", action="store_true", default=False)
+    parser.add_argument("--parallel_move_threads", type=int, default=1)
     parser.add_argument(
         "--debug",
         dest="debug",

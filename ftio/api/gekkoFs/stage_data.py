@@ -365,11 +365,11 @@ def parse_args_data_stager(
         default="/lustre/project/nhr-admire/tarraf/stage-out",
     )
     parser.add_argument(
-        "--parallel_move",
-        dest="parallel_move",
-        action="store_true",
+        "--parallel_move_threads",
+        dest="parallel_move_threads",
+        type=int,
         help="If set, flushes files in parallel",
-        default=False,
+        default=1,
     )
     parser.add_argument(
         "--debug",

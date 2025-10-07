@@ -333,8 +333,10 @@ def start_ftio(settings: JitSettings) -> None:
             if settings.ignore_mtime:
                 ftio_data_staget_args += "--ignore_mtime "
 
-            if settings.parallel_move:
-                ftio_data_staget_args += "--parallel_move "
+            if settings.parallel_move_threads > 0:
+                ftio_data_staget_args += (
+                    f"--parallel_move_threads {settings.parallel_move_threads} "
+                )
 
             if settings.debug_lvl > 0:
                 ftio_data_staget_args += "--debug "

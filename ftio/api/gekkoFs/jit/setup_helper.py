@@ -257,9 +257,10 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         help="If set, mtime is ignored during flushing process",
     )
     parser.add_argument(
-        "--parallel_move",
-        action="store_true",
-        help="If set, files are moved with multiples calls at the same time",
+        "--parallel_move_threads",
+        type=int,
+        default=0,
+        help="If specified, files are moved with multiples threads calls at the same time",
     )
     parser.add_argument(
         "--lock_generator",
@@ -365,6 +366,8 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         settings.parsed_gkfs_daemon = parsed_args.gkfs_daemon
     if parsed_args.gkfs_intercept:
         settings.parsed_gkfs_intercept = parsed_args.gkfs_intercept
+    if parsed_args.parallel_move_threads > 0:
+        settings.parallel_move_threads = parsed_args.parallel_move_threads
     if parsed_args.exclude_all:
         settings.exclude_all = True
     if parsed_args.dry_run:
@@ -383,8 +386,6 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         settings.node_local = False
     if parsed_args.ignore_mtime:
         settings.ignore_mtime = True
-    if parsed_args.parallel_move:
-        settings.parallel_move = True
     if parsed_args.lock_generator:
         settings.lock_generator = True
     if parsed_args.lock_consumer:
@@ -1498,8 +1499,8 @@ def print_settings(settings: JitSettings) -> None:
 ├─ debug level    : {settings.debug_lvl}
 ├─ use mpirun     : {settings.use_mpirun}
 ├─ ignore mtime   : {settings.ignore_mtime}
-├─ parallel move  : {settings.parallel_move}
 ├─ lock system    : {settings.lock_generator}
+├─ parallel move  : {settings.parallel_move_threads}
 └─ job id         : {settings.job_id}
 
 [bold green]ftio[/]{ftio_text}

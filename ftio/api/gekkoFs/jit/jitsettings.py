@@ -56,7 +56,7 @@ class JitSettings:
         self.dir = ""
         self.cluster = False
         self.ignore_mtime = False
-        self.parallel_move = True  # Can be slower if many files are moved
+        self.parallel_move_threads = 10  # Can be slower if many files are moved
         self.lock_generator = False
         self.lock_consumer = False
         self.adaptive = "cancel"
