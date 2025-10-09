@@ -83,8 +83,9 @@ def ftio_metric_task_save(
                 "t_end": prediction.t_end,
                 "total_bytes": prediction.total_bytes,
                 "ranks": prediction.ranks,
-                "freq": prediction.freq,
+                "freq": float(prediction.freq),
                 "top_freq": prediction.top_freqs,
+                "n_samples": prediction.n_samples,
             }
         )
     else:
