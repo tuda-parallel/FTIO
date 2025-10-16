@@ -1,12 +1,13 @@
 import sys
-import plotly.express as px
-import pandas as pd
-import plotly.graph_objects as go
-import numpy as np 
 
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+
+from ftio.plot.helper import format_plot, legend_fix
 from ftio.plot.plot_core import PlotCore
-from ftio.plot.helper import legend_fix
-from ftio.plot.helper import format_plot
+
 
 def main(args=sys.argv):
     plotter = PlotCore(args)
@@ -16,10 +17,9 @@ def main(args=sys.argv):
     symbols = ["circle", "square", "cross", "star-triangle-down", "hourglass"]
     markeredgecolor = "DarkSlateGrey"
 
-
     if plotter.nRun == 1:
         x = plotter.data.df_time["number_of_ranks"].astype(str)
-        
+
     else:
         plotter.data.df_time = plotter.data.df_time.sort_values(
             by=["number_of_ranks", "file_index"]
@@ -33,13 +33,16 @@ def main(args=sys.argv):
     ranks = plotter.data.df_time["number_of_ranks"]
     # sets_names = ["Limit", "No Limit"]
     # sets = [[0,1],[2]]
-    sets = [[0,1],[2,3],[4,5],[6,7]]
-    sets_names = ["Direct","Up-only","Adaptive","No Limit"]
+    sets = [[0, 1], [2, 3], [4, 5], [6, 7]]
+    sets_names = ["Direct", "Up-only", "Adaptive", "No Limit"]
 
-    metric = [plotter.data.df_time["delta_t_agg"],plotter.data.df_time["delta_t_agg_io"]]
+    metric = [
+        plotter.data.df_time["delta_t_agg"],
+        plotter.data.df_time["delta_t_agg_io"],
+    ]
     modes = ["Total", "IO"]
 
-    for i,_ in enumerate (sets):
+    for i, _ in enumerate(sets):
         group = plotter.data.df_time["file_index"].isin(values=sets[i])
         x = ranks[group]
         x_unqiue = pd.unique(x)
@@ -47,7 +50,7 @@ def main(args=sys.argv):
         y_plus = np.zeros((len(modes), len(x_unqiue)))
         y_minus = np.zeros((len(modes), len(x_unqiue)))
 
-        #fill the array
+        # fill the array
         for count0, _ in enumerate(modes):
             for count1, _ in enumerate(x_unqiue):
                 scope_metric = metric[count0]
@@ -56,8 +59,9 @@ def main(args=sys.argv):
                 y[count0, count1] = data.mean()
                 y_plus[count0, count1] = abs(max(data - y[count0, count1]))
                 y_minus[count0, count1] = abs(min(data - y[count0, count1]))
-            
-            fig.add_trace(go.Scatter(
+
+            fig.add_trace(
+                go.Scatter(
                     x=x_unqiue,
                     y=y[count0],
                     error_y=dict(
@@ -71,15 +75,17 @@ def main(args=sys.argv):
                     legendgroup=sets_names[i],
                     legendgrouptitle_text=sets_names[i],
                     marker=dict(
-                        symbol=symbols[i], line=dict(width=1, color=markeredgecolor)
+                        symbol=symbols[i],
+                        line=dict(width=1, color=markeredgecolor),
                     ),
                     # marker_color=colors[i]
-                    showlegend=True
-                ))
+                    showlegend=True,
+                )
+            )
 
     fig.update_xaxes(title_text="Ranks")
-    fig.update_layout(xaxis_title="Ranks",yaxis_title="Aggregated Time (s)")
-    fig.update_layout(legend_groupclick= 'toggleitem')
+    fig.update_layout(xaxis_title="Ranks", yaxis_title="Aggregated Time (s)")
+    fig.update_layout(legend_groupclick="toggleitem")
     fig = format_plot(fig)
     fig.update_layout(
         hovermode="x",
@@ -89,6 +95,7 @@ def main(args=sys.argv):
     )
     fig.show()
     print(plotter.names)
+
 
 if __name__ == "__main__":
     main(sys.argv)

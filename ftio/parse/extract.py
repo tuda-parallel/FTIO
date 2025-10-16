@@ -1,10 +1,10 @@
-""" Extracts time behavior form parsed data
+"""Extracts time behavior form parsed data"""
 
-"""
-
-import pandas as pd 
 import numpy as np
+import pandas as pd
+
 from ftio.parse.scales import Scales
+
 # from ftio.freq.helper import get_mode
 
 
@@ -34,13 +34,13 @@ def get_time_behavior(df) -> list[dict]:
                     "time": time,
                     "bandwidth": bandwidth,
                     "total_bytes": total_bytes,
-                    "ranks": i
-                    }
+                    "ranks": i,
+                }
                 out.append(tmp)
     return out
 
 
-def get_time_behavior_and_args(cmd_input:list[str], msgs=None):
+def get_time_behavior_and_args(cmd_input: list[str], msgs=None):
     """
     Parses the input command and messages to extract time behavior and arguments.
     Args:
@@ -66,17 +66,15 @@ def get_time_behavior_and_args(cmd_input:list[str], msgs=None):
 
     #! extract the fields bandwidth, time, total_bytes, and ranks from the file/msg
     data = get_time_behavior(df)
-    
+
     return data, args
-
-
 
 
 def extract_fields(data_list):
     """
     Extracts specific fields from a list or dictionary of data.
     Parameters:
-    data_list (list or dict): A list containing a single dictionary or a dictionary itself 
+    data_list (list or dict): A list containing a single dictionary or a dictionary itself
                             with keys 'bandwidth', 'time', 'total_bytes', and 'ranks'.
     Returns:
     tuple: A tuple containing:
@@ -85,11 +83,11 @@ def extract_fields(data_list):
         - total_bytes (int): The total bytes if present, otherwise 0.
         - ranks (int): The ranks if present, otherwise 0.
     """
-    if isinstance(data_list,list):
+    if isinstance(data_list, list):
         data = data_list[0]
     else:
-        data = data_list 
-    
+        data = data_list
+
     bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
     time_b = data["time"] if "time" in data else np.array([])
     total_bytes = data["total_bytes"] if "total_bytes" in data else 0

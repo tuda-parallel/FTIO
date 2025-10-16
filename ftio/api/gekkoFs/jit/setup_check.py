@@ -3,19 +3,21 @@ This file provides functions to check the setup for the JIT script, including ve
 configuration files, generating test scripts, and executing them to ensure the environment
 is correctly configured.
 
-Author: Ahmad Tarraf  
-Copyright (c) 2025 TU Darmstadt, Germany  
+Author: Ahmad Tarraf
+Copyright (c) 2025 TU Darmstadt, Germany
 Date: Aug 2024
 
-Licensed under the BSD 3-Clause License.  
-For more information, see the LICENSE file in the project root:  
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 import os
 import time
 from datetime import datetime
+
 from rich.console import Console
+
 from ftio.api.gekkoFs.jit.execute_and_wait import execute_block
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.setup_helper import jit_print

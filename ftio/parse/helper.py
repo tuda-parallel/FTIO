@@ -1,11 +1,14 @@
 import datetime
+
 import numpy as np
-from rich.panel import Panel
 from rich.console import Console
+from rich.panel import Panel
 from rich.text import Text
+
 from ftio import __version__
 
-def scale_metric(metric:str,number:float) -> tuple[str, float]:
+
+def scale_metric(metric: str, number: float) -> tuple[str, float]:
     """set unit for the plots
 
     Args:
@@ -21,7 +24,7 @@ def scale_metric(metric:str,number:float) -> tuple[str, float]:
     if number > 0:
         order = np.log10(number)
 
-        if any(x in metric.lower() for x in ["bytes","b", "bandwidth", "transfer"]):
+        if any(x in metric.lower() for x in ["bytes", "b", "bandwidth", "transfer"]):
             if order > 9:
                 order = 1e-9
                 prefix = "G"
@@ -33,8 +36,8 @@ def scale_metric(metric:str,number:float) -> tuple[str, float]:
                 prefix = "K"
             else:
                 order = 1e-0
-                prefix =""
-        elif any(x in metric.lower() for x in ["time","(s)"]):
+                prefix = ""
+        elif any(x in metric.lower() for x in ["time", "(s)"]):
             if order > 0:
                 order = 1e-0
                 prefix = ""
@@ -47,11 +50,20 @@ def scale_metric(metric:str,number:float) -> tuple[str, float]:
             return metric, 1e-0
 
         if not np.isnan(order):
-            if any(x in metric.lower() for x in ["(b/s)","(bytes/s)", "(bytes/second)", "(b/second)", "bandwidth"]):
+            if any(
+                x in metric.lower()
+                for x in [
+                    "(b/s)",
+                    "(bytes/s)",
+                    "(bytes/second)",
+                    "(b/second)",
+                    "bandwidth",
+                ]
+            ):
                 unit = f"Bandwidth ({prefix}B/s)"
-            elif any(x in metric.lower() for x in ["(bytes)","(b)"]):
+            elif any(x in metric.lower() for x in ["(bytes)", "(b)"]):
                 unit = f"Size ({prefix}B)"
-            elif any(x in metric.lower() for x in ["(s)","(second)", "time"]):
+            elif any(x in metric.lower() for x in ["(s)", "(second)", "time"]):
                 unit = f"Time ({prefix}s)"
             else:
                 unit = "UNKOWN"
@@ -72,46 +84,53 @@ def match_modes(mode):
     return mode
 
 
-def match_mode( mode:str) -> str:
-    out  = ''
+def match_mode(mode: str) -> str:
+    out = ""
     if "w" in mode:
         out = "write"
     else:
         out = "read"
-        
+
     if "async" in mode:
         out = out + "_async"
     else:
         out = out + "_sync"
 
-    return out 
+    return out
 
-def detect_source(data:dict, args) -> str:
-    if 'tmio' in args.source.lower() or 'custom' in args.source.lower():
+
+def detect_source(data: dict, args) -> str:
+    if "tmio" in args.source.lower() or "custom" in args.source.lower():
         return args.source.lower()
-    else: #autodetect
-        tmio_fields = ['read_sync', 'read_async_t', 'read_async_b', 'write_async_t', 'io_time']
+    else:  # autodetect
+        tmio_fields = [
+            "read_sync",
+            "read_async_t",
+            "read_async_b",
+            "write_async_t",
+            "io_time",
+        ]
         if all(fields in data for fields in tmio_fields):
-            return 'tmio'
+            return "tmio"
         else:
-            return 'unspecified'
+            return "unspecified"
 
 
-def print_info(prog_name:str, flag = True) -> None:
+def print_info(prog_name: str, flag=True) -> None:
     console = Console()
     if "ftio" in prog_name.lower():
-        color  = "cyan"
+        color = "cyan"
     elif "plot" in prog_name.lower():
-        color  = "yellow"
+        color = "yellow"
     elif "parse" in prog_name.lower():
-        color  = "green"
+        color = "green"
     elif "predictor" in prog_name.lower():
         if flag:
             return
         else:
-            color  = "dark_violet"
+            color = "dark_violet"
     else:
-        color  = "black"
+        color = "black"
 
     title = Panel(
         Text(prog_name, justify="center"),

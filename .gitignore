@@ -20,7 +20,6 @@ old_setup
 *.*.pois
 /docs/ppt
 ftio/util/afine.py
-ftio/util/freq_plot.py
 ftio/util/playback.py
 ftio/util/ppm.py
 ftio/api/test_api.py

@@ -1,12 +1,13 @@
-"""Outlier plot function
-"""
+"""Outlier plot function"""
 
 from __future__ import annotations
-import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
+
 import matplotlib.pyplot as plt
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
 from sklearn.inspection import DecisionBoundaryDisplay
+
 from ftio.freq.freq_html import create_html
 from ftio.plot.helper import format_plot
 from ftio.plot.spectrum import plot_both_spectrums
@@ -35,16 +36,20 @@ def plot_outliers(
         dominant_index (np.ndarray): _description_
         d (np.ndarray, optional): _description_. Defaults to np.array([]).
     """
-    colorscale = [(0, "rgb(0,50,150)"), (0.5, "rgb(150,50,150)"), (1, "rgb(255,50,0)")]
+    colorscale = [
+        (0, "rgb(0,50,150)"),
+        (0.5, "rgb(150,50,150)"),
+        (1, "rgb(255,50,0)"),
+    ]
     labels = [(f"cluster {i}") if (i >= 0) else "outliers" for i in dominant_index]
-    #prepare figures
+    # prepare figures
     figs = []
     for i in np.arange(0, 5):
         f = go.Figure()
         f = format_plot(f)
         figs.append(f)
 
-    #prepare symbols
+    # prepare symbols
     if dominant_index.size > 0 and dominant_index.max() < 20:
         symbol = dominant_index.copy()
         symbol[symbol >= 5] = symbol[symbol >= 5] + 1
@@ -54,7 +59,7 @@ def plot_outliers(
         symbol = np.ones(dominant_index.size)
     labels = np.array(labels)
 
-    if d.size  == 0 and len(freq_arr) != 0:
+    if d.size == 0 and len(freq_arr) != 0:
         d = np.vstack(
             (
                 freq_arr[indecies] / freq_arr[indecies].max(),
@@ -66,19 +71,23 @@ def plot_outliers(
     else:
         pass
 
-    
-    all_colors = [px.colors.qualitative.Alphabet[0], px.colors.qualitative.Plotly[0]] + px.colors.qualitative.Plotly[2:]
-    all_colors = np.array(all_colors + px.colors.qualitative.Alphabet + px.colors.qualitative.Dark24 + [px.colors.qualitative.Plotly[1]])
+    all_colors = [
+        px.colors.qualitative.Alphabet[0],
+        px.colors.qualitative.Plotly[0],
+    ] + px.colors.qualitative.Plotly[2:]
+    all_colors = np.array(
+        all_colors
+        + px.colors.qualitative.Alphabet
+        + px.colors.qualitative.Dark24
+        + [px.colors.qualitative.Plotly[1]]
+    )
 
     # Only for DB SCAN
     if args.outlier.lower() in ["dbscan", "db-scan", "db"]:
-        if dominant_index.max() < 20: 
+        if dominant_index.max() < 20:
             color = all_colors[dominant_index]
         else:
-            color = np.array([
-                        "blue" if (x >= 0) else "red"
-                        for x in dominant_index
-                    ])
+            color = np.array(["blue" if (x >= 0) else "red" for x in dominant_index])
         # draw the circles
         for i in range(0, len(d)):
             figs[0].add_shape(
@@ -93,7 +102,7 @@ def plot_outliers(
                 name=labels[i],
                 line_color=color[i],
             )
-    else:     
+    else:
         color = all_colors[dominant_index]
 
     for i in np.unique(labels):
@@ -161,7 +170,7 @@ def plot_outliers(
             "colorscale": colorscale,
         }
     )
-    
+
     counter = 2
     spec_figs, plt_names = plot_both_spectrums(args, freq_arr, amp, full=False)
     for trace in list(spec_figs.select_traces()):
@@ -180,7 +189,7 @@ def plot_outliers(
     figs[0].update_yaxes(title_text=f"Normed {y_title}")
     figs[1].update_xaxes(title_text="Normed Frequency ", range=[-0.01, 1.01])
     figs[1].update_yaxes(title_text=f"Normed {y_title}")
-    figs[2].update_xaxes(title_text="Frequency (Hz)",range=[0, freq_arr[indecies].max()])
+    figs[2].update_xaxes(title_text="Frequency (Hz)", range=[0, freq_arr[indecies].max()])
     figs[2].update_yaxes(title_text=f"{y_title}")
     figs[3].update_xaxes(title_text="Frequency (Hz)")
     figs[3].update_yaxes(title_text=plt_names[0])
@@ -190,9 +199,9 @@ def plot_outliers(
         fig.update_layout(width=1300, height=400)
 
     configuration = {"toImageButtonOptions": {"format": "png", "scale": 4}}
-    plot_name =  "anomaly"
+    plot_name = "anomaly"
     if "plot_name" in args:
-        plot_name +=  "_" + args.plot_name 
+        plot_name += "_" + args.plot_name
 
     create_html(figs, args.render, configuration, plot_name)
 
@@ -209,4 +218,3 @@ def plot_decision_boundaries(model, d, conf):
     plt.axis("square")
     plt.legend(labels=["outliers", "inliers"], title="true class")
     plt.show()
-

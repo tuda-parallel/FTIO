@@ -1,6 +1,7 @@
 import argparse
-import sys
 import json
+import sys
+
 import numpy as np
 
 
@@ -9,7 +10,9 @@ def parse_options():
         description="Converts old traces by scaling them 10^6."
     )
     parser.add_argument(
-        "filename", type=str, help="The paths and name to the JSON file to convert"
+        "filename",
+        type=str,
+        help="The paths and name to the JSON file to convert",
     )
     parser.add_argument(
         "--outfile",

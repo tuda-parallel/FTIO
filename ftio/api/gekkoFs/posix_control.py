@@ -14,18 +14,22 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+import argparse
 import math
+import mmap
 import os
 import re
-import argparse
 import subprocess
 import time
+from concurrent.futures import (
+    ProcessPoolExecutor,
+    ThreadPoolExecutor,
+    as_completed,
+)
+
 from ftio.api.gekkoFs.file_queue import FileQueue
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.freq.helper import MyConsole
-import mmap
-
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -34,9 +38,7 @@ files_in_progress = FileQueue()
 
 
 def move_files_os(
-    args: argparse.Namespace,
-    parallel: bool = False,
-    period:float = 0
+    args: argparse.Namespace, parallel: bool = False, period: float = 0
 ) -> None:
     """
     Moves files and directories from the source directory to the stage-out path.
@@ -52,21 +54,24 @@ def move_files_os(
     if not os.path.exists(args.stage_out_path):
         os.makedirs(args.stage_out_path)
 
-    if args.parallel_move:
-        parallel = True
-
     regex = None
     # Compile the regex pattern if provided
     if args.regex:
-        CONSOLE.print(
-            f"[bold green][Trigger][/][green] Using pattern: {args.regex}[/]\n"
-        )
+        CONSOLE.print(f"[bold green][Trigger][/][green] Using pattern: {args.regex}[/]\n")
         regex = re.compile(args.regex)
 
     # Iterate over all items in the source directory
     files = get_files(args)
+    if args.parallel_move:
+        parallel = True
+        text = (
+            f"[bold green][Trigger][/][green] {len(files)} files to move in parallel[/]\n"
+        )
+    else:
+        text = f"[bold green][Trigger][/][green] {len(files)} files to move[/]\n"
+    CONSOLE.print(text)
     if args.debug:
-        f"[bold green][Trigger][/][green] Files are:\n {files}[/]\n"
+        CONSOLE.print(f"[bold green][Trigger][/][green] Files are:\n {files}[/]\n")
 
     # Ensure the target directory exists
     os.makedirs(args.stage_out_path, exist_ok=True)
@@ -88,17 +93,14 @@ def move_files_os(
                     CONSOLE.print(f"[bold green][Trigger][/]:  Ignored {file_name}")
     else:
         futures = {}
-        with ProcessPoolExecutor(max_workers=5) as executor:
+        workers = 10
+        with ProcessPoolExecutor(max_workers=workers) as executor:
             # Submit tasks to the executor
             for i, file_name in enumerate(files):
                 if regex and regex.match(file_name):
                     if not files_in_progress.in_progress(file_name):
                         files_in_progress.put(file_name)
-                        futures[
-                            executor.submit(
-                                move_file, args, file_name, period
-                            )
-                        ] = i
+                        futures[executor.submit(move_file, args, file_name, period)] = i
                     else:
                         if args.debug:
                             CONSOLE.print(
@@ -108,6 +110,10 @@ def move_files_os(
                 else:
                     if args.debug:
                         CONSOLE.print(f"[bold green][Trigger][/]:  Ignored {file_name}")
+            CONSOLE.print(
+                f"[bold green][Trigger][/]: Finished submitting {len(futures)} futures. "
+                f"Using {workers} workers for processing"
+            )
 
             # Process results as they complete
             for future in as_completed(futures):
@@ -121,9 +127,7 @@ def move_files_os(
                     files_in_progress.mark_done(files[index])
 
 
-def move_file(
-    args: argparse.Namespace, file_name: str, period:float = 0
-) -> None:
+def move_file(args: argparse.Namespace, file_name: str, period: float = 0) -> None:
     """
     Stages out a single file if it matches the regex and meets modification time criteria.
 
@@ -131,8 +135,8 @@ def move_file(
         args (argparse.Namespace): Parsed command line arguments.
         file_name (str): Name of the file to stage out.
     """
-    threshold = period/2 # the io took half the time
-    threshold = max(threshold,10)
+    threshold = period / 2  # the IO took half the time
+    threshold = max(threshold, 10)
     fast = False  # fast copy still has an error with the preload
 
     modification_time = time.time() - get_time(args, file_name)
@@ -149,6 +153,10 @@ def move_file(
             fast_chunk_copy_file(args, file_name, threads=4)
         else:
             copy_file_and_unlink(args, file_name)
+
+        CONSOLE.print(
+            f"[bold green][Trigger][/][yellow]: {len(files_in_progress)} files still in the queue."
+        )
     else:
         CONSOLE.print(
             f"[bold green][Trigger][/][yellow]: {file_name} is too new (last modified {modification_time:.3})[/]\n"
@@ -193,24 +201,28 @@ def get_files(args: argparse.Namespace) -> list[str]:
         if isinstance(files, str):
             files = files.strip().splitlines()
         if args.debug:
-            CONSOLE.print(f"[bold green][Trigger][/][green]: Finished moving  {files}[/]\n")
+            CONSOLE.print(
+                f"[bold green][Trigger][/][green]: Finished moving  {files}[/]\n"
+            )
         files = [f"{item}" for item in files if "." in item]
         if args.debug:
-            CONSOLE.print(f"[bold green][Trigger][/][green]: Finished moving  {files}[/]\n")
-        
+            CONSOLE.print(
+                f"[bold green][Trigger][/][green]: Finished moving  {files}[/]\n"
+            )
+
     except Exception as e:
         if args.debug:
             CONSOLE.print(f"[bold green][Trigger][/][green]: Error encountered  {e}[/]\n")
-        
+
         files = preloaded_call(args, f"ls -R {args.gkfs_mntdir}")
-        
+
         if files:
             files = files.splitlines()
             # if args.debug:
             #     CONSOLE.print(f"[bold green][Trigger][/][green]: Found files are{files}[/]\n")
             files = [f for f in files if "LIBGKFS" not in f]
             files = [f"{args.gkfs_mntdir}/{item}" for item in files if "." in item]
-    
+
     if files:
         return files
     else:
@@ -248,7 +260,11 @@ def preloaded_call(args: argparse.Namespace, call: str) -> str:
 
 
 def write_chunk(
-    mmapped_file: mmap.mmap, dst: str, start: int, end: int, ld_preload: str = ""
+    mmapped_file: mmap.mmap,
+    dst: str,
+    start: int,
+    end: int,
+    ld_preload: str = "",
 ) -> None:
     """
     Writes a chunk of the file to the destination using memory mapping.
@@ -361,7 +377,7 @@ def jit_move(settings: JitSettings) -> None:
         str(settings.gkfs_hostfile),
         "--gkfs_mntdir",
         str(settings.gkfs_mntdir),
-        "--ignore_mtime"
+        "--ignore_mtime",
     ]
     if settings.regex_match:
         args += ["--regex", f"{str(settings.regex_match)}"]
@@ -370,8 +386,8 @@ def jit_move(settings: JitSettings) -> None:
         args += ["--parallel_move"]
 
     if settings.debug_lvl > 0:
-        args +=  ["--debug"]
-    
+        args += ["--debug"]
+
     # Define CLI parser
     parser = argparse.ArgumentParser(
         description="Data staging arguments", prog="file_mover"
@@ -396,20 +412,22 @@ def jit_move(settings: JitSettings) -> None:
         help="Files that match the regex expression are ignored during stage out",
     )
     parser.add_argument(
-        "--ld_preload", type=str, default=None, help="LD_PRELOAD call to GekkoFs file."
+        "--ld_preload",
+        type=str,
+        default=None,
+        help="LD_PRELOAD call to GekkoFs file.",
     )
     parser.add_argument(
         "--host_file", type=str, default=None, help="Hostfile for GekkoFs."
     )
     parser.add_argument(
-        "--gkfs_mntdir", type=str, default=None, help="Mount directory for GekkoFs."
+        "--gkfs_mntdir",
+        type=str,
+        default=None,
+        help="Mount directory for GekkoFs.",
     )
-    parser.add_argument(
-        "--ignore_mtime",action="store_true", default=True
-        )
-    parser.add_argument(
-        "--parallel_move",action="store_true", default=False
-        )
+    parser.add_argument("--ignore_mtime", action="store_true", default=True)
+    parser.add_argument("--parallel_move", action="store_true", default=False)
     parser.add_argument(
         "--debug",
         dest="debug",
@@ -422,7 +440,7 @@ def jit_move(settings: JitSettings) -> None:
         dest="adaptive",
         help="Adaptive flag for flushing",
         default="cancel",
-        choices={"skip","cancel",""}
+        choices={"skip", "cancel", ""},
     )
 
     # Parse and call mover

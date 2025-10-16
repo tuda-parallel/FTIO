@@ -1,15 +1,16 @@
 """
 Module for Dynamic Time Warping (DTW) calculations.
 
-This module provides functionality for computing DTW distances using either 
-a NumPy-based implementation or FastDTW (if available). It also supports 
+This module provides functionality for computing DTW distances using either
+a NumPy-based implementation or FastDTW (if available). It also supports
 multi-threaded DTW evaluation for improved performance.
 """
 
-import numpy as np
 import importlib.util
-from scipy.spatial.distance import euclidean
 from threading import Thread
+
+import numpy as np
+from scipy.spatial.distance import euclidean
 
 # Check if fastdtw is available
 FASTDTW_AVAILABLE: bool = importlib.util.find_spec("fastdtw") is not None

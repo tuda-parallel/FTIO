@@ -1,10 +1,10 @@
-from ftio.cli.ftio_core import core
-from ftio.parse.args import parse_args
-from ftio.processing.print_output import display_prediction
-from ftio.plot.freq_plot import convert_and_plot
 from ftio.api.metric_proxy.parse_proxy import parse
-from ftio.processing.post_processing import label_phases
+from ftio.cli.ftio_core import core
 from ftio.freq.helper import MyConsole
+from ftio.parse.args import parse_args
+from ftio.plot.freq_plot import convert_and_plot
+from ftio.processing.post_processing import label_phases
+from ftio.processing.print_output import display_prediction
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -18,7 +18,9 @@ ranks = 32
 
 # command line arguments
 argv = ["-e", "plotly"]  # ["-e", "no"] to disable the plot
-argv.extend(["-n","2"]) # finds up to n frequencies. Comment this out to go back to the default version
+argv.extend(
+    ["-n", "2"]
+)  # finds up to n frequencies. Comment this out to go back to the default version
 # ---------------------------------
 
 # set up data
@@ -28,13 +30,13 @@ data = {"time": t, "bandwidth": b, "total_bytes": 0, "ranks": ranks}
 args = parse_args(argv, "ftio")
 
 # perform prediction
-prediction, dfs = core(data, args)
+prediction, analysis_figures = core(data, args)
 
 # plot and print info
-convert_and_plot(args, dfs)
 display_prediction(args, prediction)
+analysis_figures.show()
 
-# ------------------ 
+# ------------------
 
 # Post processing
 if prediction and len(prediction["dominant_freq"]) != 0:

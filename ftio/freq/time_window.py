@@ -8,7 +8,11 @@ import numpy as np
 
 
 def data_in_time_window(
-    args, bandwidth: np.ndarray, time_b: np.ndarray, total_bytes: int, ranks: int = 0
+    args,
+    bandwidth: np.ndarray,
+    time_b: np.ndarray,
+    total_bytes: int,
+    ranks: int = 0,
 ) -> tuple[np.ndarray, np.ndarray, str]:
     """Cuts the data according the start and end time specified by the arguments.
 

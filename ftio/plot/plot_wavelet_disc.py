@@ -2,15 +2,16 @@
 This module contains functions for plotting discrete wavelet transforms and their spectra
 using Matplotlib and Plotly.
 """
+
 from argparse import Namespace
-import numpy as np
-import pywt
+
 import matplotlib.pyplot as plt
+import numpy as np
 import plotly.graph_objects as go
+import pywt
 from plotly.subplots import make_subplots
 
 from ftio.freq.freq_html import create_html
-
 
 ####################################################################################################
 #! Deprecated functions
@@ -73,9 +74,9 @@ def plot_wave_disc(
         # GoH0+G1H1 = 1 -> Multiply a with H1 and d with G1
         # https://medium.com/@shouke.wei/process-of-discrete-wavelet-transform-iii-wavelet-partial-reconstruction-ca7a8f9420dc
         if "recon" in use:
-            cc[level - i + 1] = pywt.upcoef(
-                "d", coffs[level - i + 1], wavelet, level=i
-            )[:n]
+            cc[level - i + 1] = pywt.upcoef("d", coffs[level - i + 1], wavelet, level=i)[
+                :n
+            ]
         else:
             # Wrong: only upsample: ‘↑ 2’ denotes ‘upsample by 2’ (put 0’s before values)
             # cc[level-i+1,::2**(i)] = coffs[level-i+1]
@@ -101,13 +102,12 @@ def plot_wave_disc(
         for i in np.arange(start=level, stop=0, step=-1):
             ax[level - i + 2].plot(time_disc, cc[level - i + 1])
             ax[level - i + 2].set_title(
-                f"reconstruction at level {i} from detailed coff -> [{freq / 2 ** (i + 1)}, {freq / 2**i}] Hz"
+                f"reconstruction at level {i} from detail coefficients -> [{freq / 2 ** (i + 1)}, {freq / 2**i}] Hz"
             )
         ax[1].plot(time_disc, cc[0])
         ax[1].set_title(
-            f"reconstruction at level {level} from approximated coff -> [0, {freq / 2 ** (level + 1)}] Hz"
+            f"reconstruction at level {level} from approximation coefficients -> [0, {freq / 2 ** (level + 1)}] Hz"
         )
-        fig.legend()
         fig.tight_layout()
         f.append(fig)
 
@@ -130,7 +130,10 @@ def plot_wave_disc(
         plt.xticks(fontsize=18)
         plt.yticks(fontsize=18)
         y = np.concatenate(
-            [np.array([0]), freq / 2 ** np.arange(start=level + 1, stop=0, step=-1)]
+            [
+                np.array([0]),
+                freq / 2 ** np.arange(start=level + 1, stop=0, step=-1),
+            ]
         )
         x = (
             -2 / freq + t[0] + 1 / freq * np.arange(0, len(b_sampled) + 1)
@@ -215,16 +218,36 @@ def matplot_coeffs_reconst_signal(
     num_levels = len(coeffs)
     names = get_names(freq_bands, num_levels)
     fig, axes = plt.subplots(
-        num_levels + 1, 1, figsize=(10, 3 * (num_levels + 1)), sharex=common_xaxis
+        num_levels + 1,
+        1,
+        figsize=(10, 2.5 * (num_levels + 1)),
+        sharex=common_xaxis,
     )
 
     # Plot the original and reconstructed signals in the first subplot
     axes[0].plot(t, b, label="Bandwidth", color="b", linestyle="dashed")
-    axes[0].plot(t_sampled, b_sampled, label="Sampled Bandwidth", color="b", linestyle="dashed")
-    axes[0].plot(t_sampled, np.sum(coeffs, axis=0), label="Reconstructed Signal", color="g")
-    axes[0].set_title(names[0])
-    axes[0].set_ylabel("Amplitude")
-    axes[0].legend()
+    axes[0].plot(
+        t_sampled,
+        b_sampled,
+        label="Sampled Bandwidth",
+        color="b",
+        linestyle="dashed",
+    )
+    axes[0].plot(
+        t_sampled,
+        np.sum(coeffs, axis=0),
+        label="Reconstructed Signal",
+        color="g",
+    )
+    # axes[0].set_title(names[0])
+    axes[0].set_ylabel("Amplitude", fontsize=17)
+    axes[0].legend(loc="upper right")
+    axes[0].grid(True, which="both", linestyle="--", alpha=0.6)
+    axes[0].yaxis.set_major_formatter(plt.FormatStrFormatter("%.1e"))
+    # axes[0].ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
+    axes[0].ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
+    axes[0].tick_params(axis="both", labelsize=12)
+    axes[0].set_xlim(t_sampled[0], t_sampled[-1])
 
     # Plot each coefficient with corresponding frequency range
     for i in range(num_levels):
@@ -233,16 +256,24 @@ def matplot_coeffs_reconst_signal(
             coeffs[i],
             label=names[i + 1],
         )
-        axes[i + 1].set_title(names[i + 1])
-        axes[i + 1].set_ylabel("Amplitude")
-        axes[i + 1].legend()
+        #         axes[i + 1].set_title(names[i + 1])
+        axes[i + 1].set_ylabel("Amplitude", fontsize=17)
+        axes[i + 1].legend(loc="upper right")
+        axes[i + 1].grid(True, which="both", linestyle="--", alpha=0.6)
+        axes[i + 1].yaxis.set_major_formatter(plt.FormatStrFormatter("%.1e"))
+        #         axes[i + 1].ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
+        axes[i + 1].ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
+        axes[i + 1].tick_params(axis="both", labelsize=12)
+        axes[i + 1].set_xlim(t_sampled[0], t_sampled[-1])
 
-    axes[-1].set_xlabel("Time (s)")
-
-    fig.tight_layout()
+    axes[-1].set_xlabel("Time (s)", fontsize=17)
+    fig.tight_layout()  # comment this out for the paper
     return fig
 
-def matplot_wavelet_disc_spectrum(t_sampled: np.ndarray, coeffs: np.ndarray, freq_ranges: np.ndarray):
+
+def matplot_wavelet_disc_spectrum(
+    t_sampled: np.ndarray, coeffs: np.ndarray, freq_ranges: np.ndarray
+):
     """
     Plot the wavelet spectrum (frequency decomposition) using Matplotlib with pcolormesh.
 
@@ -268,27 +299,28 @@ def matplot_wavelet_disc_spectrum(t_sampled: np.ndarray, coeffs: np.ndarray, fre
     X, Y = np.meshgrid(time_edges, freq_edges)
 
     # Create figure
-    fig, ax = plt.subplots(figsize=(15, 8))
+    fig, ax = plt.subplots(figsize=(10, 5))
 
     # Plot using pcolormesh
     cax = ax.pcolormesh(X, Y, coeffs_magnitude, cmap="seismic", shading="flat")
 
     # Formatting
-    ax.set_xlabel("Time (s)", fontsize=18)
-    ax.set_ylabel("Frequency (Hz)", fontsize=18)
-    ax.set_title("Wavelet Spectrum", fontsize=18)
-    ax.tick_params(axis="both", labelsize=18)
+
+    plt.ylabel("Frequency (Hz)", fontsize=17)
+    plt.xlabel("Time (s)", fontsize=17)
+    # ax.set_title("Wavelet Spectrum")
+    ax.tick_params(axis="both", labelsize=12)
+    ax.ticklabel_format(axis="y", style="sci", scilimits=(-5, 3))
+    ax.ticklabel_format(axis="x", style="sci", scilimits=(-5, 3))
 
     # Invert y-axis to have higher frequencies at the top
     # plt.gca().invert_yaxis()
 
     # Add colorbar
-    cbar = fig.colorbar(cax, ax=ax)
-    cbar.set_label("Magnitude", fontsize=18)
-
+    cbar = plt.colorbar(cax, ax=ax, location="bottom", aspect=50)
+    cbar.set_label("Amplitude", fontsize=17)
     plt.tight_layout()
     return fig
-
 
 
 ####################################################################################################
@@ -321,22 +353,28 @@ def ploty_coeffs_reconst_signal(
 
     names = get_names(freq_bands, len(coeffs))
     fig = make_subplots(
-        rows=len(coeffs) + 2, cols=1, subplot_titles=names, shared_xaxes=common_xaxis
+        rows=len(coeffs) + 2,
+        cols=1,
+        subplot_titles=names,
+        shared_xaxes=common_xaxis,
     )
 
     # Plot the original bandwidth
-    fig.add_trace(
-        go.Scatter(x=t, y=b, mode="lines", name="Bandwidth"), row=1, col=1
-    )
+    fig.add_trace(go.Scatter(x=t, y=b, mode="lines", name="Bandwidth"), row=1, col=1)
 
     # Plot the original bandwidth
     fig.add_trace(
-        go.Scatter(x=t_sampled, y=b_sampled, mode="lines", name="Sampled Bandwidth"), row=1, col=1
+        go.Scatter(x=t_sampled, y=b_sampled, mode="lines", name="Sampled Bandwidth"),
+        row=1,
+        col=1,
     )
     # Plot the reconstructed signal
     fig.add_trace(
         go.Scatter(
-            x=t_sampled, y=np.sum(coeffs, axis=0), mode="lines", name="Reconstructed Signal"
+            x=t_sampled,
+            y=np.sum(coeffs, axis=0),
+            mode="lines",
+            name="Reconstructed Signal",
         ),
         row=1,
         col=1,
@@ -448,13 +486,25 @@ def plot_coeffs_reconst_signal(
     """
     if "plotly" in args.engine:
         fig = ploty_coeffs_reconst_signal(
-            t, b,  t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis
+            t,
+            b,
+            t_sampled,
+            b_sampled,
+            coeffs_upsampled,
+            freq_bands,
+            common_xaxis,
         )
-        create_html([fig], args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, "freq")
+        # create_html([fig], args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, args.transformation)
 
     else:
         fig = matplot_coeffs_reconst_signal(
-            t, b,  t_sampled, b_sampled, coeffs_upsampled, freq_bands, common_xaxis
+            t,
+            b,
+            t_sampled,
+            b_sampled,
+            coeffs_upsampled,
+            freq_bands,
+            common_xaxis,
         )
 
     return fig

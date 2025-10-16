@@ -1,12 +1,17 @@
 import glob
+
 from rich.console import Console
+
 import ftio.prediction.monitor as pm
-from ftio.prediction.helper import print_data, export_extrap
-from ftio.multiprocessing.async_process import handle_in_process
-from ftio.prediction.probability_analysis import find_probability
-from ftio.prediction.helper import get_dominant
 from ftio.api.gekkoFs.ftio_gekko import run
-from ftio.prediction.analysis import display_result, save_data, window_adaptation
+from ftio.multiprocessing.async_process import handle_in_process
+from ftio.prediction.helper import export_extrap, get_dominant, print_data
+from ftio.prediction.online_analysis import (
+    display_result,
+    save_data,
+    window_adaptation,
+)
+from ftio.prediction.probability_analysis import find_probability
 from ftio.prediction.shared_resources import SharedResources
 
 
@@ -109,10 +114,8 @@ def prediction_process(
     while not shared_resources.queue.empty():
         shared_resources.data.append(shared_resources.queue.get())
 
-    _ = find_probability(shared_resources.data, counter = shared_resources.count.value)
+    _ = find_probability(shared_resources.data, counter=shared_resources.count.value)
     shared_resources.count.value += 1
-
-
 
 
 if __name__ == "__main__":

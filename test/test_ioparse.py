@@ -3,7 +3,9 @@ Functions for testing the ioparse functionality of the ftio package.
 """
 
 import os
+
 from ftio.util.ioparse import main
+
 
 def test_ioparse():
     """Test the ioparse functionality."""
@@ -11,5 +13,3 @@ def test_ioparse():
     args = ["ioparse", file]
     main(args)
     assert True
-
-

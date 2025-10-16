@@ -1,13 +1,15 @@
-import os
-import sys
-import re
 import json
+import os
+import re
+import sys
 import time
-from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
-from rich.panel import Panel
+
 import numpy as np
 import pandas as pd
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
+
 from ftio.api.trace_analysis.trace_ftio_v2 import main as trace_ftio
 
 console = Console()
@@ -17,7 +19,7 @@ def main(argv=sys.argv[1:]) -> None:
     verbose = False
     name = "plafrim"
     json_flag = False
-    
+
     # specify the name with -n
     if "-n" in argv:
         index = argv.index("-n")
@@ -82,13 +84,11 @@ def main(argv=sys.argv[1:]) -> None:
                 )
 
                 # Run the trace_ftio function
-                res = trace_ftio([file_path] + argv, verbose,json_flag)
+                res = trace_ftio([file_path] + argv, verbose, json_flag)
 
                 # Create the new file name by replacing the pattern
                 base_name = os.path.basename(file_path)
-                json_name = base_name.replace(
-                    f"_signal_{name}.csv", f"_freq_{name}.json"
-                )
+                json_name = base_name.replace(f"_signal_{name}.csv", f"_freq_{name}.json")
                 json_path = os.path.join(os.path.dirname(file_path), json_name)
                 data_converted = convert_dict(res)
 
@@ -96,9 +96,7 @@ def main(argv=sys.argv[1:]) -> None:
                     with open(json_path, "w") as file:
                         json.dump(data_converted, file, indent=4)
                 else:
-                    console.print(
-                        f"[bold red]Cannot dump Json file in {json_path}[/]"
-                    )
+                    console.print(f"[bold red]Cannot dump Json file in {json_path}[/]")
 
                 flat_res = flatten_dict(res)
                 try:
@@ -162,7 +160,7 @@ def flatten_dict(d):
     return flat
 
 
-def statistics(df,elapsed_time="",settings={}) -> None:
+def statistics(df, elapsed_time="", settings={}) -> None:
     # print(df)
     df_dom = reduce_to_max_conf(df)
     prefixes = relevant_prefix(df)
@@ -173,7 +171,7 @@ def statistics(df,elapsed_time="",settings={}) -> None:
         path = "."
 
     content = ""
-    with open(f"{path}/ftio_output.txt", 'w') as file:
+    with open(f"{path}/ftio_output.txt", "w") as file:
         for prefix in prefixes:
             s = ""
             s += periodic_apps(df, prefix)
@@ -189,8 +187,10 @@ def statistics(df,elapsed_time="",settings={}) -> None:
                 )
             )
             console.print("\n")
-            content += cleaned_text(f"{prefix.capitalize()}" + "\n----------------\n"+ s + "\n\n")
-        file.write(content+cleaned_text(elapsed_time))
+            content += cleaned_text(
+                f"{prefix.capitalize()}" + "\n----------------\n" + s + "\n\n"
+            )
+        file.write(content + cleaned_text(elapsed_time))
         if settings:
             for _, field in enumerate(settings):
                 file.write(f"\n{field}: {settings[field]}")
@@ -218,7 +218,7 @@ def compute_metrics(df: pd.DataFrame, prefix, suffix="conf", unit="%", title="")
     nanmedian = np.nan
     if not title:
         title = suffix.capitalize()
-    
+
     conf_col = f"{prefix}_{suffix}"
     if not df[conf_col].isna().all():
         min = np.min(df[conf_col])
@@ -227,7 +227,7 @@ def compute_metrics(df: pd.DataFrame, prefix, suffix="conf", unit="%", title="")
         median = np.median(df[conf_col])
         nanmean = np.nanmean(df[conf_col])
         nanmedian = np.nanmedian(df[conf_col])
-    
+
     scale = 100 if "conf" in suffix else 1
     # out = f"[green]{prefix.capitalize()} {title}:\n - range: [{min*scale:.3e},{max*scale:.3e}] {unit}\n - mean: {mean*scale:.3e} {unit}\n - nanmean: {nanmean*scale:.3e} {unit}\n - median: {median*scale:.3e} {unit}\n - nanmedian: {nanmedian*scale:.3e} {unit}\n[/]"
     out = f"[gray][green]{title}:[/]\n - range: [{min*scale:.3f},{max*scale:.3f}] {unit}\n - mean: {mean*scale:.3f} {unit}\n - nanmean: {nanmean*scale:.3f} {unit}\n - median: {median*scale:.3f} {unit}\n - nanmedian: {nanmedian*scale:.3f} {unit}\n\n[/]"
@@ -252,20 +252,21 @@ def reduce_to_max_conf(df: pd.DataFrame) -> pd.DataFrame:
             phi_col = f"{prefix}_phi"
             freq = np.nan
             conf = np.nan
-            amp  = np.nan
-            phi  = np.nan
+            amp = np.nan
+            phi = np.nan
             if isinstance(row[conf_col], list) and len(row[conf_col]) > 0:
                 dominant_index = np.argmax(row[conf_col])
                 freq = row[freq_col][dominant_index]
                 conf = row[conf_col][dominant_index]
-                amp  = row[amp_col][dominant_index]
-                phi  = row[phi_col][dominant_index]
+                amp = row[amp_col][dominant_index]
+                phi = row[phi_col][dominant_index]
             df.at[i, freq_col] = freq
             df.at[i, conf_col] = conf
-            df.at[i, amp_col]  = amp
-            df.at[i, phi_col]  = phi
+            df.at[i, amp_col] = amp
+            df.at[i, phi_col] = phi
 
     return df
+
 
 def relevant_prefix(df):
     prefixes = ["read", "write", "both"]
@@ -276,11 +277,13 @@ def relevant_prefix(df):
             res.append(mode)
     return res
 
-def cleaned_text(text:str) -> str:
+
+def cleaned_text(text: str) -> str:
     # Remove color tags and placeholders for rich console
-    text = re.sub(r'\[\w+\]', '', text)  # Remove [color] tags
-    text = re.sub(r'\[\/\]', '', text)  # Remove [/] tags
+    text = re.sub(r"\[\w+\]", "", text)  # Remove [color] tags
+    text = re.sub(r"\[\/\]", "", text)  # Remove [/] tags
     return text
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

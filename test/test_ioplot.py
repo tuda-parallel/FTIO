@@ -3,7 +3,9 @@ Functions for testing the ioplot functionality of the ftio package.
 """
 
 import os
+
 from ftio.util.ioplot import main
+
 
 def test_ioplot():
     """Test the ioplot functionality with no display option."""

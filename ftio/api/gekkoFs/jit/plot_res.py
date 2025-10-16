@@ -41,7 +41,7 @@ def format(fig: go.Figure, title: str = "") -> None:
         ),
     )
 
-    format_plot_and_ticks(fig, x_minor=False,font_size=20)
+    format_plot_and_ticks(fig, x_minor=False, font_size=20)
     # Display the plot
     fig.show()
 
@@ -80,11 +80,18 @@ def format_plot_and_ticks(
     if legend:
         fig.update_layout(
             legend=dict(
-                bgcolor="rgba(255,255,255,.99)",
-                bordercolor="Black",
-                borderwidth=1,
+                bgcolor="rgba(255,255,255,.99)", bordercolor="Black", borderwidth=1
             )
         )
+        if font:
+            fig.update_layout(
+                legend=dict(
+                    font=dict(
+                        family="Courier New, monospace", size=font_size - 1, color="black"
+                    )
+                )  # set your desired font size here
+            )
+
     if font:
         fig.update_layout(
             font=dict(family="Courier New, monospace", size=font_size, color="black")
@@ -109,7 +116,11 @@ def format_plot_and_ticks(
     if x_minor:
         x_settings["minor_ticks"] = "outside"
         x_settings["minor"] = dict(
-            ticklen=2, tickcolor="black", tickmode="auto", nticks=n_ticks, showgrid=True
+            ticklen=2,
+            tickcolor="black",
+            tickmode="auto",
+            nticks=n_ticks,
+            showgrid=True,
         )
 
     fig.update_xaxes(**x_settings)
@@ -128,12 +139,17 @@ def format_plot_and_ticks(
     if y_minor:
         y_settings["minor_ticks"] = "outside"
         y_settings["minor"] = dict(
-            ticklen=2, tickcolor="black", tickmode="auto", nticks=n_ticks, showgrid=True
+            ticklen=2,
+            tickcolor="black",
+            tickmode="auto",
+            nticks=n_ticks,
+            showgrid=True,
         )
 
     fig.update_yaxes(**y_settings)
 
     return fig
+
 
 def your_function() -> None:
     """
@@ -154,6 +170,7 @@ def your_function() -> None:
 def main() -> None:
     your_function()
     # add more
+
 
 if __name__ == "__main__":
     main()

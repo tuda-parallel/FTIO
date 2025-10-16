@@ -1,26 +1,34 @@
-"""Module contains function functions to discretize the data.
-"""
+"""Module contains function functions to discretize the data."""
 
 from __future__ import annotations
+
 from argparse import Namespace
-from rich.panel import Panel
+
 import numpy as np
-import pandas as pd
 from numba import jit
+from rich.panel import Panel
 
 from ftio.freq.helper import MyConsole
 
 
-def sample_data(b: np.ndarray, t: np.ndarray, freq:float=-1, verbose:bool = False) -> tuple[np.ndarray, float]:
+def sample_data(
+    b: np.ndarray,
+    t: np.ndarray,
+    args: Namespace = None,
+) -> tuple[np.ndarray, float]:
     """
     Samples the data at equal time steps  according to the specified frequency.
 
     Args:
         b (np.ndarray): Bandwidth values.
         t (np.ndarray): Time points corresponding to the bandwidth values.
-        freq (float, optional): Sampling frequency. Defaults to -1, which triggers automatic calculation of the optimal sampling frequency.
-        verbose (bool, optional): Flag to indicated if information about the sampling process, including the time window, frequency step, and abstraction error is
-        printed 
+        args (Namespace): Parsed arguments (see io_args.py) containing:
+            - freq (float, optional): Sampling frequency. Defaults to -1, which triggers
+                automatic calculation of the optimal sampling frequency.
+            - memory_limit (float, optional): memory limit in case freq is -1.
+            - verbose (bool, optional): Flag to indicate if information about the sampling
+                process, including the time window, frequency step, and abstraction error is
+                printed
 
     Returns:
         tuple: A tuple containing:
@@ -30,27 +38,47 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq:float=-1, verbose:bool = Fals
     Raises:
         RuntimeError: If no data is found in the sampled bandwidth.
     """
-    text = ""
-    text += f"Time window: {t[-1]-t[0]:.2f} s\n"
-    text += f"Frequency step: {1/(t[-1]-t[0]) if (t[-1]-t[0]) != 0 else 0:.3e} Hz\n"
+    if args is not None:
+        freq = args.freq
+        memory_limit = args.memory_limit * 1000**3  # args.memory_limit GB
+        verbose = args.verbose
+    else:
+        freq = -1
+        memory_limit = 2 * 1000**3  # 2 GB
+        verbose = False
 
-    # ? calculate recommended frequency:
+    duration = t[-1] - t[0] if t[-1] != t[0] else 0.0
+    text = (
+        f"Time window: {t[-1]-t[0]:.2f} s\n"
+        f"Frequency step: {1/ duration if duration > 0 else 0:.3e} Hz\n"
+    )
+
     if len(t) == 0:
         return np.empty(0), 0, " "
+
+    # Calculate recommended frequency:
     if freq == -1:
+        # Auto-detect frequency based on smallest time delta
         t_rec = find_lowest_time_change(t)
         freq = 2 / t_rec
         text += f"Recommended sampling frequency: {freq:.3e} Hz\n"
-    elif freq == -2:
-        N = 10000
-        freq = N/np.floor((t[-1] - t[0])) if t[-1] != t[0] else 1000
+        # Apply limit if freq is negative
+        N = int(np.floor((t[-1] - t[0]) * freq))
+        limit_N = int(memory_limit // np.dtype(np.float64).itemsize)
+        text += f"memory limit: {memory_limit/ 1000**3:.3e} GB ({limit_N} samples)\n"
+        if N > limit_N:
+            N = limit_N
+            freq = N / duration if duration > 0 else 10
+            text += f"[yellow]Adjusted sampling frequency due to memory limit: {freq:.3e} Hz[/])\n"
     else:
         text += f"Sampling frequency:  {freq:.3e} Hz\n"
-    N = int(np.floor((t[-1] - t[0]) * freq))
+        # Compute number of samples
+        N = int(np.floor((t[-1] - t[0]) * freq))
+
     text += f"Expected samples: {N}\n"
     # print("    '-> \033[1;Start time: %f s \033[1;0m"%t[0])
 
-    # ? sample the data with the recommended frequency
+    #  sample the data with the recommended frequency
     # t_sampled = np.zeros(N) #t[0]+np.arange(N)*1/freq
     b_sampled = np.zeros(N)
     n = len(t)
@@ -73,10 +101,12 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq:float=-1, verbose:bool = Fals
     v_0 = np.sum(b * (np.concatenate([t[1:], t[-1:]]) - t))
     # E = (abs(error))/(V0) if V0 > 0 else 0
     error = (abs(v_a - v_0)) / v_0 if v_0 > 0 else 0
-    text += f"Abstraction error: {error:.5f}\n"
+    text += f"Abstraction error: {error:.5e}\n"
 
     if len(b_sampled) == 0:
-        raise RuntimeError("No data in sampled bandwidth.\n Try increasing the sampling frequency")
+        raise RuntimeError(
+            "No data in sampled bandwidth.\n Try increasing the sampling frequency"
+        )
 
     console = MyConsole(verbose)
     console.print(
@@ -92,12 +122,14 @@ def sample_data(b: np.ndarray, t: np.ndarray, freq:float=-1, verbose:bool = Fals
     return b_sampled, freq
 
 
-def sample_data_same_size(b: np.ndarray, t:np.ndarray, freq=-1, n_bins=-1) -> tuple[np.ndarray,np.ndarray]:
+def sample_data_same_size(
+    b: np.ndarray, t: np.ndarray, freq=-1, n_bins=-1
+) -> tuple[np.ndarray, np.ndarray]:
     """
-    Discretize the data according to the specified frequency, ensuring the sampled data has the same 
+    Discretize the data according to the specified frequency, ensuring the sampled data has the same
     number of bins as specified.
 
-    This function samples the bandwidth data at the given frequency and returns the sampled 
+    This function samples the bandwidth data at the given frequency and returns the sampled
     data along with the corresponding time points, ensuring the number of bins is consistent with the provided `n_bins` value.
 
     Args:
@@ -124,7 +156,7 @@ def sample_data_same_size(b: np.ndarray, t:np.ndarray, freq=-1, n_bins=-1) -> tu
         else:
             for i in range(n_old, n):
                 if (t_step >= t[i]) and (t_step < t[i + 1]) or i == n - 1:
-                    n_old = i  # no need to itterate over entire array
+                    n_old = i  # no need to iterate over an entire array
                     b_sampled[counter] = b[i]
                     counter = counter + 1
                     break
@@ -134,9 +166,8 @@ def sample_data_same_size(b: np.ndarray, t:np.ndarray, freq=-1, n_bins=-1) -> tu
     return b_sampled, t
 
 
-
 @jit(nopython=True, cache=True)
-def find_lowest_time_change(t:np.ndarray)-> float:
+def find_lowest_time_change(t: np.ndarray) -> float:
     """finds the lowest time change
 
     Args:
@@ -154,85 +185,8 @@ def find_lowest_time_change(t:np.ndarray)-> float:
         ):
             t_rec = t[i + 1] - t[i]
 
-    if t_rec <= 0.001:
-        t_rec = 0.001
+    # no need, as we now limit per memory
+    # if t_rec <= 0.001:
+    #     t_rec = 0.001
 
     return t_rec
-
-
-def prepare_plot_sample(
-    bandwidth: np.ndarray,
-    time_b: np.ndarray,
-    freq: float,
-    n: int = 0,
-    ranks: int = 0
-) -> tuple[list[pd.DataFrame], list[pd.DataFrame]]:
-    """
-    Prepares data for plotting by creating two DataFrames.
-
-    Args:
-        bandwidth (np.ndarray): A numpy array of bandwidth values corresponding to the time.
-        time_b (np.ndarray): A numpy array of time values.
-        freq (float): The frequency value used to calculate the sampling period (T_s).
-        n (int, optional): The number of samples. Defaults to 0.
-        ranks (int, optional): The number of ranks. Defaults to 0.
-
-    Returns:
-        Tuple[list[pd.DataFrame], list[pd.DataFrame]]: A tuple containing two lists of DataFrames:
-            - The first list contains a DataFrame with start and end times, the sampling period (T_s), the number of samples (N), and the ranks.
-            - The second list contains a DataFrame with bandwidth, time, and ranks.
-    """
-    df0 = []
-    df1 = []
-
-    df0.append(
-        pd.DataFrame(
-            {
-                "t_start": time_b[0],
-                "t_end": time_b[-1],
-                "T_s": 1 / freq,
-                "N": n,
-                "ranks": ranks,
-            },
-            index=[0],
-        )
-    )
-    df1.append(
-        pd.DataFrame(
-            {"b": bandwidth, "t": time_b, "ranks": np.repeat(ranks, len(time_b))}
-        )
-    )
-
-    return df0, df1
-
-
-def sample_data_and_prepare_plots(args:Namespace, bandwidth:np.ndarray, time_b:np.ndarray, ranks:int)-> tuple[np.ndarray, float, list[list[pd.DataFrame]]]:
-    """
-    Samples the data and prepares plots if required.
-
-    Args:
-        args (Namespace): Arguments containing frequency and engine options.
-        bandwidth (np.ndarray): The bandwidth data.
-        time_b (np.ndarray): The time data.
-        ranks (int): The number of ranks.
-
-    Returns:
-        tuple: A tuple containing:
-            - The sampled bandwidth data (b_sampled),
-            - The frequency (freq),
-            - A list of DataFrames (df_sample) for plotting.
-    """
-    # sample the data
-    b_sampled, freq = sample_data(bandwidth, time_b, args.freq,args.verbose)
-
-    #prepare data for plotting
-    if any(x in args.engine for x in ["mat", "plot"]):
-        df_sample = prepare_plot_sample(bandwidth, time_b, freq, len(b_sampled), ranks)
-    else:
-        df_sample = [[],[]]
-
-
-    return b_sampled, freq, df_sample
-
-
-    

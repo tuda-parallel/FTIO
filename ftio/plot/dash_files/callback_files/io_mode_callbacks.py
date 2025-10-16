@@ -1,29 +1,40 @@
-import sys
 import importlib.util
+import sys
+
 import numpy as np
 import plotly.graph_objects as go
+
 import ftio.plot.dash_files.constants.id as id
 import ftio.plot.dash_files.constants.io_mode as io_mode
 import ftio.plot.dash_files.constants.legend_group as legend_group
 from ftio.plot.dash_files.data_source import DataSource, FileData
 
-
 DASH_AVAILABLE = importlib.util.find_spec("dash") is not None
 if not DASH_AVAILABLE:
-    sys.exit("Dash module not found. Please install it using 'make full' or 'pip install dash dash-extensions plotly_resampler'.")
+    sys.exit(
+        "Dash module not found. Please install it using 'make full' or 'pip install dash dash-extensions plotly_resampler'."
+    )
 else:
     import dash
     from dash import MATCH, Input, Output, State, dcc, html
     from dash_extensions.enrich import DashProxy, Serverside
-    from trace_updater import TraceUpdater
     from plotly_resampler import FigureResampler
-    from plotly_resampler.aggregation import MinMaxAggregator, MinMaxOverlapAggregator, NoGapHandler
+    from plotly_resampler.aggregation import (
+        MinMaxAggregator,
+        MinMaxOverlapAggregator,
+        NoGapHandler,
+    )
+
     # -------
     # TODO: Check if this problem is still not fixed or feature is now implemented
     # Solves a problem for a still open issue
     # Issue: line plot ends cutoff after last visible point #257
     # https://github.com/predict-idlab/plotly-resampler/issues/257
-    from plotly_resampler.aggregation.plotly_aggregator_parser import PlotlyAggregatorParser
+    from plotly_resampler.aggregation.plotly_aggregator_parser import (
+        PlotlyAggregatorParser,
+    )
+    from trace_updater import TraceUpdater
+
     class patched_parser(PlotlyAggregatorParser):
         @staticmethod
         def get_start_end_indices(hf_trace_data, axis_type, start, end):
@@ -34,7 +45,6 @@ else:
             length_x = len(hf_trace_data["x"])
             end_idx = max(min(length_x, end_idx + 1), min(length_x, end_idx + 2))
             return start_idx, end_idx
-
 
     from plotly_resampler.figure_resampler import figure_resampler_interface
 
@@ -54,14 +64,26 @@ def _find_x_min_and_max(file_data: FileData, data: DataSource) -> tuple[float, f
         x_min = min(x_min, min(file_data.actual_time_overlap, default=0.0))
         x_max = max(x_max, max(file_data.actual_time_overlap, default=0.0))
         if data.individual_is_selected:
-            x_min = min(x_min, min(file_data.actual_time_overlap_individual, default=0.0))
-            x_max = max(x_max, max(file_data.actual_time_overlap_individual, default=0.0))
+            x_min = min(
+                x_min,
+                min(file_data.actual_time_overlap_individual, default=0.0),
+            )
+            x_max = max(
+                x_max,
+                max(file_data.actual_time_overlap_individual, default=0.0),
+            )
     if file_data.data_required_is_not_empty:
         x_min = min(x_min, min(file_data.required_time_overlap, default=0.0))
         x_max = max(x_max, max(file_data.required_time_overlap, default=0.0))
         if data.individual_is_selected:
-            x_min = min(x_min, min(file_data.required_time_overlap_individual, default=0.0))
-            x_max = max(x_max, max(file_data.required_time_overlap_individual, default=0.0))
+            x_min = min(
+                x_min,
+                min(file_data.required_time_overlap_individual, default=0.0),
+            )
+            x_max = max(
+                x_max,
+                max(file_data.required_time_overlap_individual, default=0.0),
+            )
     return (x_min, x_max)
 
 
@@ -179,7 +201,9 @@ def _update_layout(fig: FigureResampler, file_data: FileData, data: DataSource) 
     if data.merge_plots_is_selected:
         title = "{} collected".format(io_mode.MODE_STRING_BY_MODE[data.io_mode])
     else:
-        title = "{} Ranks (Run {}: {})".format(file_data.rank, file_data.run, file_data.name)
+        title = "{} Ranks (Run {}: {})".format(
+            file_data.rank, file_data.run, file_data.name
+        )
 
     fig.update_layout(
         margin=dict(l=10, r=10, t=50, b=70),
@@ -262,7 +286,9 @@ def _create_one_common_figure(filenames: list[str], data: DataSource) -> dict:
 
 
 def _append_merged_plot(
-    div_children: list[html.Div], figure_by_id_figure: dict[str, FigureResampler], data: DataSource
+    div_children: list[html.Div],
+    figure_by_id_figure: dict[str, FigureResampler],
+    data: DataSource,
 ) -> html.Div:
     id_figure = _create_id_figure(data)
     new_child = html.Div(
@@ -270,7 +296,8 @@ def _append_merged_plot(
             dcc.Graph(
                 id={"type": id.TYPE_DYNAMIC_GRAPH, "index": id_figure},
                 figure=figure_by_id_figure[id_figure],
-                mathjax=True, responsive=True,
+                mathjax=True,
+                responsive=True,
             ),
             TraceUpdater(
                 id={
@@ -301,7 +328,8 @@ def _append_each_figure_separately(
                     dcc.Graph(
                         id={"type": id.TYPE_DYNAMIC_GRAPH, "index": id_figure},
                         figure=figure_by_id_figure[id_figure],
-                        mathjax=True, responsive=True,
+                        mathjax=True,
+                        responsive=True,
                     ),
                     TraceUpdater(
                         id={
@@ -375,7 +403,10 @@ def get_io_mode_specific_callbacks(app: DashProxy, data: DataSource) -> None:
 
     @app.callback(
         Output(
-            {"type": id.TYPE_DYNAMIC_UPDATER_BY_IO_MODE[data.io_mode], "index": MATCH},
+            {
+                "type": id.TYPE_DYNAMIC_UPDATER_BY_IO_MODE[data.io_mode],
+                "index": MATCH,
+            },
             "updateData",
         ),
         Input({"type": id.TYPE_DYNAMIC_GRAPH, "index": MATCH}, "relayoutData"),

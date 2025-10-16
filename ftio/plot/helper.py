@@ -28,7 +28,7 @@ def format_plot_and_ticks(
     x_ticks: bool = True,
     y_ticks: bool = True,
     n_ticks: int = 5,
-    font_size: int = 17
+    font_size: int = 17,
 ) -> go.Figure:
     """Formats the plot with specified settings for legend, font, and axis ticks.
 
@@ -77,7 +77,11 @@ def format_plot_and_ticks(
     if x_minor:
         x_settings["minor_ticks"] = "outside"
         x_settings["minor"] = dict(
-            ticklen=2, tickcolor="black", tickmode="auto", nticks=n_ticks, showgrid=True
+            ticklen=2,
+            tickcolor="black",
+            tickmode="auto",
+            nticks=n_ticks,
+            showgrid=True,
         )
 
     fig.update_xaxes(**x_settings)
@@ -96,7 +100,11 @@ def format_plot_and_ticks(
     if y_minor:
         y_settings["minor_ticks"] = "outside"
         y_settings["minor"] = dict(
-            ticklen=2, tickcolor="black", tickmode="auto", nticks=n_ticks, showgrid=True
+            ticklen=2,
+            tickcolor="black",
+            tickmode="auto",
+            nticks=n_ticks,
+            showgrid=True,
         )
 
     fig.update_yaxes(**y_settings)
@@ -104,7 +112,7 @@ def format_plot_and_ticks(
     return fig
 
 
-def format_plot(fig: go.Figure, font_size: int = 24) -> go.Figure:
+def format_plot(fig: go.Figure, font_size: int = 22) -> go.Figure:
     """Applies uniform formatting to the plot.
 
     Args:
@@ -117,7 +125,7 @@ def format_plot(fig: go.Figure, font_size: int = 24) -> go.Figure:
     fig.update_layout(
         plot_bgcolor="white",
         legend=dict(
-            bgcolor="rgba(255,255,255,.99)",
+            bgcolor="rgba(255,255,255,.8 )",
             bordercolor="Black",
             borderwidth=1,
         ),
@@ -181,7 +189,7 @@ def save_fig(fig: go.Figure, f: list[go.Figure], path: str, name: str) -> None:
 
 
 def add_fig_row(
-    nRun: int, onefig: bool = False, specs = None, subplot_titles = None
+    nRun: int, onefig: bool = False, specs=None, subplot_titles=None
 ) -> go.Figure:
     """Creates a figure with rows of subplots.
 
@@ -206,8 +214,8 @@ def add_fig_row(
 def add_fig_col(
     nRun: int,
     onefig: bool = False,
-    specs = None,
-    subplot_titles = None,
+    specs=None,
+    subplot_titles=None,
     horizontal_spacing: float = 0.01,
 ) -> go.Figure:
     """Creates a figure with columns of subplots.

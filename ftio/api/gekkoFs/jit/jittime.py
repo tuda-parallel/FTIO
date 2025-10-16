@@ -15,8 +15,10 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 import json
 import os
 from datetime import datetime
+
 from rich.console import Console
 from rich.table import Table
+
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 
 

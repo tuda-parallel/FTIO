@@ -1,16 +1,17 @@
-""" Function to plot the bandwidth from the JIT
-"""
+"""Function to plot the bandwidth from the JIT"""
+
+import argparse
 import json
 import os
-import argparse
+
+import numpy as np
 import plotly.graph_objs as go
 import plotly.io as pio
-import numpy as np
 from rich.console import Console
 from rich.panel import Panel
 
-from ftio.plot.units import set_unit
 from ftio.plot.helper import format_plot_and_ticks
+from ftio.plot.units import set_unit
 
 
 def load_json_and_plot(filenames):
@@ -46,9 +47,8 @@ def load_json_and_plot(filenames):
                 if "bandwidth" in sync_data:
                     print(f"found type:{sync_type}")
                     b = np.array(sync_data["bandwidth"].get("b_overlap_avr", []))
-                    t = np.array(sync_data["bandwidth"].get("t_overlap", []))  
+                    t = np.array(sync_data["bandwidth"].get("t_overlap", []))
                     break
-                    
 
         if filenames.index(filename) == 0:
             unit, order = set_unit(b)
@@ -78,7 +78,7 @@ def load_json_and_plot(filenames):
         yaxis_title=f"Bandwidth ({unit})",
         showlegend=True,
     )
-    fig = format_plot_and_ticks(fig, font_size=27,n_ticks=10)
+    fig = format_plot_and_ticks(fig, font_size=27, n_ticks=10)
 
     # Show the plot
     pio.show(fig)
@@ -89,7 +89,12 @@ def non_zero_mean(arr: np.ndarray):
 
 
 def plot_bar_with_rich(
-    x, y, max_height=10, terminal_width=None, width_percentage=0.95, func=non_zero_mean
+    x,
+    y,
+    max_height=10,
+    terminal_width=None,
+    width_percentage=0.95,
+    func=non_zero_mean,
 ):
     """
     Plots a bar chart using Rich library with dynamic width and properly scaled axis labels.
@@ -180,7 +185,10 @@ def plot_bar_with_rich(
 
     # Create a panel with the plot
     panel = Panel(
-        plot_str, title="Bandwidth Plot", border_style="bold cyan", width=terminal_width
+        plot_str,
+        title="Bandwidth Plot",
+        border_style="bold cyan",
+        width=terminal_width,
     )
 
     # Display the plot
