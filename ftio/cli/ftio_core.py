@@ -198,14 +198,18 @@ def freq_analysis(
         )
 
     elif "astft" in args.transformation:
-        prediction, df_out, share  = ftio_astft(
+        prediction, analysis_figures, share  = ftio_astft(
             args, bandwidth, time_b, total_bytes, ranks, text
         )
+        import sys
+        sys.exit()
 
     elif "amd" in args.transformation:
-        prediction, df_out, share  = ftio_amd(
+        prediction, analysis_figures, share  = ftio_amd(
             args, bandwidth, time_b, total_bytes, ranks, text
         )
+        import sys
+        sys.exit()
 
     else:
         raise Exception("Unsupported decomposition specified")
