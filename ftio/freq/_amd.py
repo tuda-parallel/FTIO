@@ -5,7 +5,7 @@ from vmdpy import VMD
 from pysdkit import EFD
 
 from ftio.freq._astft import check_3_periods, simple_astft
-from ftio.freq.anomaly_detection import z_score
+from ftio.analysis.anomaly_detection import z_score_minimal as z_score
 from ftio.freq.denoise import tfpf_wvd
 from ftio.freq.frq_verification import pcc, scc
 from scipy.fft import fft, ifft

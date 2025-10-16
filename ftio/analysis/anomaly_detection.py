@@ -170,6 +170,60 @@ def z_score(
 
     return dominant_index, conf, text
 
+# ?#################################
+# ? Z-score
+# ?#################################
+def z_score_minimal(
+    amp: np.ndarray, freq_arr: np.ndarray, args
+) -> tuple[list[float], np.ndarray, str]:
+    if args.psd:
+        amp = amp * amp / len(amp)
+
+    indices = np.arange(1, int(len(amp) / 2) + 1)
+    amp_tmp = np.array(2 * amp[indices])
+    # norm the data
+    amp_tmp = amp_tmp / amp_tmp.sum() if amp_tmp.sum() > 0 else amp_tmp
+
+    tol = args.tol
+    dominant_index = []
+    mean = np.mean(amp_tmp)
+    std = np.std(amp_tmp)
+    z_k = abs(amp_tmp - mean) / std if std > 0 else np.zeros(len(amp_tmp))
+    conf = np.zeros(len(z_k))
+    # find outliers
+    index = (
+        np.where((z_k / np.max(z_k) > tol) & (z_k > 3))
+        if len(z_k) > 0 and np.max(z_k) > 0
+        else (np.array([], dtype=np.int64),)
+    )
+    if len(index[0]) > 3:
+        counter = 0
+        for i in index[0]:
+            counter += 1
+
+    index, removed_index, msg = remove_harmonics(freq_arr, amp_tmp, indices[index[0]])
+
+    if len(index) > 0:
+        removed_index = [i - 1 for i in removed_index]  # tmp starts at 1
+        # conf[index] = (z_k[index]/max_z  + z_k[index]/np.sum(z_k[index]) + 1/np.sum(z_k > 3))/3
+        # calculate the confidence:
+        # 1) check z_k/max_zk > tol
+        tmp = z_k / np.max(z_k) > tol
+        tmp[removed_index] = False
+        conf[tmp] += z_k[tmp] / np.sum(z_k[tmp])
+
+        # 2) check z_k > 0
+        tmp = z_k > 3
+        tmp[removed_index] = False
+        conf[tmp] += z_k[tmp] / np.sum(z_k[tmp])
+        conf = conf / 2
+        conf = np.array(conf)
+
+        # get dominant index
+        dominant_index, msg = dominant(index, freq_arr, conf)
+
+    return dominant_index, conf
+
 
 # ?#################################
 # ? DB-Scan

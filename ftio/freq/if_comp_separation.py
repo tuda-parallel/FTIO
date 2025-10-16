@@ -12,7 +12,8 @@ component_linking:
 import cv2
 import numpy as np
 from scipy.signal import find_peaks, peak_prominences
-from ftio.freq.anomaly_detection import z_score, remove_harmonics
+from ftio.analysis.anomaly_detection import remove_harmonics
+from ftio.analysis.anomaly_detection import z_score_minimal as z_score
 
 """
 Rankine, L., Mesbah, M., & Boashash, B. (2007).

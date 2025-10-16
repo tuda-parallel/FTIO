@@ -11,7 +11,7 @@ from ftio.freq.if_comp_separation import (
             binary_image_zscore,
             binary_image_zscore_extended,
             component_linking)
-from ftio.freq.anomaly_detection import z_score
+from ftio.analysis.anomaly_detection import z_score_minimal as z_score
 from ftio.freq.concentration_measures import cm3, cm4, cm5
 from ftio.freq.denoise import tfpf_wvd
 from ftio.plot.plot_tf import plot_tf, plot_tf_contour
