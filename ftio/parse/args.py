@@ -313,6 +313,13 @@ Full documentation:
             default=4,
             help="Order of Butterworth filter.",
         )
+        # adaptive tsa arguments
+        parser.add_argument(
+            "--tfpf",
+            type=int,
+            default=0,
+            help="Number of time-frequency peak filtering iterations.",
+        )
 
     #! IOPLOT Settings
     if "plot" in name.lower():

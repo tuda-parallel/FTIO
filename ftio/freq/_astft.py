@@ -17,16 +17,15 @@ from ftio.freq.denoise import tfpf_wvd
 from ftio.plot.plot_tf import plot_tf, plot_tf_contour
 
 def astft(b_sampled, freq, bandwidth, time_b, args):
-
-    denoise = False
-
     t_start = time_b[0]
     t_end = time_b[-1]
     N = len(b_sampled)
     t = np.linspace(t_start, t_end, N, dtype=float)
 
-    if denoise:
-        signal_hat = tfpf_wvd(b_sampled, freq, t)
+    if args.tfpf:
+        signal_hat = b_sampled
+        for i in range(0, args.tfpf):
+            signal_hat = tfpf_wvd(signal_hat, freq, t)
         astft_3step(b_sampled, freq, t, args, filtered=signal_hat)
     else:
         astft_3step(b_sampled, freq, t, args)

@@ -11,9 +11,6 @@ from ftio.freq.frq_verification import pcc, scc
 from scipy.fft import fft, ifft
 from scipy.signal import hilbert
 
-
-plot = True
-
 def amd(b_sampled, freq, bandwidth, time_b, args, method="vmd"):
     """
     Identify periodic time windows with adaptive mode decomposition.
@@ -24,12 +21,12 @@ def amd(b_sampled, freq, bandwidth, time_b, args, method="vmd"):
     t = np.linspace(t_start, t_end, N)
 
     if "efd" in args.transformation:
-        efd(b_sampled, t, freq, args, denoise=False)
+        efd(b_sampled, t, freq, args)
 
     if "vmd" in args.transformation:
-        vmd(b_sampled, t, freq, args, denoise=True)
+        vmd(b_sampled, t, freq, args)
 
-def vmd(signal, t, fs, args, denoise=False):
+def vmd(signal, t, fs, args):
     """
     Variational Mode Decomposition (VMD) based periodicity detection.
 
@@ -37,7 +34,6 @@ def vmd(signal, t, fs, args, denoise=False):
     - signal: np.ndarray, input signal in the time domain.
     - t: np.ndarray, time samples.
     - fs: float, sampling frequency.
-    - denoise: bool, whether to apply TFPF.
     """
     # fixed parameters
     tau = 0.           # noise-tolerance (no strict fidelity enforcement)
@@ -49,9 +45,10 @@ def vmd(signal, t, fs, args, denoise=False):
     alpha = 5000       # bandwidth constraint
     K = 8              # # modes
 
-    if denoise:
-        signal_hat = tfpf_wvd(signal, fs, t)
-        signal_hat = tfpf_wvd(signal_hat, fs, t)
+    if args.tfpf:
+        signal_hat = signal
+        for i in range(0, args.tfpf):
+            signal_hat = tfpf_wvd(signal_hat, fs, t)
         u, u_hat, omega = VMD(signal_hat, alpha, tau, K, DC, init, tol)
 
         plot_imfs(signal, t, u, K, signal_hat)
@@ -90,7 +87,7 @@ def vmd(signal, t, fs, args, denoise=False):
 Component = namedtuple("Component", ["start", "end", "amp", "freq", "phase"])
 per_comp = []
 
-def efd(signal, t, fs, args, denoise=False):
+def efd(signal, t, fs, args):
     """
     Empirical Fourier decomposition (EFD) based periodicity detection.
 
@@ -98,16 +95,17 @@ def efd(signal, t, fs, args, denoise=False):
     - signal: np.ndarray, input signal in the time domain.
     - t: np.ndarray, time samples.
     - fs: float, sampling frequency.
-    - denoise: bool, whether to apply TFPF.
     """
 
     numIMFs = 8
     efd = EFD(max_imfs=numIMFs)
 
     signal_hat = None
-    if denoise:
-        signal_hat = tfpf_wvd(signal, fs, t)
-        signal_hat = tfpf_wvd(signal_hat, fs, t)
+    if args.tfpf:
+        signal_hat = signal
+        for i in range(0, args.tfpf):
+            signal_hat = tfpf_wvd(signal_hat, fs, t)
+        print("TFPF")
 
         imfs, cerf = efd.fit_transform(signal_hat, return_all=True)
         plot_imfs(signal, t, imfs, numIMFs, signal_hat)
@@ -153,7 +151,7 @@ def efd(signal, t, fs, args, denoise=False):
                 end = end+est_period
             end = end.astype(int)
 
-            if denoise:
+            if args.tfpf:
                 yf = fft(signal_hat[start:end])
             else:
                 yf = fft(signal[start:end])
