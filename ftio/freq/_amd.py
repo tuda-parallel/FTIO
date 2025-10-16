@@ -23,13 +23,11 @@ def amd(b_sampled, freq, bandwidth, time_b, args, method="vmd"):
     N = len(b_sampled)
     t = np.linspace(t_start, t_end, N)
 
-    method = "efd"
-
-    if (method == "vmd"):
-        vmd(b_sampled, t, freq, args, denoise=True)
-
-    if (method == "efd"):
+    if "efd" in args.transformation:
         efd(b_sampled, t, freq, args, denoise=False)
+
+    if "vmd" in args.transformation:
+        vmd(b_sampled, t, freq, args, denoise=True)
 
 def vmd(signal, t, fs, args, denoise=False):
     """

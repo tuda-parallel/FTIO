@@ -204,7 +204,7 @@ def freq_analysis(
         import sys
         sys.exit()
 
-    elif "amd" in args.transformation:
+    elif "efd" in args.transformation or "vmd" in args.transformation:
         prediction, analysis_figures, share  = ftio_amd(
             args, bandwidth, time_b, total_bytes, ranks, text
         )
