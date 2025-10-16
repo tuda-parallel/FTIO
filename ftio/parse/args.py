@@ -320,6 +320,12 @@ Full documentation:
             default=0,
             help="Number of time-frequency peak filtering iterations.",
         )
+        parser.add_argument(
+            "--ptfr_window",
+            type=int,
+            default=0,
+            help="Window length of STFT in PTFR in ASTFT-based analysis.",
+        )
 
     #! IOPLOT Settings
     if "plot" in name.lower():
