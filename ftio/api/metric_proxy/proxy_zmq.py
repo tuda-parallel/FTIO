@@ -1,24 +1,32 @@
-import json
+import numpy as np
 import zmq
+import msgpack
 from rich.console import Console
 
-from ftio.api.metric_proxy.helper import NpArrayEncode, data_to_json
-from ftio.api.metric_proxy.parse_proxy import filter_metrics, load_proxy_trace_stdin
+from ftio.api.metric_proxy.parse_proxy import filter_metrics
 from ftio.freq.helper import MyConsole
-from ftio.parse.args import parse_args
 from ftio.api.metric_proxy.parallel_proxy import execute_parallel, execute
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
 
+def sanitize(obj):
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {k: sanitize(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize(v) for v in obj]
+    return obj
 
-def handle_request(msg: str) -> str:
+
+def handle_request(msg: bytes) -> bytes:
     """Handle one FTIO request via ZMQ."""
-    if msg == "ping":
-        return "pong"
+    if msg == b"ping":
+        return b"pong"
     
     try:
-        req = json.loads(msg)
+        req = msgpack.unpackb(msg, raw=False)
         argv = req.get("argv", [])
         raw_metrics = req.get("metrics", [])
 
@@ -27,25 +35,26 @@ def handle_request(msg: str) -> str:
         print(f"Arguments: {argv}")
         argv.extend(["-e", "no"])
 
-        
         disable_parallel = req.get("disable_parallel", False)
         ranks = 32
 
-    except (KeyError, json.JSONDecodeError) as e:
-        return json.dumps({"error": f"Invalid request: {e}"})
+    except Exception as e:
+        return msgpack.packb({"error": f"Invalid request: {e}"}, use_bin_type=True)
 
     try:
         if disable_parallel:
-            data = execute(metrics, argv, ranks)
+            data = execute(metrics, argv, ranks, show=False)
         else:
             data = execute_parallel(metrics, argv, ranks)
             
         native_data = list(data) if not isinstance(data, list) else data
+        native_data = sanitize(native_data)
 
-        return json.dumps(native_data, cls=NpArrayEncode)
+        return msgpack.packb(native_data, use_bin_type=True)
 
     except Exception as e:
-        return json.dumps({"error": str(e)})
+        print(f"Error during processing: {e}")
+        return msgpack.packb({"error": str(e)}, use_bin_type=True)
 
 
 def main(address: str = "tcp://*:5555"):
@@ -58,10 +67,10 @@ def main(address: str = "tcp://*:5555"):
     console.print(f"[green]FTIO ZMQ Server listening on {address}[/]")
 
     while True:
-        msg = socket.recv_string()
+        msg = socket.recv()
         console.print(f"[cyan]Received request ({len(msg)} bytes)[/]")
         reply = handle_request(msg)
-        socket.send_string(reply)
+        socket.send(reply)
 
 
 if __name__ == "__main__":
