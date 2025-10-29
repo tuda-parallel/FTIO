@@ -918,14 +918,27 @@ def allocate(settings: JitSettings) -> None:
                     jit_print(f"[bold red]Error: {e}[/]")
                     nodes_arr = []
 
+            print(f"nodes_arr: {nodes_arr}")
             if nodes_arr:
-                try:
-                    nodes_arr = nodes_arr[: int(settings.nodes)]
-                except Exception as e:
-                    print(e)
+                # Remove specific nodes if present
+                nodes_to_remove = []
+                # nodes_to_remove = ["cpu0088", "cpu0039"]
+                if len(nodes_to_remove) > 0:
+                    nodes_arr = [
+                        node for node in nodes_arr if node not in nodes_to_remove
+                    ]
                     jit_print(
-                        f"[bold green]JIT [red]Unable to decrease number of nodes. Using {settings.nodes}[/]"
+                        f"[bold yellow]Removed nodes {', '.join(nodes_to_remove)} from allocation: {nodes_arr}[/]"
                     )
+                    print(f"nodes_arr: {nodes_arr}")
+
+            try:
+                nodes_arr = nodes_arr[: int(settings.nodes)]
+            except Exception as e:
+                print(e)
+                jit_print(
+                    f"[bold green]JIT [red]Unable to decrease number of nodes. Using {settings.nodes}[/]"
+                )
 
             # Write to mpi_hostfile
             with open(f"{settings.mpi_hostfile}", "w") as file:

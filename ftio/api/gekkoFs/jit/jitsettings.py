@@ -56,7 +56,7 @@ class JitSettings:
         self.dir = ""
         self.cluster = False
         self.ignore_mtime = False
-        self.parallel_move_threads = 10  # Can be slower if many files are moved
+        self.parallel_move_threads = 32  # Can be slower if many files are moved
         self.lock_generator = False
         self.lock_consumer = False
         self.adaptive = "cancel"
@@ -419,18 +419,13 @@ class JitSettings:
             # workload = " workload=cosmoflow_a100 "
             # workload = " workload=bert "
             # workload = " workload=bert_small "
-            workload = " workload=bert_v100_pytorch "
+            # workload = " workload=bert_v100_pytorch " #paper
+            workload = " workload=bert_v100_pytorch_2 "
+            # workload = " workload=bert_v100_pytorch_allranks.yaml "
             # workload = " workload=unet3d_my_a100 "
             # workload = " workload=resnet50_my_a100 "
             # workload = " workload=llama_my_7b_zero3 "
             # workload = " workload=resnet50_my_a100_pytorch "
-
-            self.app_flags = (
-                f"{workload} "
-                f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True "
-                f"++workload.dataset.data_folder={self.run_dir}/data ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints "
-                f"++workload.output.output_folder={self.run_dir}/hydra_log "
-            )
         #  ├─ S3D-IO
         elif "s3d" in self.app:
             self.app_call = "/lustre/project/nhr-admire/shared/S3D-IO/s3d_io.x"
@@ -456,6 +451,12 @@ class JitSettings:
         # ├─ dlio
         if "dlio" in self.app:
             if self.exclude_daemon:
+                self.app_flags = (
+                    f"{workload} "
+                    f"++workload.workflow.generate_data=False ++workload.workflow.train=True ++workload.workflow.checkpoint=True "
+                    f"++workload.dataset.data_folder={self.run_dir}/data ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints "
+                    f"++workload.output.output_folder={self.run_dir}/hydra_log "
+                )
                 # self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                 self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                 self.post_app_call = ""
@@ -666,7 +667,7 @@ class JitSettings:
                 else:
                     self.app_flags = (
                         f"{workload} "
-                        f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True "  # ++workload.workflow.evaluation=True "
+                        f"++workload.workflow.generate_data=False ++workload.workflow.train=True ++workload.workflow.checkpoint=True "  # ++workload.workflow.evaluation=True "
                         f"++workload.dataset.data_folder={self.gkfs_mntdir}/data/ ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints/ "
                         f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log/ "
                     )
