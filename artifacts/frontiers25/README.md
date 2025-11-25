@@ -36,7 +36,7 @@ For all the cases below, `ftio` first needs to be installed (see [Installation](
 git checkout v0.0.7 
 ```
 
-NEEDS UPDATE
+
 ### Extracting the Data Set:
 download the zip file from [here](https://doi.org/10.5281/zenodo.10670270) or using wget in a bash terminal:
 ```sh
@@ -473,7 +473,7 @@ While the job is running, the results can be examined online in the root proxy. 
 job completes, the results (traces and profiles) can be found in the directory where the root proxy was started.
 <p align="right"><a href="#artifacts-reproducibility">⬆</a></p>
 
-NEEDS UPDATE
+
 ## Citation
 The paper citation is available [here](/README.md#citation). You can cite the [data set](https://doi.org/10.5281/zenodo.10670270) as:
 ```
