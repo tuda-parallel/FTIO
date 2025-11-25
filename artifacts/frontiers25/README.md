@@ -477,15 +477,18 @@ NEEDS UPDATE
 ## Citation
 The paper citation is available [here](/README.md#citation). You can cite the [data set](https://doi.org/10.5281/zenodo.10670270) as:
 ```
- @dataset{tarraf_2024_10670270,
+@dataset{tarraf_2025_17713783,
   author       = {Tarraf, Ahmad and
                   Wolf, Felix},
-  title        = {Capturing Periodic I/O Using Frequency Techniques},
-  month        = Feb,
-  year         = 2024,
+  title        = {Improving I/O Phase Predictions in FTIO Using
+                   Hybrid Wavelet-Fourier Analysis [Data Set]
+                  },
+  month        = nov,
+  year         = 2025,
   publisher    = {Zenodo},
-  doi          = {10.5281/zenodo.10670270},
-  url          = {https://doi.org/10.5281/zenodo.10670270}
+  doi          = {10.5281/zenodo.17713783},
+  url          = {https://doi.org/10.5281/zenodo.17713783},
 }
+
 ```
 
