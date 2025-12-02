@@ -10,6 +10,8 @@ from ftio.api.metric_proxy.parallel_proxy import execute_parallel, execute
 CONSOLE = MyConsole()
 CONSOLE.set(True)
 
+CURRENT_ADDRESS = None
+
 def sanitize(obj):
     if isinstance(obj, np.ndarray):
         return obj.tolist()
@@ -22,8 +24,15 @@ def sanitize(obj):
 
 def handle_request(msg: bytes) -> bytes:
     """Handle one FTIO request via ZMQ."""
+    global CURRENT_ADDRESS
+
     if msg == b"ping":
         return b"pong"
+    
+    if msg.startswith(b"New Address: "):
+        new_address = msg[len(b"New Address: "):].decode()
+        CURRENT_ADDRESS = new_address
+        return b"Address updated"
     
     try:
         req = msgpack.unpackb(msg, raw=False)
@@ -57,20 +66,31 @@ def handle_request(msg: bytes) -> bytes:
         return msgpack.packb({"error": str(e)}, use_bin_type=True)
 
 
-def main(address: str = "tcp://*:5555"):
+def main(address: str = "tcp://*:0"):
     """FTIO ZMQ Server entrypoint for Metric Proxy."""
+    global CURRENT_ADDRESS
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.bind(address)
+    CURRENT_ADDRESS = address
+
+    endpoint = socket.getsockopt(zmq.LAST_ENDPOINT).decode()
+    print(endpoint, flush=True)
 
     console = Console()
-    console.print(f"[green]FTIO ZMQ Server listening on {address}[/]")
+    console.print(f"[green]FTIO ZMQ Server listening on {endpoint}[/]")
 
     while True:
         msg = socket.recv()
         console.print(f"[cyan]Received request ({len(msg)} bytes)[/]")
         reply = handle_request(msg)
         socket.send(reply)
+
+        if reply == b"Address updated":
+            console.print(f"[yellow]Updated address to {CURRENT_ADDRESS}[/]")
+            socket.close()
+            socket = context.socket(zmq.REP)
+            socket.bind(CURRENT_ADDRESS)
 
 
 if __name__ == "__main__":
