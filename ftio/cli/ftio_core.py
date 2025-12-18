@@ -37,6 +37,12 @@ from ftio.parse.extract import get_time_behavior_and_args
 from ftio.plot.freq_plot import convert_and_plot
 from ftio.prediction.unify_predictions import merge_predictions
 from ftio.processing.print_output import display_prediction
+from ftio.freq.time_window import data_in_time_window
+from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
+from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
+from ftio.freq._dft_workflow import ftio_dft
+from ftio.freq._astft_workflow import ftio_astft
+from ftio.freq._amd_workflow import ftio_amd
 
 
 def main(
@@ -190,6 +196,20 @@ def freq_analysis(
         prediction, analysis_figures, share = ftio_wavelet_cont(
             args, bandwidth, time_b, ranks
         )
+
+    elif "astft" in args.transformation:
+        prediction, analysis_figures, share  = ftio_astft(
+            args, bandwidth, time_b, total_bytes, ranks, text
+        )
+        import sys
+        sys.exit()
+
+    elif "efd" in args.transformation or "vmd" in args.transformation:
+        prediction, analysis_figures, share  = ftio_amd(
+            args, bandwidth, time_b, total_bytes, ranks, text
+        )
+        import sys
+        sys.exit()
 
     else:
         raise Exception("Unsupported decomposition specified")
