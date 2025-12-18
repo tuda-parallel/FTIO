@@ -17,13 +17,13 @@ def heatmap(data):
 
     if data:
         # nbins = round(data[0]['freq']*(data[0]['t_end'] - data[0]['t_start']))
-        nbins = round((data[0]["t_end"] - data[0]["t_start"]))
+        nbins = round((data[0].t_end - data[0].t_start))
     for d in data:
-        metric = d["metric"]
-        if len(d["dominant_freq"]) > 0 and len(d["conf"]) > 0:
-            max_conf_index = np.argmax(d["conf"])
-            dominant_freq = d["dominant_freq"][max_conf_index]
-            conf = d["conf"][max_conf_index] * 100
+        metric = d.metric
+        if len(d.dominant_freq) > 0 and len(d.conf) > 0:
+            max_conf_index = np.argmax(d.conf)
+            dominant_freq = d.dominant_freq[max_conf_index]
+            conf = d.conf[max_conf_index] * 100
         else:
             continue
             dominant_freq = 0
@@ -161,12 +161,12 @@ def heatmap_2(data):
     confs = []
     counter = 0
 
-    for d in data:
-        metric = d["metric"]
-        if len(d["dominant_freq"]) > 0 and len(d["conf"]) > 0:
-            max_conf_index = np.argmax(d["conf"])
-            dominant_freq = d["dominant_freq"][max_conf_index]
-            conf = d["conf"][max_conf_index]
+    for prediction in data:
+        metric = prediction.metric
+        if len(prediction.dominant_freq) > 0 and len(prediction.conf) > 0:
+            max_conf_index = np.argmax(prediction.conf)
+            dominant_freq = prediction.dominant_freq[max_conf_index]
+            conf = prediction.conf[max_conf_index]
         else:
             continue
             dominant_freq = 0
@@ -274,18 +274,18 @@ def density_heatmap(data) -> None:
 
     # Calculate number of bins based on data range
     if data:
-        t_start = data[0].get("t_start", 0)
-        t_end = data[0].get("t_end", 100)  # Use a default end value if not provided
+        t_start = data[0].t_start
+        t_end = data[0].t_end
         nbins = round((t_end - t_start) / 10)
     else:
         nbins = 30  # Default value if no data is provided
 
-    for d in data:
-        if len(d["dominant_freq"]) > 0 and len(d["conf"]) > 0:
-            max_conf_index = np.argmax(d["conf"])
-            dominant_freq = d["dominant_freq"][max_conf_index]
-            conf = d["conf"][max_conf_index] * 100
-            data_points.append((d["metric"], dominant_freq, conf))
+    for prediction in data:
+        if len(prediction.dominant_freq) > 0 and len(prediction.conf) > 0:
+            max_conf_index = np.argmax(prediction.conf)
+            dominant_freq = prediction.dominant_freq[max_conf_index]
+            conf = prediction.conf[max_conf_index] * 100
+            data_points.append((prediction.metric, dominant_freq, conf))
         else:
             continue
 
