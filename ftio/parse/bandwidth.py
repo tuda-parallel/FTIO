@@ -235,3 +235,162 @@ def overlap_core_safe(b, t_s, t_e, id_s, id_e):
         b_out.append(b_tmp)
 
     return b_out, t_out
+
+
+# **********************************************************************
+# *                       2. Series Overlap
+# **********************************************************************
+def overlap_two_series(b1, t1, b2, t2):
+    try:
+        return overlap_two_series_jit_impl(
+            np.array(b1), np.array(t1), np.array(b2), np.array(t2)
+        )
+    except:
+        return overlap_two_series_safe(b1, t1, b2, t2)
+
+
+def overlap_two_series_safe(b1, t1, b2, t2):
+    n1 = len(b1)
+    n2 = len(b2)
+    b_out = []
+    t_out = []
+
+    i1 = 0
+    i2 = 0
+    curr_b1 = 0
+    curr_b2 = 0
+
+    while i1 < n1 or i2 < n2:
+        if i1 == n1:
+            curr_b2 = b2[i2]
+            t_out.append(t2[i2])
+            i2 += 1
+        elif i2 == n2:
+            curr_b1 = b1[i1]
+            t_out.append(t1[i1])
+            i1 += 1
+        elif t1[i1] < t2[i2]:
+            curr_b1 = b1[i1]
+            t_out.append(t1[i1])
+            i1 += 1
+        elif t2[i2] < t1[i1]:
+            curr_b2 = b2[i2]
+            t_out.append(t2[i2])
+            i2 += 1
+        else:
+            curr_b1 = b1[i1]
+            curr_b2 = b2[i2]
+            t_out.append(t1[i1])
+            i1 += 1
+            i2 += 1
+        b_out.append(curr_b1 + curr_b2)
+
+    return np.array(b_out), np.array(t_out)
+
+
+@jit(nopython=True, cache=True)
+def overlap_two_series_jit_impl(b1, t1, b2, t2):
+    n1 = len(b1)
+    n2 = len(b2)
+    max_len = n1 + n2
+    b_out = np.zeros(max_len)
+    t_out = np.zeros(max_len)
+
+    i1 = 0
+    i2 = 0
+    counter = 0
+    curr_b1 = 0
+    curr_b2 = 0
+
+    while i1 < n1 or i2 < n2:
+        if i1 == n1:
+            curr_b2 = b2[i2]
+            t_out[counter] = t2[i2]
+            i2 += 1
+        elif i2 == n2:
+            curr_b1 = b1[i1]
+            t_out[counter] = t1[i1]
+            i1 += 1
+        elif t1[i1] < t2[i2]:
+            curr_b1 = b1[i1]
+            t_out[counter] = t1[i1]
+            i1 += 1
+        elif t2[i2] < t1[i1]:
+            curr_b2 = b2[i2]
+            t_out[counter] = t2[i2]
+            i2 += 1
+        else:
+            curr_b1 = b1[i1]
+            curr_b2 = b2[i2]
+            t_out[counter] = t1[i1]
+            i1 += 1
+            i2 += 1
+        b_out[counter] = curr_b1 + curr_b2
+        counter += 1
+
+    return b_out[:counter], t_out[:counter]
+
+
+def merge_overlaps(b, t):
+    """
+    Wrapper: tries JIT version, falls back to safe version if error occurs.
+    """
+    try:
+        return merge_overlaps_jit(np.array(b), np.array(t))
+    except:
+        return merge_overlaps_safe(b, t)
+
+
+# Safe Python version
+def merge_overlaps_safe(b, t):
+    """Merge overlapping timestamps by summing b values (safe Python version)."""
+    if len(b) == 0:
+        return np.array([]), np.array([])
+
+    b = np.array(b)
+    t = np.array(t)
+
+    # Sort by timestamps
+    order = np.argsort(t)
+    b = b[order]
+    t = t[order]
+
+    merged_b = []
+    unique_t = []
+
+    for val, time in zip(b, t):
+        if unique_t and time == unique_t[-1]:
+            merged_b[-1] += val
+        else:
+            unique_t.append(time)
+            merged_b.append(val)
+
+    return np.array(merged_b), np.array(unique_t)
+
+
+# Numba JIT version
+@jit(nopython=True, cache=True)
+def merge_overlaps_jit(b, t):
+    """Merge overlapping timestamps by summing b values (numba-accelerated)."""
+    n = len(b)
+    if n == 0:
+        return np.zeros(0), np.zeros(0)
+
+    # Sort by t
+    idx = np.argsort(t)
+    b_sorted = b[idx]
+    t_sorted = t[idx]
+
+    merged_b = np.zeros(n)
+    unique_t = np.zeros(n)
+    counter = 0
+
+    for i in range(n):
+        if counter == 0 or t_sorted[i] != unique_t[counter - 1]:
+            unique_t[counter] = t_sorted[i]
+            merged_b[counter] = b_sorted[i]
+            counter += 1
+        else:
+            merged_b[counter - 1] += b_sorted[i]
+
+    return merged_b[:counter], unique_t[:counter]

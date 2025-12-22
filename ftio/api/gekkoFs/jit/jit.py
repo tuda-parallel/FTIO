@@ -103,36 +103,39 @@ def main() -> None:
     # 3.0 Start Cargo Server
     start_cargo(settings)
 
-    # 4.0 Stage in
-    stage_in(settings, runtime)
-
-    # 5.0 Start FTIO
+    # 4.0 Start FTIO
     start_ftio(settings)
 
-    # 6.0 Pre- and application with Gekko intercept
+    # 5.0 pre application call
     pre_call(settings)
+
+    # 6.0 Stage in
+    stage_in(settings, runtime)
+
+    # 7.0 Pre- and application with Gekko intercept
+    # pre_call(settings)
     start_application(settings, runtime)
 
-    # 7.0 Stage out
+    # 8.0 Stage out
     stage_out(settings, runtime)
 
-    # 8.0 Post call if exists
+    # 9.0 Post call if exists
     post_call(settings)
 
-    # 9.0 Display total time
+    # 10.0 Display total time
     # _ = runtime.print_time()
     runtime.print_and_save_time(settings)
 
-    # save_bandwidth
+    # 10.1 save_bandwidth
     save_bandwidth(settings)
 
-    # mark execution as completed
+    # 10.2 mark execution as completed
     log_execution(settings)
 
-    # save the host files
+    # 10.3 save the host files
     save_hosts_file(settings)
 
-    # save the host files
+    # 10.4 save the host files
     snapshot_directory(settings)
 
     # 11.0 Soft kill

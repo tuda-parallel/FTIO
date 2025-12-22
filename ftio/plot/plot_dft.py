@@ -499,8 +499,8 @@ def plot_dft_plotly_dominant(
     else:
         console.print(
             "[orange]Too many data points for original signal[/]\n"
-            "[orange]>> skipping plotting it[/]\n"
-            "[orange]>> use ftio ... -e mat to show this plot or set ftio ... -re static[/]\n"
+            "[orange]  skipping plotting it[/]\n"
+            "[orange]  use ftio ... -e mat to show this plot or set ftio ... -re static[/]\n"
         )
     # f.add_trace(Scatter(x=time,y=sum,mode='lines+markers',name="Reconstructed signal",fill=fill, line={"shape": 'hv'},visible=visible))
     f.add_trace(

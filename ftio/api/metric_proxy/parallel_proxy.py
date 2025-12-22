@@ -142,9 +142,9 @@ def main(args: argparse.Namespace = parse_args()) -> None:
 
     console.print(
         "[blue]\nSettings:\n---------[/]\n"
-        f"[blue] - parallel: {not args.disable_parallel}[/]\n"
-        f"[blue] - future: {not pools}[/]\n"
-        f"[blue] - proxy: {args.proxy}[/]\n\n"
+        f"[blue]- parallel: {not args.disable_parallel}[/]\n"
+        f"[blue]- future: {not pools}[/]\n"
+        f"[blue]- proxy: {args.proxy}[/]\n\n"
     )
     ranks = 32
 
@@ -261,8 +261,8 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
                 # negative = np.all(arrays[0] <= 0)
                 if not decreasing_order:  # or not  negative:
                     error_counter += 1
-                    # err = '[bold red] Negative metric' if not negative else '[bold yellow] time not decreasing'
-                    err = "[bold yellow] time not decreasing"
+                    # err = '[bold red] Negative metric' if not negative else '[bold  yellow]time not decreasing'
+                    err = "[bold  yellow]time not decreasing"
                     console = MyConsole()
                     console.set(True)
                     console.print(

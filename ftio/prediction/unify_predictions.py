@@ -128,7 +128,7 @@ def merge_core(
                     )
 
             # # check if there is a perfect prediction
-            # text += f"Perfect hits of [blue]{pred_dft.dominant_freq}[/] are [blue] {hits}[/]  \n"
+            # text += f"Perfect hits of [blue]{pred_dft.dominant_freq}[/] are [blue]{hits}[/]  \n"
             # for i, value in enumerate(hits):
             #     if value == len(pred_auto.candidates):
             #         text += "[green bold]Perfect Prediction found! [/]\n"
@@ -146,7 +146,7 @@ def merge_core(
             # calculate conf:
             agreed_predictions = np.argmax(alike, axis=0)
             if "ratio" in method:
-                text += f"Agreed prediction ratio  [blue] {np.sum(alike, axis=1)/len(agreed_predictions)*100}[/] %\n"
+                text += f"Agreed prediction ratio  [blue]{np.sum(alike, axis=1)/len(agreed_predictions)*100}[/] %\n"
                 conf = (
                     1
                     - np.std(
@@ -166,7 +166,7 @@ def merge_core(
                 ) / 3
             else:
                 text += (
-                    "Agreed prediction [blue] "
+                    "Agreed prediction [blue]"
                     + ", ".join(f"{i * 100:.2f}" for i in alike)
                     + " %[/]\n"
                 )

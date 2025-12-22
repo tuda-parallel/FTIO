@@ -97,6 +97,7 @@ external-libs = [
     "plotly_resampler",
     "trace_updater",
     "flask",
+    "colorlog",
 ]
 
 development-libs = [

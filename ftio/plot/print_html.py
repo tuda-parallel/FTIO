@@ -71,7 +71,7 @@ class PrintHtml:
             # ? 3. create main HTML file
             # html_files = ["write_async.html","read_async.html","write_sync.html","read_sync.html","time.html"]
             CONSOLE.print(
-                f"├── [cyan]To see intermediate result call: \n[/]│[cyan]     open {self.path}/main.html [/]\n│"
+                f"├── [cyan]To see intermediate result call: \n[/]│[cyan]   open {self.path}/main.html [/]\n│"
             )
             self.filename = os.path.join(self.path, self.filename)
             CONSOLE.print("├── Generated main.html ")
@@ -98,7 +98,7 @@ class PrintHtml:
             for i in invalid:
                 if i in html_file:
                     CONSOLE.print(
-                        f"[yellow] Warning: removing character {i} in {html_file}[/]"
+                        f"[yellow]Warning: removing character {i} in {html_file}[/]"
                     )
                     html_file = html_file.replace(i, "")
 
@@ -114,7 +114,7 @@ class PrintHtml:
             )
             self.lock.release()
 
-        CONSOLE.print(f"    ├──  [green] Finished generating {html_file}    [/]")
+        CONSOLE.print(f"    ├──  [green]Finished generating {html_file}    [/]")
 
     def generate_html_end(self) -> None:
         """closes the File and displays the location of the HTML files"""
@@ -131,7 +131,7 @@ class PrintHtml:
                     file.write(f"<li> Run {self.names.index(i)}: {i} </li>\n")
                 file.write("</ul> \n")
             file.write("</body></html> \n")
-        CONSOLE.print(f"    └──  [green] done    [/]")
+        CONSOLE.print(f"    └──  [green]done    [/]")
 
         CONSOLE.print(
             f"[cyan]\nTo see the result call \nopen {self.path}/main.html \n[/]"

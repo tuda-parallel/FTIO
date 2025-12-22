@@ -45,17 +45,17 @@ def check_setup(settings: JitSettings):
             mpi_hostfile_path = os.path.expanduser(f"{settings.mpi_hostfile}")
             with open(mpi_hostfile_path, "r") as file:
                 mpi_hostfile_content = file.read()
-            console.print(f"[cyan]>> MPI hostfile:\n{mpi_hostfile_content}[/]")
+            console.print(f"[cyan]MPI hostfile:\n{mpi_hostfile_content}[/]")
 
         # Display GekkoFS hostfile
         gekkofs_hostfile = settings.gkfs_hostfile
         with open(gekkofs_hostfile, "r") as file:
             gekkofs_hostfile_content = file.read()
-        console.print(f"[cyan]>> Geko hostfile:\n{gekkofs_hostfile_content}[/]")
+        console.print(f"[cyan]Geko hostfile:\n{gekkofs_hostfile_content}[/]")
 
         # ls_command = f"LD_PRELOAD={settings.gkfs_intercept} LIBGKFS_HOSTS_FILE={gekkofs_hostfile} ls {settings.gkfs_mntdir}"
         # files = subprocess.check_output(ls_command, shell=True).decode()
-        # console.print(f"[cyan]>> geko_ls {gkfs_mntdir}: \n{files}[/]")
+        # console.print(f"[cyan]geko_ls {gkfs_mntdir}: \n{files}[/]")
 
         if settings.cluster and settings.debug_lvl > 0 and not settings.exclude_daemon:
 
@@ -106,7 +106,7 @@ def check_setup(settings: JitSettings):
                     f"{file} "
                 )
             # test script
-            jit_print("[cyan] >> Checking test file")
+            jit_print("[cyan]Checking test file")
             try:
                 out = execute_block(call, False)
                 console.print(f"{out}")
@@ -114,9 +114,9 @@ def check_setup(settings: JitSettings):
                 if os.path.exists(file):
                     os.remove(file)
             except Exception as e:
-                jit_print(f"[red] >> Error running test script:\n{e}")
+                jit_print(f"[red] Error running test script:\n{e}")
         else:
-            jit_print("[cyan]>> Skipping setup check")
+            jit_print("[cyan]Skipping setup check")
     time.sleep(1)
 
 

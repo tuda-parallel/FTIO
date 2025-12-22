@@ -442,7 +442,7 @@ def dominant(
             if any(freq_arr[i] % freq_arr[out] < 0.00001):
                 text += f"[yellow]Ignoring harmonic at: {freq_arr[i]:.3e} Hz (T = {1/freq_arr[i] if freq_arr[i] > 0 else 0:.3f} s, k = {i}) -> confidence: {abs(conf[i-1])*100:.3f}%[/]\n"
             else:
-                text += f"Dominant frequency at: [green] {freq_arr[i]:.3e} Hz (T = {1/freq_arr[i] if freq_arr[i] > 0 else 0:.3f} s, k = {i}) -> confidence: {abs(conf[i-1])*100:.3f}%[/]\n"
+                text += f"Dominant frequency at: [green]{freq_arr[i]:.3e} Hz (T = {1/freq_arr[i] if freq_arr[i] > 0 else 0:.3f} s, k = {i}) -> confidence: {abs(conf[i-1])*100:.3f}%[/]\n"
                 out.append(i)
             if len(out) > 2:
                 text = "[red]Too many dominant frequencies -> Signal might be not periodic[/]\n"
