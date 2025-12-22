@@ -92,3 +92,4 @@ We sincerely thank the following contributors for their valuable contributions:
 - [Ahmad Tarraf](https://github.com/a-tarraf)
 - [Jean-Baptiste Bensard](https://github.com/besnardjb): Metric proxy integration
 - [Anton Holderied](https://github.com/AntonBeasis): bachelor thesis: new periodicity score
+- [Tim Dieringer](https://github.com/Tim-Dieringer): bachelor thesis: Additional integration for Metric Proxy
