@@ -34,12 +34,15 @@ def sample_data(
         RuntimeError: If no data is found in the sampled bandwidth.
     """
     text = ""
+    
+    # Check for empty array first
+    if len(t) == 0:
+        return np.empty(0), 0
+        
     text += f"Time window: {t[-1]-t[0]:.2f} s\n"
     text += f"Frequency step: {1/(t[-1]-t[0]) if (t[-1]-t[0]) != 0 else 0:.3e} Hz\n"
 
     # ? calculate recommended frequency:
-    if len(t) == 0:
-        return np.empty(0), 0, " "
     if freq == -1:
         t_rec = find_lowest_time_change(t)
         freq = 2 / t_rec
