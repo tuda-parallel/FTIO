@@ -45,6 +45,10 @@ def ftio_dft(
             - analysis_figures (AnalysisFigures): Data and plot figures.
             - share (SharedSignalData): Contains shared information, including sampled bandwidth and total bytes.
     """
+    # Suppress numpy warnings for empty array operations
+    import warnings
+    warnings.filterwarnings('ignore', category=RuntimeWarning, module='numpy')
+    
     #! Default values for variables
     share = SharedSignalData()
     prediction = Prediction(args.transformation)
@@ -67,40 +71,65 @@ def ftio_dft(
     n = len(b_sampled)
     frequencies = args.freq * np.arange(0, n) / n
     X = dft(b_sampled)
-    X = X * np.exp(
-        -2j * np.pi * frequencies * time_stamps[0]
-    )  # Correct phase offset due to start time t0
+    
+    # Safety check for empty time_stamps array
+    if len(time_stamps) > 0:
+        X = X * np.exp(
+            -2j * np.pi * frequencies * time_stamps[0]
+        )  # Correct phase offset due to start time t0
+    # If time_stamps is empty, skip phase correction
+    
     amp = abs(X)
     phi = np.arctan2(X.imag, X.real)
     conf = np.zeros(len(amp))
     # welch(bandwidth,freq)
 
     #!  Find the dominant frequency
-    (dominant_index, conf[1 : int(n / 2) + 1], outlier_text) = outlier_detection(
-        amp, frequencies, args
-    )
+    # Safety check for empty arrays
+    if n > 0:
+        (dominant_index, conf[1 : int(n / 2) + 1], outlier_text) = outlier_detection(
+            amp, frequencies, args
+        )
 
-    #  Ignore DC offset
-    conf[0] = np.inf
-    if n % 2 == 0:
-        conf[int(n / 2) + 1 :] = np.flip(conf[1 : int(n / 2)])
+        #  Ignore DC offset
+        conf[0] = np.inf
+        if n % 2 == 0:
+            conf[int(n / 2) + 1 :] = np.flip(conf[1 : int(n / 2)])
+        else:
+            conf[int(n / 2) + 1 :] = np.flip(conf[1 : int(n / 2) + 1])
     else:
-        conf[int(n / 2) + 1 :] = np.flip(conf[1 : int(n / 2) + 1])
+        # Handle empty data case
+        dominant_index = np.array([])
+        outlier_text = "No data available for outlier detection"
 
     #! Assign data
-    prediction.dominant_freq = frequencies[dominant_index]
-    prediction.conf = conf[dominant_index]
-    prediction.amp = amp[dominant_index]
-    prediction.phi = phi[dominant_index]
-    prediction.t_start = time_stamps[0]
-    prediction.t_end = time_stamps[-1]
+    if n > 0 and len(dominant_index) > 0:
+        prediction.dominant_freq = frequencies[dominant_index]
+        prediction.conf = conf[dominant_index]
+        prediction.amp = amp[dominant_index]
+        prediction.phi = phi[dominant_index]
+    else:
+        # Handle empty data case
+        prediction.dominant_freq = np.array([])
+        prediction.conf = np.array([])
+        prediction.amp = np.array([])
+        prediction.phi = np.array([])
+    
+    # Safety check for empty time_stamps
+    if len(time_stamps) > 0:
+        prediction.t_start = time_stamps[0]
+        prediction.t_end = time_stamps[-1]
+    else:
+        prediction.t_start = 0.0
+        prediction.t_end = 0.0
+        
     prediction.freq = args.freq
     prediction.ranks = ranks
     prediction.total_bytes = total_bytes
     prediction.n_samples = n
 
     #! Save up to n_freq from the top candidates
-    if args.n_freq > 0:
+    if args.n_freq > 0 and n > 0:
         arr = amp[0 : int(np.ceil(n / 2))]
         top_candidates = np.argsort(-arr)  # from max to min
         n_freq = int(min(len(arr), args.n_freq))
@@ -111,7 +140,12 @@ def ftio_dft(
             "phi": phi[top_candidates[0:n_freq]],
         }
 
-    t_sampled = time_stamps[0] + np.arange(0, n) * 1 / args.freq
+    # Safety check for empty time_stamps
+    if len(time_stamps) > 0 and args.freq > 0:
+        t_sampled = time_stamps[0] + np.arange(0, n) * 1 / args.freq
+    else:
+        t_sampled = np.arange(0, n) * (1 / args.freq if args.freq > 0 else 1.0)
+    
     #! Fourier fit if set
     if args.fourier_fit:
         fourier_fit(args, prediction, analysis_figures, b_sampled, t_sampled)
