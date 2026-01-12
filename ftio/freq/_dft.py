@@ -79,7 +79,6 @@ def dft_fast(b: np.ndarray) -> np.ndarray:
     - np.ndarray, DFT of the input signal.
     """
     N = len(b)
-    # Safety check for empty arrays
     if N == 0:
         return np.array([])
     X = np.repeat(complex(0, 0), N)  # np.zeros(N)
@@ -101,7 +100,6 @@ def numpy_dft(b: np.ndarray) -> np.ndarray:
     Returns:
     - np.ndarray, DFT of the input signal.
     """
-    # Safety check for empty arrays
     if len(b) == 0:
         return np.array([])
     return np.fft.fft(b)

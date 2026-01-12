@@ -40,7 +40,6 @@ def data_in_time_window(
             )
             text += f"[green]Start time set to {args.ts:.2f}[/] s\n"
         else:
-            # Handle empty array case
             total_bytes = 0
             text += f"[red]Warning: No data after start time {args.ts:.2f}[/] s\n"
     else:

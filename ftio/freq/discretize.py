@@ -34,8 +34,7 @@ def sample_data(
         RuntimeError: If no data is found in the sampled bandwidth.
     """
     text = ""
-    
-    # Check for empty array first
+
     if len(t) == 0:
         return np.empty(0), 0
         
