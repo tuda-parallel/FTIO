@@ -9,7 +9,6 @@ from multiprocessing import Lock
 from rich.console import Console
 from ftio.prediction.helper import get_dominant
 from ftio.freq.prediction import Prediction
-from ftio.util.server_ftio import ftio
 
 
 class ChangePointDetector:
@@ -57,58 +56,49 @@ class ChangePointDetector:
                              f"[Process-safe: {shared_resources is not None}][/]")
     
     def _get_frequencies(self):
-        """Get frequencies list (shared or local)."""
         if self.shared_resources:
             return self.shared_resources.adwin_frequencies
         return self.frequencies
     
     def _get_timestamps(self):
-        """Get timestamps list (shared or local).""" 
         if self.shared_resources:
             return self.shared_resources.adwin_timestamps
         return self.timestamps
     
     def _get_total_samples(self):
-        """Get total samples count (shared or local)."""
         if self.shared_resources:
             return self.shared_resources.adwin_total_samples.value
         return self.total_samples
     
     def _set_total_samples(self, value):
-        """Set total samples count (shared or local)."""
         if self.shared_resources:
             self.shared_resources.adwin_total_samples.value = value
         else:
             self.total_samples = value
     
     def _get_change_count(self):
-        """Get change count (shared or local)."""
         if self.shared_resources:
             return self.shared_resources.adwin_change_count.value
         return self.change_count
     
     def _set_change_count(self, value):
-        """Set change count (shared or local)."""
         if self.shared_resources:
             self.shared_resources.adwin_change_count.value = value
         else:
             self.change_count = value
     
     def _get_last_change_time(self):
-        """Get last change time (shared or local)."""
         if self.shared_resources:
             return self.shared_resources.adwin_last_change_time.value if self.shared_resources.adwin_last_change_time.value > 0 else None
         return self.last_change_time
     
     def _set_last_change_time(self, value):
-        """Set last change time (shared or local)."""
         if self.shared_resources:
             self.shared_resources.adwin_last_change_time.value = value if value is not None else 0.0
         else:
             self.last_change_time = value
             
     def _reset_window(self):
-        """Reset ADWIN window when no frequency is detected."""
         frequencies = self._get_frequencies()
         timestamps = self._get_timestamps()
         
@@ -126,17 +116,7 @@ class ChangePointDetector:
         self.console.print("[dim yellow][ADWIN] Window cleared: No frequency data to analyze[/]")
         
     def add_prediction(self, prediction: Prediction, timestamp: float) -> Optional[Tuple[int, float]]:
-        """
-        Add a new prediction and check for change points using ADWIN.
-        This method is process-safe and can be called concurrently.
-
-        Args:
-            prediction: FTIO prediction result
-            timestamp: Timestamp of this prediction
-
-        Returns:
-            Tuple of (change_point_index, exact_change_point_timestamp) if detected, None otherwise
-        """
+       
         freq = get_dominant(prediction)
 
         if np.isnan(freq) or freq <= 0:
@@ -151,7 +131,6 @@ class ChangePointDetector:
             return self._add_prediction_local(prediction, timestamp, freq)
     
     def _add_prediction_synchronized(self, prediction: Prediction, timestamp: float, freq: float) -> Optional[Tuple[int, float]]:
-        """Add prediction with synchronized access to shared state."""
         frequencies = self._get_frequencies()
         timestamps = self._get_timestamps()
         
@@ -175,7 +154,6 @@ class ChangePointDetector:
         return None
     
     def _add_prediction_local(self, prediction: Prediction, timestamp: float, freq: float) -> Optional[Tuple[int, float]]:
-        """Add prediction using local state (non-multiprocessing mode)."""
         frequencies = self._get_frequencies()
         timestamps = self._get_timestamps()
         
@@ -199,15 +177,7 @@ class ChangePointDetector:
         return None
         
     def _detect_change(self) -> Optional[int]:
-        """
-        Pure ADWIN change detection algorithm.
-        
-        Implements the original ADWIN algorithm using only statistical hypothesis testing
-        with Hoeffding bounds. This preserves the theoretical guarantees on false alarm rates.
-        
-        Returns:
-            Index of change point if detected, None otherwise
-        """
+     
         frequencies = self._get_frequencies()
         timestamps = self._get_timestamps()
         n = len(frequencies)
@@ -224,15 +194,7 @@ class ChangePointDetector:
         return None
         
     def _test_cut_point(self, cut: int) -> bool:
-        """
-        Test if a cut point indicates a significant change using ADWIN's statistical test.
         
-        Args:
-            cut: Index to split the window (left: [0, cut), right: [cut, n))
-            
-        Returns:
-            True if change detected at this cut point
-        """
         frequencies = self._get_frequencies()
         n = len(frequencies)
         
@@ -272,15 +234,7 @@ class ChangePointDetector:
         return mean_diff > threshold
         
     def _process_change_point(self, change_point: int):
-        """
-        Process detected change point by updating window (core ADWIN behavior).
-        
-        ADWIN drops data before the change point to keep only recent data,
-        effectively adapting the window size automatically.
-        
-        Args:
-            change_point: Index where change was detected
-        """
+       
         frequencies = self._get_frequencies()
         timestamps = self._get_timestamps()
         
@@ -315,19 +269,7 @@ class ChangePointDetector:
         self.console.print(f"[green][ADWIN] New window span: {time_span:.2f} seconds[/]")
         
     def get_adaptive_start_time(self, current_prediction: Prediction) -> float:
-        """
-        Calculate the adaptive start time based on ADWIN's current window.
-        
-        When a change point was detected, this returns the EXACT timestamp of the 
-        most recent change point, allowing the analysis window to start precisely
-        from the moment the I/O pattern changed.
-        
-        Args:
-            current_prediction: Current prediction result
-            
-        Returns:
-            Exact start time for analysis window (change point timestamp or fallback)
-        """
+     
         timestamps = self._get_timestamps()
         
         if len(timestamps) == 0:
@@ -394,17 +336,7 @@ class ChangePointDetector:
         return self.last_change_point is not None
         
     def log_change_point(self, counter: int, old_freq: float, new_freq: float) -> str:
-        """
-        Generate log message for ADWIN change point detection.
-        
-        Args:
-            counter: Prediction counter
-            old_freq: Previous dominant frequency  
-            new_freq: Current dominant frequency
-            
-        Returns:
-            Formatted log message
-        """
+      
         last_change_time = self._get_last_change_time()
         if last_change_time is None:
             return ""
@@ -432,31 +364,12 @@ class ChangePointDetector:
         return log_msg
 
     def get_change_point_time(self, shared_resources=None) -> Optional[float]:
-        """
-        Get the timestamp of the most recent change point.
-        
-        Args:
-            shared_resources: Shared resources (kept for compatibility)
-            
-        Returns:
-            Timestamp of the change point, or None if no change detected
-        """
+    
         return self._get_last_change_time()
 
 def detect_pattern_change_adwin(shared_resources, current_prediction: Prediction,
                          detector: ChangePointDetector, counter: int) -> Tuple[bool, Optional[str], float]:
-    """
-    Main function to detect pattern changes using ADWIN and adapt window.
-
-    Args:
-        shared_resources: Shared resources containing prediction history
-        current_prediction: Current prediction result
-        detector: ADWIN detector instance
-        counter: Current prediction counter
-
-    Returns:
-        Tuple of (change_detected, log_message, new_start_time)
-    """
+   
     change_point = detector.add_prediction(current_prediction, current_prediction.t_end)
     
     if change_point is not None:
@@ -574,16 +487,7 @@ class CUSUMDetector:
         self.console.print("[dim yellow][CUSUM] State cleared: Starting fresh when frequency resumes[/]")
     
     def add_frequency(self, freq: float, timestamp: float = None) -> Tuple[bool, Dict[str, Any]]:
-        """
-        Add frequency observation and check for change points.
-        
-        Args:
-            freq: Frequency value (NaN or <=0 means no frequency found)
-            timestamp: Time of observation
-            
-        Returns:
-            Tuple of (change_detected, change_info)
-        """
+      
         if np.isnan(freq) or freq <= 0:
             self.console.print("[yellow][AV-CUSUM] No frequency found - resetting algorithm state[/]")
             self._reset_cusum_state()
@@ -635,7 +539,7 @@ class CUSUMDetector:
             self.console.print(f"  [dim]• Sum_neg before: {self.sum_neg:.3f}[/]")
             self.console.print(f"  [dim]• Sum_pos calculation: max(0, {self.sum_pos:.3f} + {deviation:.3f} - {self.adaptive_drift:.3f}) = {new_sum_pos:.3f}[/]")
             self.console.print(f"  [dim]• Sum_neg calculation: max(0, {self.sum_neg:.3f} - {deviation:.3f} - {self.adaptive_drift:.3f}) = {new_sum_neg:.3f}[/]")
-            self.console.print(f"  [dim]• Adaptive threshold: {self.adaptive_threshold:.3f} (h_t = 5.0×σ, σ={self.rolling_std:.3f})[/]")
+            self.console.print(f"  [dim]• Adaptive threshold: {self.adaptive_threshold:.3f} (h_t = 2.0×σ, σ={self.rolling_std:.3f})[/]")
             self.console.print(f"  [dim]• Upward change test: {self.sum_pos:.3f} > {self.adaptive_threshold:.3f} = {'UPWARD CHANGE!' if self.sum_pos > self.adaptive_threshold else 'No change'}[/]")
             self.console.print(f"  [dim]• Downward change test: {self.sum_neg:.3f} > {self.adaptive_threshold:.3f} = {'DOWNWARD CHANGE!' if self.sum_neg > self.adaptive_threshold else 'No change'}[/]")
         
@@ -718,18 +622,7 @@ def detect_pattern_change_cusum(
     detector: CUSUMDetector,
     counter: int
 ) -> Tuple[bool, Optional[str], float]:
-    """
-    CUSUM-based change point detection with enhanced logging.
-
-    Args:
-        shared_resources: Shared state for multiprocessing
-        current_prediction: Current frequency prediction
-        detector: CUSUM detector instance
-        counter: Prediction counter
-
-    Returns:
-        Tuple of (change_detected, log_message, adaptive_start_time)
-    """
+  
 
     current_freq = get_dominant(current_prediction)
     current_time = current_prediction.t_end
@@ -909,13 +802,7 @@ class SelfTuningPageHinkleyDetector:
         self.sample_count = 0
         
     def reset(self, current_freq: float = None):
-        """
-        Reset Page-Hinckley internal state for fresh start after change point detection.
-
-        Args:
-            current_freq: Optional current frequency to use as new reference.
-                         If None, state is completely cleared for reinitialization.
-        """
+      
         self.cumulative_sum_pos = 0.0
         self.cumulative_sum_neg = 0.0
 
@@ -981,16 +868,7 @@ class SelfTuningPageHinkleyDetector:
             self.console.print(f"[cyan][PH] Internal state reset: Page-Hinkley parameters reinitialized[/]")
         
     def add_frequency(self, freq: float, timestamp: float = None) -> Tuple[bool, float, Dict[str, Any]]:
-        """
-        Add frequency observation and update Page-Hinkley statistics.
-        
-        Args:
-            freq: Frequency observation (NaN or <=0 means no frequency found)
-            timestamp: Time of observation (optional)
-            
-        Returns:
-            Tuple of (change_detected, triggering_sum, metadata)
-        """
+     
         if np.isnan(freq) or freq <= 0:
             self.console.print("[yellow][STPH] No frequency found - resetting Page-Hinkley state[/]")
             self._reset_pagehinkley_state()
@@ -1126,18 +1004,7 @@ def detect_pattern_change_pagehinkley(
     detector: SelfTuningPageHinkleyDetector,
     counter: int
 ) -> Tuple[bool, Optional[str], float]:
-    """
-    Page-Hinkley-based change point detection with enhanced logging.
-
-    Args:
-        shared_resources: Shared state for multiprocessing
-        current_prediction: Current frequency prediction
-        detector: Page-Hinkley detector instance
-        counter: Prediction counter
-
-    Returns:
-        Tuple of (change_detected, log_message, adaptive_start_time)
-    """
+   
     import numpy as np
 
     current_freq = get_dominant(current_prediction)

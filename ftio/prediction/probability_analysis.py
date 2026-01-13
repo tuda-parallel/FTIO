@@ -7,22 +7,6 @@ from ftio.prediction.change_point_detection import ChangePointDetector
 
 
 def find_probability(data: list[dict], method: str = "db", counter:int = -1) -> list:
-    """Calculates the conditional probability that expresses
-    how probable the frequency (event A) is given that the signal
-    is periodic occurred (probability B).
-    According to Bayes' Theorem, P(A|B) = P(B|A)*P(A)/P(B)
-    P(B|A): Probability that the signal is periodic given that it has a frequency A --> 1
-    P(A): Probability that the signal has the frequency A
-    P(B): Probability that the signal has is periodic
-
-    Args:
-        data (dict): contacting predictions
-        method (str): method to group the predictions (step or db)
-        counter (int): number of predictions already executed
-
-    Returns:
-        out (dict): probability of predictions in ranges
-    """
     p_b = 0
     p_a = []
     p_a_given_b = 0
@@ -56,12 +40,9 @@ def find_probability(data: list[dict], method: str = "db", counter:int = -1) -> 
                 f_min = np.inf
                 f_max = 0
                 for pred in grouped_prediction:
-                    # print(pred)
-                    # print(f"index is {group}, group is {pred['group']}")
                     if group == pred["group"]:
                         f_min = min(get_dominant(pred), f_min)
                         f_max = max(get_dominant(pred), f_max)
-                        # print(f"group: {group}, pred_group: {pred['group']}, freq: {get_dominant(pred):.3f}, f_min: {f_min:.3f}, f_max:{f_max:.3f}")
                         p_a += 1
 
                 p_a = p_a / len(data) if len(data) > 0 else 0
@@ -76,18 +57,6 @@ def find_probability(data: list[dict], method: str = "db", counter:int = -1) -> 
 
 
 def detect_pattern_change(shared_resources, prediction, detector, count):
-    """
-    Detect pattern changes using the change point detector.
-    
-    Args:
-        shared_resources: Shared resources among processes
-        prediction: Current prediction result
-        detector: ChangePointDetector instance
-        count: Current prediction count
-        
-    Returns:
-        Tuple of (change_detected, change_log, adaptive_start_time)
-    """
     try:
         from ftio.prediction.helper import get_dominant
 
@@ -98,10 +67,7 @@ def detect_pattern_change(shared_resources, prediction, detector, count):
             console.print(f"[cyan][DEBUG] Change point detection called for prediction #{count}, freq={freq:.3f} Hz[/]")
             console.print(f"[cyan][DEBUG] Detector calibrated: {detector.is_calibrated}, samples: {len(detector.frequencies)}[/]")
 
-        # Get the current time (t_end from prediction)
         current_time = prediction.t_end
-
-        # Add prediction to detector
         result = detector.add_prediction(prediction, current_time)
 
         if hasattr(detector, 'verbose') and detector.verbose:
@@ -114,17 +80,15 @@ def detect_pattern_change(shared_resources, prediction, detector, count):
             if hasattr(detector, 'verbose') and detector.verbose:
                 console = Console()
                 console.print(f"[green][DEBUG] CHANGE POINT DETECTED! Index: {change_point_idx}, Time: {change_point_time:.3f}[/]")
-            
-            # Create log message
+
             change_log = f"[red bold][CHANGE_POINT] t_s={change_point_time:.3f} sec[/]"
             change_log += f"\n[purple][PREDICTOR] (#{count}):[/][yellow] Adapting analysis window to start at t_s={change_point_time:.3f}[/]"
-            
+
             return True, change_log, change_point_time
-        
+
         return False, "", prediction.t_start
-        
+
     except Exception as e:
-        # If there's any error, fall back to no change detection
         console = Console()
         console.print(f"[red]Change point detection error: {e}[/]")
         return False, "", prediction.t_start
