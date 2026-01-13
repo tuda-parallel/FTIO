@@ -24,23 +24,21 @@ def handle_in_process(function: Callable, args) -> Process:
     return process
 
 
-def join_procs(procs: list) -> list:
-    """joins procs by iterating over list and testing
-    that the process finished before joining
+def join_procs(procs: list, blocking: bool = True) -> list:
+    """
+    Joins finished processes safely. Optionally non-blocking.
 
     Args:
-        procs (list): list of procs to test
-
+        procs (list): list of multiprocessing.Process objects
+        blocking (bool): if True, join finished processes immediately
     Returns:
-        list of new procs
+        list: updated list of alive processes
     """
-    if procs:
-        for p in procs:
-            if p.is_alive():
-                pass
-                # print(f"Process {p} still working")
-            else:
-                p.join()
-                procs.remove(p)
-                # print(f"Process {p} JOINED")
-    return procs
+    alive_procs = []
+    for p in procs:
+        if p.is_alive():
+            alive_procs.append(p)
+        else:
+            if blocking:
+                p.join()  # join if requested
+    return alive_procs

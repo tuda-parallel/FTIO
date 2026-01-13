@@ -45,7 +45,7 @@ def predictor_with_processes_zmq(
 
     # Loop and predict if changes occur
     try:
-        with CONSOLE.status("[green] started\n", spinner="arrow3") as status:
+        with CONSOLE.status("[green]started\n", spinner="arrow3") as status:
             while True:
                 # join procs
                 procs = join_procs(procs)
@@ -124,3 +124,28 @@ def receive_messages(socket, poller):
         socks = dict(poller.poll(1000))
 
     return msgs, ranks
+
+
+#
+# def receive_messages(socket, poller, timeout=1000):
+#     """Receive all pending messages from a ZMQ socket safely, including large messages."""
+#     msgs = []
+#     ranks = 0
+#
+#     while True:
+#         socks = dict(poller.poll(timeout))
+#         if socket not in socks or socks[socket] != zmq.POLLIN:
+#             break  # no more messages ready
+#
+#         try:
+#             msg = socket.recv(zmq.NOBLOCK)  # or recv_multipart() if needed
+#             msgs.append(msg)
+#             ranks += 1
+#         except zmq.Again:
+#             break  # no more messages currently available
+#
+#         # After first poll, switch to non-blocking poll to empty the queue
+#         timeout = 0
+#
+#     return msgs, ranks
+#

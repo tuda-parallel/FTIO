@@ -14,28 +14,28 @@ from ftio.parse.args import parse_args
 
 def test_wavelet_cont_args():
     """Test continuous wavelet transformation with default decomposition level."""
-    args = parse_args(["-e", "no", "-c", "-tr", "wave_cont"], "ftio")
+    args = parse_args(["-e", "no", "-tr", "wave_cont"], "ftio")
     _ = core([], args)
     assert True
 
 
 def test_wavelet_disc_args():
     """Test discrete wavelet transformation with default decomposition level."""
-    args = parse_args(["-e", "no", "-c", "-tr", "wave_disc"], "ftio")
+    args = parse_args(["-e", "no", "-tr", "wave_disc"], "ftio")
     _ = core([], args)
     assert True
 
 
 def test_wavelet_cont_lvl_args():
     """Test continuous wavelet transformation with a specified decomposition level."""
-    args = parse_args(["-e", "no", "-c", "-tr", "wave_cont", "-le", "5"], "ftio")
+    args = parse_args(["-e", "no", "-tr", "wave_cont", "-le", "5"], "ftio")
     _ = core([], args)
     assert True
 
 
 def test_wavelet_disc_lvl_args():
     """Test discrete wavelet transformation with a specified decomposition level."""
-    args = parse_args(["-e", "no", "-c", "-tr", "wave_disc", "-le", "5"], "ftio")
+    args = parse_args(["-e", "no", "-tr", "wave_disc", "-le", "5"], "ftio")
     _ = core([], args)
     assert True
 
@@ -51,6 +51,6 @@ def test_wavelet_cont():
         os.path.dirname(__file__),
         "../examples/tmio/ior/collective/1536_new.json",
     )
-    args = ["ftio", file, "-e", "no", "-c", "-tr", "wave_cont"]
+    args = ["ftio", file, "-e", "no", "-tr", "wave_cont"]
     _, args = main(args)
     assert True

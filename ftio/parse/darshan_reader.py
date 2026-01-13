@@ -64,6 +64,8 @@ def extract_data(path: str, args) -> tuple[list, int, dict]:
         if isinstance(args, list) or "MPI" in args.dxt_mode.upper():
             if "DXT_MPIIO" in modules:
                 dataframe = report.records["DXT_MPIIO"].to_df()
+            if "LUSTRE" in modules:
+                dataframe = report.records["LUSTRE"].to_df()
             else:
                 console.print("[red]No DXT Module[/]\n[cyan]Trying heatmap[/]")
                 dataframe, freq, total_time = extract_heatmap(report, "MPIIO")

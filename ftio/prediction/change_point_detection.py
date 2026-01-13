@@ -9,6 +9,7 @@ from multiprocessing import Lock
 from rich.console import Console
 from ftio.prediction.helper import get_dominant
 from ftio.freq.prediction import Prediction
+from ftio.util.server_ftio import ftio
 
 
 class ChangePointDetector:
@@ -225,9 +226,6 @@ class ChangePointDetector:
     def _test_cut_point(self, cut: int) -> bool:
         """
         Test if a cut point indicates a significant change using ADWIN's statistical test.
-        
-        Fixed ADWIN implementation: Uses corrected Hoeffding bound calculation
-        for proper change detection sensitivity.
         
         Args:
             cut: Index to split the window (left: [0, cut), right: [cut, n))
@@ -766,6 +764,7 @@ def detect_pattern_change_cusum(
     
     if percent_change > 100:  
         min_window_size = 0.5
+
     elif percent_change > 50:   
         min_window_size = 1.0
     else: 

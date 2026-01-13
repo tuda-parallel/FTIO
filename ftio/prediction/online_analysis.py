@@ -367,22 +367,22 @@ def window_adaptation(
                 ): 
                     tmp = t_e - 3 * 1 / freq
                     t_s = tmp if tmp > 0 else 0
-                    text += f"[bold purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] Adjusting start time to {t_s} sec\n[/]"
+                    text += f"[bold purple][PREDICTOR] (#{shared_resources.count.value}):[/][green]Adjusting start time to {t_s} sec\n[/]"
             else:
                 if not change_detected:  # Don't reset if we detected a change point
                     t_s = 0
                     if shared_resources.hits.value == 0:
                         text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/][red bold] Resetting start time to {t_s} sec\n[/]"
         elif "data" in args.window_adaptation and len(shared_resources.data) > 0 and not change_detected:
-            text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] Trying time window adaptation: {shared_resources.count.value:.0f} =? { args.hits * shared_resources.hits.value:.0f}\n[/]"
+            text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/][green]Trying time window adaptation: {shared_resources.count.value:.0f} =? { args.hits * shared_resources.hits.value:.0f}\n[/]"
             if shared_resources.count.value == args.hits * shared_resources.hits.value:
                 # t_s = shared_resources.data[-shared_resources.count.value]['t_start']
-                # text += f'[bold purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] Adjusting start time to t_start {t_s} sec\n[/]'
+                # text += f'[bold purple][PREDICTOR] (#{shared_resources.count.value}):[/][green]Adjusting start time to t_start {t_s} sec\n[/]'
                 if len(shared_resources.t_flush) > 0:
                     print(shared_resources.t_flush)
                     index = int(args.hits * shared_resources.hits.value - 1)
                     t_s = shared_resources.t_flush[index]
-                    text += f"[bold purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] Adjusting start time to t_flush[{index}] {t_s} sec\n[/]"
+                    text += f"[bold purple][PREDICTOR] (#{shared_resources.count.value}):[/][green]Adjusting start time to t_flush[{index}] {t_s} sec\n[/]"
 
     # TODO 1: Make sanity check -- see if the same number of bytes was transferred
     # TODO 2: Train a model to validate the predictions?

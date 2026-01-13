@@ -34,7 +34,7 @@ def init_gekko(settings: JitSettings) -> None:
         #     calls.append(f"mkdir -p {settings.gkfs_rootdir}")
         calls.append(f"mkdir -p {settings.gkfs_mntdir}")
         calls.append(f"mkdir -p {settings.gkfs_rootdir}")
-        jit_print("[cyan]>> Creating directories[/]")
+        jit_print("[cyan]Creating directories[/]")
         for call in calls:
             tmp = flaged_call(
                 settings,

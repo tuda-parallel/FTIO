@@ -9,6 +9,7 @@ class Prediction:
         source (str): The name or type of transformation used to generate predictions.
         dominant_freq (np.ndarray): Array of dominant frequencies identified in the data.
         conf (np.ndarray): Confidence values associated with each dominant frequency.
+        periodicity (np.ndarray): Periodicity score results for each frequency.
         amp (np.ndarray): Amplitudes corresponding to each dominant frequency.
         phi (np.ndarray): Phase angles for each dominant frequency.
         t_start (float): Start time index or timestamp for the prediction interval.
@@ -35,6 +36,7 @@ class Prediction:
         self._source = transformation
         self._dominant_freq = np.array([])
         self._conf = np.array([])
+        self._periodicity = np.array([])
         self._amp = np.array([])
         self._phi = np.array([])
         self._t_start = t_start
@@ -46,6 +48,7 @@ class Prediction:
         self._top_freqs = {}
         self._candidates = np.array([])
         self._ranges = np.array([])
+        self._metric = ""
 
     @property
     def source(self):
@@ -88,6 +91,23 @@ class Prediction:
                 "conf must be a numpy ndarray, list convertible to ndarray, or a numeric scalar"
             )
         self._conf = value
+
+    @property
+    def periodicity(self):
+        return self._periodicity
+
+    @periodicity.setter
+    def periodicity(self, value):
+        # same logic as dominant_freq
+        if np.isscalar(value):
+            value = np.array([value])
+        elif isinstance(value, list):
+            value = np.array(value)
+        if not isinstance(value, np.ndarray):
+            raise TypeError(
+                "periodicity must be a numpy ndarray, list convertible to ndarray, or a numeric scalar"
+            )
+        self._periodicity = value
 
     @property
     def amp(self):
@@ -211,6 +231,14 @@ class Prediction:
             )
         self._ranges = value
 
+    @property
+    def metric(self):
+        return self._metric
+
+    @metric.setter
+    def metric(self, value):
+        self._metric = str(value)
+
     def get(self, key: str):
         """
         Retrieve the value for a given attribute.
@@ -270,6 +298,14 @@ class Prediction:
                 out_freq = self._dominant_freq[dominant_index]
                 out_conf = self._conf[dominant_index]
         return out_freq, out_conf
+
+    def get_periodicity(self) -> float:
+        out_periodicity = np.nan
+        if len(self._periodicity) > 0:
+            dominant_index = self.get_dominant_index()
+            if dominant_index is not None:
+                out_periodicity = self._periodicity[dominant_index]
+        return out_periodicity
 
     def get_dominant_freq(self) -> float:
         """
@@ -333,7 +369,9 @@ class Prediction:
         """
         return not self.source
 
-    def get_wave(self, freq: float, amp: float, phi: float) -> np.ndarray:
+    def get_wave(
+        self, freq: float, amp: float, phi: float, t_sampled: np.ndarray = None
+    ) -> np.ndarray:
         """
         Generate a cosine wave using the given frequency, amplitude, and phase.
 
@@ -341,13 +379,15 @@ class Prediction:
             freq (float): Frequency of the cosine wave in Hz.
             amp (float): Amplitude of the wave.
             phi (float): Phase of the wave in radians.
+            t_sampled (np.ndarray, optional): Array of time values. Defaults to None.
 
         Returns:
             np.ndarray: Array of sampled cosine wave values. Returns an empty array
             if the frequency is NaN or sampling is invalid.
         """
         if not np.isnan(freq) and self._n_samples != 0:
-            t_sampled = self._t_start + np.arange(0, self._n_samples) * 1 / self._freq
+            if t_sampled is None:
+                t_sampled = self._t_start + np.arange(0, self._n_samples) * 1 / self._freq
             if freq != 0 and not freq == self._freq / 2:
                 amp *= 2 / self._n_samples
             else:
@@ -375,7 +415,7 @@ class Prediction:
         return name
 
     def get_wave_and_name(
-        self, freq: float, amp: float, phi: float
+        self, freq: float, amp: float, phi: float, t_sampled: np.ndarray = None
     ) -> tuple[np.ndarray, str]:
         """
         Generate a cosine wave using the given frequency, amplitude, and phase. Returns additionally a string which can be used to label the plots
@@ -384,12 +424,13 @@ class Prediction:
             freq (float): Frequency of the cosine wave in Hz.
             amp (float): Amplitude of the wave.
             phi (float): Phase of the wave in radians.
+            t_sampled (np.ndarray, optional): Array of time values. Defaults to None.
 
         Returns:
             np.ndarray: Array of sampled cosine wave values. Returns an empty array
             str: Name of the cosine wave at the specified entities
         """
-        cosine_wave = self.get_wave(freq, amp, phi)
+        cosine_wave = self.get_wave(freq, amp, phi, t_sampled)
         name = self.get_wave_name(freq, amp, phi)
         return cosine_wave, name
 
@@ -405,10 +446,16 @@ class Prediction:
             if not np.isnan(f_d):
                 text = (
                     f"[cyan underline]Prediction results:[/]\n[cyan]Frequency:[/] {f_d:.3e} Hz"
-                    f"[cyan] ->[/] {np.round(1/f_d, 4)} s\n"
+                    f"[cyan]->[/] {np.round(1/f_d, 4)} s\n"
                     f"[cyan]Confidence:[/] {color_pred(c_d)}"
                     f"{np.round(c_d * 100, 2)}[/] %\n"
                 )
+                periodicity = self.get_periodicity()
+                if not np.isnan(periodicity):
+                    text += (
+                        f"[cyan]Periodicity:[/] {color_pred(periodicity)}"
+                        f"{np.round(periodicity * 100, 2)}[/] %\n"
+                    )
             else:
                 text = (
                     "[cyan underline]Prediction results:[/]\n"
@@ -439,6 +486,7 @@ class Prediction:
             "source": self._source,
             "dominant_freq": self._dominant_freq,
             "conf": self._conf,
+            "periodicity": self._periodicity,
             "amp": self._amp,
             "phi": self._phi,
             "t_start": self.t_start,

@@ -75,20 +75,20 @@ def classify_waves(data, normed=True):
     seen = []
     for mode in phasemode_list:
         seen.extend(mode.matches)
-    other = [x["metric"] for x in data if all(y not in x["metric"] for y in seen)]
+    other = [x.metric for x in data if all(y not in x.metric for y in seen)]
     phasemode_list.append(PhaseMode("Other", other))
 
     sampling_freq = np.nan
     t_s = np.inf
     t_e = 0
-    for d in data:
-        if len(d["dominant_freq"]) > 0 and len(d["conf"]) > 0:
+    for prediction in data:
+        if len(prediction.dominant_freq) > 0 and len(prediction.conf) > 0:
             if np.isnan(sampling_freq):
-                sampling_freq = d["freq"]
-                t_s = min(d["t_start"], t_s)
-                t_e = max(d["t_end"], t_e)
+                sampling_freq = prediction.freq
+                t_s = min(prediction.t_start, t_s)
+                t_e = max(prediction.t_end, t_e)
 
-            add_metric(phasemode_list, d)
+            add_metric(phasemode_list, prediction)
 
     if not np.isnan(sampling_freq):
         t = np.arange(t_s, t_e, 1 / sampling_freq)

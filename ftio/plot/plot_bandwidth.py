@@ -106,7 +106,7 @@ def plot_bar_with_rich(
         terminal_width (int, optional): Width of the terminal. If None, it will be auto-detected.
         width_percentage (float): Percentage of terminal width to use for the plot.
         func (function): for interpolating y in the interpolated x ranges (i.e., how to calculate a single
-        representative y inside a x range)
+        representative y inside an x range)
     """
 
     console = Console()

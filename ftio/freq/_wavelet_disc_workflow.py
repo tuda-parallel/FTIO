@@ -66,7 +66,7 @@ def ftio_wavelet_disc(
     # ! Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
-    b_sampled, args.freq = sample_data(bandwidth, time_stamps, args.freq, args.verbose)
+    b_sampled, args.freq = sample_data(bandwidth, time_stamps, args)
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
     # b_sampled = logicize(b_sampled)
@@ -175,7 +175,7 @@ def ftio_wavelet_disc(
                 analyze_correlation(
                     args, prediction, coefficients_upsampled[index], t_sampled
                 )
-                console.print(f"[green] {index} completed[/]")
+                console.print(f"[green]{index} completed[/]")
             exit()
 
     # ? Option 3: Find intersection between DWT and DFT

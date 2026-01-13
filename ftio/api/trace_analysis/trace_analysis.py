@@ -68,7 +68,7 @@ def main(argv=sys.argv[1:]) -> None:
     progress = Progress(
         SpinnerColumn(),
         *Progress.get_default_columns(),
-        "[yellow] --  elapsed time",
+        "[yellow]--  elapsed time",
         TimeElapsedColumn(),
     )
 

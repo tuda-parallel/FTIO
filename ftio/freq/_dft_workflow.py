@@ -8,6 +8,7 @@ from rich.console import Group
 from rich.panel import Panel
 
 from ftio.analysis.anomaly_detection import outlier_detection
+from ftio.analysis.periodicity_analysis import new_periodicity_scores
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft import dft
 from ftio.freq._filter import filter_signal
@@ -58,7 +59,7 @@ def ftio_dft(
     #!  Sample the bandwidth evenly spaced in time
     tik = time.time()
     console.print("[cyan]Executing:[/] Discretization\n")
-    b_sampled, args.freq = sample_data(bandwidth, time_stamps, args.freq, args.verbose)
+    b_sampled, args.freq = sample_data(bandwidth, time_stamps, args)
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
     #! Apply filter if specified
@@ -67,7 +68,14 @@ def ftio_dft(
 
     #!  Perform DFT
     tik = time.time()
-    console.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
+    if args.periodicity_detection:
+        console.print(
+            f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n"
+        )
+    else:
+        console.print(
+            f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier} + {args.periodicity_detection}\n"
+        )
     n = len(b_sampled)
     frequencies = args.freq * np.arange(0, n) / n
     X = dft(b_sampled)
@@ -106,6 +114,8 @@ def ftio_dft(
     if n > 0 and len(dominant_index) > 0:
         prediction.dominant_freq = frequencies[dominant_index]
         prediction.conf = conf[dominant_index]
+        if args.periodicity_detection is not None:
+            prediction.periodicity = conf[dominant_index]
         prediction.amp = amp[dominant_index]
         prediction.phi = phi[dominant_index]
     else:
@@ -114,7 +124,7 @@ def ftio_dft(
         prediction.conf = np.array([])
         prediction.amp = np.array([])
         prediction.phi = np.array([])
-    
+
     # Safety check for empty time_stamps
     if len(time_stamps) > 0:
         prediction.t_start = time_stamps[0]
@@ -122,7 +132,6 @@ def ftio_dft(
     else:
         prediction.t_start = 0.0
         prediction.t_end = 0.0
-        
     prediction.freq = args.freq
     prediction.ranks = ranks
     prediction.total_bytes = total_bytes
@@ -136,16 +145,18 @@ def ftio_dft(
         prediction.top_freqs = {
             "freq": frequencies[top_candidates[0:n_freq]],
             "conf": conf[top_candidates[0:n_freq]],
+            "periodicity": conf[top_candidates[0:n_freq]],
             "amp": amp[top_candidates[0:n_freq]],
             "phi": phi[top_candidates[0:n_freq]],
         }
+
+    periodicity_score = new_periodicity_scores(amp, b_sampled, prediction, args)
 
     # Safety check for empty time_stamps
     if len(time_stamps) > 0 and args.freq > 0:
         t_sampled = time_stamps[0] + np.arange(0, n) * 1 / args.freq
     else:
         t_sampled = np.arange(0, n) * (1 / args.freq if args.freq > 0 else 1.0)
-    
     #! Fourier fit if set
     if args.fourier_fit:
         fourier_fit(args, prediction, analysis_figures, b_sampled, t_sampled)
@@ -174,7 +185,7 @@ def ftio_dft(
 
     precision_text = ""
     # precision_text = precision_dft(amp, phi, dominant_index, b_sampled, t_sampled, frequencies, args.engine)
-    text = Group(text, outlier_text, precision_text[:-1])
+    text = Group(text, outlier_text, periodicity_score, precision_text[:-1])
 
     console.print(
         Panel.fit(

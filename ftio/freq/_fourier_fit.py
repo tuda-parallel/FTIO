@@ -3,6 +3,7 @@ from argparse import Namespace
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objs as go
+from rich.panel import Panel
 from scipy.optimize import curve_fit
 from sklearn.metrics import mean_squared_error
 
@@ -87,9 +88,25 @@ def fourier_fit(
             prediction.top_freqs["phi"][i],
         ]
 
+    f_nyquist = 1 / (2 * (t[1] - t[0]))
+    b_max = max(b_sampled)
+    lower_bounds = []
+    upper_bounds = []
+    for i in range(args.n_freq):
+        lower_bounds += [-b_max, 0, -np.pi]
+        upper_bounds += [b_max, 2 * f_nyquist, np.pi]
+
     # Fit Fourier sum model
-    # params_opt, _ = curve_fit(fourier_sum, x, cA, p0=p0, maxfev=10000)
-    params_opt, _ = curve_fit(fourier_sum, t, b_sampled, p0=p0, maxfev=maxfev)
+    text = f"maxfev:{maxfev}\n"
+    params_opt, _ = curve_fit(
+        fourier_sum,
+        t,
+        b_sampled,
+        p0=p0,
+        maxfev=maxfev,
+        # bounds=(lower_bounds, upper_bounds),
+        method="dogbox",
+    )
 
     opt_mag = params_opt[0::3]  # Magnitude is 2*amp/n
     opt_amp = np.zeros_like(opt_mag)
@@ -129,9 +146,18 @@ def fourier_fit(
     improvement_pct = (
         100 * improvement / error_before if error_before != 0 else float("inf")
     )
-    print(
-        f"Fourier fit improvement: MSE reduced from {error_before:.6f} to {error_after:.6f} "
-        f"({improvement_pct:.2f}% improvement)"
+    text += (
+        f"Fourier fit improvement: \nMSE reduced from {error_before:.3e} to {error_after:.3e} \n"
+        f"--> {improvement_pct:.2f}% improvement"
+    )
+    console.print(
+        Panel.fit(
+            text,
+            style="white",
+            border_style="green",
+            title="Fourier Fit",
+            title_align="left",
+        )
     )
 
 

@@ -19,7 +19,6 @@ import math
 import mmap
 import os
 import re
-import subprocess
 import time
 from concurrent.futures import (
     ProcessPoolExecutor,
@@ -28,6 +27,7 @@ from concurrent.futures import (
 )
 
 from ftio.api.gekkoFs.file_queue import FileQueue
+from ftio.api.gekkoFs.gekko_helper import get_modification_time, preloaded_call
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.freq.helper import MyConsole
 
@@ -49,127 +49,303 @@ def move_files_os(
             modification time checks. Defaults to False.
         period (float, optional): Time period for file modification checks. Defaults to 0.
     """
-    CONSOLE.print("[bold green][Trigger][/][green] Moving files\n")
+    CONSOLE.print("[bold green][Trigger][/] Moving files\n")
     args.ld_preload = args.ld_preload.replace("libc_", "")
     if not os.path.exists(args.stage_out_path):
         os.makedirs(args.stage_out_path)
 
-    if args.parallel_move:
-        parallel = True
-
-    regex = None
-    # Compile the regex pattern if provided
-    if args.regex:
-        CONSOLE.print(f"[bold green][Trigger][/][green] Using pattern: {args.regex}[/]\n")
-        regex = re.compile(args.regex)
-
     # Iterate over all items in the source directory
     files = get_files(args)
+    if args.parallel_move_threads > 0:
+        text = f"[bold green][Trigger][/] {len(files)} files flagged to move in parallel with {args.parallel_move_threads} threads\n"
+    else:
+        text = f"[bold green][Trigger][/] {len(files)} files flagged to move\n"
+    CONSOLE.print(text)
+
     if args.debug:
-        f"[bold green][Trigger][/][green] Files are:\n {files}[/]\n"
+        CONSOLE.print(f"[bold green][Trigger][/] Files are:\n {files}\n")
 
     # Ensure the target directory exists
     os.makedirs(args.stage_out_path, exist_ok=True)
-    if not parallel:
-        for file_name in files:
-            if regex and regex.match(file_name):
-                if not files_in_progress.in_progress(file_name):
-                    files_in_progress.put(file_name)
-                    move_file(args, file_name, period)
-                    files_in_progress.mark_done(file_name)
-                else:
-                    if args.debug:
-                        CONSOLE.print(
-                            f"[bold green][Trigger][/]: already moving {file_name}"
-                        )
+    # Check if to submit files or folders
+    # items_to_submit = get_items_to_submit(files, args, "files")
+    items_to_submit = get_items_to_submit(files, args, "folder")
 
+    if "cp" in args.flush_call:
+        flush_using_cp(args, items_to_submit, period)
+    else:  # flush using tar
+        flush_using_tar(args, items_to_submit)
+
+
+def flush_using_tar(args: argparse.Namespace, items_to_submit: list[str] = []):
+    tar_cmd = f"tar -rf {args.stage_out_path}/data.tar {' '.join(items_to_submit)}"
+    CONSOLE.print(
+        f"[bold green][Trigger][/] taring {len(items_to_submit)} items to {args.stage_out_path})\n"
+    )
+    start = time.time()
+    preloaded_call(args, tar_cmd)
+    tar_time = time.time() - start
+    CONSOLE.print(
+        f"[bold green][Trigger][/] Finished taring {len(items_to_submit)} items to {args.stage_out_path})\n"
+    )
+    start = time.time()
+    delete_items(args, items_to_submit)
+    CONSOLE.print(
+        f"[bold green][Trigger][/][green]: Tar time for {len(items_to_submit)}: tarred in {tar_time} s, "
+        f"deleted in {time.time()-start} s[/]\n"
+    )
+
+
+def flush_using_cp(args: argparse.Namespace, items_to_submit: list[str], period: float):
+    """
+    Submits file processing tasks to a ProcessPoolExecutor and tracks progress, ensuring no
+    duplicate or ignored items are processed.
+    Args:
+        args (argparse.Namespace): Command-line arguments namespace.
+        items_to_submit (list[str]): List of items (file paths) that need to be processed.
+        period (float): Time interval in seconds between task executions.
+    Returns:
+        None
+    """
+    # Step 3: Submit tasks to the executor ((only move the files if they are not
+    # already in progress
+    futures: dict = {}
+    num_workers = args.parallel_move_threads
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        for idx, item in enumerate(items_to_submit):
+            # check that the item is not in progress and not  not in the ignored list
+            if not files_in_progress.in_progress(
+                item
+            ) and not files_in_progress.is_ignored(args, item):
+                files_in_progress.put(item)
+                futures[executor.submit(move_item, args, item, period)] = idx
+                if args.debug:
+                    CONSOLE.print(f"[bold green][Trigger][/]: moving {item}")
             else:
                 if args.debug:
-                    CONSOLE.print(f"[bold green][Trigger][/]:  Ignored {file_name}")
-    else:
-        futures = {}
-        with ProcessPoolExecutor(max_workers=5) as executor:
-            # Submit tasks to the executor
-            for i, file_name in enumerate(files):
-                if regex and regex.match(file_name):
-                    if not files_in_progress.in_progress(file_name):
-                        files_in_progress.put(file_name)
-                        futures[executor.submit(move_file, args, file_name, period)] = i
-                    else:
-                        if args.debug:
-                            CONSOLE.print(
-                                f"[bold green][Trigger][/]:  already moving {file_name}"
-                            )
+                    CONSOLE.print(f"[bold yellow][Trigger][/]: already moving {item}")
 
-                else:
+        CONSOLE.print(
+            f"[bold green][Trigger][/]: Finished submitting {len(futures)} futures. "
+            f"Using {num_workers} workers for processing"
+        )
+        if args.debug:
+            CONSOLE.print(
+                f"[bold green][Trigger][/]: files in process are: {files_in_progress}"
+            )
+
+        for future in as_completed(futures):
+            try:
+                future.result()
+                files_in_progress.mark_done(items_to_submit[futures[future]])
+            except Exception as e:
+                index = futures[future]
+                CONSOLE.print(f"[red bold] {items_to_submit[index]} had an error: {e}[/]")
+                files_in_progress.mark_done(items_to_submit[index])
+
+
+def get_items_to_submit(files: list, args: argparse.Namespace, mode: str = "files"):
+    """
+    Determine which items (files or folders) should be submitted based on
+    regex filtering and the submission mode.
+
+    If `mode` includes "folder", files are grouped by their parent directory.
+    Matching files (according to `args.regex`) are checked against all files
+    in the folder:
+      - If all files in a folder match, the entire folder is submitted.
+      - Otherwise, only the matching files from that folder are submitted.
+
+    If `mode` does not include "folder", all provided files are returned.
+
+    Args:
+        files (list[str]): List of file paths to consider for submission.
+        args (Namespace): Parsed arguments containing at least:
+            - regex (str | None): Regex pattern to filter files.
+            - debug (bool): Whether to print debug information.
+        mode (str, optional): Submission mode. If it contains "folder", directory-level
+            grouping and filtering logic is applied.
+
+    Returns:
+        list[str]: List of items (file paths or folder paths) to be submitted.
+    """
+    regex = None
+    # Compile the regex pattern if provided
+    if args.regex:
+        CONSOLE.print(f"[bold green][Trigger][/] Using pattern: {args.regex}\n")
+        regex = re.compile(args.regex)
+
+    if "folder" in mode:
+        # check if we can move the entire folder:
+        #  Step 0: Group all files by their parent folder
+        folder_to_all_files: dict[str, list[str]] = {}
+        for file_path in files:
+            folder = file_path.rsplit("/", 1)[0] if "/" in file_path else "."
+            # CONSOLE.print(f" Processing file: {file_path} -> folder: {folder}")
+            folder_to_all_files.setdefault(folder, []).append(file_path)
+
+        # CONSOLE.print(f"Final folder mapping: {folder_to_all_files}")
+        CONSOLE.print(f"[bold green][Trigger][/] Using regex: {regex}")
+
+        # Step 1: Filter files by regex (only candidates to move)
+        matching_files: list[str] = [f for f in files if regex and regex.match(f)]
+
+        # Step 2: Decide whether to submit folder or individual files
+        items_to_submit: list[str] = []
+
+        for folder, all_files_in_folder in folder_to_all_files.items():
+            matching_files_in_folder = [
+                f for f in all_files_in_folder if f in matching_files
+            ]
+            # If all files in the folder match, submit the folder
+            if matching_files_in_folder:
+                if set(all_files_in_folder) == set(matching_files_in_folder):
+                    items_to_submit.append(folder)
                     if args.debug:
-                        CONSOLE.print(f"[bold green][Trigger][/]:  Ignored {file_name}")
+                        CONSOLE.print(
+                            f"[bold green][Trigger][/] Will move folder: {folder}\n"
+                        )
+                else:
+                    items_to_submit.extend(matching_files_in_folder)
+                    if args.debug:
+                        CONSOLE.print(
+                            f"[bold green][Trigger][/] Will move "
+                            f"{len(matching_files_in_folder)} from {folder}\n"
+                        )
+    else:
+        items_to_submit = files
 
-            # Process results as they complete
-            for future in as_completed(futures):
-                # index = futures[future]
-                try:
-                    future.result()
-                    files_in_progress.mark_done(files[futures[future]])
-                except Exception as e:
-                    index = futures[future]
-                    CONSOLE.print(f"[red bold] {files[index]} had an error: {e}[/]")
-                    files_in_progress.mark_done(files[index])
+    return items_to_submit
 
 
-def move_file(args: argparse.Namespace, file_name: str, period: float = 0) -> None:
+def move_item(args: argparse.Namespace, item: str, period: float = 0) -> None:
     """
     Stages out a single file if it matches the regex and meets modification time criteria.
 
     Args:
         args (argparse.Namespace): Parsed command line arguments.
-        file_name (str): Name of the file to stage out.
+        item (str): Name of the file to stage out.
     """
-    threshold = period / 2  # the io took half the time
-    threshold = max(threshold, 10)
     fast = False  # fast copy still has an error with the preload
 
-    modification_time = time.time() - get_time(args, file_name)
+    # threshold = period / 2  # the IO took half the time
+    threshold = 0  # already considered in calculation of flush time
+    threshold = max(threshold, 5)
+
+    item_time = get_modification_time(args, item)
+    modification_time = time.time() - item_time
     # CONSOLE.print(f"File modified {modification_time:.2} seconds ago")
     if args.ignore_mtime or modification_time >= threshold:
         CONSOLE.print(
-            f"[bold green][Trigger][/][bold yellow]: Moving (copy & unlink) file {file_name} (last modified {modification_time:.3} -- threshold {threshold})[/]\n"
+            f"[bold green][Trigger][/][bold yellow]: Moving (copy & unlink) item {item} (last modified {modification_time:.3} > threshold {threshold})[/]\n"
         )
         os.makedirs(
-            os.path.dirname(file_name.replace(args.gkfs_mntdir, args.stage_out_path)),
+            os.path.dirname(item.replace(args.gkfs_mntdir, args.stage_out_path)),
             exist_ok=True,
         )
         if fast:
-            fast_chunk_copy_file(args, file_name, threads=4)
+            # Todo: add mode for folder. However this currenlty not used
+            fast_chunk_copy_file(args, item, threads=4)
         else:
-            copy_file_and_unlink(args, file_name)
+            copy_file_and_unlink(args, item)
+
+        CONSOLE.print(
+            f"[bold green][Trigger][/][yellow]: {len(files_in_progress)} files still in the queue."
+        )
     else:
         CONSOLE.print(
-            f"[bold green][Trigger][/][yellow]: {file_name} is too new (last modified {modification_time:.3})[/]\n"
+            f"[bold green][Trigger][/][yellow]: Skipping item {item} is too new (last modified {modification_time:.3} < threshold {threshold})[/]\n"
         )
-        files_in_progress.mark_failed(file_name)
+        files_in_progress.mark_failed(item)
 
 
-def copy_file_and_unlink(args: argparse.Namespace, file_name: str) -> None:
+def copy_file_and_unlink(args: argparse.Namespace, item: str) -> None:
     """
-    Copies a file to the stage-out path and unlinks it from the source.
+    Copies a file or folder to the stage-out path and removes it from the source.
 
     Args:
         args (argparse.Namespace): Parsed command line arguments.
-        file_name (str): Name of the file to copy and unlink.
+        item (str): Name of the file or folder to copy and remove.
     """
+    if "." in item.split("/")[-1]:  # file
+        cp_cmd = f"cp {item} {args.stage_out_path}"
+        remove_cmd = f"unlink {item}"
+    else:  # folder
+        cp_cmd = f"cp -r {item} {args.stage_out_path}"
+        # remove_cmd = f"rm -rf {item}"
+        remove_cmd = f"find {item} -type f -exec unlink {{}} \\;"
+
+    CONSOLE.print(f"[bold green][Trigger][/] Copying {item} to {args.stage_out_path})\n")
+    start = time.time()
+    preloaded_call(args, cp_cmd)
+    copy_time = time.time() - start
     CONSOLE.print(
-        f"[bold green][Trigger][/][green]: Copying {file_name} to {args.stage_out_path})[/]\n"
+        f"[bold green][Trigger][/] Finished moving {item} to {args.stage_out_path})\n"
     )
-    preloaded_call(args, f"cp {file_name} {args.stage_out_path}")
+
+    start = time.time()
+    CONSOLE.print(f"[bold green][Trigger][/] Removing {item} from source\n")
+    try:
+        preloaded_call(args, remove_cmd)
+    except Exception as e:
+        CONSOLE.print(
+            f"[bold red][Trigger][/]Exception encounter during {remove_cmd}: {e}"
+        )
+        if "-r" in remove_cmd:
+            try:
+                remove_cmd = f"find {item} -type f -exec unlink {{}} \\;"
+                preloaded_call(args, remove_cmd)
+            except Exception as e:
+                CONSOLE.print(
+                    f"[bold red][Trigger][/]Exception encounter during {remove_cmd}: {e}"
+                )
+        files_in_progress.put_ignore(args, item)
+        CONSOLE.print(f"[bold yellow][Trigger][/]Added {item} to ignore queue ")
 
     CONSOLE.print(
-        f"[bold green][Trigger][/][green]: Unlinking {file_name} to {args.stage_out_path})[/]\n"
+        f"[bold green][Trigger][/][green]: Times  for {item}: copied in {copy_time} s, "
+        f"deleted in {time.time()-start} s[/]\n"
     )
-    preloaded_call(args, f" unlink {file_name}")
-    CONSOLE.print(
-        f"[bold green][Trigger][/][green]: Finished moving  {file_name} to {args.stage_out_path})[/]\n"
-    )
+
+
+def delete_items(args: argparse.Namespace, items: list[str]) -> None:
+    """
+    Deletes a list of files or folders from the source.
+
+    Args:
+        args (argparse.Namespace): Parsed command line arguments.
+        items (list[str]): List of file or folder paths to delete.
+    """
+    for item in items:
+        start = time.time()
+        CONSOLE.print(f"[bold green][Trigger][/] Removing {item} from source\n")
+
+        # Choose deletion command based on type
+        if "." in item.split("/")[-1]:  # assume file
+            remove_cmd = f"unlink {item}"
+        else:  # assume folder
+            remove_cmd = f"find {item} -type f -exec unlink {{}} \\; && rm -rf {item}"
+
+        try:
+            preloaded_call(args, remove_cmd)
+            elapsed = time.time() - start
+            CONSOLE.print(
+                f"[bold green][Trigger][/] Successfully removed {item} in {elapsed:.2f}s\n"
+            )
+
+        except Exception as e:
+            CONSOLE.print(
+                f"[bold red][Trigger][/] Exception during deletion of {item}: {e}\n"
+            )
+            try:
+                # fallback: try file-only unlink for directories
+                remove_cmd = f"find {item} -type f -exec unlink {{}} \\;"
+                preloaded_call(args, remove_cmd)
+            except Exception as e2:
+                CONSOLE.print(
+                    f"[bold red][Trigger][/] Fallback deletion also failed for {item}: {e2}\n"
+                )
+                files_in_progress.put_ignore(args, item)
+                CONSOLE.print(f"[bold yellow][Trigger][/] Added {item} to ignore queue\n")
 
 
 def get_files(args: argparse.Namespace) -> list[str]:
@@ -213,36 +389,6 @@ def get_files(args: argparse.Namespace) -> list[str]:
         return files
     else:
         return []
-
-
-def get_time(args: argparse.Namespace, file_name: str) -> float:
-    """
-    Retrieves the last modification time of a file.
-
-    Args:
-        args (argparse.Namespace): Parsed command line arguments.
-        file_name (str): Name of the file.
-
-    Returns:
-        float: Last modification time of the file.
-    """
-    output = preloaded_call(args, f"stat --format=%Y {file_name}")
-    return float(output.strip())
-
-
-def preloaded_call(args: argparse.Namespace, call: str) -> str:
-    """
-    Executes a shell command with GekkoFS preloaded environment variables.
-
-    Args:
-        args (argparse.Namespace): Parsed command line arguments.
-        call (str): Shell command to execute.
-
-    Returns:
-        str: Output of the shell command.
-    """
-    call = f" LIBGKFS_HOSTS_FILE={args.host_file} LD_PRELOAD={args.ld_preload} {call}"
-    return subprocess.check_output(call, shell=True, text=True)
 
 
 def write_chunk(
@@ -364,12 +510,14 @@ def jit_move(settings: JitSettings) -> None:
         "--gkfs_mntdir",
         str(settings.gkfs_mntdir),
         "--ignore_mtime",
+        "--flush_call",
+        str(settings.flush_call),
     ]
     if settings.regex_match:
         args += ["--regex", f"{str(settings.regex_match)}"]
 
-    if settings.parallel_move:
-        args += ["--parallel_move"]
+    if settings.parallel_move_threads > 0:
+        args += ["--parallel_move_threads", f"{str(settings.parallel_move_threads)}"]
 
     if settings.debug_lvl > 0:
         args += ["--debug"]
@@ -413,7 +561,7 @@ def jit_move(settings: JitSettings) -> None:
         help="Mount directory for GekkoFs.",
     )
     parser.add_argument("--ignore_mtime", action="store_true", default=True)
-    parser.add_argument("--parallel_move", action="store_true", default=False)
+    parser.add_argument("--parallel_move_threads", type=int, default=1)
     parser.add_argument(
         "--debug",
         dest="debug",
@@ -427,6 +575,33 @@ def jit_move(settings: JitSettings) -> None:
         help="Adaptive flag for flushing",
         default="cancel",
         choices={"skip", "cancel", ""},
+    )
+
+    parser.add_argument(
+        "--strategy",
+        type=str,
+        choices=["flush", "job_end", "buffer_size"],
+        default="flush",
+        help="Flushing strategy: 'flush' (immediate), 'job_end' (wait until job finishes), or 'buffer_size' (flush after reaching given size).",
+    )
+    parser.add_argument(
+        "--job_time",
+        type=int,
+        default=0,
+        help="Time in seconds required for strategy 'job_end'.",
+    )
+    parser.add_argument(
+        "--buffer_size",
+        type=int,
+        default=0,
+        help="Buffer size in bytes required for strategy 'buffer_size'.",
+    )
+    parser.add_argument(
+        "--flush_call",
+        type=str,
+        choices=["cp", "tar"],
+        default="cp",
+        help="Flushing method: 'cp' to copy files or 'tar' to compress them.",
     )
 
     # Parse and call mover

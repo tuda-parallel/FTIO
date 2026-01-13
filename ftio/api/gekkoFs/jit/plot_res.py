@@ -23,7 +23,8 @@ def format(fig: go.Figure, title: str = "") -> None:
     # Update layout with larger font sizes
     fig.update_layout(
         yaxis_title="Time (s)",
-        xaxis_title=f"Experimental Runs with # Nodes",
+        # xaxis_title=f"Experimental Runs with # Nodes",
+        xaxis_title=f"",
         showlegend=True,
         title=title,
         title_font_size=24,  # Increased title font size
