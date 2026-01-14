@@ -38,6 +38,9 @@ def sample_data(
     Raises:
         RuntimeError: If no data is found in the sampled bandwidth.
     """
+    if len(t) == 0:
+        return np.empty(0), 0, " "
+
     if args is not None:
         freq = args.freq
         memory_limit = args.memory_limit * 1000**3  # args.memory_limit GB
@@ -52,9 +55,6 @@ def sample_data(
         f"Time window: {t[-1]-t[0]:.2f} s\n"
         f"Frequency step: {1/ duration if duration > 0 else 0:.3e} Hz\n"
     )
-
-    if len(t) == 0:
-        return np.empty(0), 0, " "
 
     # Calculate recommended frequency:
     if freq == -1:
