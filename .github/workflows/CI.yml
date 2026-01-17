@@ -1,46 +1,137 @@
-name: CI 
+name: CI
 
 on:
   push:
     branches:
-      - '*'  # Trigger on push to any branch
-      #   - 'development'  # Trigger on push to any branch
-      #   - 'main'  # Trigger on push to any branch
-      #   - '!development'  # Exclude the branch
+      - '*'
   pull_request:
     branches:
-      - 'main'  # Run tests on pull requests targeting the main branch
+      - 'main'
   workflow_dispatch:
 
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  # ============================================
+  # Code Quality: Linting and Formatting
+  # ============================================
+  lint:
+    name: Lint & Format Check
     runs-on: ubuntu-latest
+    continue-on-error: true  # Non-blocking
 
     steps:
-      - name: Checkout latest FTIO code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install FTIO and dependencies
+      - name: Install linting tools
         run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install --upgrade pip
-          pip install pytest pytest-cov
-          pip install .[external-libs] || \
-            { echo "::error::External dependencies installation failed, falling back to standard install."; \
-              pip install . --no-cache-dir; }
+          python -m pip install --upgrade pip
+          pip install ruff black
 
-      - name: Test FTIO with Coverage
+      - name: Run Ruff linter
+        run: ruff check . --output-format=github
+
+      - name: Check code formatting with Black
+        run: black --check --diff .
+
+  # ============================================
+  # Tests: Multi-Python Version Matrix
+  # ============================================
+  test:
+    name: Test Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    needs: [lint]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
         run: |
-          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+          pip install .[external-libs] || pip install . --no-cache-dir
+
+      - name: Run tests with coverage
+        run: |
+          cd test
+          pytest --cov=ftio --cov-report=xml --cov-report=term -v
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          files: test/coverage.xml
+          flags: unittests
+          name: codecov-ftio
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # ============================================
+  # Coverage Report (Primary Python Version)
+  # ============================================
+  coverage:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    needs: [lint]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-3.11-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-3.11-
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+          pip install .[external-libs] || pip install . --no-cache-dir
+
+      - name: Run tests with coverage
+        run: |
           cd test
           pytest --cov=ftio --cov-report=xml --cov-report=term --cov-report=html -v
-          rm -rf io_results __pycache__ *.json*
 
       - name: Upload coverage HTML report
         uses: actions/upload-artifact@v4
@@ -48,3 +139,38 @@ jobs:
           name: coverage-report
           path: test/htmlcov/
           retention-days: 30
+
+  # ============================================
+  # Build Verification
+  # ============================================
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Check package with twine
+        run: twine check dist/*
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7

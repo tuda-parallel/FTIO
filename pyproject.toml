@@ -104,7 +104,7 @@ development-libs = [
     "black",
     "isort",
     "nbstripout",
-    #    "flake8"
+    "ruff",
 ]
 
 [project.gui-scripts]
@@ -152,3 +152,38 @@ exclude = [
     ".venv",
     "env",
 ]
+
+[tool.ruff]
+line-length = 90
+target-version = "py38"
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    "env",
+    "*.egg-info",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "SIM",    # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "E203",   # whitespace before ':' (Black compatibility)
+    "B008",   # do not perform function calls in argument defaults
+    "SIM108", # Use ternary operator (can reduce readability)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ftio"]
+
