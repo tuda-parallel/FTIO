@@ -4,56 +4,62 @@ Functions for filters.
 
 import os
 
-from ftio.cli.ftio_core import core
+from ftio.cli.ftio_core import main
 
 
 def test_lowpass():
-    """Test the core functionality of ftio with no extra options."""
+    """Test the lowpass filter functionality of ftio."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = [
         "ftio",
         file,
         "-e",
         "no",
-        "--filter_type ",
+        "--filter_type",
         "lowpass",
         "--filter_cutoff",
         "1",
     ]
-    _ = core({}, args)
-    assert True
+    prediction, parsed_args = main(args)
+    assert len(prediction) > 0
+    assert not prediction[-1].is_empty()
+    assert prediction[-1].t_start == 0.05309
 
 
 def test_highpass():
-    """Test the core functionality of ftio with no extra options."""
+    """Test the highpass filter functionality of ftio."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = [
         "ftio",
         file,
         "-e",
         "no",
-        "--filter_type ",
+        "--filter_type",
         "highpass",
         "--filter_cutoff",
         "0.2",
     ]
-    _ = core({}, args)
-    assert True
+    prediction, parsed_args = main(args)
+    assert len(prediction) > 0
+    assert not prediction[-1].is_empty()
+    assert prediction[-1].t_start == 0.05309
 
 
 def test_bandpass():
-    """Test the core functionality of ftio with no extra options."""
+    """Test the bandpass filter functionality of ftio."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = [
         "ftio",
         file,
         "-e",
         "no",
-        "--filter_type ",
+        "--filter_type",
         "bandpass",
         "--filter_cutoff",
-        "0.01",
-        "5",
+        "0.1",
+        "0.9",
     ]
-    _ = core({}, args)
-    assert True
+    prediction, parsed_args = main(args)
+    assert len(prediction) > 0
+    assert not prediction[-1].is_empty()
+    assert prediction[-1].t_start == 0.05309
