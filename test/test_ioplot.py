@@ -4,12 +4,19 @@ Functions for testing the ioplot functionality of the ftio package.
 
 import os
 
-from ftio.util.ioplot import main
+from ftio.plot.plot_core import PlotCore
 
+FILE = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
 
-def test_ioplot():
-    """Test the ioplot functionality with no display option."""
-    file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
-    args = ["ioplot", file, "--no_disp"]
-    main(args)
-    assert True
+def test_data_loaded():
+    args = ["ioplot", FILE, "--no_disp"]
+    plotter = PlotCore(args)
+    assert plotter.data is not None
+    assert plotter.data.n >= 1
+
+def test_figures():
+    args = ["ioplot", FILE, "--no_disp"]
+    plotter = PlotCore(args)
+    figures = plotter.plot_plotly()
+    assert isinstance(figures, list)
+
