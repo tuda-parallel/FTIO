@@ -16,14 +16,14 @@ Three algorithms are available:
 ### Command Line
 
 ```bash
-# Use default ADWIN algorithm
-ftio_online <input> --online_adaptation adwin
+# Use default ADWIN algorithm (X = number of MPI ranks)
+predictor X.jsonl -e no -f 100 -w frequency hits --online_adaptation adwin
 
 # Use CUSUM algorithm
-ftio_online <input> --online_adaptation cusum
+predictor X.jsonl -e no -f 100 -w frequency hits --online_adaptation cusum
 
 # Use Page-Hinkley algorithm
-ftio_online <input> --online_adaptation ph
+predictor X.jsonl -e no -f 100 -w frequency hits --online_adaptation ph
 ```
 
 ### Python API
@@ -191,28 +191,3 @@ Algorithm is selected via the `--online_adaptation` flag:
 | `adwin`    | ADWIN     | Statistical guarantees with Hoeffding bounds |
 | `cusum`    | AV-CUSUM  | Rapid detection with adaptive variance |
 | `ph`       | Page-Hinkley | Sequential detection with running mean |
-
-## Troubleshooting
-
-### No changes detected
-
-- Check if frequency variations are significant enough
-- ADWIN requires statistical significance; try CUSUM for faster detection
-- Verify that valid frequencies are being detected (not NaN)
-
-### Too many false positives
-
-- Increase ADWIN's delta parameter for higher confidence threshold
-- Check for noisy data that might trigger spurious detections
-
-### Window not adapting
-
-- Verify `--online_adaptation` flag is set
-- Check logs for change detection messages
-- Ensure minimum window constraints aren't preventing adaptation
-
-## References
-
-- Bifet, A., & Gavalda, R. (2007). Learning from Time-Changing Data with Adaptive Windowing. *SIAM International Conference on Data Mining*.
-- Page, E. S. (1954). Continuous Inspection Schemes. *Biometrika*.
-- Basseville, M., & Nikiforov, I. V. (1993). *Detection of Abrupt Changes: Theory and Application*.
