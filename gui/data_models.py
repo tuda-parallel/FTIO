@@ -1,5 +1,17 @@
 """
-Data models for storing and managing prediction data from FTIO
+Data models for storing and managing prediction data from FTIO.
+
+This module provides dataclasses for structured storage of prediction data,
+change points, frequency candidates, and a thread-safe data store for
+managing prediction history.
+
+Author: Amine Aherbil
+Copyright (c) 2025 TU Darmstadt, Germany
+Date: January 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 from dataclasses import dataclass
 from typing import List, Optional, Dict, Any

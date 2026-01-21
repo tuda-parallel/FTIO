@@ -70,8 +70,22 @@ def ftio_metric_task_save(
     show: bool = False,
 ) -> None:
     prediction = ftio_metric_task(metric, arrays, argv, ranks, show)
+    # freq = get_dominant(prediction) #just get a single dominant value
     if prediction:
-        prediction.metric = metric
-        data.append(prediction)
+        data.append(
+            {
+                "metric": f"{metric}",
+                "dominant_freq": prediction.dominant_freq,
+                "conf": prediction.conf,
+                "amp": prediction.amp,
+                "phi": prediction.phi,
+                "t_start": prediction.t_start,
+                "t_end": prediction.t_end,
+                "total_bytes": prediction.total_bytes,
+                "ranks": prediction.ranks,
+                "freq": prediction.freq,
+                "top_freq": prediction.top_freqs,
+            }
+        )
     else:
         CONSOLE.info(f"\n[yellow underline]Warning: {metric} returned {prediction}[/]")

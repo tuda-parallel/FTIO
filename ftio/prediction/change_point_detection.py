@@ -1,4 +1,20 @@
-"""Change point detection algorithms for FTIO online predictor."""
+"""
+Change point detection algorithms for FTIO online predictor.
+
+This module provides adaptive change point detection algorithms for detecting
+I/O pattern changes in streaming data. It includes three algorithms:
+- ADWIN: Adaptive Windowing with Hoeffding bounds for statistical guarantees
+- AV-CUSUM: Adaptive-Variance Cumulative Sum for rapid change detection
+- STPH: Self-Tuning Page-Hinkley test for sequential change point detection
+
+Author: Amine Aherbil
+Copyright (c) 2025 TU Darmstadt, Germany
+Date: January 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
 
 from __future__ import annotations
 
@@ -20,24 +36,24 @@ class ChangePointDetector:
         self.shared_resources = shared_resources
         self.verbose = verbose
         
-        if shared_resources and not shared_resources.adwin_initialized.value:
-            if hasattr(shared_resources, 'adwin_lock'):
-                with shared_resources.adwin_lock:
-                    if not shared_resources.adwin_initialized.value:
-                        shared_resources.adwin_frequencies[:] = []
-                        shared_resources.adwin_timestamps[:] = []
-                        shared_resources.adwin_total_samples.value = 0
-                        shared_resources.adwin_change_count.value = 0
-                        shared_resources.adwin_last_change_time.value = 0.0
-                        shared_resources.adwin_initialized.value = True
+        if shared_resources and not shared_resources.detector_initialized.value:
+            if hasattr(shared_resources, 'detector_lock'):
+                with shared_resources.detector_lock:
+                    if not shared_resources.detector_initialized.value:
+                        shared_resources.detector_frequencies[:] = []
+                        shared_resources.detector_timestamps[:] = []
+                        shared_resources.detector_total_samples.value = 0
+                        shared_resources.detector_change_count.value = 0
+                        shared_resources.detector_last_change_time.value = 0.0
+                        shared_resources.detector_initialized.value = True
             else:
-                if not shared_resources.adwin_initialized.value:
-                    shared_resources.adwin_frequencies[:] = []
-                    shared_resources.adwin_timestamps[:] = []
-                    shared_resources.adwin_total_samples.value = 0
-                    shared_resources.adwin_change_count.value = 0
-                    shared_resources.adwin_last_change_time.value = 0.0
-                    shared_resources.adwin_initialized.value = True
+                if not shared_resources.detector_initialized.value:
+                    shared_resources.detector_frequencies[:] = []
+                    shared_resources.detector_timestamps[:] = []
+                    shared_resources.detector_total_samples.value = 0
+                    shared_resources.detector_change_count.value = 0
+                    shared_resources.detector_last_change_time.value = 0.0
+                    shared_resources.detector_initialized.value = True
         
         if shared_resources is None:
             self.frequencies: List[float] = []
@@ -57,44 +73,44 @@ class ChangePointDetector:
     
     def _get_frequencies(self):
         if self.shared_resources:
-            return self.shared_resources.adwin_frequencies
+            return self.shared_resources.detector_frequencies
         return self.frequencies
     
     def _get_timestamps(self):
         if self.shared_resources:
-            return self.shared_resources.adwin_timestamps
+            return self.shared_resources.detector_timestamps
         return self.timestamps
     
     def _get_total_samples(self):
         if self.shared_resources:
-            return self.shared_resources.adwin_total_samples.value
+            return self.shared_resources.detector_total_samples.value
         return self.total_samples
     
     def _set_total_samples(self, value):
         if self.shared_resources:
-            self.shared_resources.adwin_total_samples.value = value
+            self.shared_resources.detector_total_samples.value = value
         else:
             self.total_samples = value
     
     def _get_change_count(self):
         if self.shared_resources:
-            return self.shared_resources.adwin_change_count.value
+            return self.shared_resources.detector_change_count.value
         return self.change_count
     
     def _set_change_count(self, value):
         if self.shared_resources:
-            self.shared_resources.adwin_change_count.value = value
+            self.shared_resources.detector_change_count.value = value
         else:
             self.change_count = value
     
     def _get_last_change_time(self):
         if self.shared_resources:
-            return self.shared_resources.adwin_last_change_time.value if self.shared_resources.adwin_last_change_time.value > 0 else None
+            return self.shared_resources.detector_last_change_time.value if self.shared_resources.detector_last_change_time.value > 0 else None
         return self.last_change_time
     
     def _set_last_change_time(self, value):
         if self.shared_resources:
-            self.shared_resources.adwin_last_change_time.value = value if value is not None else 0.0
+            self.shared_resources.detector_last_change_time.value = value if value is not None else 0.0
         else:
             self.last_change_time = value
             
@@ -124,8 +140,8 @@ class ChangePointDetector:
             self._reset_window()
             return None
         
-        if self.shared_resources and hasattr(self.shared_resources, 'adwin_lock'):
-            with self.shared_resources.adwin_lock:
+        if self.shared_resources and hasattr(self.shared_resources, 'detector_lock'):
+            with self.shared_resources.detector_lock:
                 return self._add_prediction_synchronized(prediction, timestamp, freq)
         else:
             return self._add_prediction_local(prediction, timestamp, freq)
@@ -431,13 +447,13 @@ class CUSUMDetector:
         """Calculate thresholds automatically from data standard deviation."""
         import numpy as np
 
-        if self.shared_resources and hasattr(self.shared_resources, 'cusum_frequencies'):
-            if hasattr(self.shared_resources, 'cusum_lock'):
-                with self.shared_resources.cusum_lock:
-                    all_freqs = list(self.shared_resources.cusum_frequencies)
+        if self.shared_resources and hasattr(self.shared_resources, 'detector_frequencies'):
+            if hasattr(self.shared_resources, 'detector_lock'):
+                with self.shared_resources.detector_lock:
+                    all_freqs = list(self.shared_resources.detector_frequencies)
                     recent_freqs = all_freqs[-self.window_size-1:-1] if len(all_freqs) > 1 else []
             else:
-                all_freqs = list(self.shared_resources.cusum_frequencies)
+                all_freqs = list(self.shared_resources.detector_frequencies)
                 recent_freqs = all_freqs[-self.window_size-1:-1] if len(all_freqs) > 1 else []
         else:
             self.frequency_buffer.append(freq)
@@ -476,13 +492,13 @@ class CUSUMDetector:
         self.adaptive_drift = 0.0
 
         if self.shared_resources:
-            if hasattr(self.shared_resources, 'cusum_lock'):
-                with self.shared_resources.cusum_lock:
-                    del self.shared_resources.cusum_frequencies[:]
-                    del self.shared_resources.cusum_timestamps[:]
+            if hasattr(self.shared_resources, 'detector_lock'):
+                with self.shared_resources.detector_lock:
+                    del self.shared_resources.detector_frequencies[:]
+                    del self.shared_resources.detector_timestamps[:]
             else:
-                del self.shared_resources.cusum_frequencies[:]
-                del self.shared_resources.cusum_timestamps[:]
+                del self.shared_resources.detector_frequencies[:]
+                del self.shared_resources.detector_timestamps[:]
 
         self.console.print("[dim yellow][CUSUM] State cleared: Starting fresh when frequency resumes[/]")
     
@@ -494,27 +510,32 @@ class CUSUMDetector:
             return False, {}
 
         if self.shared_resources:
-            if hasattr(self.shared_resources, 'cusum_lock'):
-                with self.shared_resources.cusum_lock:
-                    self.shared_resources.cusum_frequencies.append(freq)
-                    self.shared_resources.cusum_timestamps.append(timestamp or 0.0)
+            if hasattr(self.shared_resources, 'detector_lock'):
+                with self.shared_resources.detector_lock:
+                    self.shared_resources.detector_frequencies.append(freq)
+                    self.shared_resources.detector_timestamps.append(timestamp or 0.0)
             else:
-                self.shared_resources.cusum_frequencies.append(freq)
-                self.shared_resources.cusum_timestamps.append(timestamp or 0.0)
+                self.shared_resources.detector_frequencies.append(freq)
+                self.shared_resources.detector_timestamps.append(timestamp or 0.0)
         
         self._update_adaptive_parameters(freq)
         
         if not self.initialized:
-            min_init_samples = 3  
-            if self.shared_resources and len(self.shared_resources.cusum_frequencies) >= min_init_samples:
-                first_freqs = list(self.shared_resources.cusum_frequencies)[:min_init_samples]
+            min_init_samples = 3
+            if self.shared_resources:
+                freq_list = list(self.shared_resources.detector_frequencies)
+            else:
+                freq_list = self.frequency_buffer
+
+            if len(freq_list) >= min_init_samples:
+                first_freqs = freq_list[:min_init_samples]
                 self.reference = np.mean(first_freqs)
                 self.initialized = True
                 if self.show_init:
                     self.console.print(f"[yellow][AV-CUSUM] Reference established: {self.reference:.3f} Hz "
                                      f"(from first {min_init_samples} observations: {[f'{f:.3f}' for f in first_freqs]})[/]")
             else:
-                current_count = len(self.shared_resources.cusum_frequencies) if self.shared_resources else 0
+                current_count = len(freq_list)
                 self.console.print(f"[dim yellow][AV-CUSUM] Collecting calibration data ({current_count}/{min_init_samples})[/]")
                 return False, {}
         
@@ -528,7 +549,7 @@ class CUSUMDetector:
         self.sum_neg = new_sum_neg
 
         if self.verbose:
-            current_window_size = len(self.shared_resources.cusum_frequencies) if self.shared_resources else 0
+            current_window_size = len(self.shared_resources.detector_frequencies) if self.shared_resources else 0
 
             self.console.print(f"[dim yellow][AV-CUSUM DEBUG] Observation #{current_window_size}:[/]")
             self.console.print(f"  [dim]• Current freq: {freq:.3f} Hz[/]")
@@ -543,8 +564,8 @@ class CUSUMDetector:
             self.console.print(f"  [dim]• Upward change test: {self.sum_pos:.3f} > {self.adaptive_threshold:.3f} = {'UPWARD CHANGE!' if self.sum_pos > self.adaptive_threshold else 'No change'}[/]")
             self.console.print(f"  [dim]• Downward change test: {self.sum_neg:.3f} > {self.adaptive_threshold:.3f} = {'DOWNWARD CHANGE!' if self.sum_neg > self.adaptive_threshold else 'No change'}[/]")
         
-        if self.shared_resources and hasattr(self.shared_resources, 'cusum_frequencies'):
-            sample_count = len(self.shared_resources.cusum_frequencies)
+        if self.shared_resources and hasattr(self.shared_resources, 'detector_frequencies'):
+            sample_count = len(self.shared_resources.detector_frequencies)
         else:
             sample_count = len(self.frequency_buffer)
 
@@ -589,29 +610,29 @@ class CUSUMDetector:
             self.sum_neg = 0.0
             
             if self.shared_resources:
-                if hasattr(self.shared_resources, 'cusum_lock'):
-                    with self.shared_resources.cusum_lock:
-                        old_window_size = len(self.shared_resources.cusum_frequencies)
+                if hasattr(self.shared_resources, 'detector_lock'):
+                    with self.shared_resources.detector_lock:
+                        old_window_size = len(self.shared_resources.detector_frequencies)
 
                         current_freq_list = [freq]
                         current_timestamp_list = [timestamp or 0.0]
 
-                        self.shared_resources.cusum_frequencies[:] = current_freq_list
-                        self.shared_resources.cusum_timestamps[:] = current_timestamp_list
+                        self.shared_resources.detector_frequencies[:] = current_freq_list
+                        self.shared_resources.detector_timestamps[:] = current_timestamp_list
 
                         self.console.print(f"[green][CUSUM] CHANGE POINT ADAPTATION: Discarded {old_window_size-1} past samples, "
                                          f"starting fresh from current detection[/]")
-                        self.console.print(f"[green][CUSUM] WINDOW RESET: {old_window_size} → {len(self.shared_resources.cusum_frequencies)} samples[/]")
+                        self.console.print(f"[green][CUSUM] WINDOW RESET: {old_window_size} → {len(self.shared_resources.detector_frequencies)} samples[/]")
 
-                        self.shared_resources.cusum_change_count.value += 1
+                        self.shared_resources.detector_change_count.value += 1
                 else:
-                    old_window_size = len(self.shared_resources.cusum_frequencies)
+                    old_window_size = len(self.shared_resources.detector_frequencies)
                     current_freq_list = [freq]
                     current_timestamp_list = [timestamp or 0.0]
-                    self.shared_resources.cusum_frequencies[:] = current_freq_list
-                    self.shared_resources.cusum_timestamps[:] = current_timestamp_list
+                    self.shared_resources.detector_frequencies[:] = current_freq_list
+                    self.shared_resources.detector_timestamps[:] = current_timestamp_list
                     self.console.print(f"[green][CUSUM] CHANGE POINT ADAPTATION: Discarded {old_window_size-1} past samples[/]")
-                    self.shared_resources.cusum_change_count.value += 1
+                    self.shared_resources.detector_change_count.value += 1
         
         return change_detected, change_info
 
@@ -649,7 +670,7 @@ def detect_pattern_change_cusum(
         f"[bold red][CUSUM] CHANGE DETECTED! "
         f"{reference:.1f}Hz → {current_freq:.1f}Hz "
         f"(Δ={magnitude:.1f}Hz, {percent_change:.1f}% {change_type}) "
-        f"at sample {len(shared_resources.cusum_frequencies)}, time={current_time:.3f}s[/]\n"
+        f"at sample {len(shared_resources.detector_frequencies)}, time={current_time:.3f}s[/]\n"
         f"[red][CUSUM] CUSUM stats: sum_pos={sum_pos:.2f}, sum_neg={sum_neg:.2f}, "
         f"threshold={threshold}[/]\n"
         f"[red][CUSUM] Cumulative sum exceeded threshold -> Starting fresh analysis[/]"
@@ -707,9 +728,9 @@ class SelfTuningPageHinkleyDetector:
         self.sum_of_samples = 0.0
         self.sample_count = 0
 
-        if shared_resources and hasattr(shared_resources, 'pagehinkley_state'):
+        if shared_resources and hasattr(shared_resources, 'detector_state'):
             try:
-                state = dict(shared_resources.pagehinkley_state)
+                state = dict(shared_resources.detector_state)
                 if state.get('initialized', False):
                     self.cumulative_sum_pos = state.get('cumulative_sum_pos', 0.0)
                     self.cumulative_sum_neg = state.get('cumulative_sum_neg', 0.0)
@@ -732,13 +753,13 @@ class SelfTuningPageHinkleyDetector:
         import numpy as np
 
         
-        if self.shared_resources and hasattr(self.shared_resources, 'pagehinkley_frequencies'):
-            if hasattr(self.shared_resources, 'ph_lock'):
-                with self.shared_resources.ph_lock:
-                    all_freqs = list(self.shared_resources.pagehinkley_frequencies)
+        if self.shared_resources and hasattr(self.shared_resources, 'detector_frequencies'):
+            if hasattr(self.shared_resources, 'detector_lock'):
+                with self.shared_resources.detector_lock:
+                    all_freqs = list(self.shared_resources.detector_frequencies)
                     recent_freqs = all_freqs[-self.window_size-1:-1] if len(all_freqs) > 1 else []
             else:
-                all_freqs = list(self.shared_resources.pagehinkley_frequencies)
+                all_freqs = list(self.shared_resources.detector_frequencies)
                 recent_freqs = all_freqs[-self.window_size-1:-1] if len(all_freqs) > 1 else []
         else:
             self.frequency_buffer.append(freq)
@@ -761,7 +782,7 @@ class SelfTuningPageHinkleyDetector:
                                  f"λ_t={self.adaptive_threshold:.3f} (2σ threshold), "
                                  f"δ_t={self.adaptive_delta:.3f} (0.5σ delta)[/]")
     
-    def _reset_pagehinkley_state(self):
+    def _reset_detector_state(self):
         """Reset Page-Hinkley state when no frequency is detected."""
         self.cumulative_sum_pos = 0.0
         self.cumulative_sum_neg = 0.0
@@ -775,21 +796,21 @@ class SelfTuningPageHinkleyDetector:
         self.adaptive_delta = 0.0
         
         if self.shared_resources:
-            if hasattr(self.shared_resources, 'pagehinkley_lock'):
-                with self.shared_resources.pagehinkley_lock:
-                    if hasattr(self.shared_resources, 'pagehinkley_frequencies'):
-                        del self.shared_resources.pagehinkley_frequencies[:]
-                    if hasattr(self.shared_resources, 'pagehinkley_timestamps'):
-                        del self.shared_resources.pagehinkley_timestamps[:]
-                    if hasattr(self.shared_resources, 'pagehinkley_state'):
-                        self.shared_resources.pagehinkley_state.clear()
+            if hasattr(self.shared_resources, 'detector_lock'):
+                with self.shared_resources.detector_lock:
+                    if hasattr(self.shared_resources, 'detector_frequencies'):
+                        del self.shared_resources.detector_frequencies[:]
+                    if hasattr(self.shared_resources, 'detector_timestamps'):
+                        del self.shared_resources.detector_timestamps[:]
+                    if hasattr(self.shared_resources, 'detector_state'):
+                        self.shared_resources.detector_state.clear()
             else:
-                if hasattr(self.shared_resources, 'pagehinkley_frequencies'):
-                    del self.shared_resources.pagehinkley_frequencies[:]
-                if hasattr(self.shared_resources, 'pagehinkley_timestamps'):
-                    del self.shared_resources.pagehinkley_timestamps[:]
-                if hasattr(self.shared_resources, 'pagehinkley_state'):
-                    self.shared_resources.pagehinkley_state.clear()
+                if hasattr(self.shared_resources, 'detector_frequencies'):
+                    del self.shared_resources.detector_frequencies[:]
+                if hasattr(self.shared_resources, 'detector_timestamps'):
+                    del self.shared_resources.detector_timestamps[:]
+                if hasattr(self.shared_resources, 'detector_state'):
+                    self.shared_resources.detector_state.clear()
         
         self.console.print("[dim yellow][STPH] State cleared: Starting fresh when frequency resumes[/]")
     
@@ -816,10 +837,10 @@ class SelfTuningPageHinkleyDetector:
             self.sample_count = 0
 
         if self.shared_resources:
-            if hasattr(self.shared_resources, 'pagehinkley_lock'):
-                with self.shared_resources.pagehinkley_lock:
-                    if hasattr(self.shared_resources, 'pagehinkley_state'):
-                        self.shared_resources.pagehinkley_state.update({
+            if hasattr(self.shared_resources, 'detector_lock'):
+                with self.shared_resources.detector_lock:
+                    if hasattr(self.shared_resources, 'detector_state'):
+                        self.shared_resources.detector_state.update({
                             'cumulative_sum_pos': 0.0,
                             'cumulative_sum_neg': 0.0,
                             'reference_mean': self.reference_mean,
@@ -829,20 +850,20 @@ class SelfTuningPageHinkleyDetector:
                         })
 
                  
-                    if hasattr(self.shared_resources, 'pagehinkley_frequencies'):
+                    if hasattr(self.shared_resources, 'detector_frequencies'):
                         if current_freq is not None:
-                            self.shared_resources.pagehinkley_frequencies[:] = [current_freq]
+                            self.shared_resources.detector_frequencies[:] = [current_freq]
                         else:
-                            del self.shared_resources.pagehinkley_frequencies[:]
-                    if hasattr(self.shared_resources, 'pagehinkley_timestamps'):
+                            del self.shared_resources.detector_frequencies[:]
+                    if hasattr(self.shared_resources, 'detector_timestamps'):
                         if current_freq is not None:
-                            last_timestamp = self.shared_resources.pagehinkley_timestamps[-1] if len(self.shared_resources.pagehinkley_timestamps) > 0 else 0.0
-                            self.shared_resources.pagehinkley_timestamps[:] = [last_timestamp]
+                            last_timestamp = self.shared_resources.detector_timestamps[-1] if len(self.shared_resources.detector_timestamps) > 0 else 0.0
+                            self.shared_resources.detector_timestamps[:] = [last_timestamp]
                         else:
-                            del self.shared_resources.pagehinkley_timestamps[:]
+                            del self.shared_resources.detector_timestamps[:]
             else:
-                if hasattr(self.shared_resources, 'pagehinkley_state'):
-                    self.shared_resources.pagehinkley_state.update({
+                if hasattr(self.shared_resources, 'detector_state'):
+                    self.shared_resources.detector_state.update({
                         'cumulative_sum_pos': 0.0,
                         'cumulative_sum_neg': 0.0,
                         'reference_mean': self.reference_mean,
@@ -850,17 +871,17 @@ class SelfTuningPageHinkleyDetector:
                         'sample_count': self.sample_count,
                         'initialized': True
                     })
-                if hasattr(self.shared_resources, 'pagehinkley_frequencies'):
+                if hasattr(self.shared_resources, 'detector_frequencies'):
                     if current_freq is not None:
-                        self.shared_resources.pagehinkley_frequencies[:] = [current_freq]
+                        self.shared_resources.detector_frequencies[:] = [current_freq]
                     else:
-                        del self.shared_resources.pagehinkley_frequencies[:]
-                if hasattr(self.shared_resources, 'pagehinkley_timestamps'):
+                        del self.shared_resources.detector_frequencies[:]
+                if hasattr(self.shared_resources, 'detector_timestamps'):
                     if current_freq is not None:
-                        last_timestamp = self.shared_resources.pagehinkley_timestamps[-1] if len(self.shared_resources.pagehinkley_timestamps) > 0 else 0.0
-                        self.shared_resources.pagehinkley_timestamps[:] = [last_timestamp]
+                        last_timestamp = self.shared_resources.detector_timestamps[-1] if len(self.shared_resources.detector_timestamps) > 0 else 0.0
+                        self.shared_resources.detector_timestamps[:] = [last_timestamp]
                     else:
-                        del self.shared_resources.pagehinkley_timestamps[:]
+                        del self.shared_resources.detector_timestamps[:]
 
         if current_freq is not None:
             self.console.print(f"[cyan][PH] Internal state reset with new reference: {current_freq:.3f} Hz[/]")
@@ -871,19 +892,19 @@ class SelfTuningPageHinkleyDetector:
      
         if np.isnan(freq) or freq <= 0:
             self.console.print("[yellow][STPH] No frequency found - resetting Page-Hinkley state[/]")
-            self._reset_pagehinkley_state()
+            self._reset_detector_state()
             return False, 0.0, {}
         
         self._update_adaptive_parameters(freq)
 
         if self.shared_resources:
-            if hasattr(self.shared_resources, 'pagehinkley_lock'):
-                with self.shared_resources.pagehinkley_lock:
-                    self.shared_resources.pagehinkley_frequencies.append(freq)
-                    self.shared_resources.pagehinkley_timestamps.append(timestamp or 0.0)
+            if hasattr(self.shared_resources, 'detector_lock'):
+                with self.shared_resources.detector_lock:
+                    self.shared_resources.detector_frequencies.append(freq)
+                    self.shared_resources.detector_timestamps.append(timestamp or 0.0)
             else:
-                self.shared_resources.pagehinkley_frequencies.append(freq)
-                self.shared_resources.pagehinkley_timestamps.append(timestamp or 0.0)
+                self.shared_resources.detector_frequencies.append(freq)
+                self.shared_resources.detector_timestamps.append(timestamp or 0.0)
             
         if self.sample_count == 0:
             self.sample_count = 1
@@ -917,10 +938,10 @@ class SelfTuningPageHinkleyDetector:
             self.console.print(f"  [dim]• Upward change test: {self.cumulative_sum_pos:.3f} > {self.adaptive_threshold:.3f} = {'UPWARD CHANGE!' if self.cumulative_sum_pos > self.adaptive_threshold else 'No change'}[/]")
             self.console.print(f"  [dim]• Downward change test: {self.cumulative_sum_neg:.3f} > {self.adaptive_threshold:.3f} = {'DOWNWARD CHANGE!' if self.cumulative_sum_neg > self.adaptive_threshold else 'No change'}[/]")
         
-        if self.shared_resources and hasattr(self.shared_resources, 'pagehinkley_state'):
-            if hasattr(self.shared_resources, 'pagehinkley_lock'):
-                with self.shared_resources.pagehinkley_lock:
-                    self.shared_resources.pagehinkley_state.update({
+        if self.shared_resources and hasattr(self.shared_resources, 'detector_state'):
+            if hasattr(self.shared_resources, 'detector_lock'):
+                with self.shared_resources.detector_lock:
+                    self.shared_resources.detector_state.update({
                         'cumulative_sum_pos': self.cumulative_sum_pos,
                         'cumulative_sum_neg': self.cumulative_sum_neg,
                         'reference_mean': self.reference_mean,
@@ -929,7 +950,7 @@ class SelfTuningPageHinkleyDetector:
                         'initialized': True
                     })
             else:
-                self.shared_resources.pagehinkley_state.update({
+                self.shared_resources.detector_state.update({
                     'cumulative_sum_pos': self.cumulative_sum_pos,
                     'cumulative_sum_neg': self.cumulative_sum_neg,
                     'reference_mean': self.reference_mean,
@@ -938,8 +959,8 @@ class SelfTuningPageHinkleyDetector:
                     'initialized': True
                 })
             
-        if self.shared_resources and hasattr(self.shared_resources, 'pagehinkley_frequencies'):
-            sample_count = len(self.shared_resources.pagehinkley_frequencies)
+        if self.shared_resources and hasattr(self.shared_resources, 'detector_frequencies'):
+            sample_count = len(self.shared_resources.detector_frequencies)
         else:
             sample_count = len(self.frequency_buffer)
 
@@ -973,14 +994,14 @@ class SelfTuningPageHinkleyDetector:
             self.console.print(f"[dim magenta]Detection method: {'Positive sum (upward trend)' if upward_change else 'Negative sum (downward trend)'}[/]")
             self.console.print(f"[dim magenta]Adaptive minimum detectable change: {self.adaptive_delta:.3f}[/]")
             
-            if self.shared_resources and hasattr(self.shared_resources, 'pagehinkley_change_count'):
-                if hasattr(self.shared_resources, 'pagehinkley_lock'):
-                    with self.shared_resources.pagehinkley_lock:
-                        self.shared_resources.pagehinkley_change_count.value += 1
+            if self.shared_resources and hasattr(self.shared_resources, 'detector_change_count'):
+                if hasattr(self.shared_resources, 'detector_lock'):
+                    with self.shared_resources.detector_lock:
+                        self.shared_resources.detector_change_count.value += 1
                 else:
-                    self.shared_resources.pagehinkley_change_count.value += 1
+                    self.shared_resources.detector_change_count.value += 1
                 
-        current_window_size = len(self.shared_resources.pagehinkley_frequencies) if self.shared_resources else self.sample_count
+        current_window_size = len(self.shared_resources.detector_frequencies) if self.shared_resources else self.sample_count
         
         metadata = {
             'cumulative_sum_pos': self.cumulative_sum_pos,
@@ -1011,7 +1032,7 @@ def detect_pattern_change_pagehinkley(
     current_time = current_prediction.t_end
 
     if current_freq is None or np.isnan(current_freq):
-        detector._reset_pagehinkley_state()
+        detector._reset_detector_state()
         return False, None, current_prediction.t_start
     
     change_detected, triggering_sum, metadata = detector.add_frequency(current_freq, current_time)
@@ -1039,8 +1060,8 @@ def detect_pattern_change_pagehinkley(
         )
         
         adaptive_start_time = current_time
-        if hasattr(shared_resources, 'pagehinkley_last_change_time'):
-            shared_resources.pagehinkley_last_change_time.value = current_time
+        if hasattr(shared_resources, 'detector_last_change_time'):
+            shared_resources.detector_last_change_time.value = current_time
         
         logger = shared_resources.logger if hasattr(shared_resources, 'logger') else None
         if logger:

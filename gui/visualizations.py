@@ -1,5 +1,17 @@
 """
-Plotly/Dash visualization components for FTIO prediction data
+Plotly/Dash visualization components for FTIO prediction data.
+
+This module provides visualization components for the FTIO dashboard including
+frequency timeline plots, continuous cosine wave displays, change point markers,
+and combined dashboard views.
+
+Author: Amine Aherbil
+Copyright (c) 2025 TU Darmstadt, Germany
+Date: January 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 import plotly.graph_objects as go
 import plotly.express as px

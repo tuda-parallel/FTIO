@@ -1,5 +1,17 @@
 """
-Socket listener for receiving FTIO prediction logs and parsing them into structured data
+Socket listener for receiving FTIO prediction logs and parsing them into structured data.
+
+This module provides a TCP socket server that receives logs from FTIO's online
+predictor and parses them into structured prediction data using regex-based
+log parsing.
+
+Author: Amine Aherbil
+Copyright (c) 2025 TU Darmstadt, Germany
+Date: January 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 import socket
 import json

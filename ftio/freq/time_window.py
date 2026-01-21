@@ -33,20 +33,12 @@ def data_in_time_window(
         indices = np.where(time_b >= args.ts)
         time_b = time_b[indices]
         bandwidth = bandwidth[indices]
-        
-        if len(time_b) > 0:
-            total_bytes = int(
-                np.sum(bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b))
-            )
-            text += f"[green]Start time set to {args.ts:.2f}[/] s\n"
-        else:
-            total_bytes = 0
-            text += f"[red]Warning: No data after start time {args.ts:.2f}[/] s\n"
+        total_bytes = int(
+            np.sum(bandwidth * (np.concatenate([time_b[1:], time_b[-1:]]) - time_b))
+        )
+        text += f"[green]Start time set to {args.ts:.2f}[/] s\n"
     else:
-        if len(time_b) > 0:
-            text += f"Start time: [cyan]{time_b[0]:.2f}[/] s \n"
-        else:
-            text += f"[red]Warning: No data available[/]\n"
+        text += f"Start time: [cyan]{time_b[0]:.2f}[/] s \n"
 
     # shorten data according to end time
     if args.te:
@@ -58,10 +50,7 @@ def data_in_time_window(
         )
         text += f"[green]End time set to {args.te:.2f}[/] s\n"
     else:
-        if len(time_b) > 0:
-            text += f"End time: [cyan]{time_b[-1]:.2f}[/] s\n"
-        else:
-            text += f"[red]Warning: No data in time window[/]\n"
+        text += f"End time: [cyan]{time_b[-1]:.2f}[/] s\n"
 
     # ignored bytes
     ignored_bytes = ignored_bytes - total_bytes

@@ -1,5 +1,17 @@
 """
-Main Dash application for FTIO prediction visualization
+Main Dash application for FTIO prediction visualization.
+
+This module provides a real-time dashboard for visualizing FTIO predictions
+and change point detection results. It includes auto-updating visualizations,
+statistics display, and prediction selection controls.
+
+Author: Amine Aherbil
+Copyright (c) 2025 TU Darmstadt, Germany
+Date: January 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 import dash
 from dash import dcc, html, Input, Output, State, callback_context

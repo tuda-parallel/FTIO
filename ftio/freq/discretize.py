@@ -38,9 +38,6 @@ def sample_data(
     Raises:
         RuntimeError: If no data is found in the sampled bandwidth.
     """
-    if len(t) == 0:
-        return np.empty(0), 0, " "
-
     if args is not None:
         freq = args.freq
         memory_limit = args.memory_limit * 1000**3  # args.memory_limit GB
@@ -56,6 +53,9 @@ def sample_data(
         f"Frequency step: {1/ duration if duration > 0 else 0:.3e} Hz\n"
     )
 
+    if len(t) == 0:
+        return np.empty(0), 0, " "
+
     # Calculate recommended frequency:
     if freq == -1:
         # Auto-detect frequency based on smallest time delta
@@ -64,7 +64,6 @@ def sample_data(
         text += f"Recommended sampling frequency: {freq:.3e} Hz\n"
         # Apply limit if freq is negative
         N = int(np.floor((t[-1] - t[0]) * freq))
-        # N = N + 1 if N != 0 else 0  # include end point
         limit_N = int(memory_limit // np.dtype(np.float64).itemsize)
         text += f"memory limit: {memory_limit/ 1000**3:.3e} GB ({limit_N} samples)\n"
         if N > limit_N:
@@ -73,9 +72,8 @@ def sample_data(
             text += f"[yellow]Adjusted sampling frequency due to memory limit: {freq:.3e} Hz[/])\n"
     else:
         text += f"Sampling frequency:  {freq:.3e} Hz\n"
-        # Compute the number of samples
+        # Compute number of samples
         N = int(np.floor((t[-1] - t[0]) * freq))
-        # N = N + 1 if N != 0 else 0  # include end point
 
     text += f"Expected samples: {N}\n"
     # print("    '-> \033[1;Start time: %f s \033[1;0m"%t[0])

@@ -104,13 +104,11 @@ def get_change_detector(shared_resources: SharedResources, algorithm: str = "adw
         _local_detector_cache = {}
 
     detector_key = f"{algo}_detector"
-    init_flag_attr = f"{algo}_initialized"
 
     if detector_key in _local_detector_cache:
         return _local_detector_cache[detector_key]
 
-    init_flag = getattr(shared_resources, init_flag_attr)
-    show_init_message = not init_flag.value
+    show_init_message = not shared_resources.detector_initialized.value
 
     if algo == "cusum":
         detector = CUSUMDetector(window_size=50, shared_resources=shared_resources, show_init=show_init_message, verbose=True)
@@ -120,7 +118,7 @@ def get_change_detector(shared_resources: SharedResources, algorithm: str = "adw
         detector = ChangePointDetector(delta=0.05, shared_resources=shared_resources, show_init=show_init_message, verbose=True)
 
     _local_detector_cache[detector_key] = detector
-    init_flag.value = True
+    shared_resources.detector_initialized.value = True
     return detector
 
 def ftio_process(shared_resources: SharedResources, args: list[str], msgs=None) -> None:
@@ -211,7 +209,7 @@ def window_adaptation(
 
     text += hits(args, prediction, shared_resources)
 
-    algorithm = args.algorithm
+    algorithm = args.online_adaptation
 
     detector = get_change_detector(shared_resources, algorithm)
     if algorithm == "cusum":
@@ -228,27 +226,12 @@ def window_adaptation(
         )
 
     if np.isnan(freq):
-        if algorithm == "cusum":
-            cusum_samples = len(shared_resources.cusum_frequencies)
-            cusum_changes = shared_resources.cusum_change_count.value
-            text += f"[dim][CUSUM STATE: {cusum_samples} samples, {cusum_changes} changes detected so far][/]\n"
-            if cusum_samples > 0:
-                last_freq = shared_resources.cusum_frequencies[-1] if shared_resources.cusum_frequencies else "None"
-                text += f"[dim][LAST KNOWN FREQ: {last_freq:.3f} Hz][/]\n"
-        elif algorithm == "ph":
-            ph_samples = len(shared_resources.pagehinkley_frequencies)
-            ph_changes = shared_resources.pagehinkley_change_count.value
-            text += f"[dim][PAGE-HINKLEY STATE: {ph_samples} samples, {ph_changes} changes detected so far][/]\n"
-            if ph_samples > 0:
-                last_freq = shared_resources.pagehinkley_frequencies[-1] if shared_resources.pagehinkley_frequencies else "None"
-                text += f"[dim][LAST KNOWN FREQ: {last_freq:.3f} Hz][/]\n"
-        else:  # ADWIN
-            adwin_samples = len(shared_resources.adwin_frequencies)
-            adwin_changes = shared_resources.adwin_change_count.value
-            text += f"[dim][ADWIN STATE: {adwin_samples} samples, {adwin_changes} changes detected so far][/]\n"
-            if adwin_samples > 0:
-                last_freq = shared_resources.adwin_frequencies[-1] if shared_resources.adwin_frequencies else "None"
-                text += f"[dim][LAST KNOWN FREQ: {last_freq:.3f} Hz][/]\n"
+        detector_samples = len(shared_resources.detector_frequencies)
+        detector_changes = shared_resources.detector_change_count.value
+        text += f"[dim][{algorithm.upper()} STATE: {detector_samples} samples, {detector_changes} changes detected so far][/]\n"
+        if detector_samples > 0:
+            last_freq = shared_resources.detector_frequencies[-1] if shared_resources.detector_frequencies else "None"
+            text += f"[dim][LAST KNOWN FREQ: {last_freq:.3f} Hz][/]\n"
     
     if change_detected and change_log:
         text += f"{change_log}\n"
@@ -257,11 +240,11 @@ def window_adaptation(
 
         if safe_adaptive_start >= 0 and (t_e - safe_adaptive_start) >= min_window_size:
             t_s = safe_adaptive_start
-            algorithm_name = args.algorithm.upper() if hasattr(args, 'algorithm') else "UNKNOWN"
+            algorithm_name = args.online_adaptation.upper() if hasattr(args, 'online_adaptation') else "UNKNOWN"
             text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] {algorithm_name} adapted window to start at {t_s:.3f}s (window size: {t_e - t_s:.3f}s)[/]\n"
         else:
             t_s = max(0, t_e - min_window_size)
-            algorithm_name = args.algorithm.upper() if hasattr(args, 'algorithm') else "UNKNOWN"
+            algorithm_name = args.online_adaptation.upper() if hasattr(args, 'online_adaptation') else "UNKNOWN"
             text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/][yellow] {algorithm_name} adaptation would create unsafe window, using conservative {min_window_size}s window[/]\n"
     if not np.isnan(freq) and freq > 0:
         time_window = t_e - t_s
@@ -310,26 +293,17 @@ def window_adaptation(
                     text += f"[bold purple][PREDICTOR] (#{shared_resources.count.value}):[/][green]Adjusting start time to t_flush[{index}] {t_s} sec\n[/]"
 
     if not np.isnan(freq):
-        if algorithm == "cusum":
-            samples = len(shared_resources.cusum_frequencies)
-            changes = shared_resources.cusum_change_count.value
-            recent_freqs = list(shared_resources.cusum_frequencies)[-5:] if len(shared_resources.cusum_frequencies) >= 5 else list(shared_resources.cusum_frequencies)
-        elif algorithm == "ph":
-            samples = len(shared_resources.pagehinkley_frequencies)
-            changes = shared_resources.pagehinkley_change_count.value
-            recent_freqs = list(shared_resources.pagehinkley_frequencies)[-5:] if len(shared_resources.pagehinkley_frequencies) >= 5 else list(shared_resources.pagehinkley_frequencies)
-        else:  # ADWIN
-            samples = len(shared_resources.adwin_frequencies)
-            changes = shared_resources.adwin_change_count.value
-            recent_freqs = list(shared_resources.adwin_frequencies)[-5:] if len(shared_resources.adwin_frequencies) >= 5 else list(shared_resources.adwin_frequencies)
-        
+        samples = len(shared_resources.detector_frequencies)
+        changes = shared_resources.detector_change_count.value
+        recent_freqs = list(shared_resources.detector_frequencies)[-5:] if len(shared_resources.detector_frequencies) >= 5 else list(shared_resources.detector_frequencies)
+
         success_rate = (samples / prediction_count) * 100 if prediction_count > 0 else 0
-        
+
         text += f"\n[bold cyan]{algorithm.upper()} ANALYSIS (Prediction #{prediction_count})[/]\n"
         text += f"[cyan]Frequency detections: {samples}/{prediction_count} ({success_rate:.1f}% success)[/]\n"
         text += f"[cyan]Pattern changes detected: {changes}[/]\n"
         text += f"[cyan]Current frequency: {freq:.3f} Hz ({1/freq:.2f}s period)[/]\n"
-        
+
         if samples > 1:
             text += f"[cyan]Recent freq history: {[f'{f:.3f}Hz' for f in recent_freqs]}[/]\n"
 
@@ -339,7 +313,7 @@ def window_adaptation(
 
         text += f"[cyan]{algorithm.upper()} window size: {samples} samples[/]\n"
         text += f"[cyan]{algorithm.upper()} changes detected: {changes}[/]\n"
-        
+
         text += f"[bold cyan]{'='*50}[/]\n\n"
     
     text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Ended"
