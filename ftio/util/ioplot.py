@@ -1,3 +1,4 @@
+import importlib.util
 import sys
 
 from ftio.plot.plot_core import PlotCore

@@ -3,7 +3,6 @@ Functions for testing the ioplot functionality of the ftio package.
 """
 
 import os
-
 from ftio.util.ioplot import main
 
 
