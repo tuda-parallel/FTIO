@@ -7,11 +7,10 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-
+import importlib.util
 from ftio.freq.helper import MyConsole
 from ftio.parse.metrics import Metrics
 from ftio.parse.scales import Scales
-from ftio.plot.dash_files.dash_app import IOAnalysisApp
 from ftio.plot.helper import *
 from ftio.plot.plot_error import plot_error_bar, plot_time_error_bar
 from ftio.plot.print_html import PrintHtml
@@ -46,8 +45,24 @@ class PlotCore:
 
     def plot_dash(self):
         """Starts a dash server to display the figures dynamically."""
-        app = IOAnalysisApp(self)
-        app.run(port=_find_free_port(), debug=False)
+        if importlib.util.find_spec("dash") is not None:
+            import dash.dependencies
+
+            if not hasattr(dash.dependencies, "_Wildcard"):
+                dash.dependencies._Wildcard = object
+            from ftio.plot.dash_files.dash_app import IOAnalysisApp
+
+            app = IOAnalysisApp(self)
+            app.run(port=_find_free_port(), debug=False)
+        else:
+            from rich.markup import escape
+
+            CONSOLE.info(
+                "[red]"
+                + escape(
+                    "Please install plot-libs: pip install '.[external-libs,development-libs,plot-libs]'"
+                )
+            )
 
     def plot_plotly(self):
         self.f_aw = []

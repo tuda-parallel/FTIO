@@ -191,6 +191,36 @@ def freq_analysis(
             args, bandwidth, time_b, ranks
         )
 
+    elif any(t in args.transformation for t in ("astft", "efd", "vmd")):
+        # TODO: add a way to pass the results to FTIO
+        try:
+            import vmdpy
+        except ImportError:
+            raise RuntimeError(
+                "ASTFT transformation is disabled.\n"
+                "Install with: pip install ftio[amd-libs]"
+            )
+
+        if "astft" in args.transformation:
+            import sys
+
+            from ftio.freq._astft_workflow import ftio_astft
+
+            prediction, analysis_figures, share = ftio_astft(
+                args, bandwidth, time_b, total_bytes, ranks, text
+            )
+            sys.exit()
+
+        if "efd" in args.transformation or "vmd" in args.transformation:
+            import sys
+
+            from ftio.freq._amd_workflow import ftio_amd
+
+            prediction, analysis_figures, share = ftio_amd(
+                args, bandwidth, time_b, total_bytes, ranks, text
+            )
+            sys.exit()
+
     else:
         raise Exception("Unsupported decomposition specified")
 
