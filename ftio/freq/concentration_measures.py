@@ -1,4 +1,17 @@
 """
+file description
+
+Author: josefinez
+Editor: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Date: Oct 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
+"""
 TODO:
 - window function CM?
 - find an CM implementation to verify approach
@@ -25,12 +38,14 @@ beta = 5
 p = 4
 L = 105
 
+
 # don't know
 # https://de.mathworks.com/matlabcentral/answers/356692-how-to-normalize-a-fft-to-plot-in-frequency-domain
 def normalize_fft(yf):
-    yf_norm = fftshift(yf/ len(yf))
-    #yf_norm = yf / np.max(yf)
+    yf_norm = fftshift(yf / len(yf))
+    # yf_norm = yf / np.max(yf)
     return yf_norm
+
 
 def cm3(x, fs):
     win_len = min_win
@@ -43,9 +58,9 @@ def cm3(x, fs):
 
     sum = np.zeros((L,), dtype=np.complex128)
 
-    for j in range(0,L):
+    for j in range(0, L):
         win = boxcar(win_len)
-        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len//2)
+        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len // 2)
         Zxx = Zxx.transpose()
 
         for yf in Zxx:
@@ -56,9 +71,10 @@ def cm3(x, fs):
         win_len = win_len + p
 
     peak = np.argmax(sum)
-    final_win_len = min_win + p*peak
+    final_win_len = min_win + p * peak
 
     return final_win_len
+
 
 def cm4(x, fs):
     win_len = min_win
@@ -71,10 +87,10 @@ def cm4(x, fs):
 
     sum = np.zeros((L,), dtype=np.complex128)
 
-    for j in range(0,L):
+    for j in range(0, L):
         win = boxcar(win_len)
-        #win = hann(win_len)
-        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len//2)
+        # win = hann(win_len)
+        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len // 2)
         Zxx = Zxx.transpose()
 
         for yf in Zxx:
@@ -84,9 +100,10 @@ def cm4(x, fs):
         win_len = win_len + p
 
     peak = np.argmax(sum)
-    final_win_len = min_win + p*peak
+    final_win_len = min_win + p * peak
 
     return final_win_len
+
 
 def cm5(x, fs):
     win_len = min_win
@@ -99,9 +116,9 @@ def cm5(x, fs):
 
     sum = np.zeros((L,), dtype=np.complex128)
 
-    for j in range(0,L):
+    for j in range(0, L):
         win = boxcar(win_len)
-        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len//2)
+        f, t, Zxx = stft(x, fs=fs, window=win, nperseg=win_len, noverlap=win_len // 2)
         Zxx = Zxx.transpose()
 
         sum1 = 0.0
@@ -112,10 +129,10 @@ def cm5(x, fs):
             sum1 = sum1 + np.sum(yf_norm) ** beta
             sum2 = sum2 + np.sum(yf_norm) ** alpha
 
-        sum[j] = (sum1 ** (1/beta)) / (sum2 ** (1/alpha))
+        sum[j] = (sum1 ** (1 / beta)) / (sum2 ** (1 / alpha))
         win_len = win_len + p
 
     peak = np.argmax(sum)
-    final_win_len = min_win + p*peak
+    final_win_len = min_win + p * peak
 
     return final_win_len

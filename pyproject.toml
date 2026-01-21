@@ -28,25 +28,6 @@ dependencies = [
     "rich",
     "pytest",
     "fastcluster",
-	"scikit-learn",
-	"pyzmq",
-	"numba",
-	"darshan",
-	"scipy",
-	"pandas",
-	"orjson",
-	"jsonlines",
-	"plotly",
-	"kneed",
-	"PyWavelets",
-	"msgpack",
-	"rich",
-	"pytest",
-	"fastcluster",
-	"opencv-contrib-python",
-	"tftb>=0.2.0",
-	"vmdpy",
-	"pysdkit",
 ]
 
 requires-python = ">=3.8"
@@ -122,6 +103,13 @@ development-libs = [
     "isort",
     "nbstripout",
     #    "flake8"
+]
+
+amd-libs = [
+    "opencv-contrib-python",
+    "tftb>=0.2.0",
+    "vmdpy",
+    "pysdkit",
 ]
 
 [project.gui-scripts]

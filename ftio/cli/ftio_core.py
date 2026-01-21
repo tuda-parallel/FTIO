@@ -25,14 +25,10 @@ from argparse import Namespace
 import numpy as np
 
 from ftio.freq._analysis_figures import AnalysisFigures
-from ftio.freq._dft_workflow import ftio_dft
 from ftio.freq._share_signal_data import SharedSignalData
-from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
-from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
 from ftio.freq.autocorrelation import find_autocorrelation
 from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
-from ftio.freq.time_window import data_in_time_window
 from ftio.parse.extract import get_time_behavior_and_args
 from ftio.plot.freq_plot import convert_and_plot
 from ftio.prediction.unify_predictions import merge_predictions
@@ -41,8 +37,6 @@ from ftio.freq.time_window import data_in_time_window
 from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
 from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
 from ftio.freq._dft_workflow import ftio_dft
-from ftio.freq._astft_workflow import ftio_astft
-from ftio.freq._amd_workflow import ftio_amd
 
 
 def main(
@@ -197,19 +191,33 @@ def freq_analysis(
             args, bandwidth, time_b, ranks
         )
 
-    elif "astft" in args.transformation:
-        prediction, analysis_figures, share  = ftio_astft(
-            args, bandwidth, time_b, total_bytes, ranks, text
-        )
-        import sys
-        sys.exit()
+    elif any(t in args.transformation for t in ("astft", "efd", "vmd")):
+        # TODO: add a way to pass the results to FTIO
+        try:
+            import vmdpy
+        except ImportError:
+            raise RuntimeError(
+                "ASTFT transformation is disabled.\n"
+                "Install with: pip install ftio[amd-libs]"
+            )
 
-    elif "efd" in args.transformation or "vmd" in args.transformation:
-        prediction, analysis_figures, share  = ftio_amd(
-            args, bandwidth, time_b, total_bytes, ranks, text
-        )
-        import sys
-        sys.exit()
+        if "astft" in args.transformation:
+            from ftio.freq._astft_workflow import ftio_astft
+            import sys
+
+            prediction, analysis_figures, share = ftio_astft(
+                args, bandwidth, time_b, total_bytes, ranks, text
+            )
+            sys.exit()
+
+        if "efd" in args.transformation or "vmd" in args.transformation:
+            from ftio.freq._amd_workflow import ftio_amd
+            import sys
+
+            prediction, analysis_figures, share = ftio_amd(
+                args, bandwidth, time_b, total_bytes, ranks, text
+            )
+            sys.exit()
 
     else:
         raise Exception("Unsupported decomposition specified")
