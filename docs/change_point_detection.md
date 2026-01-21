@@ -26,25 +26,6 @@ predictor X.jsonl -e no -f 100 -w frequency hits --online_adaptation cusum
 predictor X.jsonl -e no -f 100 -w frequency hits --online_adaptation ph
 ```
 
-### Python API
-
-```python
-from ftio.prediction.change_point_detection import (
-    ChangePointDetector,      # ADWIN
-    CUSUMDetector,            # CUSUM
-    SelfTuningPageHinkleyDetector  # Page-Hinkley
-)
-
-# Create detector
-detector = ChangePointDetector(delta=0.05)
-
-# Add predictions and check for changes
-result = detector.add_prediction(prediction, timestamp)
-if result is not None:
-    change_idx, change_time = result
-    print(f"Change detected at time {change_time}")
-```
-
 ## Algorithms
 
 ### ADWIN (Adaptive Windowing)
@@ -60,7 +41,6 @@ ADWIN uses Hoeffding bounds to detect statistically significant changes in the f
 **Parameters:**
 - `delta` (default: 0.05): Confidence parameter. Lower values = higher confidence required for detection
 
-**Best for:** Applications requiring statistical guarantees on false positive rates
 
 ### AV-CUSUM (Adaptive-Variance Cumulative Sum)
 
@@ -75,7 +55,6 @@ CUSUM tracks cumulative deviations from a reference value, with adaptive thresho
 **Parameters:**
 - `window_size` (default: 50): Size of rolling window for variance calculation
 
-**Best for:** Rapid detection of mean shifts
 
 ### STPH (Self-Tuning Page-Hinkley)
 
@@ -90,7 +69,6 @@ Page-Hinkley uses a running mean as reference and detects when observations devi
 **Parameters:**
 - `window_size` (default: 10): Size of rolling window for variance calculation
 
-**Best for:** Sequential detection with adaptive reference
 
 ## Window Adaptation
 
@@ -118,9 +96,11 @@ A real-time visualization dashboard is available for monitoring predictions and 
 ### Starting the Dashboard
 
 ```bash
-# In a separate terminal
-cd gui
-python run_dashboard.py
+# Install GUI dependencies (if not already installed)
+pip install -e .[gui]
+
+# Run the dashboard
+ftio_gui
 ```
 
 The dashboard runs on `http://localhost:8050` and displays:
@@ -135,52 +115,7 @@ The dashboard runs on `http://localhost:8050` and displays:
 - **Frequency annotations**: Shows old → new frequency at each change
 - **Gap visualization**: Displays periods with no detected frequency
 
-## Architecture
 
-```
-FTIO Online Predictor
-         │
-         ▼
-┌─────────────────────────┐
-│ window_adaptation()     │
-│  - Select algorithm     │
-│  - Detect changes       │
-│  - Adapt window         │
-└──────────┬──────────────┘
-           │
-           ▼
-┌─────────────────────────┐
-│ Change Point Detector   │
-│  - ADWIN / CUSUM / PH   │
-│  - Process-safe state   │
-└──────────┬──────────────┘
-           │
-    ┌──────┴──────┐
-    ▼             ▼
-Socket        Adapted
-Logger        Window
-    │             │
-    ▼             ▼
-GUI          Next
-Dashboard    Prediction
-```
-
-## Configuration
-
-### Shared Resources
-
-The change point detection uses shared resources for process-safe operation:
-
-```python
-# In shared_resources.py
-self.detector_frequencies = self.manager.list()
-self.detector_timestamps = self.manager.list()
-self.detector_change_count = self.manager.Value("i", 0)
-self.detector_last_change_time = self.manager.Value("d", 0.0)
-self.detector_initialized = self.manager.Value("b", False)
-self.detector_lock = self.manager.Lock()
-self.detector_state = self.manager.dict()
-```
 
 ### Algorithm Selection
 
