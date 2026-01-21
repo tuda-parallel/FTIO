@@ -19,12 +19,12 @@ import threading
 import re
 import logging
 from typing import Optional, Callable
-from gui.data_models import PredictionData, ChangePoint, FrequencyCandidate, PredictionDataStore
+from ftio.gui.data_models import PredictionData, ChangePoint, FrequencyCandidate, PredictionDataStore
 
 
 class LogParser:
     """Parses FTIO prediction log messages into structured data"""
-    
+
     def __init__(self):
         self.patterns = {
             'prediction_start': re.compile(r'\[PREDICTOR\]\s+\(#(\d+)\):\s+Started'),
@@ -47,11 +47,11 @@ class LogParser:
             'cusum_change': re.compile(r'\[AV-CUSUM\]\s+CHANGE DETECTED!\s+([\d.]+)Hz\s+→\s+([\d.]+)Hz\s+\(([\d.]+)%'),
             'cusum_change_alt': re.compile(r'\[CUSUM\]\s+CHANGE DETECTED!\s+([\d.]+)Hz\s+→\s+([\d.]+)Hz.*?time=([\d.]+)s'),
         }
-        
+
         self.current_prediction = None
         self.current_change_point = None
         self.candidates_buffer = []
-    
+
     def parse_log_message(self, message: str) -> Optional[dict]:
 
         match = self.patterns['prediction_start'].search(message)
@@ -67,52 +67,52 @@ class LogParser:
             }
             self.candidates_buffer = []
             return None
-        
+
         if not self.current_prediction:
             return None
-            
+
         pred_id = self.current_prediction['prediction_id']
-        
+
         match = self.patterns['dominant_freq'].search(message)
         if match and int(match.group(1)) == pred_id:
             self.current_prediction['dominant_freq'] = float(match.group(2))
             self.current_prediction['dominant_period'] = float(match.group(3))
-        
+
         match = self.patterns['freq_candidates'].search(message)
         if match and int(match.group(1)) == pred_id:
             freq = float(match.group(2))
             conf = float(match.group(3))
             self.candidates_buffer.append(FrequencyCandidate(freq, conf))
-        
+
         match = self.patterns['time_window'].search(message)
         if match and int(match.group(1)) == pred_id:
             self.current_prediction['time_window'] = (float(match.group(3)), float(match.group(4)))
-        
+
         match = self.patterns['total_bytes'].search(message)
         if match and int(match.group(1)) == pred_id:
             self.current_prediction['total_bytes'] = match.group(2).strip()
-        
+
         match = self.patterns['bytes_transferred'].search(message)
         if match and int(match.group(1)) == pred_id:
             self.current_prediction['bytes_transferred'] = match.group(2).strip()
-        
+
         match = self.patterns['current_hits'].search(message)
         if match and int(match.group(1)) == pred_id:
             self.current_prediction['current_hits'] = int(float(match.group(2)))
-        
+
         match = self.patterns['periodic_prob'].search(message)
         if match:
             self.current_prediction['periodic_probability'] = float(match.group(1))
-        
+
         match = self.patterns['freq_range'].search(message)
         if match:
             self.current_prediction['frequency_range'] = (float(match.group(1)), float(match.group(2)))
             self.current_prediction['confidence'] = float(match.group(3))
-        
+
         match = self.patterns['period_range'].search(message)
         if match:
             self.current_prediction['period_range'] = (float(match.group(3)), float(match.group(4)))
-        
+
         match = self.patterns['change_point'].search(message)
         if match:
             self.current_change_point = {
@@ -121,17 +121,17 @@ class LogParser:
                 'prediction_id': pred_id
             }
             self.current_prediction['is_change_point'] = True
-        
+
         match = self.patterns['exact_change_point'].search(message)
         if match and self.current_change_point:
             self.current_change_point['timestamp'] = float(match.group(1))
-        
+
         match = self.patterns['frequency_shift'].search(message)
         if match and self.current_change_point:
             self.current_change_point['old_frequency'] = float(match.group(1))
             self.current_change_point['new_frequency'] = float(match.group(2))
             self.current_change_point['frequency_change_percent'] = float(match.group(3))
-        
+
         match = self.patterns['sample_number'].search(message)
         if match:
             self.current_prediction['sample_number'] = int(match.group(1))
@@ -181,7 +181,7 @@ class LogParser:
         match = self.patterns['prediction_end'].search(message)
         if match and int(match.group(1)) == pred_id:
             self.current_prediction['candidates'] = self.candidates_buffer.copy()
-            
+
             if self.current_prediction['is_change_point'] and self.current_change_point:
                 change_point = ChangePoint(
                     prediction_id=pred_id,
@@ -194,7 +194,7 @@ class LogParser:
                     total_samples=self.current_change_point.get('total_samples', 0)
                 )
                 self.current_prediction['change_point'] = change_point
-            
+
             prediction_data = PredictionData(
                 prediction_id=pred_id,
                 timestamp=self.current_prediction.get('timestamp', ''),
@@ -213,19 +213,19 @@ class LogParser:
                 change_point=self.current_prediction['change_point'],
                 sample_number=self.current_prediction.get('sample_number')
             )
-            
+
             self.current_prediction = None
             self.current_change_point = None
             self.candidates_buffer = []
-            
+
             return {'type': 'prediction', 'data': prediction_data}
-        
+
         return None
 
 
 class SocketListener:
     """Listens for socket connections and processes FTIO prediction logs"""
-    
+
     def __init__(self, host='localhost', port=9999, data_callback: Optional[Callable] = None):
         self.host = host
         self.port = port
@@ -234,31 +234,31 @@ class SocketListener:
         self.running = False
         self.server_socket = None
         self.client_connections = []
-        
+
     def start_server(self):
         try:
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            
+
             print(f"Attempting to bind to {self.host}:{self.port}")
             self.server_socket.bind((self.host, self.port))
             self.server_socket.listen(5)
             self.running = True
-            
+
             print(f" Socket server successfully listening on {self.host}:{self.port}")
-            
+
             while self.running:
                 try:
                     client_socket, address = self.server_socket.accept()
                     print(f" Client connected from {address}")
-                    
+
                     client_thread = threading.Thread(
-                        target=self._handle_client, 
+                        target=self._handle_client,
                         args=(client_socket, address)
                     )
                     client_thread.daemon = True
                     client_thread.start()
-                    
+
                 except socket.error as e:
                     if self.running:
                         print(f"Error accepting client connection: {e}")
@@ -266,7 +266,7 @@ class SocketListener:
                 except KeyboardInterrupt:
                     print(" Socket server interrupted")
                     break
-                    
+
         except OSError as e:
             if e.errno == 98:  # Address already in use
                 print(f"Port {self.port} is already in use! Please use a different port or kill the process using it.")
@@ -280,7 +280,7 @@ class SocketListener:
             self.running = False
         finally:
             self.stop_server()
-    
+
     def _handle_client(self, client_socket, address):
         try:
             while self.running:
@@ -288,22 +288,22 @@ class SocketListener:
                     data = client_socket.recv(4096).decode('utf-8')
                     if not data:
                         break
-                    
+
                     try:
                         message_data = json.loads(data)
-                        
+
                         if message_data.get('type') == 'prediction' and 'data' in message_data:
                             print(f"[DEBUG] Direct prediction data received: #{message_data['data']['prediction_id']}")
-                            
+
                             pred_data = message_data['data']
-                            
+
                             candidates = []
                             for cand in pred_data.get('candidates', []):
                                 candidates.append(FrequencyCandidate(
                                     frequency=cand['frequency'],
                                     confidence=cand['confidence']
                                 ))
-                            
+
                             change_point = None
                             if pred_data.get('is_change_point') and pred_data.get('change_point'):
                                 cp_data = pred_data['change_point']
@@ -317,7 +317,7 @@ class SocketListener:
                                     cut_position=cp_data['cut_position'],
                                     total_samples=cp_data['total_samples']
                                 )
-                            
+
                             prediction_data = PredictionData(
                                 prediction_id=pred_data['prediction_id'],
                                 timestamp=pred_data['timestamp'],
@@ -336,27 +336,27 @@ class SocketListener:
                                 change_point=change_point,
                                 sample_number=pred_data.get('sample_number')
                             )
-                            
+
                             if self.data_callback:
                                 self.data_callback({'type': 'prediction', 'data': prediction_data})
-                        
+
                         else:
                             log_message = message_data.get('message', '')
-                            
+
                             parsed_data = self.parser.parse_log_message(log_message)
-                            
+
                             if parsed_data and self.data_callback:
                                 self.data_callback(parsed_data)
-                            
+
                     except json.JSONDecodeError:
                         # Handle plain text messages
                         parsed_data = self.parser.parse_log_message(data.strip())
                         if parsed_data and self.data_callback:
                             self.data_callback(parsed_data)
-                            
+
                 except socket.error:
                     break
-                    
+
         except Exception as e:
             logging.error(f"Error handling client {address}: {e}")
         finally:
@@ -365,7 +365,7 @@ class SocketListener:
                 print(f"Client {address} disconnected")
             except:
                 pass
-    
+
     def stop_server(self):
         self.running = False
         if self.server_socket:
@@ -373,7 +373,7 @@ class SocketListener:
                 self.server_socket.close()
             except:
                 pass
-        
+
         for client_socket in self.client_connections:
             try:
                 client_socket.close()
@@ -381,7 +381,7 @@ class SocketListener:
                 pass
         self.client_connections.clear()
         print("Socket server stopped")
-    
+
     def start_in_thread(self):
         server_thread = threading.Thread(target=self.start_server)
         server_thread.daemon = True

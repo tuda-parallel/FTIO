@@ -18,18 +18,18 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import numpy as np
 from typing import List, Tuple, Dict
-from gui.data_models import PredictionData, ChangePoint, PredictionDataStore
+from ftio.gui.data_models import PredictionData, ChangePoint, PredictionDataStore
 
 
 class FrequencyTimelineViz:
     """Creates frequency timeline visualization"""
-    
+
     @staticmethod
     def create_timeline_plot(data_store: PredictionDataStore, title="FTIO Frequency Timeline"):
         """Create main frequency timeline plot"""
-        
+
         pred_ids, frequencies, confidences = data_store.get_frequency_timeline()
-        
+
         if not pred_ids:
             fig = go.Figure()
             fig.add_annotation(
@@ -89,7 +89,7 @@ class FrequencyTimelineViz:
                     ))
 
         cp_pred_ids, cp_frequencies, cp_labels = data_store.get_change_points_for_timeline()
-        
+
         if cp_pred_ids:
             fig.add_trace(go.Scatter(
                 x=cp_pred_ids,
@@ -147,18 +147,18 @@ class FrequencyTimelineViz:
                 borderwidth=1
             )
         )
-        
+
         return fig
 
 
 class CosineWaveViz:
     """Creates cosine wave visualization for individual predictions"""
-    
+
     @staticmethod
-    def create_cosine_plot(data_store: PredictionDataStore, prediction_id: int, 
+    def create_cosine_plot(data_store: PredictionDataStore, prediction_id: int,
                           title=None, num_points=1000):
         """Create cosine wave plot for a specific prediction"""
-        
+
         prediction = data_store.get_prediction_by_id(prediction_id)
         if not prediction:
             fig = go.Figure()
@@ -180,11 +180,11 @@ class CosineWaveViz:
         t, primary_wave, candidate_waves = data_store.generate_cosine_wave(
             prediction_id, num_points
         )
-        
+
         if title is None:
             title = (f"Cosine Wave - Prediction #{prediction_id} "
                     f"(f = {prediction.dominant_freq:.2f} Hz)")
-        
+
         fig = go.Figure()
 
         fig.add_trace(go.Scatter(
@@ -247,13 +247,13 @@ class CosineWaveViz:
                 borderwidth=1
             )
         )
-        
+
         return fig
 
 
 class DashboardViz:
     """Creates comprehensive dashboard visualization"""
-    
+
     @staticmethod
     def create_dashboard(data_store: PredictionDataStore, selected_prediction_id=None):
         """Create comprehensive dashboard with multiple views"""
@@ -261,8 +261,8 @@ class DashboardViz:
         fig = make_subplots(
             rows=2, cols=2,
             subplot_titles=(
-                "Frequency Timeline", 
-                "Latest Predictions", 
+                "Frequency Timeline",
+                "Latest Predictions",
                 "Cosine Wave View",
                 "Statistics"
             ),
@@ -303,18 +303,18 @@ class DashboardViz:
         fig.update_yaxes(title_text="Amplitude", row=2, col=1)
         fig.update_xaxes(title_text="Metric", row=2, col=2)
         fig.update_yaxes(title_text="Value", row=2, col=2)
-        
+
         return fig
-    
+
     @staticmethod
     def _calculate_stats(data_store: PredictionDataStore) -> Dict[str, float]:
         """Calculate basic statistics from prediction data"""
         if not data_store.predictions:
             return {}
-        
+
         frequencies = [p.dominant_freq for p in data_store.predictions]
         confidences = [p.confidence for p in data_store.predictions]
-        
+
         stats = {
             'Total Predictions': len(data_store.predictions),
             'Change Points': len(data_store.change_points),
@@ -322,5 +322,5 @@ class DashboardViz:
             'Avg Confidence': np.mean(confidences),
             'Freq Std Dev': np.std(frequencies)
         }
-        
+
         return stats

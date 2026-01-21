@@ -79,6 +79,9 @@ jit = "ftio.api.gekkoFs.jit.jit:main"
 parallel_trace_analysis = "ftio.api.trace_analysis.parallel_trace_analysis:main" # analyses several traces (JSON or CSV) in parallel
 proxy_ftio = "ftio.api.metric_proxy.parallel_proxy:main"
 
+# GUI
+ftio_gui = "ftio.gui.dashboard:main"
+
 # Debug-Specific Scripts
 plot_bandwdith = "ftio.plot.plot_bandwidth:main"
 convert_trace = "ftio.util.convert_old_trace:main"
@@ -99,14 +102,17 @@ external-libs = [
     "colorlog",
 ]
 
+gui = [
+    "dash>=2.14.0",
+    "plotly>=5.15.0",
+]
+
 development-libs = [
     "black",
     "isort",
     "nbstripout",
     #    "flake8"
 ]
-
-[project.gui-scripts]
 
 
 [tool.setuptools.dynamic]
