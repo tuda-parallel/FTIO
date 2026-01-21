@@ -15,9 +15,11 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-import numpy as np
 import time
 from argparse import Namespace
+
+import numpy as np
+
 from ftio.freq._amd import amd
 from ftio.freq.discretize import sample_data
 from ftio.freq.helper import MyConsole

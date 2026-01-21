@@ -25,18 +25,18 @@ from argparse import Namespace
 import numpy as np
 
 from ftio.freq._analysis_figures import AnalysisFigures
+from ftio.freq._dft_workflow import ftio_dft
 from ftio.freq._share_signal_data import SharedSignalData
+from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
+from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
 from ftio.freq.autocorrelation import find_autocorrelation
 from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
+from ftio.freq.time_window import data_in_time_window
 from ftio.parse.extract import get_time_behavior_and_args
 from ftio.plot.freq_plot import convert_and_plot
 from ftio.prediction.unify_predictions import merge_predictions
 from ftio.processing.print_output import display_prediction
-from ftio.freq.time_window import data_in_time_window
-from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
-from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
-from ftio.freq._dft_workflow import ftio_dft
 
 
 def main(
@@ -202,8 +202,9 @@ def freq_analysis(
             )
 
         if "astft" in args.transformation:
-            from ftio.freq._astft_workflow import ftio_astft
             import sys
+
+            from ftio.freq._astft_workflow import ftio_astft
 
             prediction, analysis_figures, share = ftio_astft(
                 args, bandwidth, time_b, total_bytes, ranks, text
@@ -211,8 +212,9 @@ def freq_analysis(
             sys.exit()
 
         if "efd" in args.transformation or "vmd" in args.transformation:
-            from ftio.freq._amd_workflow import ftio_amd
             import sys
+
+            from ftio.freq._amd_workflow import ftio_amd
 
             prediction, analysis_figures, share = ftio_amd(
                 args, bandwidth, time_b, total_bytes, ranks, text

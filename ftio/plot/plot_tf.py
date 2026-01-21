@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fft import fft, ifft
 from scipy.signal import stft
-from scipy.signal.windows import gaussian, boxcar
+from scipy.signal.windows import boxcar, gaussian
 
 from ftio.freq.concentration_measures import cm3, cm4, cm5
 

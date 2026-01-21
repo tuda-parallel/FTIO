@@ -12,19 +12,19 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 from collections import namedtuple
-import numpy as np
-import matplotlib.pyplot as plt
-from vmdpy import VMD
-from pysdkit import EFD
 
-from ftio.freq._astft import check_3_periods, simple_astft
-from ftio.analysis.anomaly_detection import z_score_minimal as z_score
-from ftio.freq.denoise import tfpf_wvd
+import matplotlib.pyplot as plt
+import numpy as np
+from pysdkit import EFD
+from scipy.signal import hilbert
+from vmdpy import VMD
 
 # from ftio.freq.frq_verification import pcc, scc
 # from scipy.fft import fft, ifft
 from ftio.analysis._correlation import correlation
-from scipy.signal import hilbert
+from ftio.analysis.anomaly_detection import z_score_minimal as z_score
+from ftio.freq._astft import check_3_periods, simple_astft
+from ftio.freq.denoise import tfpf_wvd
 
 
 def amd(b_sampled, freq, time_b, args):

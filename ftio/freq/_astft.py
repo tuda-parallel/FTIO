@@ -23,20 +23,19 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 from collections import namedtuple
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fft import fft
 from scipy.signal import stft
-from scipy.signal.windows import gaussian, boxcar
-from ftio.freq.if_comp_separation import (
-    binary_image_zscore,
-    component_linking,
-    # binary_image,
-    # binary_image_nprom,
-    # binary_image_zscore_extended,
-)
+from scipy.signal.windows import boxcar, gaussian
+
 from ftio.freq.concentration_measures import cm3, cm4, cm5
 from ftio.freq.denoise import tfpf_wvd
+from ftio.freq.if_comp_separation import (  # binary_image,; binary_image_nprom,; binary_image_zscore_extended,
+    binary_image_zscore,
+    component_linking,
+)
 
 # from ftio.plot.plot_tf import plot_tf, plot_tf_contour
 
