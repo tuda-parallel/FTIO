@@ -1,3 +1,16 @@
+"""
+This file provides a custom ZMQ server implementation for communication with the Metric Proxy.
+This includes handling data transmission, deserialization, and serialization from and to the Metric Proxy,
+processing requests, answering pings and changing the servers address on request from the Proxy.
+
+Author: Tim Dieringer
+Copyright (c) 2025 TU Darmstadt, Germany  
+Date: January 2026
+
+Licensed under the BSD 3-Clause License.  
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
 import math
 import time
 import numpy as np
