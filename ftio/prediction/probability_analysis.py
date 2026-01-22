@@ -77,38 +77,50 @@ def find_probability(data: list[dict], method: str = "db", counter: int = -1) ->
 
 
 def detect_pattern_change(shared_resources, prediction, detector, count):
-    try:
-        from ftio.prediction.helper import get_dominant
+    """Detect pattern changes in predictions.
 
-        freq = get_dominant(prediction)
+    Args:
+        shared_resources: Shared resources for multiprocessing
+        prediction: Current prediction object
+        detector: Change point detector instance
+        count: Prediction counter
 
-        if hasattr(detector, 'verbose') and detector.verbose:
-            console = Console()
-            console.print(f"[cyan][DEBUG] Change point detection called for prediction #{count}, freq={freq:.3f} Hz[/]")
-            console.print(f"[cyan][DEBUG] Detector calibrated: {detector.is_calibrated}, samples: {len(detector.frequencies)}[/]")
+    Returns:
+        tuple: (change_detected, change_log, start_time)
+    """
+    if prediction is None or detector is None:
+        return False, "", 0.0
 
-        current_time = prediction.t_end
-        result = detector.add_prediction(prediction, current_time)
+    freq = get_dominant(prediction)
 
-        if hasattr(detector, 'verbose') and detector.verbose:
-            console = Console()
-            console.print(f"[cyan][DEBUG] Detector result: {result}[/]")
+    if freq is None or np.isnan(freq):
+        return False, "", getattr(prediction, 't_start', 0.0)
 
-        if result is not None:
-            change_point_idx, change_point_time = result
+    current_time = getattr(prediction, 't_end', 0.0)
 
-            if hasattr(detector, 'verbose') and detector.verbose:
-                console = Console()
-                console.print(f"[green][DEBUG] CHANGE POINT DETECTED! Index: {change_point_idx}, Time: {change_point_time:.3f}[/]")
-
-            change_log = f"[red bold][CHANGE_POINT] t_s={change_point_time:.3f} sec[/]"
-            change_log += f"\n[purple][PREDICTOR] (#{count}):[/][yellow] Adapting analysis window to start at t_s={change_point_time:.3f}[/]"
-
-            return True, change_log, change_point_time
-
-        return False, "", prediction.t_start
-
-    except Exception as e:
+    if hasattr(detector, 'verbose') and detector.verbose:
         console = Console()
-        console.print(f"[red]Change point detection error: {e}[/]")
-        return False, "", prediction.t_start
+        console.print(f"[cyan][DEBUG] Change point detection called for prediction #{count}, freq={freq:.3f} Hz[/]")
+        frequencies = getattr(detector, 'frequencies', [])
+        is_calibrated = getattr(detector, 'is_calibrated', False)
+        console.print(f"[cyan][DEBUG] Detector calibrated: {is_calibrated}, samples: {len(frequencies)}[/]")
+
+    result = detector.add_prediction(prediction, current_time)
+
+    if hasattr(detector, 'verbose') and detector.verbose:
+        console = Console()
+        console.print(f"[cyan][DEBUG] Detector result: {result}[/]")
+
+    if result is not None:
+        change_point_idx, change_point_time = result
+
+        if hasattr(detector, 'verbose') and detector.verbose:
+            console = Console()
+            console.print(f"[green][DEBUG] CHANGE POINT DETECTED! Index: {change_point_idx}, Time: {change_point_time:.3f}[/]")
+
+        change_log = f"[red bold][CHANGE_POINT] t_s={change_point_time:.3f} sec[/]"
+        change_log += f"\n[purple][PREDICTOR] (#{count}):[/][yellow] Adapting analysis window to start at t_s={change_point_time:.3f}[/]"
+
+        return True, change_log, change_point_time
+
+    return False, "", getattr(prediction, 't_start', 0.0)

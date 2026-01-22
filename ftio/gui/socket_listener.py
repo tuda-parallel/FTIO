@@ -1,9 +1,8 @@
 """
-Socket listener for receiving FTIO prediction logs and parsing them into structured data.
+Socket listener for receiving FTIO prediction data via direct JSON transmission.
 
-This module provides a TCP socket server that receives logs from FTIO's online
-predictor and parses them into structured prediction data using regex-based
-log parsing.
+This module provides a TCP socket server that receives structured prediction
+data from FTIO's online predictor via direct JSON transmission.
 
 Author: Amine Aherbil
 Copyright (c) 2025 TU Darmstadt, Germany
@@ -16,221 +15,18 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 import socket
 import json
 import threading
-import re
 import logging
 from typing import Optional, Callable
 from ftio.gui.data_models import PredictionData, ChangePoint, FrequencyCandidate, PredictionDataStore
 
 
-class LogParser:
-    """Parses FTIO prediction log messages into structured data"""
-
-    def __init__(self):
-        self.patterns = {
-            'prediction_start': re.compile(r'\[PREDICTOR\]\s+\(#(\d+)\):\s+Started'),
-            'prediction_end': re.compile(r'\[PREDICTOR\]\s+\(#(\d+)\):\s+Ended'),
-            'dominant_freq': re.compile(r'\[PREDICTOR\]\s+\(#(\d+)\):\s+Dominant freq\s+([\d.]+)\s+Hz\s+\(([\d.]+)\s+sec\)'),
-            'freq_candidates': re.compile(r'\[PREDICTOR\]\s+\(#(\d+)\):\s+\d+\)\s+([\d.]+)\s+Hz\s+--\s+conf\s+([\d.]+)'),
-            'time_window': re.compile(r'\[PREDICTOR\]\s+\(#(\d+)\):\s+Time window\s+([\d.]+)\s+sec\s+\(\[([\d.]+),([\d.]+)\]\s+sec\)'),
-            'total_bytes': re.compile(r'\[PREDICTOR\]\s+\(#(\d+)\):\s+Total bytes\s+(.+)'),
-            'bytes_transferred': re.compile(r'\[PREDICTOR\]\s+\(#(\d+)\):\s+Bytes transferred since last time\s+(.+)'),
-            'current_hits': re.compile(r'\[PREDICTOR\]\s+\(#(\d+)\):\s+Current hits\s+([\d.]+)'),
-            'periodic_prob': re.compile(r'\[PREDICTOR\]\s+P\(periodic\)\s+=\s+([\d.]+)%'),
-            'freq_range': re.compile(r'\[PREDICTOR\]\s+P\(\[([\d.]+),([\d.]+)\]\s+Hz\)\s+=\s+([\d.]+)%'),
-            'period_range': re.compile(r'\[PREDICTOR\]\s+\|->\s+\[([\d.]+),([\d.]+)\]\s+Hz\s+=\s+\[([\d.]+),([\d.]+)\]\s+sec'),
-            'change_point': re.compile(r'\[ADWIN\]\s+Change detected at cut\s+(\d+)/(\d+)!'),
-            'exact_change_point': re.compile(r'EXACT CHANGE POINT detected at\s+([\d.]+)\s+seconds!'),
-            'frequency_shift': re.compile(r'\[ADWIN\]\s+Frequency shift:\s+([\d.]+)\s+→\s+([\d.]+)\s+Hz\s+\(([\d.]+)%\)'),
-            'sample_number': re.compile(r'\[ADWIN\]\s+Sample\s+#(\d+):\s+freq=([\d.]+)\s+Hz'),
-            'ph_change': re.compile(r'\[Page-Hinkley\]\s+PAGE-HINKLEY CHANGE DETECTED!\s+\w+\s+([\d.]+)Hz\s+→\s+([\d.]+)Hz.*?at sample\s+(\d+),\s+time=([\d.]+)s'),
-            'stph_change': re.compile(r'\[STPH\]\s+CHANGE DETECTED!\s+([\d.]+)Hz\s+→\s+([\d.]+)Hz\s+\(([\d.]+)%'),
-            'cusum_change': re.compile(r'\[AV-CUSUM\]\s+CHANGE DETECTED!\s+([\d.]+)Hz\s+→\s+([\d.]+)Hz\s+\(([\d.]+)%'),
-            'cusum_change_alt': re.compile(r'\[CUSUM\]\s+CHANGE DETECTED!\s+([\d.]+)Hz\s+→\s+([\d.]+)Hz.*?time=([\d.]+)s'),
-        }
-
-        self.current_prediction = None
-        self.current_change_point = None
-        self.candidates_buffer = []
-
-    def parse_log_message(self, message: str) -> Optional[dict]:
-
-        match = self.patterns['prediction_start'].search(message)
-        if match:
-            pred_id = int(match.group(1))
-            self.current_prediction = {
-                'prediction_id': pred_id,
-                'candidates': [],
-                'is_change_point': False,
-                'change_point': None,
-                'timestamp': '',
-                'sample_number': None
-            }
-            self.candidates_buffer = []
-            return None
-
-        if not self.current_prediction:
-            return None
-
-        pred_id = self.current_prediction['prediction_id']
-
-        match = self.patterns['dominant_freq'].search(message)
-        if match and int(match.group(1)) == pred_id:
-            self.current_prediction['dominant_freq'] = float(match.group(2))
-            self.current_prediction['dominant_period'] = float(match.group(3))
-
-        match = self.patterns['freq_candidates'].search(message)
-        if match and int(match.group(1)) == pred_id:
-            freq = float(match.group(2))
-            conf = float(match.group(3))
-            self.candidates_buffer.append(FrequencyCandidate(freq, conf))
-
-        match = self.patterns['time_window'].search(message)
-        if match and int(match.group(1)) == pred_id:
-            self.current_prediction['time_window'] = (float(match.group(3)), float(match.group(4)))
-
-        match = self.patterns['total_bytes'].search(message)
-        if match and int(match.group(1)) == pred_id:
-            self.current_prediction['total_bytes'] = match.group(2).strip()
-
-        match = self.patterns['bytes_transferred'].search(message)
-        if match and int(match.group(1)) == pred_id:
-            self.current_prediction['bytes_transferred'] = match.group(2).strip()
-
-        match = self.patterns['current_hits'].search(message)
-        if match and int(match.group(1)) == pred_id:
-            self.current_prediction['current_hits'] = int(float(match.group(2)))
-
-        match = self.patterns['periodic_prob'].search(message)
-        if match:
-            self.current_prediction['periodic_probability'] = float(match.group(1))
-
-        match = self.patterns['freq_range'].search(message)
-        if match:
-            self.current_prediction['frequency_range'] = (float(match.group(1)), float(match.group(2)))
-            self.current_prediction['confidence'] = float(match.group(3))
-
-        match = self.patterns['period_range'].search(message)
-        if match:
-            self.current_prediction['period_range'] = (float(match.group(3)), float(match.group(4)))
-
-        match = self.patterns['change_point'].search(message)
-        if match:
-            self.current_change_point = {
-                'cut_position': int(match.group(1)),
-                'total_samples': int(match.group(2)),
-                'prediction_id': pred_id
-            }
-            self.current_prediction['is_change_point'] = True
-
-        match = self.patterns['exact_change_point'].search(message)
-        if match and self.current_change_point:
-            self.current_change_point['timestamp'] = float(match.group(1))
-
-        match = self.patterns['frequency_shift'].search(message)
-        if match and self.current_change_point:
-            self.current_change_point['old_frequency'] = float(match.group(1))
-            self.current_change_point['new_frequency'] = float(match.group(2))
-            self.current_change_point['frequency_change_percent'] = float(match.group(3))
-
-        match = self.patterns['sample_number'].search(message)
-        if match:
-            self.current_prediction['sample_number'] = int(match.group(1))
-
-        match = self.patterns['ph_change'].search(message)
-        if match:
-            self.current_change_point = {
-                'old_frequency': float(match.group(1)),
-                'new_frequency': float(match.group(2)),
-                'cut_position': int(match.group(3)),
-                'total_samples': int(match.group(3)),
-                'timestamp': float(match.group(4)),
-                'frequency_change_percent': abs((float(match.group(2)) - float(match.group(1))) / float(match.group(1)) * 100) if float(match.group(1)) > 0 else 0,
-                'prediction_id': pred_id
-            }
-            self.current_prediction['is_change_point'] = True
-
-        match = self.patterns['stph_change'].search(message)
-        if match:
-            if not self.current_change_point:
-                self.current_change_point = {'prediction_id': pred_id}
-            self.current_change_point['old_frequency'] = float(match.group(1))
-            self.current_change_point['new_frequency'] = float(match.group(2))
-            self.current_change_point['frequency_change_percent'] = float(match.group(3))
-            self.current_prediction['is_change_point'] = True
-
-        match = self.patterns['cusum_change'].search(message)
-        if match:
-            if not self.current_change_point:
-                self.current_change_point = {'prediction_id': pred_id}
-            self.current_change_point['old_frequency'] = float(match.group(1))
-            self.current_change_point['new_frequency'] = float(match.group(2))
-            self.current_change_point['frequency_change_percent'] = float(match.group(3))
-            self.current_prediction['is_change_point'] = True
-
-        match = self.patterns['cusum_change_alt'].search(message)
-        if match:
-            if not self.current_change_point:
-                self.current_change_point = {'prediction_id': pred_id}
-            self.current_change_point['old_frequency'] = float(match.group(1))
-            self.current_change_point['new_frequency'] = float(match.group(2))
-            self.current_change_point['timestamp'] = float(match.group(3))
-            self.current_change_point['frequency_change_percent'] = abs((float(match.group(2)) - float(match.group(1))) / float(match.group(1)) * 100) if float(match.group(1)) > 0 else 0
-            self.current_prediction['is_change_point'] = True
-
-        # Check for prediction end
-        match = self.patterns['prediction_end'].search(message)
-        if match and int(match.group(1)) == pred_id:
-            self.current_prediction['candidates'] = self.candidates_buffer.copy()
-
-            if self.current_prediction['is_change_point'] and self.current_change_point:
-                change_point = ChangePoint(
-                    prediction_id=pred_id,
-                    timestamp=self.current_change_point.get('timestamp', 0.0),
-                    old_frequency=self.current_change_point.get('old_frequency', 0.0),
-                    new_frequency=self.current_change_point.get('new_frequency', 0.0),
-                    frequency_change_percent=self.current_change_point.get('frequency_change_percent', 0.0),
-                    sample_number=self.current_prediction.get('sample_number', 0),
-                    cut_position=self.current_change_point.get('cut_position', 0),
-                    total_samples=self.current_change_point.get('total_samples', 0)
-                )
-                self.current_prediction['change_point'] = change_point
-
-            prediction_data = PredictionData(
-                prediction_id=pred_id,
-                timestamp=self.current_prediction.get('timestamp', ''),
-                dominant_freq=self.current_prediction.get('dominant_freq', 0.0),
-                dominant_period=self.current_prediction.get('dominant_period', 0.0),
-                confidence=self.current_prediction.get('confidence', 0.0),
-                candidates=self.current_prediction['candidates'],
-                time_window=self.current_prediction.get('time_window', (0.0, 0.0)),
-                total_bytes=self.current_prediction.get('total_bytes', ''),
-                bytes_transferred=self.current_prediction.get('bytes_transferred', ''),
-                current_hits=self.current_prediction.get('current_hits', 0),
-                periodic_probability=self.current_prediction.get('periodic_probability', 0.0),
-                frequency_range=self.current_prediction.get('frequency_range', (0.0, 0.0)),
-                period_range=self.current_prediction.get('period_range', (0.0, 0.0)),
-                is_change_point=self.current_prediction['is_change_point'],
-                change_point=self.current_prediction['change_point'],
-                sample_number=self.current_prediction.get('sample_number')
-            )
-
-            self.current_prediction = None
-            self.current_change_point = None
-            self.candidates_buffer = []
-
-            return {'type': 'prediction', 'data': prediction_data}
-
-        return None
-
-
 class SocketListener:
-    """Listens for socket connections and processes FTIO prediction logs"""
+    """Listens for socket connections and processes FTIO prediction data"""
 
     def __init__(self, host='localhost', port=9999, data_callback: Optional[Callable] = None):
         self.host = host
         self.port = port
         self.data_callback = data_callback
-        self.parser = LogParser()
         self.running = False
         self.server_socket = None
         self.client_connections = []
@@ -340,19 +136,8 @@ class SocketListener:
                             if self.data_callback:
                                 self.data_callback({'type': 'prediction', 'data': prediction_data})
 
-                        else:
-                            log_message = message_data.get('message', '')
-
-                            parsed_data = self.parser.parse_log_message(log_message)
-
-                            if parsed_data and self.data_callback:
-                                self.data_callback(parsed_data)
-
                     except json.JSONDecodeError:
-                        # Handle plain text messages
-                        parsed_data = self.parser.parse_log_message(data.strip())
-                        if parsed_data and self.data_callback:
-                            self.data_callback(parsed_data)
+                        pass
 
                 except socket.error:
                     break

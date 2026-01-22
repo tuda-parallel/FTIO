@@ -75,16 +75,20 @@ def ftio_metric_task_save(
         data.append(
             {
                 "metric": f"{metric}",
-                "dominant_freq": prediction.dominant_freq,
-                "conf": prediction.conf,
-                "amp": prediction.amp,
-                "phi": prediction.phi,
-                "t_start": prediction.t_start,
-                "t_end": prediction.t_end,
-                "total_bytes": prediction.total_bytes,
-                "ranks": prediction.ranks,
-                "freq": prediction.freq,
-                "top_freq": prediction.top_freqs,
+                "dominant_freq": prediction["dominant_freq"],
+                "conf": prediction["conf"],
+                "amp": prediction["amp"],
+                "phi": prediction["phi"],
+                "t_start": prediction["t_start"],
+                "t_end": prediction["t_end"],
+                "total_bytes": prediction["total_bytes"],
+                "ranks": prediction["ranks"],
+                "freq": prediction["freq"],
+                **(
+                    {"top_freq": prediction["top_freq"]}
+                    if "top_freq" in prediction
+                    else {}
+                ),
             }
         )
     else:

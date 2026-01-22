@@ -1,3 +1,5 @@
+"""Performs the analysis for prediction. This includes the calculation of ftio and parsing of the data into a queue"""
+
 from __future__ import annotations
 
 from argparse import Namespace
@@ -122,13 +124,22 @@ def get_change_detector(shared_resources: SharedResources, algorithm: str = "adw
     return detector
 
 def ftio_process(shared_resources: SharedResources, args: list[str], msgs=None) -> None:
+    """Perform a single prediction
+
+    Args:
+        shared_resources (SharedResources): shared resources among processes
+        args (list[str]): additional arguments passed to ftio
+        msgs: ZMQ messages (optional)
+    """
     console = Console()
     pred_id = shared_resources.count.value
     start_msg = f"[purple][PREDICTOR] (#{pred_id}):[/] Started"
     log_to_gui_and_console(console, start_msg, "predictor_start", {"count": pred_id})
 
+    # Modify the arguments
     args.extend(["-e", "no"])
     args.extend(["-ts", f"{shared_resources.start_time.value:.2f}"])
+    # perform prediction
     prediction_list, parsed_args = ftio_core.main(args, msgs)
     if not prediction_list:
         log_to_gui_and_console(console,
@@ -136,26 +147,24 @@ def ftio_process(shared_resources: SharedResources, args: list[str], msgs=None) 
             "termination", {"reason": "no_data"})
         return
 
+    # get the prediction
     prediction = prediction_list[-1]
-    freq = get_dominant(prediction) or 0.0
+    # plot_bar_with_rich(shared_resources.t_app,shared_resources.b_app, width_percentage=0.9)
 
+    # get data
+    freq = get_dominant(prediction) or 0.0  # just get a single dominant value
+
+    # save prediction results
     save_data(prediction, shared_resources)
 
+    # display results
     text = display_result(freq, prediction, shared_resources)
-    text += window_adaptation(parsed_args, prediction, freq, shared_resources)
-    is_change_point = "[CHANGE_POINT]" in text
-    change_point_info = None
-    if is_change_point:
-        import re
-        t_match = re.search(r"t_s=([0-9.]+)", text)
-        f_match = re.search(r"change:\s*([0-9.]+)\s*→\s*([0-9.]+)", text)
-        change_point_info = {
-            "prediction_id": pred_id,
-            "timestamp": float(prediction.t_end),
-            "old_frequency": float(f_match.group(1)) if f_match else 0.0,
-            "new_frequency": float(f_match.group(2)) if f_match else freq,
-            "start_time": float(t_match.group(1)) if t_match else float(prediction.t_start)
-        }
+    # data analysis to decrease window thus change start_time
+    # Get change point info directly from window_adaptation
+    adaptation_text, is_change_point, change_point_info = window_adaptation(
+        parsed_args, prediction, freq, shared_resources
+    )
+    text += adaptation_text
     candidates = [
         {"frequency": f, "confidence": c}
         for f, c in zip(prediction.dominant_freq, prediction.conf)
@@ -187,6 +196,7 @@ def ftio_process(shared_resources: SharedResources, args: list[str], msgs=None) 
     }
 
     get_socket_logger().send_log("prediction", "FTIO structured prediction", structured_prediction)
+    # print text
     log_to_gui_and_console(console, text, "prediction_log", {"count": pred_id, "freq": dominant_freq})
 
     shared_resources.count.value += 1
@@ -198,7 +208,19 @@ def window_adaptation(
     prediction: Prediction,
     freq: float,
     shared_resources: SharedResources,
-) -> str:
+) -> tuple[str, bool, dict]:
+    """Modifies the start time if conditions are true. Also performs change point detection.
+
+    Args:
+        args (argparse): command line arguments
+        prediction (Prediction): result from FTIO
+        freq (float|Nan): dominant frequency
+        shared_resources (SharedResources): shared resources among processes
+
+    Returns:
+        tuple: (text, is_change_point, change_point_info)
+    """
+    # average data/data processing
     text = ""
     t_s = prediction.t_start
     t_e = prediction.t_end
@@ -207,11 +229,14 @@ def window_adaptation(
     prediction_count = shared_resources.count.value
     text += f"Prediction #{prediction_count}\n"
 
+    # Hits
     text += hits(args, prediction, shared_resources)
 
     algorithm = args.online_adaptation
 
+    # Change point detection - capture data directly
     detector = get_change_detector(shared_resources, algorithm)
+    old_freq = freq  # Store current freq before detection
     if algorithm == "cusum":
         change_detected, change_log, adaptive_start_time = detect_pattern_change_cusum(
             shared_resources, prediction, detector, shared_resources.count.value
@@ -224,6 +249,17 @@ def window_adaptation(
         change_detected, change_log, adaptive_start_time = detect_pattern_change_adwin(
             shared_resources, prediction, detector, shared_resources.count.value
         )
+
+    # Build change point info directly - no regex needed
+    change_point_info = None
+    if change_detected:
+        change_point_info = {
+            "prediction_id": shared_resources.count.value,
+            "timestamp": float(prediction.t_end),
+            "old_frequency": float(old_freq) if not np.isnan(old_freq) else 0.0,
+            "new_frequency": float(freq) if not np.isnan(freq) else 0.0,
+            "start_time": float(adaptive_start_time)
+        }
 
     if np.isnan(freq):
         detector_samples = len(shared_resources.detector_frequencies)
@@ -246,6 +282,8 @@ def window_adaptation(
             t_s = max(0, t_e - min_window_size)
             algorithm_name = args.online_adaptation.upper() if hasattr(args, 'online_adaptation') else "UNKNOWN"
             text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/][yellow] {algorithm_name} adaptation would create unsafe window, using conservative {min_window_size}s window[/]\n"
+
+    # time window adaptation
     if not np.isnan(freq) and freq > 0:
         time_window = t_e - t_s
         if time_window > 0:
@@ -270,6 +308,7 @@ def window_adaptation(
                 f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Average transferred {avr_bytes:.0f} {unit}\n"
             )
 
+        # adaptive time window
         if "frequency_hits" in args.window_adaptation and not change_detected:
             if shared_resources.hits.value > args.hits:
                 if (
@@ -286,6 +325,8 @@ def window_adaptation(
         elif "data" in args.window_adaptation and len(shared_resources.data) > 0 and not change_detected:
             text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/][green]Trying time window adaptation: {shared_resources.count.value:.0f} =? { args.hits * shared_resources.hits.value:.0f}\n[/]"
             if shared_resources.count.value == args.hits * shared_resources.hits.value:
+                # t_s = shared_resources.data[-shared_resources.count.value]['t_start']
+                # text += f'[bold purple][PREDICTOR] (#{shared_resources.count.value}):[/][green] Adjusting start time to t_start {t_s} sec\n[/]'
                 if len(shared_resources.t_flush) > 0:
                     print(shared_resources.t_flush)
                     index = int(args.hits * shared_resources.hits.value - 1)
@@ -315,15 +356,25 @@ def window_adaptation(
         text += f"[cyan]{algorithm.upper()} changes detected: {changes}[/]\n"
 
         text += f"[bold cyan]{'='*50}[/]\n\n"
-    
+
+    # TODO 1: Make sanity check -- see if the same number of bytes was transferred
+    # TODO 2: Train a model to validate the predictions?
     text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Ended"
     shared_resources.start_time.value = t_s
-    return text
+    return text, change_detected, change_point_info
 
 
 def save_data(prediction, shared_resources) -> None:
+    """Put all data from `prediction` in a `queue`. The total bytes are as well saved here.
+
+    Args:
+        prediction (dict): result from FTIO
+        shared_resources (SharedResources): shared resources among processes
+    """
+    # safe total transferred bytes
     shared_resources.aggregated_bytes.value += prediction.total_bytes
 
+    # save data
     shared_resources.queue.put(
         {
             "phase": shared_resources.count.value,
@@ -336,6 +387,7 @@ def save_data(prediction, shared_resources) -> None:
             "total_bytes": prediction.total_bytes,
             "ranks": prediction.ranks,
             "freq": prediction.freq,
+            # 'hits': shared_resources.hits.value,
         }
     )
 
@@ -343,12 +395,24 @@ def save_data(prediction, shared_resources) -> None:
 def display_result(
     freq: float, prediction: Prediction, shared_resources: SharedResources
 ) -> str:
+    """Displays the results from FTIO
+
+    Args:
+        freq (float): dominant frequency
+        prediction (Prediction): prediction setting from FTIO
+        shared_resources (SharedResources): shared resources among processes
+
+    Returns:
+        str: text to print to console
+    """
     text = ""
+    # Dominant frequency
     if not np.isnan(freq):
         text = f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Dominant freq {freq:.3f} Hz ({1/freq if freq != 0 else 0:.2f} sec)\n"
     else:
         text = f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] No dominant frequency found\n"
 
+    # Candidates
     if len(prediction.dominant_freq) > 0:
         text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Freq candidates ({len(prediction.dominant_freq)} found): \n"
         for i, f_d in enumerate(prediction.dominant_freq):
@@ -359,13 +423,18 @@ def display_result(
     else:
         text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] No frequency candidates detected\n"
 
+    # time window
     text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Time window {prediction.t_end-prediction.t_start:.3f} sec ([{prediction.t_start:.3f},{prediction.t_end:.3f}] sec)\n"
 
+    # total bytes
     total_bytes = shared_resources.aggregated_bytes.value
+    # total_bytes =  prediction.total_bytes
     unit, order = set_unit(total_bytes, "B")
     total_bytes = order * total_bytes
     text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Total bytes {total_bytes:.0f} {unit}\n"
 
+    # Bytes since last time
+    # tmp = abs(prediction.total_bytes -shared_resources.aggregated_bytes.value)
     tmp = abs(shared_resources.aggregated_bytes.value)
     unit, order = set_unit(tmp, "B")
     tmp = order * tmp
