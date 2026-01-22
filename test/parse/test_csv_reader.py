@@ -46,3 +46,6 @@ def test_read_csv_file_empty():
     finally:
         os.unlink(path)
 
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v'])

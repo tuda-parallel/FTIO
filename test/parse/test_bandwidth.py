@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from ftio.parse.bandwidth import overlap, overlap_core_safe, overlap_two_series_safe, merge_overlaps_safe
 
@@ -72,8 +73,8 @@ def test_overlap_two_series_safe_non_overlapping():
 
     b_out, t_out = overlap_two_series_safe(b1, t1, b2, t2)
 
-    assert b_out == [100.0, 0.0, 200.0, 0.0]
-    assert t_out == [0.0, 5.0, 10.0, 15.0]
+    assert np.array_equal(b_out, [100.0, 0.0, 200.0, 0.0])
+    assert np.array_equal(t_out, [0.0, 5.0, 10.0, 15.0])
 
 
 def test_overlap_two_series_safe_overlapping():
@@ -84,8 +85,8 @@ def test_overlap_two_series_safe_overlapping():
 
     b_out, t_out = overlap_two_series_safe(b1, t1, b2, t2)
 
-    assert b_out == [100.0, 150.0, 50.0, 0.0]
-    assert t_out == [0.0, 5.0, 10.0, 15.0]
+    assert np.array_equal(b_out, [100.0, 150.0, 50.0, 0.0])
+    assert np.array_equal(t_out, [0.0, 5.0, 10.0, 15.0])
 
 
 def test_overlap_two_series_safe_same_timestamp():
@@ -96,8 +97,8 @@ def test_overlap_two_series_safe_same_timestamp():
 
     b_out, t_out = overlap_two_series_safe(b1, t1, b2, t2)
 
-    assert b_out == [300.0]
-    assert t_out == [5.0]
+    assert np.array_equal(b_out, [300.0])
+    assert np.array_equal(t_out, [5.0])
 
 
 def test_overlap_two_series_safe_empty_series():
@@ -108,8 +109,8 @@ def test_overlap_two_series_safe_empty_series():
 
     b_out, t_out = overlap_two_series_safe(b1, t1, b2, t2)
 
-    assert b_out == [100.0, 50.0]
-    assert t_out == [0.0, 5.0]
+    assert np.array_equal(b_out, [100.0, 50.0])
+    assert np.array_equal(t_out, [0.0, 5.0])
 
 
 def test_merge_overlaps_safe_no_duplicate():
@@ -160,3 +161,7 @@ def test_merge_overlaps_safe_empty():
 
     assert len(b_out) == 0
     assert len(t_out) == 0
+
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v'])
