@@ -98,6 +98,7 @@ external-libs = [
     "trace_updater",
     "flask",
     "colorlog",
+    "pytz",
 ]
 
 development-libs = [
