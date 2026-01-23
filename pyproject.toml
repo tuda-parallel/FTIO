@@ -92,8 +92,8 @@ server_ftio = "ftio.util.server_ftio:main_cli"
 [project.optional-dependencies]
 external-libs = [
     "fastdtw",
-    "dash",
-    "dash_extensions>=1.0.0",
+    "dash<2.18.0",
+    "dash_extensions",
     "plotly_resampler",
     "trace_updater",
     "flask",
