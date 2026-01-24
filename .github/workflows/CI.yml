@@ -83,7 +83,15 @@ jobs:
       - name: Run tests with coverage
         run: |
           cd test
-          pytest --cov=ftio --cov-report=xml --cov-report=term -v
+          pytest --cov=ftio --cov-report=xml --cov-report=term --junitxml=test-results.xml -v
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Test Results (Python ${{ matrix.python-version }})
+          path: test/test-results.xml
+          reporter: java-junit
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11'
