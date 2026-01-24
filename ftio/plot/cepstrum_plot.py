@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import matplotlib.pyplot as plt
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from sklearn.inspection import DecisionBoundaryDisplay
 
 from ftio.freq.freq_html import create_html
 from ftio.plot.helper import format_plot
@@ -81,7 +79,6 @@ def plot_cepstrum(
     for i in np.arange(2, 4):
         figs[i].update_layout(coloraxis={"colorscale": colorscale})
 
-    y_title = "Power" if args.psd else "Amplitude"
     figs[0].update_xaxes(title_text="Frequency (Hz)")
     figs[0].update_yaxes(title_text=plt_names[0])
     figs[1].update_xaxes(title_text="Frequency (Hz)")

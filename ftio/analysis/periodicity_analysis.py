@@ -15,27 +15,16 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import matplotlib.pyplot as plt
-
 # all
 import numpy as np
-from kneed import KneeLocator
 from rich.panel import Panel
 
 # find_peaks
-from scipy.signal import find_peaks
 from scipy.stats import kurtosis
-from sklearn.cluster import DBSCAN
 
 # Isolation forest
-from sklearn.ensemble import IsolationForest
-
 # Lof
-from sklearn.neighbors import KDTree, LocalOutlierFactor, NearestNeighbors
-
 from ftio.analysis._correlation import correlation
-from ftio.plot.anomaly_plot import plot_decision_boundaries, plot_outliers
-from ftio.plot.cepstrum_plot import plot_cepstrum
 
 
 def new_periodicity_scores(
@@ -84,7 +73,7 @@ def new_periodicity_scores(
         safe_spectrum = np.where(freq_arr <= 0, 1e-12, freq_arr)
         geometric_mean = np.exp(np.mean(np.log(safe_spectrum)))
         arithmetic_mean = np.mean(safe_spectrum)
-        spectral_flatness_score = 1 - float((geometric_mean / arithmetic_mean))
+        spectral_flatness_score = 1 - float(geometric_mean / arithmetic_mean)
         return spectral_flatness_score
 
     def signal_correlation(

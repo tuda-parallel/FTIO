@@ -5,7 +5,7 @@ import csv
 def read_csv_file(file_path):
     arrays = {}
 
-    with open(file_path, "r") as csvfile:
+    with open(file_path) as csvfile:
         reader = csv.DictReader(csvfile)
 
         # Initialize arrays based on headers

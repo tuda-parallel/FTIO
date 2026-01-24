@@ -10,8 +10,6 @@ import plotly.graph_objects as go
 from rich.console import Console
 
 from ftio.freq._analysis_figures import AnalysisFigures
-from ftio.freq.dtw import threaded_dtw
-from ftio.freq.freq_html import create_html
 from ftio.freq.prediction import Prediction
 from ftio.plot.helper import format_plot
 from ftio.plot.spectrum import plot_one_spectrum
@@ -164,7 +162,7 @@ def plot_dft(
 
         # create_html(f, args.render, {"toImageButtonOptions": {"format": "png", "scale": 4}}, args.transformation)
 
-    analysis_figures.add_figure_and_show(f, f"dft")
+    analysis_figures.add_figure_and_show(f, "dft")
 
 
 def plot_dft_matplotlib_top(
@@ -318,7 +316,6 @@ def plot_dft_matplotlib_dominant(
 def plot_dft_matplotlib_spectrum(args, freq, amp):
     f = plt.figure(figsize=(10, 4))
     # settings
-    full = False
     percent = True
 
     mode = "Amplitude"
@@ -358,7 +355,13 @@ def plot_dft_plotly_spectrum(args, freq, amp):
         },
         width=1100,
         height=600,
-        coloraxis_colorbar=dict(yanchor="top", y=1, x=1, ticks="outside", title=""),
+        coloraxis_colorbar={
+            "yanchor": "top",
+            "y": 1,
+            "x": 1,
+            "ticks": "outside",
+            "title": "",
+        },
         # title="Spectrum (Ranks %i)" % r
     )
     # fig_tmp.show(config=conf)
@@ -386,9 +389,9 @@ def plot_dft_plotly_top(
 
     template = "plotly"
     if "dark" in template:
-        color_bar = "white"
+        pass
     else:
-        color_bar = "black"
+        pass
     paper = True
     if "no_paper" in args.engine:
         paper = False
@@ -396,11 +399,6 @@ def plot_dft_plotly_top(
     colors.pop(1)
     width = 1100
     height = 600  # 600
-    font_settings = {
-        "family": "Courier New, monospace",
-        "size": 24,
-        "color": "black",
-    }
     f = go.Figure()
     color_counter = 0
     for i, signal in enumerate(top_signals):
@@ -439,7 +437,13 @@ def plot_dft_plotly_top(
     )
     if paper:
         f.update_layout(
-            legend=dict(orientation="h", yanchor="top", y=0.99, xanchor="left", x=0.01)
+            legend={
+                "orientation": "h",
+                "yanchor": "top",
+                "y": 0.99,
+                "xanchor": "left",
+                "x": 0.01,
+            }
         )
     f.update_xaxes(range=[t_sampled[0], t_sampled[-1]])
     f = format_plot(f)
@@ -466,9 +470,9 @@ def plot_dft_plotly_dominant(
 
     template = "plotly"
     if "dark" in template:
-        color_bar = "white"
+        pass
     else:
-        color_bar = "black"
+        pass
     paper = True
     if "no_paper" in args.engine:
         paper = False
@@ -557,7 +561,9 @@ def plot_dft_plotly_dominant(
         template=template,
     )
     if paper:
-        f.update_layout(legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01))
+        f.update_layout(
+            legend={"yanchor": "top", "y": 0.99, "xanchor": "left", "x": 0.01}
+        )
     # else:
     #     f.update_layout(
     #         legend=dict(yanchor="top", y=0.99, xanchor="right", x=.99)

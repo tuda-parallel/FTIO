@@ -11,14 +11,12 @@ from ftio.api.metric_proxy.helper import create_process_bar, extract_data
 # from rich.progress import Progress
 from ftio.api.metric_proxy.parse_proxy import (
     filter_metrics,
-    get_all_metrics,
     parse_all,
 )
 from ftio.api.metric_proxy.plot_proxy import (
     density_heatmap,
     heatmap,
     heatmap_2,
-    plot_timeseries_metrics,
     scatter,
     scatter2D,
 )
@@ -114,7 +112,7 @@ def main(args: argparse.Namespace = parse_args()) -> None:
     # finds up to n frequencies. Comment this out to go back to the default version
     # ftio_args.extend(['-n', '10'])
 
-    console.print(f"FTIO args: ftio_args")
+    console.print("FTIO args: ftio_args")
     if args.proxy:
         mp = MetricProxy()
         if not args.job_id:
@@ -233,7 +231,7 @@ def execute_parallel(
                         ): metric
                         for metric, arrays in metrics.items()
                     }
-                    for future in as_completed(futures):
+                    for _future in as_completed(futures):
                         counter += 1
                         progress.update(task, completed=counter)
         except KeyboardInterrupt:

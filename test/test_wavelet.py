@@ -33,7 +33,7 @@ def test_wavelet_disc_args():
 def test_wavelet_cont_lvl_args():
     """Test continuous wavelet transformation with a specified decomposition level."""
     args = parse_args(["-e", "no", "-tr", "wave_cont", "-le", "5"], "ftio")
-    pred, analysis_figs= core([], args)
+    pred, analysis_figs = core([], args)
 
     assert args.level == 5
     assert pred.is_empty()
@@ -65,4 +65,3 @@ def test_wavelet_cont():
     assert len(pred) > 0
     assert not pred[-1].is_empty()
     assert pred[-1].source == "wave_cont"
-

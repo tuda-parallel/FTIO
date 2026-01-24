@@ -1,9 +1,17 @@
 import pytest
-from ftio.parse.helper import scale_metric, match_mode, match_modes, detect_source, print_info
+
+from ftio.parse.helper import (
+    detect_source,
+    match_mode,
+    match_modes,
+    print_info,
+    scale_metric,
+)
+
 
 def test_scale_metric_giga():
     metric = "Bandwidth (B/s)"
-    number = 2_500_000_000.0  #2.5 GB/s
+    number = 2_500_000_000.0  # 2.5 GB/s
 
     unit, scale = scale_metric(metric, number)
 
@@ -13,7 +21,7 @@ def test_scale_metric_giga():
 
 def test_scale_metric_mega():
     metric = "Bandwidth (B/s)"
-    number = 150_000_000.0  #150 MB/s
+    number = 150_000_000.0  # 150 MB/s
 
     unit, scale = scale_metric(metric, number)
 
@@ -33,7 +41,7 @@ def test_scale_metric_kilo():
 
 def test_scale_metric():
     metric = "Bandwidth (B/s)"
-    number = 500.0  #500 B/s
+    number = 500.0  # 500 B/s
 
     unit, scale = scale_metric(metric, number)
     assert scale == 1e-0
@@ -49,7 +57,7 @@ def test_scale_metric_second():
 
 
 def test_scale_metric_microseconds():
-    #The original function seems to have a bug
+    # The original function seems to have a bug
     metric = "Time (s)"
     number = 0.01
 
@@ -87,6 +95,7 @@ def test_match_mode():
 def test_detect_source_tmio():
     class MockArgs:
         source = "tmio"
+
     data = {}
     result = detect_source(data, MockArgs())
     assert result == "tmio"
@@ -126,5 +135,5 @@ def test_print_info_runs():
     print_info("other")
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

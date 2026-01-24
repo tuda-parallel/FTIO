@@ -121,7 +121,7 @@ class Scales:
             elif (
                 not self.same_path
                 and ".json" in path[-6:]
-                and not "ftio" in self.prog_name.lower()
+                and "ftio" not in self.prog_name.lower()
             ):
                 self.names.append(path)
                 console.print(f"[cyan]Current file:[/] {path}")
@@ -130,7 +130,7 @@ class Scales:
             # Single file
             else:
                 self.names.append(get_filename(path))
-                if not "predictor" in self.prog_name.lower():
+                if "predictor" not in self.prog_name.lower():
                     console.print(f"[cyan]Current file:[/] {path}\n")
                 self.load_file(path)
 
@@ -171,7 +171,7 @@ class Scales:
         self.call = ""
         for i in argv:
             self.call = self.call + " " + i
-        f = open("%s/.call.txt" % (os.getcwd()), "a")
+        f = open(f"{os.getcwd()}/.call.txt", "a")
         f.write(
             datetime.datetime.now().strftime("%Y-%m-%d %H:%M") + " :" + self.call + "\n\n"
         )

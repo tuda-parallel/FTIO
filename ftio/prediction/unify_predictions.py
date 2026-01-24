@@ -36,7 +36,7 @@ def merge_predictions(
     pred_merged = pred_dft
     if args.autocorrelation:
         tik = time.time()
-        CONSOLE.print(f"[cyan]Merging Started:[/]\n")
+        CONSOLE.print("[cyan]Merging Started:[/]\n")
         text = f"Merging Autocorrelation and {args.transformation.upper()}\n"
         if not pred_auto.is_empty() and not np.isnan(pred_auto.dominant_freq):
             pred_merged, text = merge_core(pred_dft, pred_auto, args.freq, text)

@@ -46,7 +46,7 @@ def plot_spectrum(
     )
 
     fig_tmp.update_traces(
-        marker_line=dict(width=0.2, color="black"),
+        marker_line={"width": 0.2, "color": "black"},
         hovertemplate="<b>Frequency</b>: %{x:.2e} Hz <br><b>"
         + f"{name}"
         + "</b>: %{y:.2e}"
@@ -55,7 +55,7 @@ def plot_spectrum(
     fig_tmp.update_layout(
         xaxis_title="Frequency (Hz)",
         yaxis_title=name + unit,
-        coloraxis_colorbar=dict(yanchor="top", y=1, x=0, ticks="outside"),
+        coloraxis_colorbar={"yanchor": "top", "y": 1, "x": 0, "ticks": "outside"},
         template=template,
     )
     fig_tmp = format_plot(fig_tmp)

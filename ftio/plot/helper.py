@@ -13,10 +13,7 @@ def legend_fix(data, c: int) -> bool:
     Returns:
         bool: True if the legend should be fixed, False otherwise.
     """
-    if c == data.nRun - 1:
-        return True
-    else:
-        return False
+    return c == data.nRun - 1
 
 
 def format_plot_and_ticks(
@@ -47,65 +44,65 @@ def format_plot_and_ticks(
     """
     if legend:
         fig.update_layout(
-            legend=dict(
-                bgcolor="rgba(255,255,255,.99)",
-                bordercolor="Black",
-                borderwidth=1,
-            )
+            legend={
+                "bgcolor": "rgba(255,255,255,.99)",
+                "bordercolor": "Black",
+                "borderwidth": 1,
+            }
         )
     if font:
         fig.update_layout(
-            font=dict(family="Courier New, monospace", size=font_size, color="black")
+            font={"family": "Courier New, monospace", "size": font_size, "color": "black"}
         )
 
     fig.update_layout(
         plot_bgcolor="white",
-        margin=dict(r=5),
+        margin={"r": 5},
     )
 
-    x_settings = dict(
-        mirror=True,
-        showgrid=True,
-        showline=True,
-        linecolor="black",
-        gridcolor="lightgrey",
-    )
+    x_settings = {
+        "mirror": True,
+        "showgrid": True,
+        "showline": True,
+        "linecolor": "black",
+        "gridcolor": "lightgrey",
+    }
     if x_ticks:
         x_settings["ticks"] = "outside"
         x_settings["ticklen"] = 10
 
     if x_minor:
         x_settings["minor_ticks"] = "outside"
-        x_settings["minor"] = dict(
-            ticklen=2,
-            tickcolor="black",
-            tickmode="auto",
-            nticks=n_ticks,
-            showgrid=True,
-        )
+        x_settings["minor"] = {
+            "ticklen": 2,
+            "tickcolor": "black",
+            "tickmode": "auto",
+            "nticks": n_ticks,
+            "showgrid": True,
+        }
 
     fig.update_xaxes(**x_settings)
 
-    y_settings = dict(
-        mirror=True,
-        showgrid=True,
-        showline=True,
-        linecolor="black",
-        gridcolor="lightgrey",
-    )
+    y_settings = {
+        "mirror": True,
+        "showgrid": True,
+        "showline": True,
+        "linecolor": "black",
+        "gridcolor": "lightgrey",
+    }
     if y_ticks:
         y_settings["ticks"] = "outside"
         y_settings["ticklen"] = 10
 
     if y_minor:
         y_settings["minor_ticks"] = "outside"
-        y_settings["minor"] = dict(
-            ticklen=2,
-            tickcolor="black",
-            tickmode="auto",
-            nticks=n_ticks,
-            showgrid=True,
-        )
+        y_settings["minor"] = {
+            "ticklen": 2,
+            "tickcolor": "black",
+            "tickmode": "auto",
+            "nticks": n_ticks,
+            "showgrid": True,
+        }
 
     fig.update_yaxes(**y_settings)
 
@@ -124,12 +121,12 @@ def format_plot(fig: go.Figure, font_size: int = 22) -> go.Figure:
     """
     fig.update_layout(
         plot_bgcolor="white",
-        legend=dict(
-            bgcolor="rgba(255,255,255,.8 )",
-            bordercolor="Black",
-            borderwidth=1,
-        ),
-        font=dict(family="Courier New, monospace", size=font_size, color="black"),
+        legend={
+            "bgcolor": "rgba(255,255,255,.8 )",
+            "bordercolor": "Black",
+            "borderwidth": 1,
+        },
+        font={"family": "Courier New, monospace", "size": font_size, "color": "black"},
         # margin=dict(l=5, r=5, t=5, b=5) #IEEE
         # margin=dict(t=top_margin),
     )
@@ -145,7 +142,7 @@ def format_plot(fig: go.Figure, font_size: int = 22) -> go.Figure:
         linecolor="black",
         gridcolor="lightgrey",
         minor_ticks="outside",
-        minor=dict(ticklen=2),
+        minor={"ticklen": 2},
     )
 
     fig.update_yaxes(
@@ -159,7 +156,7 @@ def format_plot(fig: go.Figure, font_size: int = 22) -> go.Figure:
         linecolor="black",
         gridcolor="lightgrey",
         minor_ticks="outside",
-        minor=dict(ticklen=2),
+        minor={"ticklen": 2},
     )
 
     return fig
@@ -202,7 +199,7 @@ def add_fig_row(
     Returns:
         go.Figure: Plotly figure with rows of subplots.
     """
-    if nRun == 1 or onefig == True:
+    if nRun == 1 or onefig:
         # self.f_t.append(go.Figure())
         f = make_subplots(rows=1, cols=1, specs=specs)
     else:
@@ -230,7 +227,7 @@ def add_fig_col(
     Returns:
         go.Figure: Plotly figure with columns of subplots.
     """
-    if nRun == 1 or onefig == True:
+    if nRun == 1 or onefig:
         # self.f_t.append(go.Figure())
         f = make_subplots(rows=1, cols=1, specs=specs)
     else:

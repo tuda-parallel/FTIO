@@ -25,7 +25,7 @@ def main(argv=sys.argv[1:], verbose=True, json_flag=True):
 
 def extract_arrays_from_json(argv=sys.argv[1:], verbose=True):
     full_path = get_path(argv, verbose)
-    with open(full_path, "r") as file:
+    with open(full_path) as file:
         arrays = json.load(file)
 
     b_r = np.array([])
@@ -43,7 +43,7 @@ def extract_arrays_from_json(argv=sys.argv[1:], verbose=True):
     # adapt for FTIO
     # command line arguments
     argv = [x for x in argv if ".py" not in x and ".json" not in x]
-    if not "-e" in argv:
+    if "-e" not in argv:
         argv.extend(["-e", "no"])
 
     if verbose:
@@ -105,7 +105,7 @@ def extract_arrays_from_csv(argv=sys.argv[1:], verbose=True):
     # adapt for FTIO
     # command line arguments
     argv = [x for x in argv if ".py" not in x and ".csv" not in x]
-    if not "-e" in argv:
+    if "-e" not in argv:
         argv.extend(["-e", "no"])
 
     if verbose:
@@ -116,7 +116,11 @@ def extract_arrays_from_csv(argv=sys.argv[1:], verbose=True):
     return res
 
 
-def run_ftio_on_group(argv, verbose, arrays, b_r, t_r, b_w, t_w, b_b=[], t_b=[]):
+def run_ftio_on_group(argv, verbose, arrays, b_r, t_r, b_w, t_w, b_b=None, t_b=None):
+    if t_b is None:
+        t_b = []
+    if b_b is None:
+        b_b = []
     total_bytes_r = 0  # np.sum(np.repeat(t_s,len(b_r))*len(b_r))
     total_bytes_w = 0  # np.sum(np.repeat(t_s,len(b_w))*len(b_w))
     total_bytes_b = 0  # np.sum(np.repeat(t_s,len(b_b))*len(b_b))

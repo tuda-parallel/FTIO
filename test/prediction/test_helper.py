@@ -3,15 +3,16 @@ import pytest
 
 from ftio.freq.prediction import Prediction
 from ftio.prediction.helper import (
+    format_jsonl,
     get_dominant,
     get_dominant_and_conf,
     print_data,
-    format_jsonl,
 )
 
 """
 Tests for class ftio/prediction/helper.py
 """
+
 
 def test_get_dominant():
     pred = Prediction()

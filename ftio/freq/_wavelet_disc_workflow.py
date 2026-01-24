@@ -7,7 +7,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 
-from ftio.analysis._logicize import logicize
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft_workflow import ftio_dft
 from ftio.freq._dft_x_dwt import analyze_correlation
@@ -21,7 +20,6 @@ from ftio.freq._wavelet_helpers import (
 from ftio.freq.autocorrelation import find_fd_autocorrelation
 from ftio.freq.discretize import sample_data
 from ftio.freq.helper import MyConsole
-from ftio.plot.freq_plot import convert_and_plot
 from ftio.plot.plot_wavelet_disc import (
     plot_coeffs_reconst_signal,
     plot_wavelet_disc_spectrum,
@@ -50,7 +48,6 @@ def ftio_wavelet_disc(
     """
     # Default values for variables
     share = SharedSignalData()
-    df_out = [[], [], [], []]
     prediction = {
         "source": {args.transformation},
         "dominant_freq": [],
@@ -125,9 +122,9 @@ def ftio_wavelet_disc(
             args, t_sampled, coefficients_upsampled, freq_ranges
         )
 
-        analysis_figures_wavelet.add_figure([f1], f"wavelet_disc")
-        analysis_figures_wavelet.add_figure([f2], f"wavelet_disc_spectrum")
-        console.print(f" --- Done --- \n")
+        analysis_figures_wavelet.add_figure([f1], "wavelet_disc")
+        analysis_figures_wavelet.add_figure([f2], "wavelet_disc_spectrum")
+        console.print(" --- Done --- \n")
     else:
         analysis_figures_wavelet = AnalysisFigures()
 
@@ -192,7 +189,7 @@ def ftio_wavelet_disc(
 
     # ? Option 4: Apply autocorrelation on low
     elif "dwt_x_autocorrelation" in analysis:
-        res = find_fd_autocorrelation(
+        find_fd_autocorrelation(
             args,
             coefficients_upsampled[0],
             args.freq,

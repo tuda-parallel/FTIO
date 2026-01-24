@@ -167,8 +167,8 @@ def freq_analysis(
     #! Init
     bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
     time_b = data["time"] if "time" in data else np.array([])
-    total_bytes = data["total_bytes"] if "total_bytes" in data else 0
-    ranks = data["ranks"] if "ranks" in data else 0
+    total_bytes = data.get("total_bytes", 0)
+    ranks = data.get("ranks", 0)
 
     #! Extract relevant data
     bandwidth, time_b, text = data_in_time_window(

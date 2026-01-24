@@ -11,7 +11,6 @@ from rich.table import Table
 
 from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
-from ftio.prediction.helper import get_dominant_and_conf
 
 
 def display_prediction(

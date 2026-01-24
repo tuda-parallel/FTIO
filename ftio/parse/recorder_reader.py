@@ -46,7 +46,7 @@ def extract_data(path: str, args) -> tuple[list, int]:
     for root, _, files in os.walk(path):
         for file in sorted(files, key=len):
             file = os.path.join(root, file)
-            current_file = open(file, "r")
+            current_file = open(file)
             current_file = current_file.readlines()
             # data.extend([k for k in f if 'MPI_File_w' in k or 'MPI_File_r' in k])
             data.extend([k for k in current_file if " write " in k or " read " in k])

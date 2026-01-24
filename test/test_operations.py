@@ -4,12 +4,13 @@ Functions for testing the API functionalities of the ftio package.
 
 import os
 
+import numpy as np
+
 from ftio.cli.ftio_core import main
 from ftio.freq.prediction import Prediction
 from ftio.parse.bandwidth import overlap
 from ftio.processing.compact_operations import quick_ftio
 from ftio.processing.post_processing import label_phases
-import numpy as np
 
 
 def test_quick_ftio():
@@ -74,7 +75,9 @@ def test_quick_ftio():
     assert prediction.t_end == 65.0
     assert prediction.source == "dft"
     assert len(prediction.dominant_freq) > 0
-    assert np.isclose(prediction.dominant_freq[0], 0.04615385, rtol=1e-5) #Is found frequency correct?
+    assert np.isclose(
+        prediction.dominant_freq[0], 0.04615385, rtol=1e-5
+    )  # Is found frequency correct?
 
 
 def test_post_processing():
@@ -100,9 +103,9 @@ def test_ftio_multiple_files():
 
     preds, parsed_args = main(args)
 
-    #It seems that same files conclude to one file
+    # It seems that same files conclude to one file
     assert isinstance(preds, list)
-    assert len(preds) == 1 #Identical export file.
+    assert len(preds) == 1  # Identical export file.
     for pred in preds:
         assert isinstance(pred, Prediction)
         assert not pred.is_empty()

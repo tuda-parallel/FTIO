@@ -1,10 +1,12 @@
-import pytest
 import plotly.graph_objects as go
-from ftio.plot.helper import format_plot, format_plot_and_ticks, add_fig_row, add_fig_col
+import pytest
+
+from ftio.plot.helper import add_fig_col, add_fig_row, format_plot, format_plot_and_ticks
 
 """
 Tests for class ftio/plot/helper.py
 """
+
 
 def test_format_plot_and_ticks_returnformat():
     fig = go.Figure()
@@ -25,7 +27,7 @@ def test_format_plot_returnformat():
     fig.add_trace(go.Scatter(x=(1, 2, 3), y=(4, 5, 6)))
     result = format_plot(fig)
     assert isinstance(result, go.Figure)
-    assert result.layout.plot_bgcolor == 'white'
+    assert result.layout.plot_bgcolor == "white"
 
 
 def test_format_plot_font():
@@ -50,5 +52,5 @@ def test_add_fig_col():
     assert isinstance(fig, go.Figure)
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

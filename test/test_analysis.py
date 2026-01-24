@@ -2,27 +2,30 @@
 Tests for ftio.analysis module.
 """
 
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
-from unittest.mock import MagicMock, patch
 
-from ftio.analysis.signal_analysis import sliding_correlation as signal_sliding_correlation
-from ftio.analysis._logicize import logicize
 from ftio.analysis._correlation import (
     correlation,
-    sliding_correlation,
     extract_correlation_ranges,
+    sliding_correlation,
 )
+from ftio.analysis._logicize import logicize
 from ftio.analysis.anomaly_detection import (
-    outlier_detection,
-    z_score,
     db_scan,
+    dominant,
     isolation_forest,
     lof,
-    peaks,
-    dominant,
-    remove_harmonics,
     norm_conf,
+    outlier_detection,
+    peaks,
+    remove_harmonics,
+    z_score,
+)
+from ftio.analysis.signal_analysis import (
+    sliding_correlation as signal_sliding_correlation,
 )
 
 
@@ -231,7 +234,9 @@ class TestExtractCorrelationRanges:
         t = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
         corrs = np.array([0.0, 0.5, 0.8, 0.9, 0.3, 0.0])
 
-        ranges = extract_correlation_ranges(t, corrs, threshold_low=0.5, threshold_high=1.0)
+        ranges = extract_correlation_ranges(
+            t, corrs, threshold_low=0.5, threshold_high=1.0
+        )
 
         assert len(ranges) >= 1
         # Should find range where correlation is between 0.5 and 1.0
@@ -241,7 +246,9 @@ class TestExtractCorrelationRanges:
         t = np.array([0.0, 1.0, 2.0, 3.0])
         corrs = np.array([0.0, 0.1, 0.1, 0.0])
 
-        ranges = extract_correlation_ranges(t, corrs, threshold_low=0.5, threshold_high=1.0)
+        ranges = extract_correlation_ranges(
+            t, corrs, threshold_low=0.5, threshold_high=1.0
+        )
 
         assert len(ranges) == 0
 
@@ -250,7 +257,9 @@ class TestExtractCorrelationRanges:
         t = np.array([0.0, 1.0, 2.0, 3.0, 4.0])
         corrs = np.array([0.8, 0.9, 0.5, 0.1, 0.0])
 
-        ranges = extract_correlation_ranges(t, corrs, threshold_low=0.5, threshold_high=1.0)
+        ranges = extract_correlation_ranges(
+            t, corrs, threshold_low=0.5, threshold_high=1.0
+        )
 
         assert len(ranges) >= 1
         assert ranges[0][0] == 0.0  # Should start from the beginning
@@ -260,7 +269,9 @@ class TestExtractCorrelationRanges:
         t = np.array([0.0, 1.0, 2.0, 3.0, 4.0])
         corrs = np.array([0.1, 0.2, 0.6, 0.8, 0.9])
 
-        ranges = extract_correlation_ranges(t, corrs, threshold_low=0.5, threshold_high=1.0)
+        ranges = extract_correlation_ranges(
+            t, corrs, threshold_low=0.5, threshold_high=1.0
+        )
 
         assert len(ranges) >= 1
         assert ranges[-1][1] == 4.0  # Should end at the last element
@@ -311,13 +322,13 @@ class TestAnomalyDetection:
         # Generate a signal with clear periodic component
         n = 256
         freq_arr = np.fft.fftfreq(n, d=1.0)
-        freq_arr = np.abs(freq_arr[:n // 2 + 1])
+        freq_arr = np.abs(freq_arr[: n // 2 + 1])
         freq_arr[0] = 1e-10  # Avoid division by zero
 
         # Create amplitude spectrum with a dominant peak
         amp = np.zeros(n)
         amp[10] = 10.0  # Strong peak at index 10
-        amp[20] = 2.0   # Weaker peak at index 20
+        amp[20] = 2.0  # Weaker peak at index 20
 
         return amp, freq_arr
 
@@ -716,7 +727,7 @@ class TestAnomalyDetectionAdditional:
         # Create flat spectrum with no clear peaks
         n = 256
         freq_arr = np.fft.fftfreq(n, d=1.0)
-        freq_arr = np.abs(freq_arr[:n // 2 + 1])
+        freq_arr = np.abs(freq_arr[: n // 2 + 1])
         freq_arr[0] = 1e-10
 
         amp = np.ones(n) * 0.1  # Flat spectrum
@@ -730,7 +741,7 @@ class TestAnomalyDetectionAdditional:
         """Test Z-score with many candidate frequencies."""
         n = 256
         freq_arr = np.fft.fftfreq(n, d=1.0)
-        freq_arr = np.abs(freq_arr[:n // 2 + 1])
+        freq_arr = np.abs(freq_arr[: n // 2 + 1])
         freq_arr[0] = 1e-10
 
         # Create spectrum with multiple strong peaks
@@ -751,7 +762,7 @@ class TestAnomalyDetectionAdditional:
         """Test Z-score when std is zero."""
         n = 64
         freq_arr = np.fft.fftfreq(n, d=1.0)
-        freq_arr = np.abs(freq_arr[:n // 2 + 1])
+        freq_arr = np.abs(freq_arr[: n // 2 + 1])
         freq_arr[0] = 1e-10
 
         amp = np.ones(n) * 1.0  # All same values, std = 0
@@ -764,7 +775,7 @@ class TestAnomalyDetectionAdditional:
         """Test DBSCAN with different data characteristics."""
         n = 256
         freq_arr = np.fft.fftfreq(n, d=1.0)
-        freq_arr = np.abs(freq_arr[:n // 2 + 1])
+        freq_arr = np.abs(freq_arr[: n // 2 + 1])
         freq_arr[0] = 1e-10
 
         # Create spectrum with clear peak

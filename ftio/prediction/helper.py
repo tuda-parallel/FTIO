@@ -6,7 +6,6 @@ import json
 import os
 
 import numpy as np
-from rich.console import Console
 
 from ftio.freq.prediction import Prediction
 

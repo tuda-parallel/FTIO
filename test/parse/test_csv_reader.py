@@ -1,12 +1,15 @@
 import os
 import tempfile
+
 from ftio.parse.csv_reader import read_csv_file
 
 
 def test_read_csv_file():
-    csv_content = "rank,bandwidth,time,unit\n0,150,1,MB/s\n1,175,2,MB/s\n2,160,0,MB/s\n3,180,3,MB/s"
+    csv_content = (
+        "rank,bandwidth,time,unit\n0,150,1,MB/s\n1,175,2,MB/s\n2,160,0,MB/s\n3,180,3,MB/s"
+    )
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as file:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as file:
         file.write(csv_content)
         path = file.name
 
@@ -16,7 +19,7 @@ def test_read_csv_file():
         # cols
         assert len(result) == 4  # 4
         assert all(key in result for key in ["rank", "bandwidth", "time", "unit"])
-        #row
+        # row
         assert all(len(result[key]) == 4 for key in result)
 
         # values
@@ -32,7 +35,7 @@ def test_read_csv_file():
 def test_read_csv_file_empty():
     csv_content = """col1,col2,col3"""
 
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as file:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as file:
         file.write(csv_content)
         path = file.name
 
@@ -47,5 +50,5 @@ def test_read_csv_file_empty():
         os.unlink(path)
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

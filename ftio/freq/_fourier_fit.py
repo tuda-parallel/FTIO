@@ -72,9 +72,8 @@ def fourier_fit(
     console = MyConsole()
     console.set(args.verbose)
 
-    if args.reconstruction:
-        if max(args.reconstruction) < args.n_freq:
-            args.reconstruction.append(args.n_freq)
+    if args.reconstruction and max(args.reconstruction) < args.n_freq:
+        args.reconstruction.append(args.n_freq)
 
     for i in range(args.n_freq):
         if prediction.top_freqs["freq"][i] == 0:
@@ -135,10 +134,10 @@ def fourier_fit(
     dft_res = fourier_sum(t, *p0)
     fitted = fourier_sum(t, *params_opt)
     if any(x in args.engine for x in ["mat", "plot"]):
-        console.print(f"Generating Fourier Fit Plot\n")
+        console.print("Generating Fourier Fit Plot\n")
         fig = plot_fourier_fit(args, t, b_sampled, prediction, fitted, dft_res)
         analysis_figures.add_figure_and_show([fig], "fourier_fit")
-        console.print(f" --- Done --- \n")
+        console.print(" --- Done --- \n")
 
     error_before = mean_squared_error(b_sampled, dft_res)
     error_after = mean_squared_error(b_sampled, fitted)
@@ -161,7 +160,6 @@ def fourier_fit(
     )
 
 
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 
@@ -259,7 +257,7 @@ def plot_fourier_fit(
                 y=b_sampled,
                 mode="lines",
                 name="Sampled Signal",
-                line=dict(dash="dash", width=3, color="blue"),
+                line={"dash": "dash", "width": 3, "color": "blue"},
             )
         )
         fig.add_trace(
@@ -268,7 +266,7 @@ def plot_fourier_fit(
                 y=fourier_fit,
                 mode="lines",
                 name=f"Fourier Fit {N}-Components Sum",
-                line=dict(width=4, color="orange"),
+                line={"width": 4, "color": "orange"},
             )
         )
         fig.add_trace(
@@ -277,7 +275,7 @@ def plot_fourier_fit(
                 y=dft_res,
                 mode="lines",
                 name=f"DFT {N}-Component Sum",
-                line=dict(width=2, color="green"),
+                line={"width": 2, "color": "green"},
             )
         )
 
@@ -290,7 +288,7 @@ def plot_fourier_fit(
                         y=wave,
                         mode="lines",
                         name=label,
-                        line=dict(width=2, color=plotly_colors[i % len(plotly_colors)]),
+                        line={"width": 2, "color": plotly_colors[i % len(plotly_colors)]},
                     )
                 )
 
@@ -298,6 +296,6 @@ def plot_fourier_fit(
             xaxis_title="Time",
             yaxis_title=f"Bandwidth ({unit})",
         )
-        f = format_plot(fig)
+        format_plot(fig)
 
     return fig

@@ -1,7 +1,12 @@
 import numpy as np
 import pytest
 
-from ftio.parse.bandwidth import overlap, overlap_core_safe, overlap_two_series_safe, merge_overlaps_safe
+from ftio.parse.bandwidth import (
+    merge_overlaps_safe,
+    overlap,
+    overlap_core_safe,
+    overlap_two_series_safe,
+)
 
 
 def test_overlap_return_lists():
@@ -163,5 +168,5 @@ def test_merge_overlaps_safe_empty():
     assert len(t_out) == 0
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

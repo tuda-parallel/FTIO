@@ -1,9 +1,11 @@
 import pytest
+
 from ftio.prediction.shared_resources import SharedResources
 
 """
 Tests for class ftio/prediction/shared_resources.py
 """
+
 
 def test_shared_resources_init():
     sr = SharedResources()

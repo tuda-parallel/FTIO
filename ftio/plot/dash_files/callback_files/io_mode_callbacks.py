@@ -21,7 +21,6 @@ else:
     from plotly_resampler import FigureResampler
     from plotly_resampler.aggregation import (
         MinMaxAggregator,
-        MinMaxOverlapAggregator,
         NoGapHandler,
     )
 
@@ -199,19 +198,17 @@ def _add_traces(fig: FigureResampler, file_data: FileData, data: DataSource) -> 
 
 def _update_layout(fig: FigureResampler, file_data: FileData, data: DataSource) -> None:
     if data.merge_plots_is_selected:
-        title = "{} collected".format(io_mode.MODE_STRING_BY_MODE[data.io_mode])
+        title = f"{io_mode.MODE_STRING_BY_MODE[data.io_mode]} collected"
     else:
-        title = "{} Ranks (Run {}: {})".format(
-            file_data.rank, file_data.run, file_data.name
-        )
+        title = f"{file_data.rank} Ranks (Run {file_data.run}: {file_data.name})"
 
     fig.update_layout(
-        margin=dict(l=10, r=10, t=50, b=70),
+        margin={"l": 10, "r": 10, "t": 50, "b": 70},
         yaxis_rangemode="nonnegative",
         barmode="stack",
         xaxis_title="Time (s)",
         yaxis_title="Transfer Rate (MB/s)",
-        font=dict(family=data.fontfamily, size=data.fontsize),
+        font={"family": data.fontfamily, "size": data.fontsize},
         width=data.width_figure,
         height=data.height_figure,
         title=title,
@@ -223,30 +220,30 @@ def _update_axes(fig: FigureResampler) -> None:
         ticks="outside",
         tickcolor="black",
         ticklen=6,
-        minor=dict(
-            ticklen=3,
-            tickcolor="black",
-            tickmode="auto",
-            nticks=10,
-            showgrid=True,
-        ),
+        minor={
+            "ticklen": 3,
+            "tickcolor": "black",
+            "tickmode": "auto",
+            "nticks": 10,
+            "showgrid": True,
+        },
     )
     fig.update_yaxes(
         ticks="outside",
         tickcolor="black",
         ticklen=6,
-        minor=dict(
-            ticklen=3,
-            tickcolor="black",
-            tickmode="auto",
-            nticks=10,
-            showgrid=True,
-        ),
+        minor={
+            "ticklen": 3,
+            "tickcolor": "black",
+            "tickmode": "auto",
+            "nticks": 10,
+            "showgrid": True,
+        },
     )
 
 
 def _create_separate_figures(filenames: list[str], data: DataSource) -> dict:
-    figure_by_id_figure = dict()
+    figure_by_id_figure = {}
 
     for filename in filenames:
         file_data = data.file_data_by_filename[filename]
@@ -266,7 +263,7 @@ def _create_separate_figures(filenames: list[str], data: DataSource) -> dict:
 
 
 def _create_one_common_figure(filenames: list[str], data: DataSource) -> dict:
-    figure_by_id_figure = dict()
+    figure_by_id_figure = {}
 
     fig = FigureResampler(
         default_n_shown_samples=data.n_shown_samples,
@@ -357,7 +354,7 @@ def get_io_mode_specific_callbacks(app: DashProxy, data: DataSource) -> None:
         Input(id.DROPDOWN_FILE, "options"),
     )
     def create_figures(filenames: list[str]) -> dict[str, FigureResampler]:
-        figure_by_id_figure = dict()
+        figure_by_id_figure = {}
 
         if data.merge_plots_is_selected:
             figure_by_id_figure = _create_one_common_figure(filenames, data)
@@ -386,7 +383,7 @@ def get_io_mode_specific_callbacks(app: DashProxy, data: DataSource) -> None:
         div_children = [
             html.Div(
                 dcc.Markdown(
-                    "### {}".format(io_mode.MODE_STRING_BY_MODE[data.io_mode]),
+                    f"### {io_mode.MODE_STRING_BY_MODE[data.io_mode]}",
                     mathjax=True,
                 )
             )

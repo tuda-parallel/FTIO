@@ -5,8 +5,10 @@ import numpy as np
 
 class overlap_thread(Thread):
     # constructor
-    def __init__(self, ts, te, b_rank_sum, b_rank_avr=[]):
+    def __init__(self, ts, te, b_rank_sum, b_rank_avr=None):
         # execute the base constructor
+        if b_rank_avr is None:
+            b_rank_avr = []
         Thread.__init__(self)
         # set out values
         self.n_overlap = []

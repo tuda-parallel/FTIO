@@ -148,7 +148,7 @@ class JitResult:
         fig.update_traces(
             textposition="inside",
             texttemplate="%{text:.1f}",
-            textfont=dict(color="white"),
+            textfont={"color": "white"},
             insidetextanchor="middle",
             textangle=-90 if len(self.node) > 3 else 0,
         )
@@ -189,24 +189,24 @@ class JitResult:
             fig.update_traces(
                 textposition="inside",
                 texttemplate="%{text:.2f}",
-                textfont=dict(color="white"),
+                textfont={"color": "white"},
             )
 
         font_size = 18 - len(self.node)
         if len(self.node) > 3:
             font_size = 14
         fig.update_traces(
-            textfont=dict(size=font_size),
+            textfont={"size": font_size},
             texttemplate="%{text:.1f}",
         )
-        fig.update_annotations(font=dict(sie=font_size - 1))
+        fig.update_annotations(font={"sie": font_size - 1})
         fig.update_layout(uniformtext_minsize=font_size - 1, uniformtext_mode="hide")
 
         # Update layout with larger font sizes
         fig.update_layout(
             yaxis_title="Time (s)",
             # xaxis_title=f"Experimental Runs with # Nodes",
-            xaxis_title=f"",
+            xaxis_title="",
             showlegend=True,
             title=title,
             barmode=barmode,
@@ -217,23 +217,23 @@ class JitResult:
                 else 500 + 100 * len(self.node)
             ),
             height=500,
-            xaxis=dict(title_font=dict(size=20)),  # Increased x-axis title font size
-            yaxis=dict(title_font=dict(size=20)),  # Increased y-axis title font size
-            legend=dict(
-                font=dict(size=22),  # Increased legend font size
-            ),
+            xaxis={"title_font": {"size": 20}},  # Increased x-axis title font size
+            yaxis={"title_font": {"size": 20}},  # Increased y-axis title font size
+            legend={
+                "font": {"size": 22},  # Increased legend font size
+            },
         )
         format_plot_and_ticks(fig, x_minor=False, font_size=16)
         fig.update_layout(
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=0.85,
-                xanchor="left",
-                x=0.005,
+            legend={
+                "orientation": "h",
+                "yanchor": "bottom",
+                "y": 0.85,
+                "xanchor": "left",
+                "x": 0.005,
                 # xanchor="right",
                 # x=0.997,
-            )
+            }
         )
         # fig.update_traces(
         #     textposition="inside",
@@ -423,8 +423,8 @@ class JitResult:
                 x=[categories[0], categories[1]],
                 y=app_values,
                 text=app_values,
-                name=f"App",
-                error_y=dict(type="data", array=app_error_diff),  # Min-max error bars
+                name="App",
+                error_y={"type": "data", "array": app_error_diff},  # Min-max error bars
             )
         )
 
@@ -434,10 +434,11 @@ class JitResult:
                 x=[categories[0], categories[1]],
                 y=stage_out_values,
                 text=stage_out_values,
-                name=f"Stage out",
-                error_y=dict(
-                    type="data", array=stage_out_error_diff
-                ),  # Min-max error bars
+                name="Stage out",
+                error_y={
+                    "type": "data",
+                    "array": stage_out_error_diff,
+                },  # Min-max error bars
             )
         )
 
@@ -447,10 +448,11 @@ class JitResult:
                 x=[categories[0], categories[1]],
                 y=stage_in_values,
                 text=stage_in_values,
-                name=f"Stage in",
-                error_y=dict(
-                    type="data", array=stage_in_error_diff
-                ),  # Min-max error bars
+                name="Stage in",
+                error_y={
+                    "type": "data",
+                    "array": stage_in_error_diff,
+                },  # Min-max error bars
             )
         )
 
@@ -599,7 +601,7 @@ def highlight_row(values, chunks, min_value=None, max_value=None):
     for i, val in enumerate(values):
         # Skip color scale if value is NaN
         if np.isnan(val):
-            formatted = f"[gray]NaN[/]"
+            formatted = "[gray]NaN[/]"
             result.append(formatted)
             continue
 

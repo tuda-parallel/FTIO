@@ -47,7 +47,7 @@ def parse(file_path_or_msg, data, io_type="w", debug_level: int = 0) -> tuple[di
 
     # JSON
     elif "JSON" in extension.upper():
-        with open(file_path_or_msg, "r") as json_file:
+        with open(file_path_or_msg) as json_file:
             json_data = json.load(json_file)
         for key, value in json_data.items():
             if "avg_throughput" in key:

@@ -113,7 +113,7 @@ def extract_and_plot(
         all (bool): Flag to control whether to call add_dict or add_all (default is False).
     """
     # Open the file and load the JSON data
-    with open(json_file_path, "r") as json_file:
+    with open(json_file_path) as json_file:
         data = json.load(json_file)
 
     # Sort the data by 'nodes'

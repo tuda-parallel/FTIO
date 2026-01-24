@@ -6,8 +6,6 @@ import numpy as np
 import pandas as pd
 from rich.console import Console
 
-from ftio.parse.bandwidth import overlap
-
 
 def parse_args():
     # Set up command-line argument parsing
@@ -47,12 +45,11 @@ def parse_txt(args, file_path):
     ranks = 0
     total_bytes = 0
     t = []
-    N = 0
     # Prepare to store the data columns (for interaction)
     data = []
 
     # Read the file and prepare columns
-    with open(file_path, "r") as file:
+    with open(file_path) as file:
         for line in file:
             parts = line.split()
             # if len(parts) >= 13:
@@ -114,7 +111,7 @@ def main(args=parse_args()):
 
     # Print JSON for verification
     # print(json.dumps(json_data, indent=4))
-    console.print(f"[green]--- done ---[/]")
+    console.print("[green]--- done ---[/]")
 
 
 # Ensure script runs only when executed directly

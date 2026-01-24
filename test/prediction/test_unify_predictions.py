@@ -1,12 +1,13 @@
-import pytest
 import numpy as np
+import pytest
 
-from ftio.prediction.unify_predictions import merge_core
 from ftio.freq.prediction import Prediction
+from ftio.prediction.unify_predictions import merge_core
 
 """
 Tests for class ftio/prediction/unify_predictions.py
 """
+
 
 def test_merge_predictions():
     pred = Prediction(transformation="dft")
@@ -15,7 +16,7 @@ def test_merge_predictions():
     pred.amp = np.array([1.0, 2.0, 0.5])
     pred.phi = np.array([0.0, 0.1, 0.2])
 
-    pred2= Prediction(transformation="autocorrelation")
+    pred2 = Prediction(transformation="autocorrelation")
     pred2.dominant_freq = np.array([0.2])
     pred2.conf = np.array([0.85])
     pred2.amp = np.array([1.5])

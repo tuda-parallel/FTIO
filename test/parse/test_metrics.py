@@ -51,5 +51,5 @@ def test_add_metric_zero():
     assert result == []
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

@@ -7,6 +7,7 @@ from ftio.prediction.probability import Probability
 Tests for class ftio/prediction/probability.py
 """
 
+
 def test_init():
     prob = Probability(freq_min=0.1, freq_max=0.5)
 
@@ -25,7 +26,7 @@ def test_init_custom():
         p_periodic=0.5,
         p_freq=0.3,
         p_freq_given_periodic=0.7,
-        p_periodic_given_freq=0.9
+        p_periodic_given_freq=0.9,
     )
 
     assert prob.freq_min == 0.2
@@ -38,7 +39,9 @@ def test_init_custom():
 
 def test_set():
     prob = Probability(freq_min=0.1, freq_max=0.5)
-    prob.set(p_periodic=0.6, p_freq=0.4, p_freq_given_periodic=0.8, p_periodic_given_freq=0.7)
+    prob.set(
+        p_periodic=0.6, p_freq=0.4, p_freq_given_periodic=0.8, p_periodic_given_freq=0.7
+    )
 
     assert prob.p_periodic == 0.6
     assert prob.p_freq == 0.4

@@ -76,7 +76,7 @@ class IOAnalysisApp(DashProxy):
                     id=id.DROPDOWN_FILE,
                     multi=True,
                     style={"marginTop": 10},
-                    disabled=(True if self._plot_core.data.args.merge_plots else False),
+                    disabled=(bool(self._plot_core.data.args.merge_plots)),
                 ),
                 dcc.Checklist(
                     options=self._io_modes,

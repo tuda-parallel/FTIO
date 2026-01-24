@@ -43,13 +43,13 @@ def check_setup(settings: JitSettings):
         # Display MPI hostfile
         if settings.cluster:
             mpi_hostfile_path = os.path.expanduser(f"{settings.mpi_hostfile}")
-            with open(mpi_hostfile_path, "r") as file:
+            with open(mpi_hostfile_path) as file:
                 mpi_hostfile_content = file.read()
             console.print(f"[cyan]MPI hostfile:\n{mpi_hostfile_content}[/]")
 
         # Display GekkoFS hostfile
         gekkofs_hostfile = settings.gkfs_hostfile
-        with open(gekkofs_hostfile, "r") as file:
+        with open(gekkofs_hostfile) as file:
             gekkofs_hostfile_content = file.read()
         console.print(f"[cyan]Geko hostfile:\n{gekkofs_hostfile_content}[/]")
 
