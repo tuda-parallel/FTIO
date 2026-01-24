@@ -253,11 +253,19 @@ def window_adaptation(
     # Build change point info directly - no regex needed
     change_point_info = None
     if change_detected:
+        old_freq_val = float(old_freq) if not np.isnan(old_freq) else 0.0
+        new_freq_val = float(freq) if not np.isnan(freq) else 0.0
+        freq_change_pct = abs(new_freq_val - old_freq_val) / old_freq_val * 100 if old_freq_val > 0 else 0.0
+        sample_count = len(shared_resources.detector_frequencies)
         change_point_info = {
             "prediction_id": shared_resources.count.value,
             "timestamp": float(prediction.t_end),
-            "old_frequency": float(old_freq) if not np.isnan(old_freq) else 0.0,
-            "new_frequency": float(freq) if not np.isnan(freq) else 0.0,
+            "old_frequency": old_freq_val,
+            "new_frequency": new_freq_val,
+            "frequency_change_percent": freq_change_pct,
+            "sample_number": sample_count,
+            "cut_position": sample_count - 1 if sample_count > 0 else 0,
+            "total_samples": sample_count,
             "start_time": float(adaptive_start_time)
         }
 
