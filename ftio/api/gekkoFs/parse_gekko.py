@@ -143,7 +143,7 @@ def assign(data: dict, unpacker, io_type="w", debug_level: int = 0) -> dict:
             if debug_level > 1:
                 # averaged throughput
                 print(
-                    f"Transfer speed: {np.sum(np.array(data["req_size"]))/(max(np.array(data["t_end"])) - min(np.array(data["t_start"]))) *1e-9} GB/s"
+                    f"Transfer speed: {np.sum(np.array(data['req_size']))/(max(np.array(data['t_end'])) - min(np.array(data['t_start']))) *1e-9} GB/s"
                 )
                 print(f"Start time: {np.array(data['t_start'])} sec")
                 print(f"End time: {np.array(data['t_end'])} sec")

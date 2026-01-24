@@ -353,7 +353,11 @@ def new_periodicity_scores(
             start_time = prediction.t_start
             if args.n_freq > 0:
                 for i, (dominant_freq, phi) in enumerate(
-                    zip(prediction.top_freqs["freq"], prediction.top_freqs["phi"])
+                    zip(
+                        prediction.top_freqs["freq"],
+                        prediction.top_freqs["phi"],
+                        strict=False,
+                    )
                 ):
                     score = signal_correlation(
                         dominant_freq, sampling_freq, signal, phi, start_time
@@ -380,7 +384,11 @@ def new_periodicity_scores(
             start_time = prediction.t_start
             if args.n_freq > 0:
                 for i, (dominant_freq, phi) in enumerate(
-                    zip(prediction.top_freqs["freq"], prediction.top_freqs["phi"])
+                    zip(
+                        prediction.top_freqs["freq"],
+                        prediction.top_freqs["phi"],
+                        strict=False,
+                    )
                 ):
                     print(dominant_freq)
                     score, new_text = weighted_ind_period_correlation(

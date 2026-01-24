@@ -346,7 +346,7 @@ def merge_overlaps_safe(b, t):
     merged_b = []
     unique_t = []
 
-    for val, time in zip(b, t):
+    for val, time in zip(b, t, strict=False):
         if unique_t and time == unique_t[-1]:
             merged_b[-1] += val
         else:

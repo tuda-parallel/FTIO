@@ -172,7 +172,7 @@ def extract_correlation_ranges(
 
     # Create ranges and filter by duration
     ranges = []
-    for start, end in zip(start_indices, end_indices):
+    for start, end in zip(start_indices, end_indices, strict=False):
         t_start, t_end = t[start], t[end - 1]
         if (t_end - t_start) >= min_duration:
             ranges.append((t_start, t_end))
