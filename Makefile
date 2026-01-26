@@ -77,15 +77,15 @@ clean: clean_project
 
 
 docker:
-	cd docker && docker build -t freq_io:1.0 .
+	docker build -f docker/Dockerfile -t freq_io:1.0 .
 
 
 docker_run:
-	cd docker && docker run -v "$$PWD/examples/tmio/JSONL/8.jsonl:/freq_io/8.jsonl" -t freq_io:1.0 ftio 8.jsonl -e no 
+	docker run -v "$$PWD/examples/tmio/JSONL/8.jsonl:/freq_io/8.jsonl" -t freq_io:1.0 8.jsonl -e no
 
 
 docker_interactive:
-	cd docker && docker run -ti   freq_io:1.0
+	docker run -ti --entrypoint /bin/bash freq_io:1.0
 
 
 
