@@ -92,13 +92,8 @@ server_ftio = "ftio.util.server_ftio:main_cli"
 [project.optional-dependencies]
 external-libs = [
     "fastdtw",
-    "dash<2.18.0",
-    "dash_extensions",
-    "plotly_resampler",
-    "trace_updater",
     "flask",
     "colorlog",
-    "pytz",
 ]
 
 development-libs = [
@@ -106,6 +101,21 @@ development-libs = [
     "isort",
     "nbstripout",
     "ruff",
+]
+
+amd-libs = [
+    "opencv-contrib-python",
+    "tftb>=0.2.0",
+    "vmdpy",
+    "pysdkit",
+]
+
+plot-libs = [
+    "dash",
+    "dash_extensions",
+    "pytz",
+    "plotly_resampler",
+    "trace_updater",
 ]
 
 [project.gui-scripts]

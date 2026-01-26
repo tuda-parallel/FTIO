@@ -165,6 +165,9 @@ pip install '.[external-libs]'
 
 #Or with external dependencies and style tools 
 pip install '.[external-libs,development-libs]'
+
+#Or with external dependencies, style tools, and plot libs (to call `ioplot` with dash support) 
+pip install '.[external-libs,development-libs,plot-libs]'
 ```
 
 > [!note]
