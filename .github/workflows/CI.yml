@@ -143,14 +143,14 @@ jobs:
       - name: Run tests with coverage
         run: |
           cd test
-          pytest --cov=ftio --cov-report=xml --cov-report=term --cov-report=html -v
+          pytest --cov=ftio --cov-report=term -v
 
-      - name: Upload coverage HTML report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: test/htmlcov/
-          retention-days: 30
+      - name: Write coverage to job summary
+        run: |
+          cd test
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
 
   # ============================================
   # Build Verification
