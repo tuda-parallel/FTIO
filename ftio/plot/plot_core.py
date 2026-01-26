@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import socket
 from multiprocessing import Process
@@ -7,7 +8,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import importlib.util
+
 from ftio.freq.helper import MyConsole
 from ftio.parse.metrics import Metrics
 from ftio.parse.scales import Scales

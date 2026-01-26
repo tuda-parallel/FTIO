@@ -134,7 +134,7 @@ def binary_image_zscore_extended(Zxx, freq, args):
         prom = peak_prominences(freqs, peaks)[0]
 
         for ind in indices:
-            if not ind in zscore_freq:
+            if ind not in zscore_freq:
                 zscore_freq.append(ind)
                 zscore_freq.append(ind - 1)
                 zscore_freq.append(ind + 1)
@@ -169,7 +169,7 @@ def component_linking(image, fs, win_len):
     frame = np.array(image, dtype="uint8")
 
     analysis = cv2.connectedComponentsWithStats(frame, 8, cv2.CV_32S)
-    (totalLabels, label_ids, values, centroid) = analysis
+    totalLabels, label_ids, values, centroid = analysis
 
     output = np.zeros(image.shape, dtype="uint8")
 

@@ -194,12 +194,12 @@ def freq_analysis(
     elif any(t in args.transformation for t in ("astft", "efd", "vmd")):
         # TODO: add a way to pass the results to FTIO
         try:
-            import vmdpy
+            import vmdpy  # noqa: F401
         except ImportError:
             raise RuntimeError(
                 "ASTFT transformation is disabled.\n"
                 "Install with: pip install ftio[amd-libs]"
-            )
+            ) from None
 
         if "astft" in args.transformation:
             import sys

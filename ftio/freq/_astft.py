@@ -28,9 +28,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.fft import fft
 from scipy.signal import stft
-from scipy.signal.windows import boxcar, gaussian
+from scipy.signal.windows import boxcar
 
-from ftio.freq.concentration_measures import cm3, cm4, cm5
+from ftio.freq.concentration_measures import cm5
 from ftio.freq.denoise import tfpf_wvd
 from ftio.freq.if_comp_separation import (  # binary_image,; binary_image_nprom,; binary_image_zscore_extended,
     binary_image_zscore,
@@ -165,33 +165,24 @@ def check_3_periods(signal, fs, exp_freq, est_period, start, end):
         yf = np.abs(yf)
         # check if expected freq is peak
         if (
-            exp_frq_bin > 1
-            and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin - 1])
-            and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin + 1])
-        ):
-            if not flag:
-                start = i
-                flag = True
-            continue
-        # or if expected + neighbor are peak
-        # additional peak afterwards
-        elif (
-            len(yf) > exp_frq_bin + 2
-            and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin - 1])
-            and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin + 2])
-            and np.abs(yf[exp_frq_bin + 1]) > np.abs(yf[exp_frq_bin - 1])
-            and np.abs(yf[exp_frq_bin + 1]) > np.abs(yf[exp_frq_bin + 2])
-        ):
-            if not flag:
-                start = i
-                flag = True
-            continue
-        # additional peak before
-        elif (
-            np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin + 1])
-            and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin - 2])
-            and np.abs(yf[exp_frq_bin - 1]) > np.abs(yf[exp_frq_bin + 1])
-            and np.abs(yf[exp_frq_bin - 1]) > np.abs(yf[exp_frq_bin - 2])
+            (
+                exp_frq_bin > 1
+                and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin - 1])
+                and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin + 1])
+            )
+            or (
+                len(yf) > exp_frq_bin + 2
+                and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin - 1])
+                and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin + 2])
+                and np.abs(yf[exp_frq_bin + 1]) > np.abs(yf[exp_frq_bin - 1])
+                and np.abs(yf[exp_frq_bin + 1]) > np.abs(yf[exp_frq_bin + 2])
+            )
+            or (
+                np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin + 1])
+                and np.abs(yf[exp_frq_bin]) > np.abs(yf[exp_frq_bin - 2])
+                and np.abs(yf[exp_frq_bin - 1]) > np.abs(yf[exp_frq_bin + 1])
+                and np.abs(yf[exp_frq_bin - 1]) > np.abs(yf[exp_frq_bin - 2])
+            )
         ):
             if not flag:
                 start = i
@@ -326,9 +317,6 @@ def frq_refinement(signal, start, end, frq_est, fs, duration):
     return yf, ind, start_per, end_per
 
 
-from scipy.signal import find_peaks
-
-
 def simple_astft(components, signal, filtered, fs, time_b, args, merge=True, imfs=None):
 
     signal_plot = signal
@@ -369,7 +357,6 @@ def simple_astft(components, signal, filtered, fs, time_b, args, merge=True, imf
     for i in components:
         start = i[0][0]
         end = i[0][1] + 1
-        window = signal[start:end]
         comp_length = i[0][1] - i[0][0]
 
         est_period_time = 1 / i[1]
