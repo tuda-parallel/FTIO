@@ -74,12 +74,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  # TODO: To enable Docker Hub publishing, add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN
-  #       as repository secrets.
+  # TODO: To enable Docker Hub publishing:
+  #       1. Add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN as repository secrets
+  #       2. Change 'if: false' to 'if: true' below
   docker-hub:
     name: Push to Docker Hub
     runs-on: ubuntu-latest
-    if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+    if: false
 
     steps:
       - name: Checkout code
