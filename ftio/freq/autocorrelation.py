@@ -140,7 +140,7 @@ def filter_outliers(
         method = "z"
         # With quantil and weights
         if "q" in method:
-            text += f"Filtering method: [purple]quantil[/]\n"
+            text += "Filtering method: [purple]quantil[/]\n"
             # candidates = candidates*weights/sum(weights)
             q1 = np.percentile(candidates, 25)
             q3 = np.percentile(candidates, 75)
@@ -246,10 +246,10 @@ def find_fd_autocorrelation(
 
     # plot
     if any(x in args.engine for x in ["mat", "plot"]):
-        console.print(f"Generating Autocorrelation Plot\n")
+        console.print("Generating Autocorrelation Plot\n")
         fig = plot_autocorr_results(args, acorr, peaks, outliers, len(candidates) > 0)
         analysis_figures.add_figure([fig], "Autocorrelation")
-        console.print(f" --- Done --- \n")
+        console.print(" --- Done --- \n")
 
     return {
         "autocorrelation": acorr,

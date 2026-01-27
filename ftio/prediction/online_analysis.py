@@ -9,7 +9,6 @@ from rich.console import Console
 
 from ftio.cli import ftio_core
 from ftio.freq.prediction import Prediction
-from ftio.plot.plot_bandwidth import plot_bar_with_rich
 from ftio.plot.units import set_unit
 from ftio.prediction.helper import get_dominant
 from ftio.prediction.shared_resources import SharedResources

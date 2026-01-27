@@ -90,7 +90,7 @@ def extract_fields(data_list):
 
     bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
     time_b = data["time"] if "time" in data else np.array([])
-    total_bytes = data["total_bytes"] if "total_bytes" in data else 0
-    ranks = data["ranks"] if "ranks" in data else 0
+    total_bytes = data.get("total_bytes", 0)
+    ranks = data.get("ranks", 0)
 
     return bandwidth, time_b, total_bytes, ranks

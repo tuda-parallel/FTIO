@@ -12,7 +12,9 @@ CONSOLE = MyConsole()
 CONSOLE.set(True)
 
 
-def phases_and_timeseries(metrics, data, argv=[]):
+def phases_and_timeseries(metrics, data, argv=None):
+    if argv is None:
+        argv = []
     phasemode_list, t = classify_waves(data, True)
 
     if argv and "-n" in argv:
@@ -22,7 +24,9 @@ def phases_and_timeseries(metrics, data, argv=[]):
         plot_waves_and_timeseries(argv, metrics, phasemode_list, t)
 
 
-def phases(data, argv=[]):
+def phases(data, argv=None):
+    if argv is None:
+        argv = []
     phasemode_list, t = classify_waves(data)
 
     if argv and "-n" in argv:

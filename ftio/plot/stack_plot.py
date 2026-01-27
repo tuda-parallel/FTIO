@@ -50,12 +50,12 @@ class StackPlot:
             self.fig.update_layout(
                 xaxis_title="Time (s)",
                 yaxis_title="Bandwidth (B/s)",
-                font=dict(family="Courier New, monospace", size=24),
+                font={"family": "Courier New, monospace", "size": 24},
                 width=width,
                 height=height / 1.1,
                 template=template,
             )
-            self.fig.update_layout(legend=dict(groupclick="toggleitem"))
+            self.fig.update_layout(legend={"groupclick": "toggleitem"})
             self.fig.show()
         elif "mat" in self.engine:
             plt.stackplot(self.t, self.b, baseline="zero")

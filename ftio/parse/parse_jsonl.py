@@ -19,6 +19,6 @@ class ParseJsonl:
         """
         file = self.path
         with jsonlines.open(file, "r") as jsonl_f:
-            data = [obj for obj in jsonl_f]
+            data = list(jsonl_f)
 
         return Simrun(data, "jsonl", file, args, index)

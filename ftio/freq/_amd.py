@@ -23,7 +23,7 @@ from vmdpy import VMD
 # from scipy.fft import fft, ifft
 from ftio.analysis._correlation import correlation
 from ftio.analysis.anomaly_detection import z_score_minimal as z_score
-from ftio.freq._astft import check_3_periods, simple_astft
+from ftio.freq._astft import simple_astft
 from ftio.freq.denoise import tfpf_wvd
 
 
@@ -137,7 +137,7 @@ def efd(signal, t, fs, args):
     # match highest energy contribution
 
     # updated center freq
-    from scipy.fft import fft, ifft
+    from scipy.fft import fft
 
     cerf2 = np.empty(numIMFs)
     for i in range(0, numIMFs):
@@ -147,7 +147,6 @@ def efd(signal, t, fs, args):
 
         frq_arr = np.zeros(len(imfs[i]), dtype=complex)
         frq_arr[ind] = yf[ind]
-        iyf = ifft(frq_arr)
 
     per_segments = energy_windowed(t, imfs, cerf2, fs)
 
@@ -186,7 +185,6 @@ def efd(signal, t, fs, args):
             for i in indices:
                 arr = np.zeros(N, dtype=complex)
                 arr[i] = yf[i]
-                iyf = ifft(arr)
 
                 if exp_frq_bin == i or exp_frq_bin - 1 == i or exp_frq_bin + 1 == i:
                     # collect potential components
@@ -404,7 +402,7 @@ def imf_select_windowed(signal, t, u_per, fs, overlap=0.5):
         # analytic_signal = hilbert(imf)
         # amplitude_envelope = np.abs(analytic_signal)
 
-        from scipy.fft import fft, ifft
+        from scipy.fft import fft
 
         yf = fft(imf)
 

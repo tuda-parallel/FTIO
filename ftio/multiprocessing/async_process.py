@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from multiprocessing import Process
-from typing import Callable
 
 
 def handle_in_process(function: Callable, args) -> Process:

@@ -33,7 +33,7 @@ def load_json_and_plot(filenames):
         json_file_path = os.path.join(current_directory, filename)
 
         # Load the JSON file
-        with open(json_file_path, "r") as json_file:
+        with open(json_file_path) as json_file:
             data = json.load(json_file)
 
         # Extract arrays from the JSON data
@@ -181,7 +181,7 @@ def plot_bar_with_rich(
     plot_str += (
         f"\n{' ' * new_label_offset}{''.join(label_line)}"  # Adjusted x-axis label
     )
-    plot_str = f" " * (label_offset + 2 + len(y_unit)) + "^\n" + plot_str
+    plot_str = " " * (label_offset + 2 + len(y_unit)) + "^\n" + plot_str
 
     # Create a panel with the plot
     panel = Panel(

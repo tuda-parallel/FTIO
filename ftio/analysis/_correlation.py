@@ -69,9 +69,7 @@ def sliding_correlation(x, y, window_size, method="pearson"):
     return corrs
 
 
-def plot_correlation(
-    t, signal_1, signal_2, corrs, window_duration=None, name=["Cosine", "Logical"]
-):
+def plot_correlation(t, signal_1, signal_2, corrs, window_duration=None, name=None):
     """
     Plot input signals, sliding correlation, and their product.
 
@@ -84,12 +82,14 @@ def plot_correlation(
         name            : List of two string indicating the label on the plot
     """
     # Ensure aligned time vector for correlation
+    if name is None:
+        name = ["Cosine", "Logical"]
     min_len = min(len(signal_1), len(signal_2), len(corrs))
     signal_1 = signal_1[:min_len]
     signal_2 = signal_2[:min_len]
     t_corr = t[:min_len]
     corrs = corrs[:min_len]
-    masked_corr = signal_1 * signal_2
+    signal_1 * signal_2
     # plt.figure(figsize=(10, 8))
     # plt.subplot(3, 1, 1)
     plt.figure(figsize=(10, 6))
@@ -172,7 +172,7 @@ def extract_correlation_ranges(
 
     # Create ranges and filter by duration
     ranges = []
-    for start, end in zip(start_indices, end_indices):
+    for start, end in zip(start_indices, end_indices, strict=False):
         t_start, t_end = t[start], t[end - 1]
         if (t_end - t_start) >= min_duration:
             ranges.append((t_start, t_end))

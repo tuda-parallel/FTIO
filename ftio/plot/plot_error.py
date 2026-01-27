@@ -17,12 +17,14 @@ def make_sub():
         vertical_spacing=0.05,
         row_heights=[0.65, 0.35],
     )
-    f.update_xaxes(minor=dict(ticklen=6, tickcolor="black", showgrid=True))
+    f.update_xaxes(minor={"ticklen": 6, "tickcolor": "black", "showgrid": True})
 
     return f
 
 
-def plot_error_bar(df, s, f=[]):
+def plot_error_bar(df, s, f=None):
+    if f is None:
+        f = []
     if not f:
         f = make_sub()
     modes = ["max", "median"]
@@ -74,21 +76,21 @@ def plot_error_bar(df, s, f=[]):
             go.Scatter(
                 x=x_unqiue,
                 y=y[modes.index(j)],
-                error_y=dict(
-                    type="data",
-                    symmetric=False,
-                    array=y_plus[modes.index(j)],
-                    arrayminus=y_minus[modes.index(j)],
-                ),
+                error_y={
+                    "type": "data",
+                    "symmetric": False,
+                    "array": y_plus[modes.index(j)],
+                    "arrayminus": y_minus[modes.index(j)],
+                },
                 mode="lines+markers",
-                name="$\\text{%s}(%s)$" % (j, s),
-                legendgroup="%s_%s" % (j, s),
-                marker=dict(
-                    symbol=symbols[modes.index(j)],
-                    line=dict(width=1, color=markeredgecolor),
-                ),
+                name=f"$\\text{{{j}}}({s})$",
+                legendgroup=f"{j}_{s}",
+                marker={
+                    "symbol": symbols[modes.index(j)],
+                    "line": {"width": 1, "color": markeredgecolor},
+                },
                 marker_color=colors[modes.index(j)],
-                line=dict(dash=dash),
+                line={"dash": dash},
             ),
             row=1,
             col=1,
@@ -110,22 +112,22 @@ def plot_error_bar(df, s, f=[]):
             go.Scatter(
                 x=x_unqiue,
                 y=np.repeat(0, len(y[modes.index(j)])),
-                error_y=dict(
-                    type="data",
-                    symmetric=False,
-                    array=y_plus_normed[modes.index(j)],
-                    arrayminus=y_minus_normed[modes.index(j)],
-                ),
+                error_y={
+                    "type": "data",
+                    "symmetric": False,
+                    "array": y_plus_normed[modes.index(j)],
+                    "arrayminus": y_minus_normed[modes.index(j)],
+                },
                 mode="lines+markers",
-                name="$\\text{%s}(%s)$" % (j, s),
+                name=f"$\\text{{{j}}}({s})$",
                 showlegend=False,
-                legendgroup="%s_%s" % (j, s),
-                marker=dict(
-                    symbol=symbols[modes.index(j)],
-                    line=dict(width=1, color=markeredgecolor),
-                ),
+                legendgroup=f"{j}_{s}",
+                marker={
+                    "symbol": symbols[modes.index(j)],
+                    "line": {"width": 1, "color": markeredgecolor},
+                },
                 marker_color=colors[modes.index(j)],
-                line=dict(dash=dash),
+                line={"dash": dash},
             ),
             row=2,
             col=1,
@@ -136,7 +138,7 @@ def plot_error_bar(df, s, f=[]):
     )  # ,tickmode = 'array', tickvals = x_unqiue, ticktext = x_unqiue.astype(str))
     f.update_yaxes(title_text="Rel.<br>dev. (%)", row=2, col=1)
     f.update_yaxes(
-        minor=dict(ticklen=4, tickcolor="black", showgrid=True, ticks="inside")
+        minor={"ticklen": 4, "tickcolor": "black", "showgrid": True, "ticks": "inside"}
     )
     f.update_layout(
         hovermode="x",
@@ -229,20 +231,20 @@ def plot_time_error_bar(df_time, modes, names, colors, symbols, markeredgecolor)
             go.Scatter(
                 x=x_unqiue,
                 y=y[modes.index(j)],
-                error_y=dict(
-                    type="data",
-                    symmetric=False,
-                    array=y_plus[modes.index(j)],
-                    arrayminus=y_minus[modes.index(j)],
-                ),
+                error_y={
+                    "type": "data",
+                    "symmetric": False,
+                    "array": y_plus[modes.index(j)],
+                    "arrayminus": y_minus[modes.index(j)],
+                },
                 mode="lines+markers",
                 name=names[modes.index(j)],
                 legendgroup=names[modes.index(j)],
-                marker=dict(
-                    symbol=symbols[modes.index(j)],
-                    line=dict(width=1, color=markeredgecolor),
-                    size=8 if "Total" not in names[modes.index(j)] else 9,
-                ),
+                marker={
+                    "symbol": symbols[modes.index(j)],
+                    "line": {"width": 1, "color": markeredgecolor},
+                    "size": 8 if "Total" not in names[modes.index(j)] else 9,
+                },
                 marker_color=colors[modes.index(j)],
             ),
             row=1,
@@ -266,21 +268,21 @@ def plot_time_error_bar(df_time, modes, names, colors, symbols, markeredgecolor)
             go.Scatter(
                 x=x_unqiue,
                 y=np.repeat(0, len(y[modes.index(j)])),
-                error_y=dict(
-                    type="data",
-                    symmetric=False,
-                    array=y_plus_normed[modes.index(j)],
-                    arrayminus=y_minus_normed[modes.index(j)],
-                ),
+                error_y={
+                    "type": "data",
+                    "symmetric": False,
+                    "array": y_plus_normed[modes.index(j)],
+                    "arrayminus": y_minus_normed[modes.index(j)],
+                },
                 mode="lines+markers",
                 name=names[modes.index(j)],
                 showlegend=False,
                 legendgroup=names[modes.index(j)],
-                marker=dict(
-                    symbol=symbols[modes.index(j)],
-                    line=dict(width=1, color=markeredgecolor),
-                    size=8,
-                ),
+                marker={
+                    "symbol": symbols[modes.index(j)],
+                    "line": {"width": 1, "color": markeredgecolor},
+                    "size": 8,
+                },
                 marker_color=colors[modes.index(j)],
             ),
             row=2,

@@ -121,7 +121,7 @@ def plot_filter_results_plotly(args, b, filtered_signal, as_subplots=True):
 
         # Frequency-Domain traces
         fig.add_trace(
-            go.Bar(x=freqs, y=amp, name="Original", marker=dict(color="green")),
+            go.Bar(x=freqs, y=amp, name="Original", marker={"color": "green"}),
             row=2,
             col=1,
         )
@@ -130,7 +130,7 @@ def plot_filter_results_plotly(args, b, filtered_signal, as_subplots=True):
                 x=freqs,
                 y=amp_filtered,
                 name="Filtered",
-                marker=dict(color="red"),
+                marker={"color": "red"},
             ),
             row=2,
             col=1,
@@ -140,10 +140,10 @@ def plot_filter_results_plotly(args, b, filtered_signal, as_subplots=True):
         fig.update_layout(
             height=800,
             title_text="Filter Analysis: Time and Frequency Domain",
-            xaxis=dict(title="Time [s]"),
-            yaxis=dict(title="Amplitude"),
-            xaxis2=dict(title="Frequency [Hz]"),
-            yaxis2=dict(title="Amplitude"),
+            xaxis={"title": "Time [s]"},
+            yaxis={"title": "Amplitude"},
+            xaxis2={"title": "Frequency [Hz]"},
+            yaxis2={"title": "Amplitude"},
             showlegend=True,
         )
         fig = [fig]
@@ -179,14 +179,14 @@ def plot_filter_results_plotly(args, b, filtered_signal, as_subplots=True):
         # Separate Frequency-Domain figure
         fig_freq = go.Figure()
         fig_freq.add_trace(
-            go.Bar(x=freqs, y=amp, name="Original", marker=dict(color="green"))
+            go.Bar(x=freqs, y=amp, name="Original", marker={"color": "green"})
         )
         fig_freq.add_trace(
             go.Bar(
                 x=freqs,
                 y=amp_filtered,
                 name="Filtered",
-                marker=dict(color="red"),
+                marker={"color": "red"},
             )
         )
         fig_freq.update_layout(

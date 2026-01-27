@@ -67,7 +67,7 @@ def sample_data(
         # N = N + 1 if N != 0 else 0  # include end point
         limit_N = int(memory_limit // np.dtype(np.float64).itemsize)
         text += f"memory limit: {memory_limit/ 1000**3:.3e} GB ({limit_N} samples)\n"
-        if N > limit_N:
+        if limit_N < N:
             N = limit_N
             freq = N / duration if duration > 0 else 10
             text += f"[yellow]Adjusted sampling frequency due to memory limit: {freq:.3e} Hz[/])\n"
@@ -152,7 +152,7 @@ def sample_data_same_size(
     counter = 0
     t_step = 0
     n = len(b)
-    for k in range(0, n_bins):
+    for _k in range(0, n_bins):
         if (t_step < t[0]) or (t_step > t[-1]):
             counter = counter + 1
         else:

@@ -62,11 +62,11 @@ def plot_plotly_autocorr_results(
         y=acorr,
         mode="markers+lines",
         name="ACF",
-        marker=dict(
-            color=acorr,
-            colorscale=["rgb(0,50,150)", "rgb(150,50,150)", "rgb(255,50,0)"],
-            showscale=True,
-        ),
+        marker={
+            "color": acorr,
+            "colorscale": ["rgb(0,50,150)", "rgb(150,50,150)", "rgb(255,50,0)"],
+            "showscale": True,
+        },
     )
 
     fig.update_layout(
@@ -79,22 +79,26 @@ def plot_plotly_autocorr_results(
         yaxis_title="ACF",
         width=1100,
         height=400,
-        legend=dict(yanchor="top", y=0.99, xanchor="right", x=0.99),
-        coloraxis_colorbar=dict(
-            yanchor="top", y=1, x=0, ticks="outside", ticksuffix=" bills"
-        ),
+        legend={"yanchor": "top", "y": 0.99, "xanchor": "right", "x": 0.99},
+        coloraxis_colorbar={
+            "yanchor": "top",
+            "y": 1,
+            "x": 0,
+            "ticks": "outside",
+            "ticksuffix": " bills",
+        },
     )
 
     # Plot peaks
     fig.add_scatter(
         x=peaks,
         y=acorr[peaks],
-        marker=dict(
-            color="rgba(20, 220, 70, 0.9)",
-            size=14,
-            symbol="star-triangle-up",
-            line=dict(width=1, color="DarkSlateGrey"),
-        ),
+        marker={
+            "color": "rgba(20, 220, 70, 0.9)",
+            "size": 14,
+            "symbol": "star-triangle-up",
+            "line": {"width": 1, "color": "DarkSlateGrey"},
+        },
         mode="markers",
         name="peaks",
     )
@@ -105,12 +109,12 @@ def plot_plotly_autocorr_results(
         fig.add_scatter(
             x=val,
             y=acorr[val],
-            marker=dict(
-                color="rgba(220, 20, 70, 0.9)",
-                size=21,
-                symbol="circle-open-dot",
-                line=dict(width=2, color="DarkSlateGrey"),
-            ),
+            marker={
+                "color": "rgba(220, 20, 70, 0.9)",
+                "size": 21,
+                "symbol": "circle-open-dot",
+                "line": {"width": 2, "color": "DarkSlateGrey"},
+            },
             mode="markers",
             name="relevant peaks",
         )

@@ -143,7 +143,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
         wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run)
 
     if not settings.exclude_daemon:
-        jit_print(f"[green]############## Gkfs init finished ##############\n\n\n\n ")
+        jit_print("[green]############## Gkfs init finished ##############\n\n\n\n ")
 
 
 #! Start Proxy
@@ -198,7 +198,7 @@ def start_gekko_proxy(settings: JitSettings) -> None:
             _ = monitor_log_file(settings.gkfs_proxy_err, "Error Proxy")
 
     if not settings.exclude_proxy:
-        jit_print(f"[green]############## Proxy init finished ##############\n\n\n\n ")
+        jit_print("[green]############## Proxy init finished ##############\n\n\n\n ")
 
 
 #! start Cargo
@@ -257,7 +257,7 @@ def start_cargo(settings: JitSettings) -> None:
         # if settings.verbose_error:
         #     _ = monitor_log_file(settings.cargo_err,"Error Cargo")
 
-        process = execute_background_and_log(
+        execute_background_and_log(
             settings, call, settings.cargo_log, "cargo", settings.cargo_err
         )
         if settings.verbose_error:
@@ -274,7 +274,7 @@ def start_cargo(settings: JitSettings) -> None:
         time.sleep(4)
 
     if not settings.exclude_cargo:
-        jit_print(f"[green]############## Cargo init finished ##############\n\n\n\n ")
+        jit_print("[green]############## Cargo init finished ##############\n\n\n\n ")
 
 
 #! start FTIO
@@ -400,7 +400,7 @@ def start_ftio(settings: JitSettings) -> None:
             )
         time.sleep(8)
     if not settings.exclude_ftio:
-        jit_print(f"[green]############## FTIO init finished ##############\n\n\n\n ")
+        jit_print("[green]############## FTIO init finished ##############\n\n\n\n ")
 
 
 #! Stage in
@@ -487,7 +487,7 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
         # adjust regex for flushing
         adjust_regex(settings, "flush")
     if not settings.exclude_all:
-        jit_print(f"[green]############## Stage-in finished ##############\n\n\n\n ")
+        jit_print("[green]############## Stage-in finished ##############\n\n\n\n ")
 
 
 #! Stage out
@@ -571,7 +571,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             relevant_files(settings)
             time.sleep(5)
     if not settings.exclude_all:
-        jit_print(f"[green]############## Stage-Out finished ##############\n\n\n\n ")
+        jit_print("[green]############## Stage-Out finished ##############\n\n\n\n ")
 
 
 #! App call
@@ -738,7 +738,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
     os.chdir(original_dir)
     jit_print(f"Changing directory to {os.getcwd()}")
 
-    jit_print(f"[green]############## Application finished ##############\n\n\n\n ")
+    jit_print("[green]############## Application finished ##############\n\n\n\n ")
 
 
 #! Pre app call
@@ -779,7 +779,7 @@ def pre_call(settings: JitSettings) -> None:
         #     settings.pre_app_call, settings.app_log
         # )
         jit_print(
-            f"[green]############## Pre-application call finished ##############\n\n\n\n "
+            "[green]############## Pre-application call finished ##############\n\n\n\n "
         )
 
 
@@ -817,5 +817,5 @@ def post_call(settings: JitSettings) -> None:
                     settings.dry_run,
                 )
         jit_print(
-            f"[green]############## Post-application call finished ##############\n\n\n\n "
+            "[green]############## Post-application call finished ##############\n\n\n\n "
         )

@@ -84,7 +84,7 @@ def ftio_dft(
     # welch(bandwidth,freq)
 
     #!  Find the dominant frequency
-    (dominant_index, conf[1 : int(n / 2) + 1], outlier_text) = outlier_detection(
+    dominant_index, conf[1 : int(n / 2) + 1], outlier_text = outlier_detection(
         amp, frequencies, args
     )
 
@@ -146,7 +146,7 @@ def ftio_dft(
         )
         if not args.autocorrelation:
             plot_dft(args, prediction, analysis_figures)
-        console.print(f" --- Done --- \n")
+        console.print(" --- Done --- \n")
 
     if args.autocorrelation:
         share.set_data_from_predicition(b_sampled, prediction)

@@ -47,7 +47,7 @@ class PrintHtml:
         a folder is created that hosts all sub-pages
         """
         # only execute if dynmaic plots are needed
-        if not "stat" in self.render:  # only generate a single image
+        if "stat" not in self.render:  # only generate a single image
 
             # ? 1. set current working directory
             pwd = os.getcwd()
@@ -131,7 +131,7 @@ class PrintHtml:
                     file.write(f"<li> Run {self.names.index(i)}: {i} </li>\n")
                 file.write("</ul> \n")
             file.write("</body></html> \n")
-        CONSOLE.print(f"    └──  [green]done    [/]")
+        CONSOLE.print("    └──  [green]done    [/]")
 
         CONSOLE.print(
             f"[cyan]\nTo see the result call \nopen {self.path}/main.html \n[/]"
@@ -154,7 +154,7 @@ class PrintHtml:
 # *                       1. figures_to_html
 # **********************************************************************
 def figures_to_html(
-    figs: list, filename: str = "write_async.html", names: list = []
+    figs: list, filename: str = "write_async.html", names: list = None
 ) -> None:
     """Convert list of figures to a HTML file
 
@@ -164,6 +164,8 @@ def figures_to_html(
         names (list, optional): folders to map the runs if needed. Defaults to [].
     """
     # conf = {  "toImageButtonOptions": {     "format": "svg", "scale":1  }}
+    if names is None:
+        names = []
     conf = {"toImageButtonOptions": {"format": "png", "scale": 2}}
     template = """
     <!DOCTYPE html>

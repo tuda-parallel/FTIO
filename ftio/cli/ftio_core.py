@@ -167,8 +167,8 @@ def freq_analysis(
     #! Init
     bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
     time_b = data["time"] if "time" in data else np.array([])
-    total_bytes = data["total_bytes"] if "total_bytes" in data else 0
-    ranks = data["ranks"] if "ranks" in data else 0
+    total_bytes = data.get("total_bytes", 0)
+    ranks = data.get("ranks", 0)
 
     #! Extract relevant data
     bandwidth, time_b, text = data_in_time_window(
@@ -194,12 +194,12 @@ def freq_analysis(
     elif any(t in args.transformation for t in ("astft", "efd", "vmd")):
         # TODO: add a way to pass the results to FTIO
         try:
-            import vmdpy
+            import vmdpy  # noqa: F401
         except ImportError:
             raise RuntimeError(
                 "ASTFT transformation is disabled.\n"
                 "Install with: pip install ftio[amd-libs]"
-            )
+            ) from None
 
         if "astft" in args.transformation:
             import sys
