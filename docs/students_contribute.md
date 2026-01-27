@@ -9,18 +9,22 @@
     - [Step-by-Step Instructions](#step-by-step-instructions)
         - [1. Keeping Your Branch Updated](#1-keeping-your-branch-updated)
         - [2. Committing Changes](#2-committing-changes)
-        - [3. Submitting Your Work](#3-submitting-your-work)
+        - [3. Working With Issues](#3-working-with-issues)
+        - [4. Adding Examples, Tests, and Documentation](#4-adding-examples-tests-and-documentation)
+        - [5. Preparing the Final Version](#5-preparing-the-final-version)
+        - [6. Submitting Your Work](#6-submitting-your-work)
     - [Language and Conduct](#language-and-conduct)
     - [Best Practices](#best-practices)
     - [Instructions for Adding an Example](#instructions-for-adding-an-example)
     - [Instructions for Adding a Test Case](#instructions-for-adding-a-test-case)
     - [Instructions for Adding Documentation](#instructions-for-adding-documentation)
 
+
 ## Workflow Overview
 
 1. **GitHub Username**:
     - Before starting your work, please create a GitHub account if you don’t have one already and send me your GitHub
-      username. This will be necessary for setting up your branch and reflect your contributions to the code.
+      username. This will be necessary to set up your branch and reflect your contributions to the code.
 
 2. **Branch Creation**:
     - Ahmad will create a branch for your work once your thesis starts. This branch will be linked to an issue that
@@ -58,12 +62,18 @@
 5. **Merging Restrictions**:
     - You are **not allowed** to merge into the `development` or `main` branches.
 
-6. **Final Submission**:
+6. **Adding Examples, Tests, and Documentation**
+    - Any new feature or significant change **should include**:
+        - An [example](#instructions-for-adding-an-example) (or explanation in the doc on how to use the feature)
+        - A [test case](#instructions-for-adding-a-test-case)
+        - A [Documentation](#instructions-for-adding-documentation)
+    - Examples should be minimal, reproducible, and placed in `examples/`. Alternatively, the documentation shows how to use the new feature
+    - Test cases must pass and follow existing structures.
+    - Documentation should be clear and concise.
 
-- When your thesis is complete, create a **pull request (PR)** to merge your branch into the `development` branch.
-- Include a summary of your work and link the pull request to your issue for reference.
-- Don't forget to add yourself to the [list of contributors](/docs/contributing.md#list-of-contributors).
-
+7. **Final Submission**:
+   - Submit your work as documented [here](#6-submitting-your-work)
+  
 ---
 
 ## Step-by-Step Instructions
@@ -71,7 +81,6 @@
 ### 1. Keeping Your Branch Updated
 
 - Periodically update your branch with changes from `development`:
-
   ```bash
   git checkout development
   git pull origin development
@@ -82,13 +91,12 @@
   # Or rebase for a linear history
   git rebase development
   ```
-
 - Resolve any merge conflicts promptly and test your work.
 
 ### 2. Committing Changes
 
 - Make frequent commits with clear and descriptive messages. Ideally, once you are finished working on an aspect, you
-  create a commit for it. Before commiting, always check and fix the style:
+  create a commit for it. Before committing, always check and fix the style:
 
 ```bash
  cd <ftio_repo>
@@ -113,16 +121,18 @@ Afterwards, push your changes from *your* local branch to *your* remote:
   ```
 
 > [!note]
-> Avoid using to short or undescriptive commit messages like 'update' or 'code cleaned'.
+> Avoid using overly short or overly descriptive commit messages, such as 'update' or 'code cleaned'.
 
 > [!note]
-> Always check that your commits align with the style used. For that call 'make check_style' in the root directory of
-> the repo. An easier and more automated way is explained under [here](#commit-with-style).
+> Always check that your commits align with the style used. For that, call 'make check_style' in the root directory of
+> the repo. An easier, more automated way is explained [here](#commit-with-style).
+
+- You are **not allowed** to merge into the `development` or `main` branches.
 
 ### Commit With Style
 
-You can make things even easier regarding the style if you combine this with a Git hook. For that
-creat a file called `pre-commit` under the root dirs .git folder (`.git/hooks/pre-commit`).
+You can make things even easier regarding the style by combining this with a Git hook. For that
+Create a file called `pre-commit` under the root directory's .git folder (`.git/hooks/pre-commit`).
 
 ```bash
 cd <ftio_repo>
@@ -140,14 +150,39 @@ black .
 isort .
 ```
 
-That's it. Now everytime you commit, the code is formated correctly.
+That's it. Now every time you commit, the code is formatted correctly.
 
-### 3. Submitting Your Work
+### 3. Working With Issues
 
-- Once your thesis is complete:
-    1. Push all changes to your branch.
-    2. Create a pull request targeting the `development` branch.
-    3. Write a description of your work, including any key contributions or challenges.
+- Link commits to your assigned issue.
+- Update issues regularly.
+- Use issue discussion only for code-related questions.
+
+### 4. Adding Examples, Tests, and Documentation
+
+- Add an example, test case, and documentation for each significant change.
+- Follow section instructions for:
+  - [Examples](#instructions-for-adding-an-example)
+  - [Tests](#instructions-for-adding-a-test-case)
+  - [Documentation](#instructions-for-adding-documentation)
+
+### 5. Preparing the Final Version
+
+- Ensure all tests pass, style checks succeed, examples and documentation are complete.
+- Clean up unused code or debug output.
+
+### 6. Submitting Your Work
+ - Make sure all above points are addressed (especially **4** and **5**)
+ - Tag your final version:
+     ```bash
+     git tag -a BA_time_window_adaptation -m "Bachelor Thesis: implementation and evaluation of time window adaptation"
+     git push --tags
+     ```
+ - Check that all previous points are covered (especially **Point 6**).
+ - When your thesis is complete, create a **pull request (PR)** to merge your branch into the `development` branch.
+ - Include a summary of your work and link the pull request to your issue for reference.
+ - Don’t forget to add yourself to the [list of contributors](/docs/contributing.md#list-of-contributors).
+
 
 ---
 
@@ -179,7 +214,7 @@ That's it. Now everytime you commit, the code is formated correctly.
 ## Best Practices
 
 - **External dependencies**: Some features in the project rely on optional external dependencies (e.g., `fastdtw`,
-  `dash`, `dash-extensions`), that are not essential, but provide optimized version or additional functionalities. If
+  `dash`, `dash-extensions`), which are not essential, but provide an optimized version or additional functionalities. If
   these dependencies are not available, the code should fall back and continue to function without those specific
   features as described [here]
 - **Stay Updated**: Regularly pull changes from `development` to avoid large merge conflicts. Also, keep the issue
