@@ -84,9 +84,7 @@ def trigger_flush(sync_trigger: Queue, args: argparse.Namespace) -> None:
     """
     if "flush" in args.strategy:
         strategy_avoid_interference(sync_trigger, args)
-    elif "job_end" in args.strategy:
-        pass
-    elif "buffer_size" in args.strategy:
+    elif "job_end" in args.strategy or "buffer_size" in args.strategy:
         pass
     else:
         raise ValueError("Unknown strategy")

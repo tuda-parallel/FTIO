@@ -5,7 +5,7 @@ def process_log_files(input_files, output_file, timestamp_column):
     last_timestamp = 0
     with open(output_file, "w") as outfile:
         for input_file in input_files:
-            with open(input_file, "r") as infile:
+            with open(input_file) as infile:
                 for line in infile:
                     # Split line by spaces and extract the relevant columns
                     columns = line.split()

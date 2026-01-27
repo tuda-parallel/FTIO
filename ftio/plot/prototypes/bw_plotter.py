@@ -2,17 +2,15 @@ import sys
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 
-from ftio.plot.helper import format_plot, legend_fix
+from ftio.plot.helper import format_plot
 from ftio.plot.plot_core import PlotCore
 
 
 def main(args=sys.argv):
     plotter = PlotCore(args)
 
-    colors = px.colors.qualitative.Plotly
     plotter.nRun = len(pd.unique(plotter.data.df_time["file_index"]))
     symbols = ["circle", "square", "cross", "star-triangle-down", "hourglass"]
     markeredgecolor = "DarkSlateGrey"
@@ -64,20 +62,20 @@ def main(args=sys.argv):
                 go.Scatter(
                     x=x_unqiue,
                     y=y[count0],
-                    error_y=dict(
-                        type="data",
-                        symmetric=False,
-                        array=y_plus[count0],
-                        arrayminus=y_minus[count0],
-                    ),
+                    error_y={
+                        "type": "data",
+                        "symmetric": False,
+                        "array": y_plus[count0],
+                        "arrayminus": y_minus[count0],
+                    },
                     mode="lines+markers",
                     name=modes[count0],
                     legendgroup=sets_names[i],
                     legendgrouptitle_text=sets_names[i],
-                    marker=dict(
-                        symbol=symbols[i],
-                        line=dict(width=1, color=markeredgecolor),
-                    ),
+                    marker={
+                        "symbol": symbols[i],
+                        "line": {"width": 1, "color": markeredgecolor},
+                    },
                     # marker_color=colors[i]
                     showlegend=True,
                 )

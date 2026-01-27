@@ -7,7 +7,6 @@ from rich.console import Console
 from ftio.cli.ftio_core import core
 from ftio.freq.prediction import Prediction
 from ftio.parse.args import parse_args
-from ftio.plot.freq_plot import convert_and_plot
 from ftio.processing.print_output import display_prediction
 
 console = Console()

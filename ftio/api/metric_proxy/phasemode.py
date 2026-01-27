@@ -18,10 +18,7 @@ class PhaseMode:
             raise AttributeError(f"'MyClass' object has no attribute '{attribute}'")
 
     def match(self, d: dict):
-        if any(n in d.metric for n in self.matches):
-            return True
-        else:
-            return False
+        return bool(any(n in d.metric for n in self.matches))
 
     def add(self, d: dict) -> None:
         self.data.append(d)

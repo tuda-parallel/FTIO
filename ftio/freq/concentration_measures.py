@@ -19,7 +19,6 @@ TODO:
 """
 
 import numpy as np
-from scipy.fft import fft
 from scipy.fftpack import fftshift
 from scipy.signal import stft
 from scipy.signal.windows import boxcar

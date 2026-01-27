@@ -15,7 +15,7 @@ def format(fig: go.Figure, title: str = "") -> None:
         texttemplate="%{text:.2f}",
         textfont_size=16,  # Increased font size
         textangle=0,
-        textfont=dict(color="white"),
+        textfont={"color": "white"},
     )
 
     fig.update_layout(barmode="group")
@@ -24,22 +24,22 @@ def format(fig: go.Figure, title: str = "") -> None:
     fig.update_layout(
         yaxis_title="Time (s)",
         # xaxis_title=f"Experimental Runs with # Nodes",
-        xaxis_title=f"",
+        xaxis_title="",
         showlegend=True,
         title=title,
         title_font_size=24,  # Increased title font size
         width=1000,
         height=700,
-        xaxis=dict(title_font=dict(size=24)),  # Increased x-axis title font size
-        yaxis=dict(title_font=dict(size=24)),  # Increased y-axis title font size
-        legend=dict(
-            font=dict(size=20),  # Increased legend font size
-            orientation="h",
-            yanchor="bottom",
-            y=0.9,
-            xanchor="right",
-            x=0.995,
-        ),
+        xaxis={"title_font": {"size": 24}},  # Increased x-axis title font size
+        yaxis={"title_font": {"size": 24}},  # Increased y-axis title font size
+        legend={
+            "font": {"size": 20},  # Increased legend font size
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 0.9,
+            "xanchor": "right",
+            "x": 0.995,
+        },
     )
 
     format_plot_and_ticks(fig, x_minor=False, font_size=20)
@@ -80,72 +80,76 @@ def format_plot_and_ticks(
     """
     if legend:
         fig.update_layout(
-            legend=dict(
-                bgcolor="rgba(255,255,255,.99)", bordercolor="Black", borderwidth=1
-            )
+            legend={
+                "bgcolor": "rgba(255,255,255,.99)",
+                "bordercolor": "Black",
+                "borderwidth": 1,
+            }
         )
         if font:
             fig.update_layout(
-                legend=dict(
-                    font=dict(
-                        family="Courier New, monospace", size=font_size - 1, color="black"
-                    )
-                )  # set your desired font size here
+                legend={
+                    "font": {
+                        "family": "Courier New, monospace",
+                        "size": font_size - 1,
+                        "color": "black",
+                    }
+                }  # set your desired font size here
             )
 
     if font:
         fig.update_layout(
-            font=dict(family="Courier New, monospace", size=font_size, color="black")
+            font={"family": "Courier New, monospace", "size": font_size, "color": "black"}
         )
 
     fig.update_layout(
         plot_bgcolor="white",
-        margin=dict(r=5),
+        margin={"r": 5},
     )
 
-    x_settings = dict(
-        mirror=True,
-        showgrid=True,
-        showline=True,
-        linecolor="black",
-        gridcolor="lightgrey",
-    )
+    x_settings = {
+        "mirror": True,
+        "showgrid": True,
+        "showline": True,
+        "linecolor": "black",
+        "gridcolor": "lightgrey",
+    }
     if x_ticks:
         x_settings["ticks"] = "outside"
         x_settings["ticklen"] = 10
 
     if x_minor:
         x_settings["minor_ticks"] = "outside"
-        x_settings["minor"] = dict(
-            ticklen=2,
-            tickcolor="black",
-            tickmode="auto",
-            nticks=n_ticks,
-            showgrid=True,
-        )
+        x_settings["minor"] = {
+            "ticklen": 2,
+            "tickcolor": "black",
+            "tickmode": "auto",
+            "nticks": n_ticks,
+            "showgrid": True,
+        }
 
     fig.update_xaxes(**x_settings)
 
-    y_settings = dict(
-        mirror=True,
-        showgrid=True,
-        showline=True,
-        linecolor="black",
-        gridcolor="lightgrey",
-    )
+    y_settings = {
+        "mirror": True,
+        "showgrid": True,
+        "showline": True,
+        "linecolor": "black",
+        "gridcolor": "lightgrey",
+    }
     if y_ticks:
         y_settings["ticks"] = "outside"
         y_settings["ticklen"] = 10
 
     if y_minor:
         y_settings["minor_ticks"] = "outside"
-        y_settings["minor"] = dict(
-            ticklen=2,
-            tickcolor="black",
-            tickmode="auto",
-            nticks=n_ticks,
-            showgrid=True,
-        )
+        y_settings["minor"] = {
+            "ticklen": 2,
+            "tickcolor": "black",
+            "tickmode": "auto",
+            "nticks": n_ticks,
+            "showgrid": True,
+        }
 
     fig.update_yaxes(**y_settings)
 

@@ -107,14 +107,14 @@ class Simrun:
             format (str, optional): json or jsonl. Defaults to 'json'.
         """
         if "jsonl" in file_format:
-            if "read_sync" == mode:
+            if mode == "read_sync":
                 self.read_sync = self.merge_parts(data, "read_sync", args)
-            elif "read_async" == mode:
+            elif mode == "read_async":
                 self.read_async_t = self.merge_parts(data, "read_async_t", args)
                 self.read_async_b = self.merge_parts(data, "read_async_b", args)
-            elif "write_sync" == mode:
+            elif mode == "write_sync":
                 self.write_sync = self.merge_parts(data, "write_sync", args)
-            elif "write_async" == mode:
+            elif mode == "write_async":
                 self.write_async_t = self.merge_parts(data, "write_async_t", args)
                 self.write_async_b = self.merge_parts(data, "write_async_b", args)
             else:
@@ -125,19 +125,19 @@ class Simrun:
                 self.io_percent = Percent(self.io_time)
 
         else:
-            if "read_sync" == mode:
+            if mode == "read_sync":
                 self.read_sync = Sample(data["read_sync"], "read_sync", args)
-            elif "read_async" == mode:
+            elif mode == "read_async":
                 self.read_async_t = Sample(data["read_async_t"], "read_async_t", args)
                 if "read_async_b" in data:
                     self.read_async_b = Sample(data["read_async_b"], "read_async_b", args)
-            elif "write_async" == mode:
+            elif mode == "write_async":
                 self.write_async_t = Sample(data["write_async_t"], "write_async_t", args)
                 if "write_async_b" in data:
                     self.write_async_b = Sample(
                         data["write_async_b"], "write_async_b", args
                     )
-            elif "write_sync" == mode:
+            elif mode == "write_sync":
                 self.write_sync = Sample(data["write_sync"], "write_sync", args)
 
     def reset(self, args):
@@ -234,7 +234,7 @@ class Simrun:
                 out = Sample(data_array, mode, args)
         return out
 
-    def merge_fields(self, data_array, keys: list[str] = []) -> dict:
+    def merge_fields(self, data_array, keys: list[str] = None) -> dict:
         """Merges the metrics field from different files. For example,
         JsonlLines file constantly append new data. To merge the previous
         metrics with the new one, this function iterates over the fields
@@ -247,8 +247,10 @@ class Simrun:
         Returns:
             dict: merge fields in stored in a dict variable
         """
+        if keys is None:
+            keys = []
         if not keys:
-            keys = [k for k in data_array[0].keys()]
+            keys = list(data_array[0].keys())
 
         my_dict = {}
         for field in keys:
@@ -256,7 +258,7 @@ class Simrun:
             if isinstance(data_array[0][field], dict):
                 data_array2 = [x[field] for x in data_array if field in x]
                 my_dict[field] = self.merge_fields(
-                    data_array2, [k for k in data_array2[0].keys()]
+                    data_array2, list(data_array2[0].keys())
                 )
             else:
                 if isinstance(data_array[0][field], list):
@@ -264,9 +266,9 @@ class Simrun:
                     for i, _ in enumerate(data_array):
                         my_dict[field].extend(data_array[i][field])
                 else:
-                    if any([x in field for x in ["total", "_t_"]]):
+                    if any(x in field for x in ["total", "_t_"]):
                         my_dict[field] = sum(x[field] for x in data_array)
-                    elif any([x in field for x in ["max", "number"]]):
+                    elif any(x in field for x in ["max", "number"]):
                         my_dict[field] = max(x[field] for x in data_array)
                     elif "min" in field:
                         my_dict[field] = min(x[field] for x in data_array)

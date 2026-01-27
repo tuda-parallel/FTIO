@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 
-from ftio import __copyright__, __license__, __repo__, __version__
+from ftio import __copyright__, __license__, __repo__
 
 
 def parse_args(argv: list, name="") -> argparse.Namespace:
@@ -30,7 +30,7 @@ def parse_args(argv: list, name="") -> argparse.Namespace:
         description=disc,
         epilog=f"""
 --------------------------------------------
-Author: 
+Author:
 Ahmad H. Tarraf
 
 Contributors:
@@ -432,9 +432,8 @@ Full documentation:
         recon = []
         if args.reconstruction:
             recon = [int(x) for val in args.reconstruction for x in val.split(",")]
-        if args.n_freq:
-            if args.n_freq not in recon:
-                recon.append(int(args.n_freq))
+        if args.n_freq and args.n_freq not in recon:
+            recon.append(int(args.n_freq))
         args.reconstruction = recon
 
     return args

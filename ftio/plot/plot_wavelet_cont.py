@@ -70,7 +70,7 @@ def matplot_dominant_scale(
     dominant_power: np.ndarray,
     label: str = None,
     peaks: np.ndarray = None,
-    subplot=[],
+    subplot=None,
 ) -> plt.Figure:
     """
     Plot dominant wavelet scale using Matplotlib.
@@ -85,6 +85,8 @@ def matplot_dominant_scale(
     Returns:
         plt.Figure: Matplotlib figure object.
     """
+    if subplot is None:
+        subplot = []
     if subplot:
         fig = plt.subplot(subplot[0], subplot[1], subplot[2])
     else:
@@ -117,7 +119,7 @@ def matplot_wave_cont_spectrum(
     t: np.ndarray,
     power_spectrum: np.ndarray,
     frequencies: np.ndarray,
-    subplot=[],
+    subplot=None,
 ) -> plt.Figure:
     """
     Plot wavelet power spectrum using Matplotlib.
@@ -131,6 +133,8 @@ def matplot_wave_cont_spectrum(
     Returns:
         plt.Figure: Matplotlib figure object.
     """
+    if subplot is None:
+        subplot = []
     if subplot:
         fig = plt.subplot(subplot[0], subplot[1], subplot[2])
     else:
@@ -325,7 +329,7 @@ def plotly_dominant_scale(
         y=dominant_power,
         mode="lines",
         name=f"Power at {label if label else 'Dominant Scale'}",
-        line=dict(color="orange"),
+        line={"color": "orange"},
     )
     if subplot:
         fig.add_trace(trace, row=subplot[0], col=subplot[1])
@@ -337,7 +341,7 @@ def plotly_dominant_scale(
             x=t[peaks],
             y=dominant_power[peaks],
             mode="markers",
-            marker=dict(color="red"),
+            marker={"color": "red"},
             name="Detected Peaks",
         )
 
@@ -390,7 +394,7 @@ def plotly_wave_cont_spectrum(
     else:
         fig.add_trace(heatmap)
         fig.update_layout(
-            title=f"Scaleogram",
+            title="Scaleogram",
             xaxis_title="Time (seconds)",
             yaxis_title="Frequencies (Hz)",
         )
@@ -484,7 +488,7 @@ def plotly_plot_scales(
         shared_xaxes=common_xaxis,
     )
     fig.add_trace(
-        go.Scatter(x=t, y=b, mode="lines", name="Time Series", line=dict(color="blue")),
+        go.Scatter(x=t, y=b, mode="lines", name="Time Series", line={"color": "blue"}),
         row=1,
         col=1,
     )
@@ -552,9 +556,9 @@ def plotly_plot_scales_all_in_one(
     )
     fig = go.Figure()
     fig.add_trace(
-        go.Scatter(x=t, y=b, mode="lines", name=names[0], line=dict(color="blue"))
+        go.Scatter(x=t, y=b, mode="lines", name=names[0], line={"color": "blue"})
     )
-    for i, scale in enumerate(scales):
+    for i, _scale in enumerate(scales):
         fig.add_trace(
             go.Scatter(
                 x=t,
@@ -569,7 +573,7 @@ def plotly_plot_scales_all_in_one(
                     x=t[peaks[i]],
                     y=power_spectrum[i, peaks[i]],
                     mode="markers",
-                    marker=dict(color="red"),
+                    marker={"color": "red"},
                     name=names[i + 1].replace("Power", "Peaks"),
                 )
             )

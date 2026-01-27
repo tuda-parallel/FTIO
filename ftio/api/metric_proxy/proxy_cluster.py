@@ -123,7 +123,7 @@ def plot_cluster(
 
     # Customize the marker size and add hover information
     fig.update_traces(
-        marker=dict(size=10),
+        marker={"size": 10},
         hovertemplate=(
             "x: %{x}<br>"
             "y: %{y}<br>"

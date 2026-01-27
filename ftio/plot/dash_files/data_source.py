@@ -156,7 +156,7 @@ class DataSource:
         self._ranks_unique.sort()
 
     def _init_file_data_dictionary(self):
-        self._file_data_by_filename: dict[str, FileData] = dict()
+        self._file_data_by_filename: dict[str, FileData] = {}
         for idx, filename in enumerate(self._filenames):
             self._file_data_by_filename[filename] = FileData(
                 idx,

@@ -15,7 +15,7 @@ from ftio.prediction.probability_analysis import find_probability
 from ftio.prediction.shared_resources import SharedResources
 
 
-def main(args: list[str] = []) -> None:
+def main(args: list[str] = None) -> None:
     """
     Main function to monitor files and launch prediction processes.
 
@@ -30,6 +30,8 @@ def main(args: list[str] = []) -> None:
         KeyboardInterrupt: When the function is interrupted by the user.
     """
 
+    if args is None:
+        args = []
     n_buffers = 4
     args = ["-e", "plotly", "-f", "0.01"]
     # path=r'/d/github/FTIO/examples/API/gekkoFs/JSON/*.json'

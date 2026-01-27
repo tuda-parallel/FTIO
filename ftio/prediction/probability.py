@@ -66,7 +66,4 @@ class Probability:
         )
 
     def get_freq_prob(self, freq):
-        if freq >= self.freq_min and freq <= self.freq_max:
-            return True
-        else:
-            return False
+        return bool(freq >= self.freq_min and freq <= self.freq_max)

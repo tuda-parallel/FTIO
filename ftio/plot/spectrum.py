@@ -46,7 +46,7 @@ def plot_spectrum(
     )
 
     fig_tmp.update_traces(
-        marker_line=dict(width=0.2, color="black"),
+        marker_line={"width": 0.2, "color": "black"},
         hovertemplate="<b>Frequency</b>: %{x:.2e} Hz <br><b>"
         + f"{name}"
         + "</b>: %{y:.2e}"
@@ -55,7 +55,7 @@ def plot_spectrum(
     fig_tmp.update_layout(
         xaxis_title="Frequency (Hz)",
         yaxis_title=name + unit,
-        coloraxis_colorbar=dict(yanchor="top", y=1, x=0, ticks="outside"),
+        coloraxis_colorbar={"yanchor": "top", "y": 1, "x": 0, "ticks": "outside"},
         template=template,
     )
     fig_tmp = format_plot(fig_tmp)
@@ -90,11 +90,17 @@ def plot_both_spectrums(args, freq: np.ndarray, amp: np.ndarray, full: bool = Tr
     layout = fig_tmp.layout
     for trace in list(fig_tmp.select_traces()):
         trace.update(marker={"coloraxis": "coloraxis"})
-        fig_1.append_trace(trace, row=1, col=1)
+        if hasattr(fig_1, "add_trace"):
+            fig_1.add_trace(trace, row=1, col=1)
+        else:
+            fig_1.append_trace(trace, 1, 1)
     fig_tmp, name_plt1 = plot_spectrum(power, freq, "Power", True)
     for trace in list(fig_tmp.select_traces()):
         trace.update(marker={"coloraxis": "coloraxis2"})
-        fig_1.append_trace(trace, row=2, col=1)
+        if hasattr(fig_1, "add_trace"):
+            fig_1.add_trace(trace, row=2, col=1)
+        else:
+            fig_1.append_trace(trace, 2, 1)
     fig_1.update_layout(layout)
     fig_1.update_layout(
         coloraxis={

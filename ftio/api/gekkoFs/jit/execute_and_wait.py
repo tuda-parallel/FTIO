@@ -20,8 +20,6 @@ import time
 from datetime import datetime
 
 from rich.console import Console
-from rich.markup import escape
-from rich.panel import Panel
 from rich.status import Status
 
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
@@ -195,16 +193,15 @@ def execute_background(
     # print(call)
     # process = subprocess.Popen(call, shell=True, preexec_fn=os.setpgrp,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if log_file and log_err_file:
-        with open(log_file, "a") as log_out:
-            with open(log_err_file, "w") as log_err:
-                process = subprocess.Popen(
-                    call,
-                    shell=True,
-                    executable="/bin/bash",
-                    stdout=log_out,
-                    stderr=log_err,
-                    env=os.environ,
-                )
+        with open(log_file, "a") as log_out, open(log_err_file, "w") as log_err:
+            process = subprocess.Popen(
+                call,
+                shell=True,
+                executable="/bin/bash",
+                stdout=log_out,
+                stderr=log_err,
+                env=os.environ,
+            )
     elif log_file:
         with open(log_file, "a") as log_out:
             process = subprocess.Popen(
@@ -342,7 +339,7 @@ def end_of_transfer(
     settings: JitSettings,
     log_file: str,
     call: str,
-    monitored_files: list[str] = [],
+    monitored_files: list[str] = None,
 ) -> None:
     """Monitors the end of a transfer process by checking log files.
 
@@ -352,6 +349,8 @@ def end_of_transfer(
         call (str): bash call to execute if stuck
         monitored_files (list[str]): list of files to monitor
     """
+    if monitored_files is None:
+        monitored_files = []
     if settings.dry_run:
         return
 
@@ -372,7 +371,7 @@ def end_of_transfer(
     elif n == 0:
         return
     else:
-        with open(log_file, "r") as file:
+        with open(log_file) as file:
             # Move to the end of the file
             file.seek(0, 2)
             last_pos = file.tell()
@@ -439,15 +438,14 @@ def end_of_transfer(
                         status.update(
                             f"Waiting for {len(monitored_files)} more files to be deleted [yellow]({hits}/{limit})[/]: {monitored_files}"
                         )
-                        if hits > 4:
-                            if stuck:
-                                jit_print("[cyan]Stuck? Triggering cargo again\n")
-                                _ = execute_background(
-                                    call,
-                                    settings.cargo_log,
-                                    settings.cargo_err,
-                                )
-                                stuck = False
+                        if hits > 4 and stuck:
+                            jit_print("[cyan]Stuck? Triggering cargo again\n")
+                            _ = execute_background(
+                                call,
+                                settings.cargo_log,
+                                settings.cargo_err,
+                            )
+                            stuck = False
                         if hits > limit:
                             jit_print("[cyan]Stopping stage out\n")
                             return
@@ -477,7 +475,6 @@ def end_of_transfer_online(
         return
 
     repeated_trigger = True
-    copy = False  # Trigger cargo again
     monitored_files = get_files(settings, True)
     stuck_time = 5
     last_lines = read_last_n_lines(log_file)
@@ -752,7 +749,6 @@ def print_file(file, src=""):
         src (str): source of the file for colored output
     """
     logger = JIT_LOGGER
-    close = ""
     newline = True
     wait_time = 0.0
     if src:
@@ -780,12 +776,10 @@ def print_file(file, src=""):
         if "error" in src.lower():
             time.sleep(0.1)
         else:
-            with console.status(
-                f"[bold green]Waiting for {file} to appear ..."
-            ) as status:
+            with console.status(f"[bold green]Waiting for {file} to appear ..."):
                 time.sleep(0.1)
 
-    with open(file, "r") as file:
+    with open(file) as file:
         # Go to the end of the file
         file.seek(0, os.SEEK_END)
         buffer = []
@@ -890,7 +884,7 @@ def wait_for_line(
         ) as status:
             time.sleep(0.1)
 
-    with open(filename, "r") as file:
+    with open(filename) as file:
         # Move to the end of the file to start monitoring
         # file.seek(0, 2)  # Go to the end of the file and look at the last 10 entris
         try:

@@ -19,7 +19,7 @@ def set_unit(arr: np.ndarray, suffix="B/s") -> tuple[str, float]:
         pass
     elif isinstance(arr, pd.DataFrame):
         arr = arr.to_numpy()
-    elif isinstance(arr, float) or isinstance(arr, int):
+    elif isinstance(arr, (float, int)):
         arr = np.array(arr)
 
     if arr.size > 0 and np.max(arr) > 0:

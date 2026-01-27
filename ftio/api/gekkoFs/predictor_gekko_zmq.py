@@ -30,8 +30,10 @@ from ftio.api.gekkoFs.stage_data import (
 from ftio.freq.helper import MyConsole
 from ftio.multiprocessing.async_process import handle_in_process, join_procs
 from ftio.plot.plot_bandwidth import plot_bar_with_rich
-from ftio.prediction.helper import print_data  # , export_extrap
-from ftio.prediction.helper import get_dominant_and_conf
+from ftio.prediction.helper import (
+    get_dominant_and_conf,
+    print_data,  # , export_extrap
+)
 from ftio.prediction.online_analysis import (
     display_result,
     save_data,

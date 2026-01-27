@@ -1,6 +1,5 @@
 import argparse
 import json
-import sys
 
 import numpy as np
 
@@ -51,20 +50,16 @@ def main(args=parse_options()):
         "b_rank_sum",
         "b_ind",
     ]
-    with open(args.filename, "rt") as current_file:
+    with open(args.filename) as current_file:
         data = json.load(current_file)
         for mode in data:
-            if "read" in mode or "write" in mode:
-                if data[mode]:
-                    for metric in fields_metrics:
-                        if metric in data[mode]:
-                            scale(data[mode], metric)
-                    for metric in fields_bandwidth:
-                        if (
-                            "bandwidth" in data[mode]
-                            and metric in data[mode]["bandwidth"]
-                        ):
-                            scale(data[mode]["bandwidth"], metric)
+            if ("read" in mode or "write" in mode) and data[mode]:
+                for metric in fields_metrics:
+                    if metric in data[mode]:
+                        scale(data[mode], metric)
+                for metric in fields_bandwidth:
+                    if "bandwidth" in data[mode] and metric in data[mode]["bandwidth"]:
+                        scale(data[mode]["bandwidth"], metric)
 
     # json.dump(data,out_file)
     with open(args.outfile, "w") as out_file:

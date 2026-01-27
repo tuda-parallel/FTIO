@@ -64,8 +64,8 @@ def process_file(file_path: str, argv: list, settings: dict, index: int = 0) -> 
         # if input file is not a json, save ftio result
         if not settings["json"] and settings["save"]:
             json_file = base_name.replace(
-                f"_signal_{settings["name"]}.csv",
-                f"_freq_{settings["name"]}.json",
+                f"_signal_{settings['name']}.csv",
+                f"_freq_{settings['name']}.json",
             )
             json_path = os.path.join(os.path.dirname(file_path), json_file)
             # Convert NumPy arrays to lists and save the ftio results
@@ -158,7 +158,7 @@ def main(argv: list = sys.argv[1:]) -> None:
         settings["freq"] = str(argv[index + 1])
 
     start_time = time.time()
-    pattern = f"_signal_{settings["name"]}.csv"
+    pattern = f"_signal_{settings['name']}.csv"
     df = pd.DataFrame()
     if settings["json"]:
         pattern = ".json"
@@ -205,7 +205,7 @@ def main(argv: list = sys.argv[1:]) -> None:
             if settings["num_procs"] == -1:
                 settings["num_procs"] = int(cpu_count() / 2)
 
-            console.print(f"[bold green]Using {settings["num_procs"]} processes[/]\n")
+            console.print(f"[bold green]Using {settings['num_procs']} processes[/]\n")
             task = progress.add_task("[green]Processing files", total=total_files)
 
             # List to store failed file details
@@ -277,7 +277,7 @@ def main(argv: list = sys.argv[1:]) -> None:
                 f" - [bold red]{len(failed_files)} files failed[/]\n"
             )
             console.print("\n[bold yellow]The following files failed to process:[/]")
-            with open(f"{settings["res_path"]}/log.err", "w") as log:
+            with open(f"{settings['res_path']}/log.err", "w") as log:
                 for file_path, error in failed_files:
                     console.print(f"[bold red]{file_path}[/]")
                     log.write(f"{file_path}: {error}\n")

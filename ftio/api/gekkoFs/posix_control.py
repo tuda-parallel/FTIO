@@ -77,7 +77,9 @@ def move_files_os(
         flush_using_tar(args, items_to_submit)
 
 
-def flush_using_tar(args: argparse.Namespace, items_to_submit: list[str] = []):
+def flush_using_tar(args: argparse.Namespace, items_to_submit: list[str] = None):
+    if items_to_submit is None:
+        items_to_submit = []
     tar_cmd = f"tar -rf {args.stage_out_path}/data.tar {' '.join(items_to_submit)}"
     CONSOLE.print(
         f"[bold green][Trigger][/] taring {len(items_to_submit)} items to {args.stage_out_path})\n"

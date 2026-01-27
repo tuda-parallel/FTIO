@@ -89,7 +89,7 @@ class DataControl:
             full_path = os.path.join(self.settings.gkfs_mntdir, file)
             # Prepare the command for moving the file
             # 1) get time now:
-            now = gkfs_call(self.settings, f"date +%s")
+            now = gkfs_call(self.settings, "date +%s")
 
             # 2) check the time:
             out_time = gkfs_call(self.settings, f"stat -c %Y {full_path}")
