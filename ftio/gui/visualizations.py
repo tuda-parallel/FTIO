@@ -123,7 +123,9 @@ class FrequencyTimelineViz:
                 )
             )
 
-            for pred_id, freq, label in zip(cp_pred_ids, cp_frequencies, cp_labels, strict=False):
+            for pred_id, freq, label in zip(
+                cp_pred_ids, cp_frequencies, cp_labels, strict=False
+            ):
                 fig.add_vline(
                     x=pred_id,
                     line_dash="dash",
@@ -244,7 +246,10 @@ class CosineWaveViz:
                 "gridcolor": "lightgray",
             },
             yaxis={
-                "title": "Amplitude", "range": [-1.2, 1.2], "showgrid": True, "gridcolor": "lightgray"
+                "title": "Amplitude",
+                "range": [-1.2, 1.2],
+                "showgrid": True,
+                "gridcolor": "lightgray",
             },
             height=400,
             margin={"l": 60, "r": 60, "t": 60, "b": 60},

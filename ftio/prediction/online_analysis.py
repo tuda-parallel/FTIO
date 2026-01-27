@@ -418,9 +418,7 @@ def window_adaptation(
                 trend = (
                     "increasing"
                     if recent_freqs[-1] > recent_freqs[-2]
-                    else "decreasing"
-                    if recent_freqs[-1] < recent_freqs[-2]
-                    else "stable"
+                    else "decreasing" if recent_freqs[-1] < recent_freqs[-2] else "stable"
                 )
                 text += f"[cyan]Frequency trend: {trend}[/]\n"
 
