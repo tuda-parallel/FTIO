@@ -86,6 +86,7 @@ convert_trace = "ftio.util.convert_old_trace:main"
 trace_ftio = "ftio.api.trace_analysis.trace_ftio_v2:main"
 trace_analysis = "ftio.api.trace_analysis.trace_analysis:main"
 admire_proxy_invoke_ftio = "ftio.api.metric_proxy.proxy_invoke_ftio:main"
+admire_proxy_zmq = "ftio.api.metric_proxy.proxy_zmq:main"
 jit_plot = "ftio.api.gekkoFs.jit.jit_plot:main"
 server_ftio = "ftio.util.server_ftio:main_cli"
 

@@ -5,6 +5,7 @@ from ftio.cli.ftio_core import core
 # from ftio.prediction.helper import get_dominant
 # from ftio.plot.freq_plot import convert_and_plot
 from ftio.freq.helper import MyConsole
+from ftio.freq.prediction import Prediction
 from ftio.parse.args import parse_args
 from ftio.processing.print_output import display_prediction
 
@@ -70,7 +71,33 @@ def ftio_metric_task_save(
 ) -> None:
     prediction = ftio_metric_task(metric, arrays, argv, ranks, show)
     # freq = get_dominant(prediction) #just get a single dominant value
-    if prediction:
+    names = []
+    if prediction.top_freqs:
+        freqs = prediction.top_freqs["freq"]
+        amps  = prediction.top_freqs["amp"]
+        phis  = prediction.top_freqs["phi"]
+
+        for f, a, p in zip(freqs, amps, phis):
+            names.append(prediction.get_wave_name(f, a, p))
+
+        data.append(
+            {
+                "metric": f"{metric}",
+                "dominant_freq": prediction.dominant_freq,
+                "conf": prediction.conf,
+                "amp": prediction.amp,
+                "phi": prediction.phi,
+                "t_start": prediction.t_start,
+                "t_end": prediction.t_end,
+                "total_bytes": prediction.total_bytes,
+                "ranks": prediction.ranks,
+                "freq": float(prediction.freq),
+                "top_freq": prediction.top_freqs,
+                "n_samples": prediction.n_samples,
+                "wave_names": names,
+            }
+        )
+    #if prediction:
         # data.append(
         #     {
         #         "metric": f"{metric}",
@@ -86,7 +113,8 @@ def ftio_metric_task_save(
         #         "top_freq": prediction.top_freqs,
         #     }
         # )
-        prediction.metric = metric
-        data.append(prediction)
+        # caused issues with msgpack serialization
+        #prediction.metric = metric
+        #data.append(prediction)
     else:
         CONSOLE.info(f"\n[yellow underline]Warning: {metric} returned {prediction}[/]")
