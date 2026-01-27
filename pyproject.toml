@@ -29,6 +29,7 @@ dependencies = [
     "pytest",
     "pytest-cov",
     "fastcluster",
+    "requests"
 ]
 
 requires-python = ">=3.8"
@@ -180,19 +181,19 @@ exclude = [
 
 [tool.ruff.lint]
 select = [
-    "E",      # pycodestyle errors
-    "W",      # pycodestyle warnings
-    "F",      # Pyflakes
-    "I",      # isort
-    "B",      # flake8-bugbear
-    "C4",     # flake8-comprehensions
-    "UP",     # pyupgrade
-    "SIM",    # flake8-simplify
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # Pyflakes
+    "I", # isort
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+    "SIM", # flake8-simplify
 ]
 ignore = [
-    "E501",   # line too long (handled by formatter)
-    "E203",   # whitespace before ':' (Black compatibility)
-    "B008",   # do not perform function calls in argument defaults
+    "E501", # line too long (handled by formatter)
+    "E203", # whitespace before ':' (Black compatibility)
+    "B008", # do not perform function calls in argument defaults
     "SIM108", # Use ternary operator (can reduce readability)
 
     # ==========================================================================
@@ -201,14 +202,14 @@ ignore = [
     # ==========================================================================
 
     # Import issues
-    "F403",   # undefined-local-with-import-star: `from module import *` used
-    "F405",   # undefined-local-with-import-star-usage: name may be undefined from star import
+    "F403", # undefined-local-with-import-star: `from module import *` used
+    "F405", # undefined-local-with-import-star-usage: name may be undefined from star import
 
     # Exception handling
-    "E722",   # bare-except: do not use bare `except:`, specify exception type
+    "E722", # bare-except: do not use bare `except:`, specify exception type
 
     # Code style improvements
-    "UP031",  # printf-string-formatting: use f-strings instead of % formatting
+    "UP031", # printf-string-formatting: use f-strings instead of % formatting
     "SIM102", # collapsible-if: use single `if` instead of nested `if` statements
     "SIM113", # enumerate-for-loop: use `enumerate()` for index variable in `for` loop
     "SIM115", # open-file-with-context-handler: use context manager for `open()`
@@ -216,11 +217,11 @@ ignore = [
     "SIM116", # if-else-block-instead-of-dict-lookup: use dict lookup instead of if-else
 
     # Variable issues
-    "F821",   # undefined-name: undefined variable name
-    "F811",   # redefined-while-unused: redefinition of unused variable
-    "B007",   # unused-loop-control-variable: loop variable not used in body
-    "E741",   # ambiguous-variable-name: ambiguous variable name (e.g., l, O, I)
-    "E402",   # module-import-not-at-top-of-file: import not at top of file
+    "F821", # undefined-name: undefined variable name
+    "F811", # redefined-while-unused: redefinition of unused variable
+    "B007", # unused-loop-control-variable: loop variable not used in body
+    "E741", # ambiguous-variable-name: ambiguous variable name (e.g., l, O, I)
+    "E402", # module-import-not-at-top-of-file: import not at top of file
 ]
 
 [tool.ruff.lint.isort]
