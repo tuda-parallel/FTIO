@@ -3,8 +3,17 @@ Functions for testing the ioplot functionality of the ftio package.
 """
 
 import os
+import warnings
+
 import pytest
+
 from ftio.plot.plot_core import PlotCore
+
+warnings.filterwarnings(
+    "ignore",
+    message=".*scattermapbox.*",
+    category=DeprecationWarning,
+)
 
 FILE = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
 
@@ -19,9 +28,9 @@ def test_data_loaded():
 def test_figures():
     args = ["ioplot", FILE, "--no_disp"]
     plotter = PlotCore(args)
-    # figures = plotter.plot_plotly()
-    # assert isinstance(figures, list)
-    assert True
+    figures = plotter.plot_plotly()
+    assert isinstance(figures, list)
+    # assert True
 
 
 def test_plotter_dimensions():

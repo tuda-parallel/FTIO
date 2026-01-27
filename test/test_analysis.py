@@ -2,12 +2,12 @@
 Tests for ftio.analysis module.
 """
 
-from unittest.mock import MagicMock
 import warnings
-from scipy.stats import ConstantInputWarning
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
+from scipy.stats import ConstantInputWarning
 
 from ftio.analysis._correlation import (
     correlation,

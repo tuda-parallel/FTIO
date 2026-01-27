@@ -1,4 +1,5 @@
 import pytest
+
 from ftio.prediction.group import group_dbscan, group_step
 
 """
