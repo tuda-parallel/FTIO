@@ -111,7 +111,9 @@ def prediction_process(
     # display results
     text = display_result(freq, prediction, shared_resources=shared_resources)
     # data analysis to decrease window
-    adaptation_text, _, _ = window_adaptation(parsed_args, prediction, freq, shared_resources)
+    adaptation_text, _, _ = window_adaptation(
+        parsed_args, prediction, freq, shared_resources
+    )
     text += adaptation_text
     console.print(text)
     while not shared_resources.queue.empty():

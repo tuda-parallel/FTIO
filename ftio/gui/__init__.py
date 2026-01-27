@@ -16,23 +16,26 @@ Requires: pip install ftio-hpc[gui]
 """
 
 __all__ = [
-    'FTIODashApp',
-    'PredictionData',
-    'ChangePoint',
-    'PredictionDataStore',
-    'SocketListener'
+    "FTIODashApp",
+    "PredictionData",
+    "ChangePoint",
+    "PredictionDataStore",
+    "SocketListener",
 ]
 
 
 def __getattr__(name):
     """Lazy import to avoid requiring dash unless actually used."""
-    if name == 'FTIODashApp':
+    if name == "FTIODashApp":
         from ftio.gui.dashboard import FTIODashApp
+
         return FTIODashApp
-    elif name == 'SocketListener':
+    elif name == "SocketListener":
         from ftio.gui.socket_listener import SocketListener
+
         return SocketListener
-    elif name in ('PredictionData', 'ChangePoint', 'PredictionDataStore'):
+    elif name in ("PredictionData", "ChangePoint", "PredictionDataStore"):
         from ftio.gui import data_models
+
         return getattr(data_models, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

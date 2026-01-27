@@ -10,16 +10,16 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-import numpy as np
-import pytest
 from unittest.mock import MagicMock
 
+import numpy as np
+
+from ftio.freq.prediction import Prediction
 from ftio.prediction.change_point_detection import (
     ChangePointDetector,
     CUSUMDetector,
     SelfTuningPageHinkleyDetector,
 )
-from ftio.freq.prediction import Prediction
 
 
 def create_mock_prediction(freq: float, t_start: float, t_end: float) -> MagicMock:
@@ -48,8 +48,8 @@ class TestADWINDetector:
 
         # Add stable frequency predictions
         for i in range(10):
-            pred = create_mock_prediction(freq=0.5, t_start=i, t_end=i+1)
-            result = detector.add_prediction(pred, timestamp=float(i+1))
+            pred = create_mock_prediction(freq=0.5, t_start=i, t_end=i + 1)
+            _ = detector.add_prediction(pred, timestamp=float(i + 1))
 
         # Should not detect change with stable frequency
         assert detector._get_change_count() == 0
@@ -60,14 +60,14 @@ class TestADWINDetector:
 
         # Add low frequency predictions (more samples for statistical significance)
         for i in range(10):
-            pred = create_mock_prediction(freq=0.1, t_start=i, t_end=i+1)
-            detector.add_prediction(pred, timestamp=float(i+1))
+            pred = create_mock_prediction(freq=0.1, t_start=i, t_end=i + 1)
+            detector.add_prediction(pred, timestamp=float(i + 1))
 
         # Add high frequency predictions (significant change: 0.1 -> 10 Hz)
         change_detected = False
         for i in range(10, 30):
-            pred = create_mock_prediction(freq=10.0, t_start=i, t_end=i+1)
-            result = detector.add_prediction(pred, timestamp=float(i+1))
+            pred = create_mock_prediction(freq=10.0, t_start=i, t_end=i + 1)
+            result = detector.add_prediction(pred, timestamp=float(i + 1))
             if result is not None:
                 change_detected = True
 
@@ -80,8 +80,8 @@ class TestADWINDetector:
 
         # Add some predictions
         for i in range(5):
-            pred = create_mock_prediction(freq=0.5, t_start=i, t_end=i+1)
-            detector.add_prediction(pred, timestamp=float(i+1))
+            pred = create_mock_prediction(freq=0.5, t_start=i, t_end=i + 1)
+            detector.add_prediction(pred, timestamp=float(i + 1))
 
         # Add NaN frequency
         pred = create_mock_prediction(freq=np.nan, t_start=5, t_end=6)
@@ -97,8 +97,8 @@ class TestADWINDetector:
         # Add predictions
         freqs = [0.5, 0.6, 0.4, 0.5, 0.55]
         for i, f in enumerate(freqs):
-            pred = create_mock_prediction(freq=f, t_start=i, t_end=i+1)
-            detector.add_prediction(pred, timestamp=float(i+1))
+            pred = create_mock_prediction(freq=f, t_start=i, t_end=i + 1)
+            detector.add_prediction(pred, timestamp=float(i + 1))
 
         stats = detector.get_window_stats()
         assert stats["size"] == 5
@@ -231,7 +231,9 @@ class TestDetectorIntegration:
         """Test all detectors handle edge cases gracefully."""
         adwin = ChangePointDetector(delta=0.05, shared_resources=None, show_init=False)
         cusum = CUSUMDetector(window_size=50, shared_resources=None, show_init=False)
-        ph = SelfTuningPageHinkleyDetector(window_size=10, shared_resources=None, show_init=False)
+        ph = SelfTuningPageHinkleyDetector(
+            window_size=10, shared_resources=None, show_init=False
+        )
 
         # Test with zero frequency
         pred = create_mock_prediction(freq=0.0, t_start=0, t_end=1)
@@ -249,7 +251,9 @@ class TestDetectorIntegration:
         """Test all detectors can detect obvious pattern changes."""
         adwin = ChangePointDetector(delta=0.05, shared_resources=None, show_init=False)
         cusum = CUSUMDetector(window_size=50, shared_resources=None, show_init=False)
-        ph = SelfTuningPageHinkleyDetector(window_size=10, shared_resources=None, show_init=False)
+        ph = SelfTuningPageHinkleyDetector(
+            window_size=10, shared_resources=None, show_init=False
+        )
 
         # Create obvious pattern change: 0.1 Hz -> 10 Hz
         low_freq = 0.1
@@ -257,10 +261,10 @@ class TestDetectorIntegration:
 
         # Feed low frequency
         for i in range(10):
-            pred = create_mock_prediction(freq=low_freq, t_start=i, t_end=i+1)
-            adwin.add_prediction(pred, timestamp=float(i+1))
-            cusum.add_frequency(low_freq, timestamp=float(i+1))
-            ph.add_frequency(low_freq, timestamp=float(i+1))
+            pred = create_mock_prediction(freq=low_freq, t_start=i, t_end=i + 1)
+            adwin.add_prediction(pred, timestamp=float(i + 1))
+            cusum.add_frequency(low_freq, timestamp=float(i + 1))
+            ph.add_frequency(low_freq, timestamp=float(i + 1))
 
         # Feed high frequency and check for detection
         adwin_detected = False
@@ -268,16 +272,16 @@ class TestDetectorIntegration:
         ph_detected = False
 
         for i in range(10, 30):
-            pred = create_mock_prediction(freq=high_freq, t_start=i, t_end=i+1)
+            pred = create_mock_prediction(freq=high_freq, t_start=i, t_end=i + 1)
 
-            if adwin.add_prediction(pred, timestamp=float(i+1)) is not None:
+            if adwin.add_prediction(pred, timestamp=float(i + 1)) is not None:
                 adwin_detected = True
 
-            detected, _ = cusum.add_frequency(high_freq, timestamp=float(i+1))
+            detected, _ = cusum.add_frequency(high_freq, timestamp=float(i + 1))
             if detected:
                 cusum_detected = True
 
-            detected, _, _ = ph.add_frequency(high_freq, timestamp=float(i+1))
+            detected, _, _ = ph.add_frequency(high_freq, timestamp=float(i + 1))
             if detected:
                 ph_detected = True
 
