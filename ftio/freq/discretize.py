@@ -64,7 +64,6 @@ def sample_data(
         text += f"Recommended sampling frequency: {freq:.3e} Hz\n"
         # Apply limit if freq is negative
         N = int(np.floor((t[-1] - t[0]) * freq))
-        # N = N + 1 if N != 0 else 0  # include end point
         limit_N = int(memory_limit // np.dtype(np.float64).itemsize)
         text += f"memory limit: {memory_limit/ 1000**3:.3e} GB ({limit_N} samples)\n"
         if limit_N < N:
@@ -73,9 +72,8 @@ def sample_data(
             text += f"[yellow]Adjusted sampling frequency due to memory limit: {freq:.3e} Hz[/])\n"
     else:
         text += f"Sampling frequency:  {freq:.3e} Hz\n"
-        # Compute the number of samples
+        # Compute number of samples
         N = int(np.floor((t[-1] - t[0]) * freq))
-        # N = N + 1 if N != 0 else 0  # include end point
 
     text += f"Expected samples: {N}\n"
     # print("    '-> \033[1;Start time: %f s \033[1;0m"%t[0])

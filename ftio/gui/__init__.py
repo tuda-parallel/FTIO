@@ -1,0 +1,41 @@
+"""
+FTIO GUI Dashboard for real-time prediction visualization.
+
+This module provides a Dash-based web dashboard for visualizing FTIO predictions
+and change point detection results in real-time.
+
+Author: Amine Aherbil
+Copyright (c) 2025 TU Darmstadt, Germany
+Date: January 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+
+Requires: pip install ftio-hpc[gui]
+"""
+
+__all__ = [
+    "FTIODashApp",
+    "PredictionData",
+    "ChangePoint",
+    "PredictionDataStore",
+    "SocketListener",
+]
+
+
+def __getattr__(name):
+    """Lazy import to avoid requiring dash unless actually used."""
+    if name == "FTIODashApp":
+        from ftio.gui.dashboard import FTIODashApp
+
+        return FTIODashApp
+    elif name == "SocketListener":
+        from ftio.gui.socket_listener import SocketListener
+
+        return SocketListener
+    elif name in ("PredictionData", "ChangePoint", "PredictionDataStore"):
+        from ftio.gui import data_models
+
+        return getattr(data_models, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

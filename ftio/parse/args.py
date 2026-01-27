@@ -258,6 +258,14 @@ Full documentation:
         )
         parser.set_defaults(hits=3)
         parser.add_argument(
+            "--online_adaptation",
+            dest="online_adaptation",
+            type=str,
+            choices=["adwin", "cusum", "ph"],
+            help="change point detection algorithm to use. 'adwin' (default) uses Adaptive Windowing with automatic window sizing and mathematical guarantees. 'cusum' uses Cumulative Sum detection for rapid change detection. 'ph' uses Page-Hinkley test for sequential change point detection.",
+        )
+        parser.set_defaults(online_adaptation="adwin")
+        parser.add_argument(
             "-v",
             "--verbose",
             dest="verbose",

@@ -26,8 +26,19 @@ class SharedResources:
         self.t_app = self.manager.list()
         # For triggering cargo
         self.sync_trigger = self.manager.Queue()
-        # saves when the dada ti received from gkfs
+        # saves when the data is received from gkfs
         self.t_flush = self.manager.list()
+
+        # Change point detection shared state (used by all algorithms: ADWIN, CUSUM, Page-Hinkley)
+        self.detector_frequencies = self.manager.list()
+        self.detector_timestamps = self.manager.list()
+        self.detector_total_samples = self.manager.Value("i", 0)
+        self.detector_change_count = self.manager.Value("i", 0)
+        self.detector_last_change_time = self.manager.Value("d", 0.0)
+        self.detector_initialized = self.manager.Value("b", False)
+        self.detector_lock = self.manager.Lock()
+        # Algorithm-specific state (e.g., Page-Hinkley cumulative sums)
+        self.detector_state = self.manager.dict()
 
     def restart(self):
         """Restart the manager and reinitialize shared resources."""
