@@ -1,6 +1,8 @@
 import pytest
-
+import multiprocessing as mp
 from ftio.prediction.shared_resources import SharedResources
+
+mp.set_start_method("spawn", force=True)
 
 """
 Tests for class ftio/prediction/shared_resources.py

@@ -3,6 +3,8 @@ Tests for ftio.analysis module.
 """
 
 from unittest.mock import MagicMock
+import warnings
+from scipy.stats import ConstantInputWarning
 
 import numpy as np
 import pytest
@@ -182,8 +184,10 @@ class TestCorrelation:
         """Test Spearman correlation with constant signals (returns NaN -> 0)."""
         x = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
         y = np.array([1.0, 1.0, 1.0, 1.0, 1.0])
-
-        r = correlation(x, y, method="spearman")
+        # Suppress the ConstantInputWarning from scipy.stats.spearmanr
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ConstantInputWarning)
+            r = correlation(x, y, method="spearman")
 
         assert r == 0
 

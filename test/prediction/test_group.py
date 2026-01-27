@@ -1,5 +1,4 @@
 import pytest
-
 from ftio.prediction.group import group_dbscan, group_step
 
 """
@@ -7,7 +6,8 @@ Tests for class ftio/prediction/group.py
 """
 
 
-def testdata():
+# Renamed to avoid pytest thinking it's a test function
+def sample_data():
     return [
         {
             "dominant_freq": [0.1],
@@ -41,7 +41,7 @@ def testdata():
 
 
 def test_group_step():
-    data = testdata()
+    data = sample_data()
     result, num_groups = group_step(data)
 
     assert len(result) > 0
@@ -51,13 +51,13 @@ def test_group_step():
 
 
 def test_group_step_different():
-    data = testdata()
+    data = sample_data()
     result, num_groups = group_step(data)
     assert num_groups >= 1
 
 
 def test_group_dbscan():
-    data = testdata()
+    data = sample_data()
     result, num_groups = group_dbscan(data)
 
     assert len(result) > 0

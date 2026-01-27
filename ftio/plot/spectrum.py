@@ -90,11 +90,17 @@ def plot_both_spectrums(args, freq: np.ndarray, amp: np.ndarray, full: bool = Tr
     layout = fig_tmp.layout
     for trace in list(fig_tmp.select_traces()):
         trace.update(marker={"coloraxis": "coloraxis"})
-        fig_1.append_trace(trace, row=1, col=1)
+        if hasattr(fig_1, "add_trace"):
+            fig_1.add_trace(trace, row=1, col=1)
+        else:
+            fig_1.append_trace(trace, 1, 1)
     fig_tmp, name_plt1 = plot_spectrum(power, freq, "Power", True)
     for trace in list(fig_tmp.select_traces()):
         trace.update(marker={"coloraxis": "coloraxis2"})
-        fig_1.append_trace(trace, row=2, col=1)
+        if hasattr(fig_1, "add_trace"):
+            fig_1.add_trace(trace, row=2, col=1)
+        else:
+            fig_1.append_trace(trace, 2, 1)
     fig_1.update_layout(layout)
     fig_1.update_layout(
         coloraxis={
