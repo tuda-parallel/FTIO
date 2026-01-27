@@ -3,12 +3,17 @@ Functions for testing the Metric Proxy interface functionality of the ftio packa
 """
 
 import os
+
 import msgpack
+
 from ftio.api.metric_proxy.proxy_zmq import handle_request
+
 
 def test_proxy():
     """Test the Metric Proxy interface functionality."""
-    file_path = os.path.join(os.path.dirname(__file__), "../examples/API/proxy/trace_export.msgpack")
+    file_path = os.path.join(
+        os.path.dirname(__file__), "../examples/API/proxy/trace_export.msgpack"
+    )
     with open(file_path, "rb") as f:
         msg_bytes = f.read()
     reply = handle_request(msg_bytes)

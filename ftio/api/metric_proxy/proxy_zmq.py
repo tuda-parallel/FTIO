@@ -4,27 +4,25 @@ This includes handling data transmission, deserialization, and serialization fro
 processing requests, answering pings and changing the servers address on request from the Proxy.
 
 Author: Tim Dieringer
-Copyright (c) 2025 TU Darmstadt, Germany  
+Copyright (c) 2025 TU Darmstadt, Germany
 Date: January 2026
 
-Licensed under the BSD 3-Clause License.  
+Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
-import math
+
+import signal
 import time
+
+import msgpack
 import numpy as np
 import zmq
-import msgpack
 from rich.console import Console
 
-from multiprocessing import Pool, cpu_count
 from ftio.api.metric_proxy.parallel_proxy import execute, execute_parallel
-from ftio.prediction.tasks import ftio_metric_task, ftio_metric_task_save
-
 from ftio.api.metric_proxy.parse_proxy import filter_metrics
 from ftio.freq.helper import MyConsole
-import signal
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -32,6 +30,7 @@ CONSOLE.set(True)
 CURRENT_ADDRESS = None
 IDLE_TIMEOUT = 100
 last_request = time.time()
+
 
 def sanitize(obj):
     if isinstance(obj, np.ndarray):
@@ -49,12 +48,12 @@ def handle_request(msg: bytes) -> bytes:
 
     if msg == b"ping":
         return b"pong"
-    
+
     if msg.startswith(b"New Address: "):
-        new_address = msg[len(b"New Address: "):].decode()
+        new_address = msg[len(b"New Address: ") :].decode()
         CURRENT_ADDRESS = new_address
         return b"Address updated"
-    
+
     try:
         req = msgpack.unpackb(msg, raw=False)
         argv = req.get("argv", [])
@@ -70,7 +69,6 @@ def handle_request(msg: bytes) -> bytes:
 
         ranks = 32
 
-
     except Exception as e:
         return msgpack.packb({"error": f"Invalid request: {e}"}, use_bin_type=True)
 
@@ -82,7 +80,7 @@ def handle_request(msg: bytes) -> bytes:
             data = execute_parallel(metrics, argv, ranks)
         elapsed_time = time.process_time() - t
         CONSOLE.info(f"[blue]Calculation time: {elapsed_time} s[/]")
-        
+
         native_data = sanitize(list(data))
 
         return msgpack.packb(native_data, use_bin_type=True)
@@ -131,10 +129,9 @@ def main(address: str = "tcp://*:0"):
         socket.close(linger=0)
         context.term()
 
-        
+
 def shutdown_handler(signum, frame):
     raise SystemExit
-
 
 
 if __name__ == "__main__":
