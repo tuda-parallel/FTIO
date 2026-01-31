@@ -203,9 +203,7 @@ class FTIODashApp:
                 Input("clear-button", "n_clicks"),
             ],
         )
-        def update_visualization(
-            n_intervals, view_mode, selected_pred_id, clear_clicks
-        ):
+        def update_visualization(n_intervals, view_mode, selected_pred_id, clear_clicks):
 
             ctx = callback_context
             if ctx.triggered and ctx.triggered[0]["prop_id"] == "clear-button.n_clicks":
