@@ -19,7 +19,7 @@ import time
 
 import dash
 import numpy as np
-from dash import Input, Output, State, callback_context, dcc, html
+from dash import Input, Output, callback_context, dcc, html
 
 from ftio.gui.data_models import PredictionDataStore
 from ftio.gui.socket_listener import SocketListener
