@@ -303,8 +303,12 @@ def window_adaptation(
     # Build change point info directly - no regex needed
     change_point_info = None
     if change_detected:
-        old_freq_val = float(old_freq) if old_freq is not None and not np.isnan(old_freq) else 0.0
-        new_freq_val = float(new_freq) if new_freq is not None and not np.isnan(new_freq) else 0.0
+        old_freq_val = (
+            float(old_freq) if old_freq is not None and not np.isnan(old_freq) else 0.0
+        )
+        new_freq_val = (
+            float(new_freq) if new_freq is not None and not np.isnan(new_freq) else 0.0
+        )
         freq_change_pct = (
             abs(new_freq_val - old_freq_val) / old_freq_val * 100
             if old_freq_val > 0
