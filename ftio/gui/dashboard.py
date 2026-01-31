@@ -524,25 +524,27 @@ class FTIODashApp:
         cumulative_time = 0.0
         segment_info = []  # For change point markers
 
+        # Normalized display: each prediction gets equal width showing 5 cycles
+        display_cycles = 5  # Show 5 complete cycles per prediction
+
         for pred in sorted_predictions:
-            t_start, t_end = pred.time_window
-            duration = max(0.001, t_end - t_start)  # Ensure positive duration
             freq = pred.dominant_freq
 
             if freq == 0 or freq is None:
-
+                # No frequency - show flat gap
+                display_duration = 1.0  # Fixed width for gaps
                 num_points = 100
-                t_local = np.linspace(0, duration, num_points)
+                t_local = np.linspace(0, display_duration, num_points)
                 t_global = cumulative_time + t_local
 
                 global_time.extend(t_global.tolist())
-                global_cosine.extend([None] * num_points)  # None creates a gap
+                global_cosine.extend([None] * num_points)
             else:
+                # Normalized: show 5 cycles regardless of actual duration
+                display_duration = display_cycles / freq  # Time for 5 cycles
+                num_points = 1000
 
-                num_points = 1000  # Fixed points like individual view
-
-                t_local = np.linspace(0, duration, num_points)
-
+                t_local = np.linspace(0, display_duration, num_points)
                 cosine_segment = np.cos(2 * np.pi * freq * t_local)
 
                 t_global = cumulative_time + t_local
@@ -551,10 +553,10 @@ class FTIODashApp:
                 global_cosine.extend(cosine_segment.tolist())
 
             segment_start = cumulative_time
-            segment_end = cumulative_time + duration
+            segment_end = cumulative_time + display_duration
             segment_info.append((segment_start, segment_end, pred))
 
-            cumulative_time += duration
+            cumulative_time += display_duration
 
         fig = go.Figure()
 
