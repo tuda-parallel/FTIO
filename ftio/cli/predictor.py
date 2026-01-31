@@ -5,11 +5,11 @@ from __future__ import annotations
 import sys
 
 from ftio.parse.helper import print_info
+from ftio.prediction.online_analysis import init_socket_logger
 from ftio.prediction.pools import predictor_with_pools
 from ftio.prediction.processes import predictor_with_processes
 from ftio.prediction.processes_zmq import predictor_with_processes_zmq
 from ftio.prediction.shared_resources import SharedResources
-from ftio.prediction.online_analysis import init_socket_logger
 
 
 def main(args: list[str] = sys.argv) -> None:

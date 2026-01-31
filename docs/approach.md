@@ -67,20 +67,10 @@ predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation adwin
 predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation cusum
 predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation ph
 
-# With GUI dashboard visualization
+# With GUI dashboard visualization (works with any algorithm)
 ftio-gui  # Start dashboard first in separate terminal
-predictor X.jsonl -e no -f 100 -w frequency_hits --gui
+predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation adwin --gui
 ```
-
-### Key Flags
-
-| Flag | Description |
-|------|-------------|
-| `-w frequency_hits` | Enable window adaptation based on frequency detection hits |
-| `--online_adaptation` | Change point detection algorithm: `adwin`, `cusum`, or `ph` |
-| `--gui` | Forward prediction data to the FTIO GUI dashboard |
-| `-e no` | Disable plot generation |
-| `-f` | Sampling frequency in Hz |
 
 For more details on change point detection algorithms, see [Change Point Detection](change_point_detection.md).
 

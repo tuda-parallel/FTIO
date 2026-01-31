@@ -103,7 +103,7 @@ pip install -e .[gui]
 ftio-gui
 
 # 2. Then run predictor with --gui flag to forward data to the dashboard
-predictor X.jsonl -e no -f 100 -w frequency_hits --gui
+predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation adwin --gui
 ```
 
 The dashboard runs on `http://localhost:8050` and displays:
