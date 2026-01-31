@@ -130,3 +130,37 @@ Algorithm is selected via the `--online_adaptation` flag:
 | `adwin`    | ADWIN     | Statistical guarantees with Hoeffding bounds |
 | `cusum`    | AV-CUSUM  | Rapid detection with adaptive variance |
 | `ph`       | Page-Hinkley | Sequential detection with running mean |
+
+## Call Tree
+
+### Change Point Detection Call Tree
+```
+ftio/cli/predictor.py::main()
+└── ftio/prediction/processes.py::predictor_with_processes()
+    └── ftio/prediction/online_analysis.py::ftio_process()
+        └── online_analysis.py::window_adaptation()
+            ├── online_analysis.py::get_change_detector()
+            │   ├── ftio/prediction/change_point_detection.py::ChangePointDetector()      # ADWIN
+            │   ├── ftio/prediction/change_point_detection.py::CUSUMDetector()            # CUSUM
+            │   └── ftio/prediction/change_point_detection.py::SelfTuningPageHinkleyDetector()  # PH
+            └── change_point_detection.py::detect_pattern_change_adwin()   # or _cusum() or _pagehinkley()
+                └── ChangePointDetector::add_prediction()
+                    └── ChangePointDetector::_detect_change()
+```
+
+### GUI Integration Call Tree
+```
+ftio/cli/predictor.py::main()
+├── ftio/prediction/online_analysis.py::init_socket_logger()
+│   └── online_analysis.py::SocketLogger()
+└── ftio/prediction/processes.py::predictor_with_processes()
+    └── ftio/prediction/online_analysis.py::ftio_process()
+        └── online_analysis.py::log_to_gui_and_console()
+            └── online_analysis.py::get_socket_logger()
+                └── SocketLogger::send_log()  # Sends to ftio-gui dashboard
+
+ftio/gui/dashboard.py::main()  # ftio-gui command
+└── FTIODashApp::run()
+    ├── ftio/gui/socket_listener.py::SocketListener()  # Receives from predictor
+    └── FTIODashApp::_create_cosine_timeline_plot()    # Renders merged view
+```
