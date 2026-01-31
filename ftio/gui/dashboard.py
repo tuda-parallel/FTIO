@@ -37,7 +37,6 @@ class FTIODashApp:
 
         self.data_store = PredictionDataStore()
         self.selected_prediction_id = None
-        self.auto_update = True
         self.last_update = time.time()
 
         self.socket_listener = SocketListener(
@@ -141,19 +140,6 @@ class FTIODashApp:
                                         "cursor": "pointer",
                                     },
                                 ),
-                                html.Button(
-                                    "Auto Update",
-                                    id="auto-update-button",
-                                    n_clicks=0,
-                                    style={
-                                        "backgroundColor": "#27ae60",
-                                        "color": "white",
-                                        "border": "none",
-                                        "padding": "8px 16px",
-                                        "cursor": "pointer",
-                                        "marginLeft": "10px",
-                                    },
-                                ),
                             ],
                             style={"display": "inline-block"},
                         ),
@@ -216,10 +202,9 @@ class FTIODashApp:
                 Input("prediction-selector", "value"),
                 Input("clear-button", "n_clicks"),
             ],
-            [State("auto-update-button", "n_clicks")],
         )
         def update_visualization(
-            n_intervals, view_mode, selected_pred_id, clear_clicks, auto_clicks
+            n_intervals, view_mode, selected_pred_id, clear_clicks
         ):
 
             ctx = callback_context
@@ -530,6 +515,7 @@ class FTIODashApp:
             return fig
 
         last_3_predictions = data_store.get_latest_predictions(3)
+        print(f"[DEBUG] Merged view using {len(last_3_predictions)} predictions")
 
         sorted_predictions = sorted(last_3_predictions, key=lambda p: p.time_window[0])
 
@@ -553,7 +539,7 @@ class FTIODashApp:
                 global_cosine.extend([None] * num_points)  # None creates a gap
             else:
 
-                num_points = max(100, int(freq * duration * 50))  # 50 points per cycle
+                num_points = 1000  # Fixed points like individual view
 
                 t_local = np.linspace(0, duration, num_points)
 
