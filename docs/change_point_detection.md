@@ -15,16 +15,36 @@ Three algorithms are available:
 
 ### Command Line
 
+There are two configuration modes:
+
+**Pure change point detection**:
 ```bash
-# Use default ADWIN algorithm (X = number of MPI ranks)
+# Only change point detection, no hit-based optimization
+predictor X.jsonl -e no -f 100 --online_adaptation adwin
+predictor X.jsonl -e no -f 100 --online_adaptation cusum
+predictor X.jsonl -e no -f 100 --online_adaptation ph
+```
+
+**Hybrid mode**:
+```bash
+# Change point detection + hit-based optimization
 predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation adwin
-
-# Use CUSUM algorithm
 predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation cusum
-
-# Use Page-Hinkley algorithm
 predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation ph
 ```
+
+### Configuration Modes Explained
+
+| Mode | Flags |
+|------|-------|
+| Pure | `--online_adaptation <algo>` |
+| Hybrid | `-w frequency_hits --online_adaptation <algo>` |
+
+In **hybrid mode**, the two mechanisms are complementary:
+- **Change point detection** handles pattern transitions (primary mechanism)
+- **Hit-based** optimizes stable periods by shrinking the window (secondary optimization)
+
+Hit-based only activates when change point detection reports no change. They do not interfere with each other.
 
 ## Algorithms
 
@@ -103,6 +123,9 @@ pip install -e .[gui]
 ftio-gui
 
 # 2. Then run predictor with --gui flag to forward data to the dashboard
+# Pure mode:
+predictor X.jsonl -e no -f 100 --online_adaptation adwin --gui
+# Or hybrid mode:
 predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation adwin --gui
 ```
 
