@@ -280,6 +280,12 @@ Full documentation:
         )
         parser.set_defaults(zmq=False)
         parser.add_argument(
+            "--gui",
+            action="store_true",
+            help="enables forwarding prediction data to the FTIO GUI dashboard. Start the GUI first with 'ftio-gui' then run predictor with this flag.",
+        )
+        parser.set_defaults(gui=False)
+        parser.add_argument(
             "--zmq_source",
             type=str,
             help="the source of zmq: TMIO, direct, etc.",

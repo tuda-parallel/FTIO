@@ -81,10 +81,23 @@ class SocketLogger:
 
 
 _socket_logger = None
+_gui_enabled = False
+
+
+def init_socket_logger(gui_enabled: bool = False):
+    """Initialize the socket logger based on --gui flag"""
+    global _socket_logger, _gui_enabled
+    _gui_enabled = gui_enabled
+    if gui_enabled:
+        _socket_logger = SocketLogger()
+    else:
+        _socket_logger = None
 
 
 def get_socket_logger():
-    global _socket_logger
+    global _socket_logger, _gui_enabled
+    if not _gui_enabled:
+        return None
     if _socket_logger is None:
         _socket_logger = SocketLogger()
     return _socket_logger
@@ -108,20 +121,20 @@ def log_to_gui_and_console(
 
     console.print(message)
 
-    logger.send_log(log_type, clean_message, data)
+    if logger is not None:
+        logger.send_log(log_type, clean_message, data)
 
 
 def get_change_detector(shared_resources: SharedResources, algorithm: str = "adwin"):
-    # Console()
     algo = (algorithm or "adwin").lower()
-    global _local_detector_cache
-    if "_local_detector_cache" not in globals():
-        _local_detector_cache = {}
-
     detector_key = f"{algo}_detector"
 
-    if detector_key in _local_detector_cache:
-        return _local_detector_cache[detector_key]
+    # Cache detector on shared_resources instead of using global
+    if not hasattr(shared_resources, "_detector_cache"):
+        shared_resources._detector_cache = {}
+
+    if detector_key in shared_resources._detector_cache:
+        return shared_resources._detector_cache[detector_key]
 
     show_init_message = not shared_resources.detector_initialized.value
 
@@ -144,7 +157,7 @@ def get_change_detector(shared_resources: SharedResources, algorithm: str = "adw
             verbose=True,
         )
 
-    _local_detector_cache[detector_key] = detector
+    shared_resources._detector_cache[detector_key] = detector
     shared_resources.detector_initialized.value = True
     return detector
 
@@ -224,9 +237,9 @@ def ftio_process(shared_resources: SharedResources, args: list[str], msgs=None) 
         "change_point": change_point_info,
     }
 
-    get_socket_logger().send_log(
-        "prediction", "FTIO structured prediction", structured_prediction
-    )
+    logger = get_socket_logger()
+    if logger is not None:
+        logger.send_log("prediction", "FTIO structured prediction", structured_prediction)
     # print text
     log_to_gui_and_console(
         console, text, "prediction_log", {"count": pred_id, "freq": dominant_freq}
@@ -268,27 +281,30 @@ def window_adaptation(
 
     # Change point detection - capture data directly
     detector = get_change_detector(shared_resources, algorithm)
-    old_freq = freq  # Store current freq before detection
     if algorithm == "cusum":
-        change_detected, change_log, adaptive_start_time = detect_pattern_change_cusum(
-            shared_resources, prediction, detector, shared_resources.count.value
+        change_detected, change_log, adaptive_start_time, old_freq, new_freq = (
+            detect_pattern_change_cusum(
+                shared_resources, prediction, detector, shared_resources.count.value
+            )
         )
     elif algorithm == "ph":
-        change_detected, change_log, adaptive_start_time = (
+        change_detected, change_log, adaptive_start_time, old_freq, new_freq = (
             detect_pattern_change_pagehinkley(
                 shared_resources, prediction, detector, shared_resources.count.value
             )
         )
     else:
-        change_detected, change_log, adaptive_start_time = detect_pattern_change_adwin(
-            shared_resources, prediction, detector, shared_resources.count.value
+        change_detected, change_log, adaptive_start_time, old_freq, new_freq = (
+            detect_pattern_change_adwin(
+                shared_resources, prediction, detector, shared_resources.count.value
+            )
         )
 
     # Build change point info directly - no regex needed
     change_point_info = None
     if change_detected:
-        old_freq_val = float(old_freq) if not np.isnan(old_freq) else 0.0
-        new_freq_val = float(freq) if not np.isnan(freq) else 0.0
+        old_freq_val = float(old_freq) if old_freq is not None and not np.isnan(old_freq) else 0.0
+        new_freq_val = float(new_freq) if new_freq is not None and not np.isnan(new_freq) else 0.0
         freq_change_pct = (
             abs(new_freq_val - old_freq_val) / old_freq_val * 100
             if old_freq_val > 0

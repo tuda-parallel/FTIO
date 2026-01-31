@@ -444,7 +444,7 @@ def detect_pattern_change_adwin(
     current_prediction: Prediction,
     detector: ChangePointDetector,
     counter: int,
-) -> tuple[bool, str | None, float]:
+) -> tuple[bool, str | None, float, float | None, float | None]:
 
     change_point = detector.add_prediction(current_prediction, current_prediction.t_end)
 
@@ -467,23 +467,24 @@ def detect_pattern_change_adwin(
             from ftio.prediction.online_analysis import get_socket_logger
 
             logger = get_socket_logger()
-            logger.send_log(
-                "change_point",
-                "ADWIN Change Point Detected",
-                {
-                    "exact_time": change_time,
-                    "old_freq": old_freq,
-                    "new_freq": current_freq,
-                    "adaptive_start": new_start_time,
-                    "counter": counter,
-                },
-            )
+            if logger is not None:
+                logger.send_log(
+                    "change_point",
+                    "ADWIN Change Point Detected",
+                    {
+                        "exact_time": change_time,
+                        "old_freq": old_freq,
+                        "new_freq": current_freq,
+                        "adaptive_start": new_start_time,
+                        "counter": counter,
+                    },
+                )
         except ImportError:
             pass
 
-        return True, log_msg, new_start_time
+        return True, log_msg, new_start_time, old_freq, current_freq
 
-    return False, None, current_prediction.t_start
+    return False, None, current_prediction.t_start, None, None
 
 
 class CUSUMDetector:
@@ -781,19 +782,19 @@ def detect_pattern_change_cusum(
     current_prediction: Prediction,
     detector: CUSUMDetector,
     counter: int,
-) -> tuple[bool, str | None, float]:
+) -> tuple[bool, str | None, float, float | None, float | None]:
 
     current_freq = get_dominant(current_prediction)
     current_time = current_prediction.t_end
 
     if np.isnan(current_freq):
         detector._reset_cusum_state()
-        return False, None, current_prediction.t_start
+        return False, None, current_prediction.t_start, None, None
 
     change_detected, change_info = detector.add_frequency(current_freq, current_time)
 
     if not change_detected:
-        return False, None, current_prediction.t_start
+        return False, None, current_prediction.t_start, None, None
 
     change_type = change_info["change_type"]
     reference = change_info["reference"]
@@ -828,25 +829,26 @@ def detect_pattern_change_cusum(
         from ftio.prediction.online_analysis import get_socket_logger
 
         logger = get_socket_logger()
-        logger.send_log(
-            "change_point",
-            "CUSUM Change Point Detected",
-            {
-                "algorithm": "CUSUM",
-                "detection_time": current_time,
-                "change_type": change_type,
-                "frequency": current_freq,
-                "reference": reference,
-                "magnitude": magnitude,
-                "percent_change": percent_change,
-                "threshold": threshold,
-                "counter": counter,
-            },
-        )
+        if logger is not None:
+            logger.send_log(
+                "change_point",
+                "CUSUM Change Point Detected",
+                {
+                    "algorithm": "CUSUM",
+                    "detection_time": current_time,
+                    "change_type": change_type,
+                    "frequency": current_freq,
+                    "reference": reference,
+                    "magnitude": magnitude,
+                    "percent_change": percent_change,
+                    "threshold": threshold,
+                    "counter": counter,
+                },
+            )
     except ImportError:
         pass
 
-    return True, log_msg, new_start_time
+    return True, log_msg, new_start_time, reference, current_freq
 
 
 class SelfTuningPageHinkleyDetector:
@@ -1252,7 +1254,7 @@ def detect_pattern_change_pagehinkley(
     current_prediction: Prediction,
     detector: SelfTuningPageHinkleyDetector,
     counter: int,
-) -> tuple[bool, str | None, float]:
+) -> tuple[bool, str | None, float, float | None, float | None]:
 
     import numpy as np
 
@@ -1261,7 +1263,7 @@ def detect_pattern_change_pagehinkley(
 
     if current_freq is None or np.isnan(current_freq):
         detector._reset_detector_state()
-        return False, None, current_prediction.t_start
+        return False, None, current_prediction.t_start, None, None
 
     change_detected, triggering_sum, metadata = detector.add_frequency(
         current_freq, current_time
@@ -1318,6 +1320,6 @@ def detect_pattern_change_pagehinkley(
                 },
             )
 
-        return True, log_message, adaptive_start_time
+        return True, log_message, adaptive_start_time, reference_mean, frequency
 
-    return False, None, current_prediction.t_start
+    return False, None, current_prediction.t_start, None, None

@@ -17,13 +17,13 @@ Three algorithms are available:
 
 ```bash
 # Use default ADWIN algorithm (X = number of MPI ranks)
-predictor X.jsonl -e no -f 100 -w frequency hits --online_adaptation adwin
+predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation adwin
 
 # Use CUSUM algorithm
-predictor X.jsonl -e no -f 100 -w frequency hits --online_adaptation cusum
+predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation cusum
 
 # Use Page-Hinkley algorithm
-predictor X.jsonl -e no -f 100 -w frequency hits --online_adaptation ph
+predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation ph
 ```
 
 ## Algorithms
@@ -99,8 +99,11 @@ A real-time visualization dashboard is available for monitoring predictions and 
 # Install GUI dependencies (if not already installed)
 pip install -e .[gui]
 
-# Run the dashboard
-ftio_gui
+# 1. Start the GUI dashboard first
+ftio-gui
+
+# 2. Then run predictor with --gui flag to forward data to the dashboard
+predictor X.jsonl -e no -f 100 -w frequency_hits --gui
 ```
 
 The dashboard runs on `http://localhost:8050` and displays:
@@ -114,6 +117,7 @@ The dashboard runs on `http://localhost:8050` and displays:
 - **Change point markers**: Red vertical lines indicate detected changes
 - **Frequency annotations**: Shows old → new frequency at each change
 - **Gap visualization**: Displays periods with no detected frequency
+- **Auto-connect**: The predictor automatically connects to the GUI when `--gui` flag is used
 
 
 
