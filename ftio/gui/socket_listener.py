@@ -61,7 +61,10 @@ class SocketListener:
     """
 
     def __init__(
-        self, host: str = "localhost", port: int = 9999, data_callback: Callable | None = None
+        self,
+        host: str = "localhost",
+        port: int = 9999,
+        data_callback: Callable | None = None,
     ):
         """Initialize the socket listener with connection parameters.
 
