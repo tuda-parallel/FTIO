@@ -148,7 +148,10 @@ def prediction_zmq_process(
     # display results
     text = display_result(freq, prediction, shared_resources)
     # data analysis to decrease window thus change start_time
-    text += window_adaptation(parsed_args, prediction, freq, shared_resources)
+    adaptation_text, _, _ = window_adaptation(
+        parsed_args, prediction, freq, shared_resources
+    )
+    text += adaptation_text
     # print text
     console.print(text)
 
