@@ -26,7 +26,26 @@ from ftio.prediction.shared_resources import SharedResources
 
 
 class SocketLogger:
-    def __init__(self, host="localhost", port=9999):
+    """TCP socket client for sending prediction and change point data to the GUI dashboard.
+
+    Establishes a connection to the dashboard server and sends JSON-formatted messages
+    containing prediction results, change point detections, and other log data for
+    real-time visualization.
+
+    Attributes:
+        host: The hostname of the GUI server (default: "localhost").
+        port: The port number of the GUI server (default: 9999).
+        socket: The TCP socket connection.
+        connected: Boolean indicating if currently connected to the server.
+    """
+
+    def __init__(self, host: str = "localhost", port: int = 9999):
+        """Initialize the socket logger and attempt connection to the GUI server.
+
+        Args:
+            host: The hostname of the GUI server.
+            port: The port number of the GUI server.
+        """
         self.host = host
         self.port = port
         self.socket = None
@@ -34,7 +53,15 @@ class SocketLogger:
         self._connect()
 
     def _connect(self):
-        """Attempt to connect to the GUI server"""
+        """Attempt to establish a TCP connection to the GUI dashboard server.
+
+        Creates a socket with a 1-second timeout and attempts to connect to the
+        SocketListener running in the GUI dashboard process. If connection fails
+        (e.g., GUI not running), sets connected=False and continues without GUI
+        logging - predictions still work, just without real-time visualization.
+
+        The connection is optional: the predictor works fine without the GUI.
+        """
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.settimeout(1.0)  # 1 second timeout
@@ -52,6 +79,22 @@ class SocketLogger:
             print("[WARNING] GUI logging disabled - messages will only appear in console")
 
     def send_log(self, log_type: str, message: str, data: dict = None):
+        """Send a log message to the GUI dashboard for visualization.
+
+        Constructs a JSON message with timestamp, type, message, and optional data,
+        then sends it over the TCP socket. If sending fails, marks the connection
+        as closed and stops further send attempts.
+
+        Args:
+            log_type: Category of the message. Common types:
+                - "prediction": New FTIO prediction result
+                - "change_point": Change point detection event
+                - "info": General information message
+            message: Human-readable description of the event.
+            data: Dictionary containing structured data for the GUI to display.
+                For predictions, includes frequency, confidence, time window, etc.
+                For change points, includes old/new frequency and detection time.
+        """
         if not self.connected:
             return
 
@@ -74,6 +117,10 @@ class SocketLogger:
                 self.socket = None
 
     def close(self):
+        """Close the socket connection to the GUI server.
+
+        Safe to call multiple times. After closing, no more messages can be sent.
+        """
         if self.socket:
             self.socket.close()
             self.socket = None

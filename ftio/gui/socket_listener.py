@@ -28,11 +28,51 @@ from ftio.gui.data_models import (
 
 
 class SocketListener:
-    """Listens for socket connections and processes FTIO prediction data"""
+    """TCP server that receives FTIO prediction data from the online predictor.
+
+    This class is the receiving end of the predictor-to-GUI communication channel.
+    The FTIO online predictor (predictor.py) runs as a separate process and sends
+    prediction results via TCP socket. This SocketListener runs inside the GUI
+    dashboard process and receives those messages.
+
+    Architecture:
+        [FTIO Predictor Process] --TCP/JSON--> [SocketListener] --> [GUI Dashboard]
+
+    The socket connection allows the predictor and GUI to run on different machines
+    if needed (e.g., predictor on HPC cluster, GUI on local workstation).
+
+    Each received message contains:
+        - Prediction ID and timestamp
+        - Detected dominant frequency and confidence
+        - Time window that was analyzed
+        - Whether a change point was detected
+        - Change point details (old/new frequency, when it occurred)
+
+    Messages are JSON-formatted and parsed into PredictionData objects, which are
+    then passed to the dashboard via the data_callback function for visualization.
+
+    Attributes:
+        host: The hostname to bind the server to (default: "localhost").
+        port: The port number to listen on (default: 9999).
+        data_callback: Function called when new prediction data arrives.
+        running: Boolean indicating if the server is currently running.
+        server_socket: The main TCP server socket.
+        client_connections: List of active client connections.
+    """
 
     def __init__(
-        self, host="localhost", port=9999, data_callback: Callable | None = None
+        self, host: str = "localhost", port: int = 9999, data_callback: Callable | None = None
     ):
+        """Initialize the socket listener with connection parameters.
+
+        Args:
+            host: The hostname to bind the server to. Use "localhost" for local
+                connections only, or "0.0.0.0" to accept connections from any host.
+            port: The port number to listen on. Must match the port used by the
+                FTIO predictor's SocketLogger (default: 9999).
+            data_callback: Function to call when prediction data is received.
+                The callback receives a dict with 'type' and 'data' keys.
+        """
         self.host = host
         self.port = port
         self.data_callback = data_callback
@@ -41,6 +81,19 @@ class SocketListener:
         self.client_connections = []
 
     def start_server(self):
+        """Start the TCP server and begin listening for predictor connections.
+
+        This method blocks and runs the main server loop. It binds to the configured
+        host:port, listens for incoming connections, and spawns a new thread for
+        each connected client (predictor process).
+
+        The server continues running until stop_server() is called or an error occurs.
+        Each client connection is handled in a separate daemon thread, allowing
+        multiple predictors to connect simultaneously.
+
+        Raises:
+            OSError: If the port is already in use (errno 98) or other socket errors.
+        """
         try:
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -89,6 +142,30 @@ class SocketListener:
             self.stop_server()
 
     def _handle_client(self, client_socket, address):
+        """Handle an individual client connection in a dedicated thread.
+
+        Continuously receives JSON messages from the connected predictor process,
+        parses them into PredictionData objects, and forwards them to the dashboard
+        via the data_callback.
+
+        Message format expected:
+            {
+                "type": "prediction",
+                "data": {
+                    "prediction_id": int,
+                    "timestamp": float,
+                    "dominant_freq": float,
+                    "confidence": float,
+                    "is_change_point": bool,
+                    "change_point": {...} or null,
+                    ...
+                }
+            }
+
+        Args:
+            client_socket: The socket connection to the client (predictor).
+            address: Tuple of (host, port) identifying the client.
+        """
         try:
             while self.running:
                 try:
@@ -176,6 +253,12 @@ class SocketListener:
                 pass
 
     def stop_server(self):
+        """Stop the server and close all connections.
+
+        Sets running to False to signal all client handler threads to stop,
+        closes the main server socket, and closes all active client connections.
+        This method is safe to call multiple times.
+        """
         self.running = False
         if self.server_socket:
             with contextlib.suppress(BaseException):
@@ -188,6 +271,16 @@ class SocketListener:
         print("Socket server stopped")
 
     def start_in_thread(self):
+        """Start the server in a background daemon thread.
+
+        This is the recommended way to start the server when running alongside
+        the GUI dashboard. The daemon thread allows the program to exit cleanly
+        even if the server is still running.
+
+        Returns:
+            threading.Thread: The thread object running the server. Can be used
+                to check if the server is still alive via thread.is_alive().
+        """
         server_thread = threading.Thread(target=self.start_server)
         server_thread.daemon = True
         server_thread.start()
