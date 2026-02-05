@@ -245,9 +245,18 @@ Full documentation:
             "--window_adaptation",
             dest="window_adaptation",
             type=str,
-            choices=["frequency_hits", "data"],
-            help='online time window adaptation. If set to frequency_hits, the time window is shifted on X "frequency hits" (a dominant frequency was found) to X times the last found period from the current instance. Alternatively it can be set to "data" to move the window to X times after data has been received',
+            choices=["frequency_hits", "data", "adwin", "cusum", "ph"],
+            help=(
+                "online window adaptation strategy. "
+                "'frequency_hits': shift the time window on X frequency hits to X times the last found period. "
+                "'data': move the window to X times after data has been received. "
+                "'adwin': Adaptive Windowing with automatic window sizing and mathematical guarantees. "
+                "'cusum': Cumulative Sum detection for rapid change detection. "
+                "'ph': Page-Hinkley test for sequential change point detection. "
+                "For 'adwin', 'cusum', and 'ph', the option '--gui' is supported to display detected change points."
+            ),
         )
+
         parser.set_defaults(window_adaptation="")
         parser.add_argument(
             "-hi",
@@ -257,14 +266,6 @@ Full documentation:
             help="specifies the number of hits needed to adapt the time window. A hit occurs once a dominant frequency is found",
         )
         parser.set_defaults(hits=3)
-        parser.add_argument(
-            "--online_adaptation",
-            dest="online_adaptation",
-            type=str,
-            choices=["adwin", "cusum", "ph"],
-            help="change point detection algorithm to use. 'adwin' (default) uses Adaptive Windowing with automatic window sizing and mathematical guarantees. 'cusum' uses Cumulative Sum detection for rapid change detection. 'ph' uses Page-Hinkley test for sequential change point detection.",
-        )
-        parser.set_defaults(online_adaptation="adwin")
         parser.add_argument(
             "-v",
             "--verbose",
@@ -327,7 +328,7 @@ Full documentation:
             default=4,
             help="Order of Butterworth filter.",
         )
-        # adaptive tsa arguments
+        # change_detection tsa arguments
         parser.add_argument(
             "--tfpf",
             type=int,

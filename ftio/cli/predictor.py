@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import sys
 
+from ftio.gui.socket_logger import init_socket_logger
 from ftio.parse.helper import print_info
-from ftio.prediction.online_analysis import init_socket_logger
 from ftio.prediction.pools import predictor_with_pools
 from ftio.prediction.processes import predictor_with_processes
 from ftio.prediction.processes_zmq import predictor_with_processes_zmq
@@ -24,9 +24,9 @@ def main(args: list[str] = sys.argv) -> None:
     mode = "procs"  # "procs" or "pool"
 
     # Initialize GUI socket logger if --gui flag is present
-    gui_enabled = "--gui" in args
-    init_socket_logger(gui_enabled)
-    if gui_enabled:
+
+    if "gui" in args:
+        init_socket_logger(True)
         print("[INFO] GUI mode enabled - forwarding predictions to ftio-gui dashboard")
 
     if "pool" in mode.lower():

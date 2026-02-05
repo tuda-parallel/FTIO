@@ -7,7 +7,7 @@ def set_unit(arr: np.ndarray, suffix="B/s") -> tuple[str, float]:
 
     Args:
         arr (np.ndarray | float): array or float
-        unit (optional): default B/s
+        suffix (optional): default B/s
 
     Returns:
         unit (string): unit in GB/s, MB/s, KB/s or B/s

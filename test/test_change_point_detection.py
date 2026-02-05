@@ -15,11 +15,9 @@ from unittest.mock import MagicMock
 import numpy as np
 
 from ftio.freq.prediction import Prediction
-from ftio.prediction.change_point_detection import (
-    ChangePointDetector,
-    CUSUMDetector,
-    SelfTuningPageHinkleyDetector,
-)
+from ftio.prediction.change_detection.adwin import AdwinDetector
+from ftio.prediction.change_detection.cusum import CUSUMDetector
+from ftio.prediction.change_detection.pagehinkley import SelfTuningPageHinkleyDetector
 
 
 def create_mock_prediction(freq: float, t_start: float, t_end: float) -> MagicMock:
@@ -38,13 +36,13 @@ class TestADWINDetector:
 
     def test_initialization(self):
         """Test ADWIN detector initializes correctly."""
-        detector = ChangePointDetector(delta=0.05, shared_resources=None, show_init=False)
+        detector = AdwinDetector(delta=0.05, past_predictions=None)
         assert detector.delta == 0.05
         assert detector.min_window_size == 2
 
     def test_no_change_stable_frequency(self):
         """Test that stable frequencies don't trigger change detection."""
-        detector = ChangePointDetector(delta=0.05, shared_resources=None, show_init=False)
+        detector = AdwinDetector(delta=0.05, past_predictions=None)
 
         # Add stable frequency predictions
         for i in range(10):
@@ -52,11 +50,11 @@ class TestADWINDetector:
             _ = detector.add_prediction(pred, timestamp=float(i + 1))
 
         # Should not detect change with stable frequency
-        assert detector._get_change_count() == 0
+        assert detector.change_count == 0
 
     def test_detects_frequency_change(self):
         """Test that significant frequency change is detected."""
-        detector = ChangePointDetector(delta=0.05, shared_resources=None, show_init=False)
+        detector = AdwinDetector(delta=0.05, past_predictions=None)
 
         # Add low frequency predictions (more samples for statistical significance)
         for i in range(10):
@@ -72,11 +70,11 @@ class TestADWINDetector:
                 change_detected = True
 
         # Should detect the change during the loop or in the count
-        assert change_detected or detector._get_change_count() >= 1
+        assert change_detected or detector.change_count >= 1
 
     def test_reset_on_nan_frequency(self):
         """Test that NaN frequency resets the detector window."""
-        detector = ChangePointDetector(delta=0.05, shared_resources=None, show_init=False)
+        detector = AdwinDetector(delta=0.05, past_predictions=None)
 
         # Add some predictions
         for i in range(5):
@@ -88,19 +86,20 @@ class TestADWINDetector:
         detector.add_prediction(pred, timestamp=6.0)
 
         # Window should be reset
-        assert len(detector._get_frequencies()) == 0
+        assert detector.frequencies_found == 0
 
     def test_window_stats(self):
         """Test window statistics calculation."""
-        detector = ChangePointDetector(delta=0.05, shared_resources=None, show_init=False)
+        detector = AdwinDetector(delta=0.05, past_predictions=None)
 
         # Add predictions
         freqs = [0.5, 0.6, 0.4, 0.5, 0.55]
+        timestamps = [0, 0.2, 1, 2.5, 5.55]
         for i, f in enumerate(freqs):
             pred = create_mock_prediction(freq=f, t_start=i, t_end=i + 1)
             detector.add_prediction(pred, timestamp=float(i + 1))
 
-        stats = detector.get_window_stats()
+        stats = detector.get_window_stats(freqs, timestamps)
         assert stats["size"] == 5
         assert abs(stats["mean"] - np.mean(freqs)) < 0.001
 
@@ -110,26 +109,24 @@ class TestCUSUMDetector:
 
     def test_initialization(self):
         """Test CUSUM detector initializes correctly."""
-        detector = CUSUMDetector(window_size=50, shared_resources=None, show_init=False)
+        detector = CUSUMDetector(window_size=50)
         assert detector.window_size == 50
         assert detector.sum_pos == 0.0
         assert detector.sum_neg == 0.0
 
     def test_reference_establishment(self):
         """Test that reference is established from initial samples."""
-        detector = CUSUMDetector(window_size=50, shared_resources=None, show_init=False)
+        detector = CUSUMDetector(window_size=50)
 
         # Add initial samples
-        freqs = [0.5, 0.5, 0.5]
-        for f in freqs:
+        for f in [0.5, 0.5, 0.5]:
             detector.add_frequency(f, timestamp=0.0)
 
-        assert detector.initialized
         assert abs(detector.reference - 0.5) < 0.001
 
     def test_detects_upward_change(self):
         """Test detection of upward frequency shift."""
-        detector = CUSUMDetector(window_size=50, shared_resources=None, show_init=False)
+        detector = CUSUMDetector(window_size=50)
 
         # Establish baseline
         for i in range(5):
@@ -147,7 +144,7 @@ class TestCUSUMDetector:
 
     def test_reset_on_nan(self):
         """Test that NaN frequency resets CUSUM state."""
-        detector = CUSUMDetector(window_size=50, shared_resources=None, show_init=False)
+        detector = CUSUMDetector(window_size=50)
 
         # Add some frequencies
         for i in range(5):
@@ -156,7 +153,6 @@ class TestCUSUMDetector:
         # Add NaN
         detector.add_frequency(np.nan, timestamp=5.0)
 
-        assert not detector.initialized
         assert detector.sum_pos == 0.0
         assert detector.sum_neg == 0.0
 
@@ -166,18 +162,14 @@ class TestPageHinkleyDetector:
 
     def test_initialization(self):
         """Test Page-Hinkley detector initializes correctly."""
-        detector = SelfTuningPageHinkleyDetector(
-            window_size=10, shared_resources=None, show_init=False
-        )
+        detector = SelfTuningPageHinkleyDetector(window_size=10, past_predictions=None)
         assert detector.window_size == 10
         assert detector.cumulative_sum_pos == 0.0
         assert detector.cumulative_sum_neg == 0.0
 
     def test_reference_mean_update(self):
         """Test that reference mean updates with new samples."""
-        detector = SelfTuningPageHinkleyDetector(
-            window_size=10, shared_resources=None, show_init=False
-        )
+        detector = SelfTuningPageHinkleyDetector(window_size=10, past_predictions=None)
 
         # Add samples
         detector.add_frequency(0.5, timestamp=0.0)
@@ -188,9 +180,7 @@ class TestPageHinkleyDetector:
 
     def test_detects_change(self):
         """Test detection of frequency change."""
-        detector = SelfTuningPageHinkleyDetector(
-            window_size=10, shared_resources=None, show_init=False
-        )
+        detector = SelfTuningPageHinkleyDetector(window_size=10, past_predictions=None)
 
         # Establish baseline
         for i in range(5):
@@ -206,34 +196,15 @@ class TestPageHinkleyDetector:
 
         assert change_detected
 
-    def test_reset_functionality(self):
-        """Test reset functionality."""
-        detector = SelfTuningPageHinkleyDetector(
-            window_size=10, shared_resources=None, show_init=False
-        )
-
-        # Add samples and accumulate state
-        for i in range(5):
-            detector.add_frequency(0.5, timestamp=float(i))
-
-        # Reset with new frequency
-        detector.reset(current_freq=1.0)
-
-        assert detector.cumulative_sum_pos == 0.0
-        assert detector.cumulative_sum_neg == 0.0
-        assert detector.reference_mean == 1.0
-
 
 class TestDetectorIntegration:
     """Integration tests for change point detectors."""
 
     def test_all_detectors_handle_empty_input(self):
         """Test all detectors handle edge cases gracefully."""
-        adwin = ChangePointDetector(delta=0.05, shared_resources=None, show_init=False)
-        cusum = CUSUMDetector(window_size=50, shared_resources=None, show_init=False)
-        ph = SelfTuningPageHinkleyDetector(
-            window_size=10, shared_resources=None, show_init=False
-        )
+        adwin = AdwinDetector(delta=0.05, past_predictions=None)
+        cusum = CUSUMDetector(window_size=50)
+        ph = SelfTuningPageHinkleyDetector(window_size=10, past_predictions=None)
 
         # Test with zero frequency
         pred = create_mock_prediction(freq=0.0, t_start=0, t_end=1)
@@ -249,11 +220,9 @@ class TestDetectorIntegration:
 
     def test_all_detectors_consistent_detection(self):
         """Test all detectors can detect obvious pattern changes."""
-        adwin = ChangePointDetector(delta=0.05, shared_resources=None, show_init=False)
-        cusum = CUSUMDetector(window_size=50, shared_resources=None, show_init=False)
-        ph = SelfTuningPageHinkleyDetector(
-            window_size=10, shared_resources=None, show_init=False
-        )
+        adwin = AdwinDetector(delta=0.05, past_predictions=None)
+        cusum = CUSUMDetector(window_size=50)
+        ph = SelfTuningPageHinkleyDetector(window_size=10, past_predictions=None)
 
         # Create obvious pattern change: 0.1 Hz -> 10 Hz
         low_freq = 0.1

@@ -25,7 +25,7 @@ from scipy.signal.windows import boxcar
 
 """
 Pei, S. C., & Huang, S. G. (2012).
-STFT with adaptive window width based on the chirp rate.
+STFT with change_detection window width based on the chirp rate.
 IEEE Transactions on Signal Processing, 60(8), 4065-4080.
 """
 

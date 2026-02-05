@@ -29,7 +29,7 @@ from ftio.freq.denoise import tfpf_wvd
 
 def amd(b_sampled, freq, time_b, args):
     """
-    Identify periodic time windows with adaptive mode decomposition.
+    Identify periodic time windows with change_detection mode decomposition.
     """
     t_start = time_b[0]
     t_end = time_b[-1]

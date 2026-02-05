@@ -94,7 +94,7 @@ def flush_using_tar(args: argparse.Namespace, items_to_submit: list[str] = None)
     delete_items(args, items_to_submit)
     CONSOLE.print(
         f"[bold green][Trigger][/][green]: Tar time for {len(items_to_submit)}: tarred in {tar_time} s, "
-        f"deleted in {time.time()-start} s[/]\n"
+        f"deleted in {time.time() - start} s[/]\n"
     )
 
 
@@ -305,7 +305,7 @@ def copy_file_and_unlink(args: argparse.Namespace, item: str) -> None:
 
     CONSOLE.print(
         f"[bold green][Trigger][/][green]: Times  for {item}: copied in {copy_time} s, "
-        f"deleted in {time.time()-start} s[/]\n"
+        f"deleted in {time.time() - start} s[/]\n"
     )
 
 
@@ -572,8 +572,8 @@ def jit_move(settings: JitSettings) -> None:
         default=False,
     )
     parser.add_argument(
-        "--adaptive",
-        dest="adaptive",
+        "--change_detection",
+        dest="change_detection",
         help="Adaptive flag for flushing",
         default="cancel",
         choices={"skip", "cancel", ""},
