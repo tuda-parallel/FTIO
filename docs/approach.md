@@ -34,7 +34,7 @@ An overview of the core of FTIO is provided below:
 
 <p align="right"><a href="#approach">⬆</a></p>
 
- ## Online Prediction 
+ ## Online Prediction
 
 The tool [`predictor`](https://github.com/tuda-parallel/FTIO/tree/main/ftio/cli/predictor.py) launches `ftio` in a loop. It monitors a file for changes. The file contains bandwidth values over time. Once the file changes, `ftio` is called and a new prediction is found. `predictor` performs a few additional steps compared `ftio`:
 * FTIO results are merged into frequency ranges using DB-Scan​
@@ -51,6 +51,28 @@ An overview of predictor.py is provided in the image below:
 </div>
 <br />
 
+### Usage Examples
+
+```bash
+# Basic usage: X = number of MPI ranks
+predictor X.jsonl -e no -f 100
+
+# With window adaptation based on frequency hits
+predictor X.jsonl -e no -f 100 -w frequency_hits
+
+# With change point detection (ADWIN algorithm, default)
+predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation adwin
+
+# With CUSUM or Page-Hinkley change point detection
+predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation cusum
+predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation ph
+
+# With GUI dashboard visualization (works with any algorithm)
+ftio-gui  # Start dashboard first in separate terminal
+predictor X.jsonl -e no -f 100 -w frequency_hits --online_adaptation adwin --gui
+```
+
+For more details on change point detection algorithms, see [Change Point Detection](change_point_detection.md).
 
 <p align="right"><a href="#approach">⬆</a></p>
 

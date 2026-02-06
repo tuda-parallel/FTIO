@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 
+from ftio.gui.socket_logger import init_socket_logger
 from ftio.parse.helper import print_info
 from ftio.prediction.pools import predictor_with_pools
 from ftio.prediction.processes import predictor_with_processes
@@ -21,6 +22,12 @@ def main(args: list[str] = sys.argv) -> None:
     print_info("Predictor", False)
     shared_resources = SharedResources()
     mode = "procs"  # "procs" or "pool"
+
+    # Initialize GUI socket logger if --gui flag is present
+
+    if "gui" in args:
+        init_socket_logger(True)
+        print("[INFO] GUI mode enabled - forwarding predictions to ftio-gui dashboard")
 
     if "pool" in mode.lower():
         # prediction with a Pool of process and a callback mechanism

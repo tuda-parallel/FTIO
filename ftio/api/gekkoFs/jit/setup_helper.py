@@ -194,7 +194,7 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         help="Protocol for GekkoFS daemon (ofi+verbs or ofi+sockets).",
     )
     parser.add_argument(
-        "--adaptive",
+        "--change_detection",
         type=str,
         help="Adaptive flag for flushing",
         default="cancel",
@@ -1066,7 +1066,7 @@ def exit_routine(settings: JitSettings) -> None:
     Args:
         settings (JitSettings): The JIT settings object.
     """
-    info = f"{settings.app_call} with {settings.nodes} nodes {settings.log_suffix} (./{ os.path.relpath(settings.log_dir, os.getcwd())})"
+    info = f"{settings.app_call} with {settings.nodes} nodes {settings.log_suffix} (./{os.path.relpath(settings.log_dir, os.getcwd())})"
     jit_print(f"[bold blue]Killing Job: {info} [/]")
     log_failed_jobs(settings, info)
     soft_kill(settings)
@@ -1325,7 +1325,9 @@ def set_dir_gekko(settings: JitSettings) -> None:
             # Single regex to replace both key-value pair and standalone path
             updated_content = re.sub(
                 r'(/[^"]*_gkfs_mountdir)(/[^"]*)',  # old: r'(/[^"]*tarraf_gkfs_mountdir)(/[^"]*)',
-                lambda match: f"{settings.gkfs_mntdir}{match.group(2)}",  # Replace with 'settings.gkfs_mntdir' and preserve the rest
+                lambda match: (
+                    f"{settings.gkfs_mntdir}{match.group(2)}"
+                ),  # Replace with 'settings.gkfs_mntdir' and preserve the rest
                 content,
             )
             # print(updated_content)
@@ -1393,7 +1395,7 @@ def print_settings(settings: JitSettings) -> None:
     cpu_daemon = f"{settings.procs_daemon}"
     task_proxy = f"{settings.app_nodes}"
     cpu_proxy = f"{settings.procs_proxy}"
-    task_cargo = f"{settings.app_nodes*settings.procs_cargo}"
+    task_cargo = f"{settings.app_nodes * settings.procs_cargo}"
     cpu_cargo = f"{settings.procs_cargo}"
     task_ftio = "1"
     cpu_ftio = f"{settings.procs_ftio}"
@@ -1405,7 +1407,7 @@ def print_settings(settings: JitSettings) -> None:
 ├─ address ftio   : {settings.address_ftio}
 ├─ port ftio      : {settings.port_ftio}
 ├─ node count     : 1
-└─ ftio node      : {settings.ftio_node_command.replace('--nodelist=', '')}"""
+└─ ftio node      : {settings.ftio_node_command.replace("--nodelist=", "")}"""
 
     gkfs_daemon_text = f"""
 ├─ gkfs daemon    : {settings.gkfs_daemon}
@@ -1526,7 +1528,7 @@ def print_settings(settings: JitSettings) -> None:
 ├─ run dir        : {settings.run_dir}
 ├─ realpath       : {os.path.realpath(settings.run_dir)}
 ├─ app nodes      : {settings.app_nodes}
-├─ app nodes list : {settings.app_nodes_command.replace('--nodelist=', '')}
+├─ app nodes list : {settings.app_nodes_command.replace("--nodelist=", "")}
 ├─ app            : {settings.app}
 ├─ app call       : {settings.app_call}
 └─ app flags      : {app_flags}
@@ -1681,7 +1683,6 @@ def check(settings: JitSettings) -> None:
 
     call = flaged_call(settings, f"ls -lahrt {settings.gkfs_mntdir}", exclude=["ftio"])
     try:
-
         files = subprocess.check_output(
             f"{call}",
             shell=True,
@@ -1718,7 +1719,7 @@ def generate_cluster_command(
     procs = nodes * procs_per_node
 
     if not settings.cluster:
-        call = f"mpiexec -np {procs} --oversubscribe " f"{additional_arguments} {call}"
+        call = f"mpiexec -np {procs} --oversubscribe {additional_arguments} {call}"
     else:
         if not node_list:
             node_list = f"--nodelist={settings.single_node}"
@@ -2049,7 +2050,7 @@ def srun_call(
         f"srun "
         f"--export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
         f"--jobid={settings.job_id} {node_list} --disable-status "
-        f"-N {nodes} --ntasks={nodes*procs} "
+        f"-N {nodes} --ntasks={nodes * procs} "
         f"--cpus-per-task={procs} --ntasks-per-node={procs} "
         f"--overcommit --overlap --oversubscribe --mem=0 "
         f"{settings.task_set_0} {command}"

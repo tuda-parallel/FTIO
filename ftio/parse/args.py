@@ -245,9 +245,18 @@ Full documentation:
             "--window_adaptation",
             dest="window_adaptation",
             type=str,
-            choices=["frequency_hits", "data"],
-            help='online time window adaptation. If set to frequency_hits, the time window is shifted on X "frequency hits" (a dominant frequency was found) to X times the last found period from the current instance. Alternatively it can be set to "data" to move the window to X times after data has been received',
+            choices=["frequency_hits", "data", "adwin", "cusum", "ph"],
+            help=(
+                "online window adaptation strategy. "
+                "'frequency_hits': shift the time window on X frequency hits to X times the last found period. "
+                "'data': move the window to X times after data has been received. "
+                "'adwin': Adaptive Windowing with automatic window sizing and mathematical guarantees. "
+                "'cusum': Cumulative Sum detection for rapid change detection. "
+                "'ph': Page-Hinkley test for sequential change point detection. "
+                "For 'adwin', 'cusum', and 'ph', the option '--gui' is supported to display detected change points."
+            ),
         )
+
         parser.set_defaults(window_adaptation="")
         parser.add_argument(
             "-hi",
@@ -271,6 +280,12 @@ Full documentation:
             help="avoids opening the generated HTML file since zmq is used",
         )
         parser.set_defaults(zmq=False)
+        parser.add_argument(
+            "--gui",
+            action="store_true",
+            help="enables forwarding prediction data to the FTIO GUI dashboard. Start the GUI first with 'ftio-gui' then run predictor with this flag.",
+        )
+        parser.set_defaults(gui=False)
         parser.add_argument(
             "--zmq_source",
             type=str,
@@ -313,7 +328,7 @@ Full documentation:
             default=4,
             help="Order of Butterworth filter.",
         )
-        # adaptive tsa arguments
+        # change_detection tsa arguments
         parser.add_argument(
             "--tfpf",
             type=int,

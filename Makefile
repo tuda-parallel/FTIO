@@ -116,7 +116,7 @@ test:
 
 check_style: check_tools
 	black .
-	ruff check --fix 
+	ruff check --fix
 # 	flake8 .
 
 check_tools:
