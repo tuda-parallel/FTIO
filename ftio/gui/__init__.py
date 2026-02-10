@@ -5,15 +5,11 @@ This module provides a Dash-based web dashboard for visualizing FTIO predictions
 and change point detection results in real-time.
 
 Author: Amine Aherbil
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2026 TU Darmstadt, Germany
 Date: January 2025
-
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
-https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
-
-Requires: pip install ftio-hpc[gui]
-"""
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 __all__ = [
     "FTIODashApp",

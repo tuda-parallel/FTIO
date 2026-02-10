@@ -1,3 +1,12 @@
+"""
+
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: ftio/iomodel/
+Date: Apr 2025
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
+
 import argparse
 import json
 import os

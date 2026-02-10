@@ -6,13 +6,12 @@ and change point detection results. It includes auto-updating visualizations,
 statistics display, and prediction selection controls.
 
 Author: Amine Aherbil
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
 Date: January 2025
-
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
-https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
-"""
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 import argparse
 import time
@@ -242,7 +241,6 @@ class FTIODashApp:
                 viz_component = dcc.Graph(figure=fig, style={"height": "600px"})
 
             elif view_mode == "dashboard":
-
                 fig = self._create_cosine_timeline_plot(self.data_store)
                 viz_component = dcc.Graph(figure=fig, style={"height": "600px"})
 
@@ -293,7 +291,6 @@ class FTIODashApp:
 
             rows = []
             for i, pred in enumerate(unique_preds):
-
                 row_style = {
                     "backgroundColor": "#ffffff" if i % 2 == 0 else "#f8f9fa",
                     "padding": "8px",
@@ -301,7 +298,6 @@ class FTIODashApp:
                 }
 
                 if pred.dominant_freq == 0 or pred.dominant_freq is None:
-
                     row = html.Tr(
                         [
                             html.Td(
@@ -324,7 +320,6 @@ class FTIODashApp:
                         style=row_style,
                     )
                 else:
-
                     change_point_text = ""
                     if pred.is_change_point and pred.change_point:
                         cp = pred.change_point

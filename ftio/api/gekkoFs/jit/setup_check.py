@@ -4,13 +4,12 @@ configuration files, generating test scripts, and executing them to ensure the e
 is correctly configured.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
 Date: Aug 2024
-
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
-https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
-"""
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 import os
 import time
@@ -39,7 +38,6 @@ def check_setup(settings: JitSettings):
     """
 
     if not settings.exclude_all:
-
         # Display MPI hostfile
         if settings.cluster:
             mpi_hostfile_path = os.path.expanduser(f"{settings.mpi_hostfile}")
@@ -58,7 +56,6 @@ def check_setup(settings: JitSettings):
         # console.print(f"[cyan]geko_ls {gkfs_mntdir}: \n{files}[/]")
 
         if settings.cluster and settings.debug_lvl > 0 and not settings.exclude_daemon:
-
             additional_arguments = ""
             timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
             file = create_test_file("test.sh" + timestamp, settings)

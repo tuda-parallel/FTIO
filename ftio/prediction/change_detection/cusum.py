@@ -289,7 +289,7 @@ def detect_pattern_change_cusum(
                 f"[bold red][CUSUM] CHANGE DETECTED! "
                 f"{reference:.1f}Hz → {current_freq:.1f}Hz "
                 f"(Δ={magnitude:.1f}Hz, {percent_change:.1f}% {change_type}) "
-                f"at sample {len(shared_resources.detector_frequencies)}, "
+                f"at sample {len(shared_resources.data)}, "
                 f"time={current_time:.3f}s[/]\n"
                 f"[red][CUSUM] CUSUM stats: sum_pos={sum_pos:.2f}, "
                 f"sum_neg={sum_neg:.2f}, threshold={threshold}[/]\n"

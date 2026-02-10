@@ -1,4 +1,12 @@
-"""Performs prediction with Pools (ProcessPoolExecutor) and a callback mechanism"""
+"""Performs prediction with Pools (ProcessPoolExecutor) and a callback mechanism
+
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Mär 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 from __future__ import annotations
 
@@ -27,8 +35,6 @@ def predictor_with_processes_zmq(
         args (list[str]): additional arguments passed to ftio
     """
     procs = []
-    context = zmq.Context()
-    socket = context.socket(socket_type=zmq.PULL)
     # parse arguments
     tmp_args = parse_args(args)
     addr = tmp_args.zmq_address
@@ -58,8 +64,6 @@ def predictor_with_processes_zmq(
                 CONSOLE.print(f"[cyan]Got message from {ranks}:[/]")
                 status.update("")
 
-                # launch prediction
-                # TODO: append b_app and t_app
                 procs.append(
                     handle_in_process(
                         prediction_process, args=(shard_resources, args, msgs)

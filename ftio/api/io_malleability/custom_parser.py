@@ -1,3 +1,12 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Mär 2025
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
+
 import argparse
 import json
 import os
@@ -84,7 +93,7 @@ def parse_txt(args, file_path):
         # Print a preview of the first few lines
         console.print(f"[green]Preview of the first {preview_rows} rows of data:[/]")
         for i in range(preview_rows):
-            console.print(f'{i}: {" | ".join(data[i])}')
+            console.print(f"{i}: {' | '.join(data[i])}")
 
         # Ask the user to map the appropriate columns
         console.print("\nPlease select the column to map to bandwidth:")

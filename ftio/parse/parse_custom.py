@@ -1,6 +1,13 @@
 """Parse text file contaiting three fields:
 the bandwidth, the start time, and the end time.
-"""
+
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Feb 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 from ftio.parse.simrun import Simrun
 from ftio.parse.txt_reader import extract

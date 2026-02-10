@@ -1,4 +1,12 @@
-"""Performs the analysis for prediction. This includes the calculation of ftio and parsing of the data into a queue"""
+"""Performs the analysis for prediction. This includes the calculation of ftio and parsing of the data into a queue
+
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Mai 2025
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 from __future__ import annotations
 
@@ -52,7 +60,7 @@ def ftio_process(shared_resources: SharedResources, args: Namespace, msgs=None) 
     args.extend(["-e", "no"])
     args.extend(["-ts", f"{shared_resources.start_time.value:.2f}"])
     # perform prediction
-    prediction_list, parsed_args = ftio_core.main(args, msgs)
+    prediction_list, parsed_args = ftio_core.main(args, msgs, shared_resources)
     if not prediction_list:
         log_to_gui_and_console(
             gui_enabled,
@@ -125,7 +133,7 @@ def ftio_process(shared_resources: SharedResources, args: Namespace, msgs=None) 
         "prediction_log",
         {"count": pred_id, "freq": dominant_freq},
     )
-    shared_resources.count.value += 1
+    # shared_resources.count.value += 1
 
 
 def window_adaptation(
@@ -258,15 +266,27 @@ def window_adaptation(
                     text += f"[purple][PREDICTOR] (#{prediction_count}):[/][red bold] Resetting start time to {t_s} sec\n[/]"
 
         # Data-based adaptation
-        elif "data" in args.window_adaptation and len(shared_resources.data) > 0:
-            text += f"[purple][PREDICTOR] (#{prediction_count}):[/][green]Trying time window adaptation: {prediction_count:.0f} =? {args.hits * shared_resources.hits.value:.0f}\n[/]"
-            if prediction_count == args.hits * shared_resources.hits.value:
-                # t_s = shared_resources.data[-shared_resources.count.value]['t_start']
-                # text += f'[bold purple][PREDICTOR] (#{prediction_count}):[/][green] Adjusting start time to t_start {t_s} sec\n[/]'
-                if len(shared_resources.t_flush) > 0:
-                    index = int(args.hits * shared_resources.hits.value - 1)
-                    t_s = shared_resources.t_flush[index]
-                    text += f"[bold purple][PREDICTOR] (#{prediction_count}):[/][green] Adjusting start time to t_flush[{index}] {t_s} sec\n[/]"
+        elif "data" in args.window_adaptation:
+            if len(shared_resources.data) > 0:
+                test = (
+                    np.floor(prediction_count / args.hits) if prediction_count != 0 else 0
+                )
+                text += f"[purple][PREDICTOR] (#{prediction_count}):[/][green] Trying time window adaptation: {test:.0f} =? {shared_resources.hits.value:.0f}\n[/]"
+                if (
+                    test == shared_resources.hits.value
+                    and shared_resources.hits.value > 0
+                ):
+                    # t_s = shared_resources.data[-shared_resources.count.value]['t_start']
+                    # text += f'[bold purple][PREDICTOR] (#{prediction_count}):[/][green] Adjusting start time to t_start {t_s} sec\n[/]'
+                    index = int(prediction_count - 1)
+                    shared_resources.hits.value = 0
+                    if len(shared_resources.t_flush) > 0:
+                        t_s = shared_resources.t_flush[index]
+                        text += f"[bold purple][PREDICTOR] (#{prediction_count}):[/][green] Adjusting start time to t_flush[{index}] {t_s} sec\n[/]"
+                    else:
+                        t_s = shared_resources.data[index]["t_end"]
+                        text += f"[bold purple][PREDICTOR] (#{prediction_count}):[/][green] Adjusting start time to t_end[{index}] {t_s} sec\n[/]"
+
                     shared_resources.online_detection["change_count"] += 1
                     shared_resources.online_detection["last_change_time"] = t_s
 
@@ -275,36 +295,47 @@ def window_adaptation(
                 f"Unknown online adaptation algorithm: {args.window_adaptation}"
             )
 
-    # ---------------------- Summary ----------------------
-    if not np.isnan(freq):
-        frequencies = [get_dominant(d) for d in list(shared_resources.data)]
-        frequencies.append(freq)
-        samples = len(frequencies)
-        changes = shared_resources.online_detection["change_count"]
-        recent_freqs = (
-            list(frequencies)[-5:] if len(frequencies) >= 5 else list(frequencies)
-        )
-        success_rate = (samples / prediction_count) * 100 if prediction_count > 0 else 0
+        # ---------------------- Summary ----------------------
+        if not np.isnan(freq):
+            frequencies = [get_dominant(d) for d in list(shared_resources.data)]
+            frequencies.append(freq)
+            samples = len(frequencies)
+            changes = shared_resources.online_detection["change_count"]
+            recent_freqs = (
+                list(frequencies)[-5:] if len(frequencies) >= 5 else list(frequencies)
+            )
+            success_rate = (
+                samples / (prediction_count + 1) * 100 if prediction_count + 1 > 0 else 0
+            )
 
-        text += f"\n[purple][PREDICTOR] (#{prediction_count}): [bold cyan]{'=' * 50}[/]\n"
-        text += f"[purple][PREDICTOR] (#{prediction_count}): [bold cyan]{args.window_adaptation.upper()} ANALYSIS (Prediction #{prediction_count})[/]\n"
-        text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Frequency detections: {samples}/{prediction_count} ({success_rate:.1f}% coverage)[/]\n"
-        text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Pattern changes detected: {changes}[/]\n"
-        text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Current frequency: {freq:.3f} Hz ({1 / freq:.2f}s period)[/]\n"
+            text += (
+                f"\n[purple][PREDICTOR] (#{prediction_count}): [bold cyan]{'=' * 50}[/]\n"
+            )
+            text += f"[purple][PREDICTOR] (#{prediction_count}): [bold cyan]{args.window_adaptation.upper()} ANALYSIS (Prediction #{prediction_count})[/]\n"
+            text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Frequency detections: {samples}/{prediction_count + 1} ({success_rate:.1f}% coverage)[/]\n"
+            text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Pattern changes detected: {changes}[/]\n"
+            text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Current frequency: {freq:.3f} Hz ({1 / freq:.2f}s period)[/]\n"
+            text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Time window: [{t_s:.2f} -- {t_e:.2f}] s[/]\n"
 
-        if samples > 1 and args.verbose:
-            text += f"[cyan][purple][PREDICTOR] (#{prediction_count}): Recent freq history: {[f'{f:.3f}Hz' for f in recent_freqs]}[/]\n"
-            if len(recent_freqs) >= 2:
-                trend = (
-                    "increasing"
-                    if recent_freqs[-1] > recent_freqs[-2]
-                    else "decreasing" if recent_freqs[-1] < recent_freqs[-2] else "stable"
-                )
-                text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Frequency trend: {trend}[/]\n"
+            if samples > 1 and args.verbose:
+                text += f"[cyan][purple][PREDICTOR] (#{prediction_count}): Recent freq history: {[f'{f:.3f}Hz' for f in recent_freqs]}[/]\n"
+                if len(recent_freqs) >= 2:
+                    trend = (
+                        "increasing"
+                        if recent_freqs[-1] > recent_freqs[-2]
+                        else (
+                            "decreasing"
+                            if recent_freqs[-1] < recent_freqs[-2]
+                            else "stable"
+                        )
+                    )
+                    text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Frequency trend: {trend}[/]\n"
 
-        text += f"[cyan][purple][PREDICTOR] (#{prediction_count}): {args.window_adaptation.upper()} window size: {samples} samples[/]\n"
-        text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]{args.window_adaptation.upper()} changes detected: {changes}[/]\n"
-        text += f"[purple][PREDICTOR] (#{prediction_count}): [bold cyan]{'=' * 50}[/]\n\n"
+            text += f"[cyan][purple][PREDICTOR] (#{prediction_count}): {args.window_adaptation.upper()} window size: {samples} samples[/]\n"
+            text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]{args.window_adaptation.upper()} changes detected: {changes}[/]\n"
+            text += (
+                f"[purple][PREDICTOR] (#{prediction_count}): [bold cyan]{'=' * 50}[/]\n\n"
+            )
 
     # TODO 1: Make sanity check -- see if the same number of bytes was transferred
     # TODO 2: Train a model to validate the predictions?
@@ -399,15 +430,16 @@ def display_result(
 
 def hits(args, prediction, shared_resources):
     text = ""
-    if "frequency_hits" in args.window_adaptation:
-        if len(prediction.dominant_freq) == 1:
-            shared_resources.hits.value += 1
+    if args.window_adaptation is not None:
+        if "frequency_hits" in args.window_adaptation:
+            if len(prediction.dominant_freq) == 1:
+                shared_resources.hits.value += 1
+                text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Current hits {shared_resources.hits.value}\n"
+            else:
+                shared_resources.hits.value = 0
+                text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/][red bold] Resetting hits {shared_resources.hits.value}[/]\n"
+        elif "data" in args.window_adaptation:
+            shared_resources.hits.value = shared_resources.count.value // args.hits
             text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Current hits {shared_resources.hits.value}\n"
-        else:
-            shared_resources.hits.value = 0
-            text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/][red bold] Resetting hits {shared_resources.hits.value}[/]\n"
-    elif "data" in args.window_adaptation:
-        shared_resources.hits.value = shared_resources.count.value // args.hits
-        text += f"[purple][PREDICTOR] (#{shared_resources.count.value}):[/] Current hits {shared_resources.hits.value}\n"
 
     return text

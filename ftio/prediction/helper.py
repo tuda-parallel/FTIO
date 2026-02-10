@@ -1,4 +1,12 @@
-"""Helper functions"""
+"""Helper functions
+
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Feb 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 from __future__ import annotations
 
@@ -119,7 +127,7 @@ def format_jsonl(data: list[dict]) -> tuple[str, str]:
                 string += f'{{"params":{{"Processes":{ranks}}},"callpath":"{call_path}","metric":"Frequency (Hz)","value":{dominant_freq:e} }}\n'
                 out_ranks = ranks
                 if dominant_freq > 0:
-                    string += f'{{"params":{{"Processes":{ranks}}},"callpath":"{call_path}","metric":"Period (s)","value":{1/dominant_freq:e} }}\n'
+                    string += f'{{"params":{{"Processes":{ranks}}},"callpath":"{call_path}","metric":"Period (s)","value":{1 / dominant_freq:e} }}\n'
                 break
 
     return string, out_ranks

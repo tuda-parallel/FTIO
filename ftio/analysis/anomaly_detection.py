@@ -4,13 +4,12 @@ including Z-Score, DBSCAN, Isolation Forest, Local Outlier Factor, and peak dete
 includes utilities for removing harmonics and visualizing outliers.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
 Date: Feb 2024
-
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
-https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
-"""
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 from __future__ import annotations
 
@@ -124,16 +123,16 @@ def z_score(
         if len(z_k) > 0 and np.max(z_k) > 0
         else (np.array([], dtype=np.int64),)
     )
-    text += f"[green]mean[/]: {mean/np.sum(amp_tmp) if np.sum(amp_tmp) else 0:.3e}\n[green]std[/]: {std:.3e}\n"
-    text += f"Frequencies with Z-score > 3 -> [green]{len(z_k[z_k>3])}[/] candidates\n"
+    text += f"[green]mean[/]: {mean / np.sum(amp_tmp) if np.sum(amp_tmp) else 0:.3e}\n[green]std[/]: {std:.3e}\n"
+    text += f"Frequencies with Z-score > 3 -> [green]{len(z_k[z_k > 3])}[/] candidates\n"
     text += (
-        f"         + Z > Z_max*{tol*100}% > 3 -> [green]{len(index[0])}[/] candidates\n"
+        f"         + Z > Z_max*{tol * 100}% > 3 -> [green]{len(index[0])}[/] candidates\n"
     )
     if len(index[0]) > 3:
         counter = 0
         for i in index[0]:
             counter += 1
-            text += f"           {counter}) {1/freq_arr[i+1]:.3f} s: z_k = {z_k[i]/np.max(z_k):.2f}\n"
+            text += f"           {counter}) {1 / freq_arr[i + 1]:.3f} s: z_k = {z_k[i] / np.max(z_k):.2f}\n"
 
     index, removed_index, msg = remove_harmonics(freq_arr, amp_tmp, indices[index[0]])
     text += msg
@@ -440,9 +439,9 @@ def dominant(
     if len(dominant_index) > 0:
         for i in dominant_index:
             if any(freq_arr[i] % freq_arr[out] < 0.00001):
-                text += f"[yellow]Ignoring harmonic at: {freq_arr[i]:.3e} Hz (T = {1/freq_arr[i] if freq_arr[i] > 0 else 0:.3f} s, k = {i}) -> confidence: {abs(conf[i-1])*100:.3f}%[/]\n"
+                text += f"[yellow]Ignoring harmonic at: {freq_arr[i]:.3e} Hz (T = {1 / freq_arr[i] if freq_arr[i] > 0 else 0:.3f} s, k = {i}) -> confidence: {abs(conf[i - 1]) * 100:.3f}%[/]\n"
             else:
-                text += f"Dominant frequency at: [green]{freq_arr[i]:.3e} Hz (T = {1/freq_arr[i] if freq_arr[i] > 0 else 0:.3f} s, k = {i}) -> confidence: {abs(conf[i-1])*100:.3f}%[/]\n"
+                text += f"Dominant frequency at: [green]{freq_arr[i]:.3e} Hz (T = {1 / freq_arr[i] if freq_arr[i] > 0 else 0:.3f} s, k = {i}) -> confidence: {abs(conf[i - 1]) * 100:.3f}%[/]\n"
                 out.append(i)
             if len(out) > 2:
                 text = "[red]Too many dominant frequencies -> Signal might be not periodic[/]\n"
@@ -480,7 +479,7 @@ def remove_harmonics(freq_arr, amp_tmp, index_list) -> tuple[np.ndarray, list, s
                 if freq_arr[ind] % freq_arr[value] < 0.00001 and ind != value:
                     msg += (
                         f"[yellow]Ignoring harmonic at: {freq_arr[ind]:.3e} Hz "
-                        f"(T = {1/freq_arr[ind] if freq_arr[ind] > 0 else 0:.3f} s, k = {ind})[/]\n"
+                        f"(T = {1 / freq_arr[ind] if freq_arr[ind] > 0 else 0:.3f} s, k = {ind})[/]\n"
                     )
                     removed.append(ind)
                     flag = False
