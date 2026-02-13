@@ -102,7 +102,7 @@ def plot_filter_results_plotly(args, b, filtered_signal, as_subplots=True):
             rows=2,
             cols=1,
             subplot_titles=("Time-Domain Signal", "Magnitude Response"),
-            sharedx=False,
+            shared_xaxes=False,
         )
 
         # Time-Domain traces
