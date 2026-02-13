@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Okt 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import numpy as np
 
 from ftio.freq.prediction import Prediction
@@ -18,10 +28,7 @@ class PhaseMode:
             raise AttributeError(f"'MyClass' object has no attribute '{attribute}'")
 
     def match(self, d: dict):
-        if any(n in d.metric for n in self.matches):
-            return True
-        else:
-            return False
+        return bool(any(n in d.metric for n in self.matches))
 
     def add(self, d: dict) -> None:
         self.data.append(d)

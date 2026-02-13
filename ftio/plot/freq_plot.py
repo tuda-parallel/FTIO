@@ -1,9 +1,18 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Sep 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 from __future__ import annotations
 
 from argparse import Namespace
 
 from ftio.freq._analysis_figures import AnalysisFigures
-from ftio.freq.freq_html import create_html
 from ftio.freq.prediction import Prediction
 
 
@@ -19,6 +28,5 @@ def convert_and_plot(
        list_analysis_figures (list[AnalysisFigures]): List of AnalysisFigures containing the data to plot.
     """
 
-    conf = {"toImageButtonOptions": {"format": "png", "scale": 4}}
     for analysis_figures in list_analysis_figures:
         analysis_figures.show()

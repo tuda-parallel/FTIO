@@ -1,9 +1,17 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import numpy as np
 
 from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
 from ftio.parse.bandwidth import overlap
-from ftio.plot.freq_plot import convert_and_plot
 from ftio.processing.print_output import display_prediction
 
 ranks = 10

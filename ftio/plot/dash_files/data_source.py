@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Feb 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import pandas as pd
 
 import ftio.plot.dash_files.constants.io_mode as io_mode
@@ -156,7 +166,7 @@ class DataSource:
         self._ranks_unique.sort()
 
     def _init_file_data_dictionary(self):
-        self._file_data_by_filename: dict[str, FileData] = dict()
+        self._file_data_by_filename: dict[str, FileData] = {}
         for idx, filename in enumerate(self._filenames):
             self._file_data_by_filename[filename] = FileData(
                 idx,

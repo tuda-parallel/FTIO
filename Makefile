@@ -47,14 +47,14 @@ ftio_debug_venv: override PYTHON = .venv/bin/python3
 ftio_debug_venv: ftio_debug
 
 ftio_debug: 
-	$(PYTHON) -m pip install -e '.[external-libs,development-libs]' --no-cache-dir || \
+	$(PYTHON) -m pip install -e '.[external-libs,development-libs,plot-libs]' --no-cache-dir || \
 	(echo "Installing external libs failed, trying fallback..." && $(PYTHON) -m pip install -e . --no-cache-dir)
 
 ftio: 
 	$(PYTHON) -m pip install . 
 
 ftio_full: 
-	$(PYTHON) -m pip install '.[external-libs,development-libs]'
+	$(PYTHON) -m pip install '.[external-libs,development-libs,plot-libs]'
 venv: 
 	$(PYTHON) -m venv .venv 
 	@echo -e "Environment created. Using python from .venv/bin/python3" 
@@ -77,15 +77,15 @@ clean: clean_project
 
 
 docker:
-	cd docker && docker build -t freq_io:1.0 .
+	docker build -f docker/Dockerfile -t freq_io:1.0 .
 
 
 docker_run:
-	cd docker && docker run -v "$$PWD/examples/tmio/JSONL/8.jsonl:/freq_io/8.jsonl" -t freq_io:1.0 ftio 8.jsonl -e no 
+	docker run -v "$$PWD/examples/tmio/JSONL/8.jsonl:/freq_io/8.jsonl" -t freq_io:1.0 8.jsonl -e no
 
 
 docker_interactive:
-	cd docker && docker run -ti   freq_io:1.0
+	docker run -ti --entrypoint /bin/bash freq_io:1.0
 
 
 
@@ -116,7 +116,7 @@ test:
 
 check_style: check_tools
 	black .
-	isort .
+	ruff check --fix
 # 	flake8 .
 
 check_tools:

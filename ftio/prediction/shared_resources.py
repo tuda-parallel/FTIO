@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Dez 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 from multiprocessing import Manager
 
 
@@ -19,15 +29,18 @@ class SharedResources:
         self.hits = self.manager.Value("d", 0.0)
         # Start time window for ftio
         self.start_time = self.manager.Value("d", 0.0)
-        # Number of prediction
+        # Number of predictions
         self.count = self.manager.Value("i", 0)
         # Bandwidth and time appended between predictions
         self.b_app = self.manager.list()
         self.t_app = self.manager.list()
         # For triggering cargo
         self.sync_trigger = self.manager.Queue()
-        # saves when the dada ti received from gkfs
+        # saves when the data is received from gkfs
         self.t_flush = self.manager.list()
+
+        # Change point detection shared state
+        self.online_detection = self.manager.dict()
 
     def restart(self):
         """Restart the manager and reinitialize shared resources."""

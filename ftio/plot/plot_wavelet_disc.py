@@ -1,7 +1,14 @@
 """
 This module contains functions for plotting discrete wavelet transforms and their spectra
 using Matplotlib and Plotly.
-"""
+
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Feb 2025
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 from argparse import Namespace
 
@@ -10,8 +17,6 @@ import numpy as np
 import plotly.graph_objects as go
 import pywt
 from plotly.subplots import make_subplots
-
-from ftio.freq.freq_html import create_html
 
 ####################################################################################################
 #! Deprecated functions
@@ -432,7 +437,7 @@ def plotly_wavelet_disc_spectrum(
             y=freq_labels,  # Frequency bands (now reversed)
             z=coeffs_magnitude,  # Magnitude
             colorscale="Viridis",  # Color mapping
-            colorbar=dict(title="Magnitude"),
+            colorbar={"title": "Magnitude"},
         )
     )
 
@@ -440,15 +445,15 @@ def plotly_wavelet_disc_spectrum(
     fig.update_layout(
         title="Wavelet Spectrum",
         height=500,
-        xaxis=dict(
-            title="Time (s)",
+        xaxis={
+            "title": "Time (s)",
             # range=[t[0], t[-1]],  # Ensures full time range
-        ),
-        yaxis=dict(
-            title="Frequency ranges ",
+        },
+        yaxis={
+            "title": "Frequency ranges ",
             # autorange=False,
             # range=[freq_labels[0], freq_labels[-1]],
-        ),
+        },
     )
 
     return fig

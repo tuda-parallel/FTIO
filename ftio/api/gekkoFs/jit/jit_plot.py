@@ -4,13 +4,12 @@ containing experimental data for JIT, JIT no FTIO, and Pure modes. It includes
 functions to extract data, process it, and generate visualizations.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
 Date: Dec 2024
-
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
-https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
-"""
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 import argparse
 import json
@@ -113,7 +112,7 @@ def extract_and_plot(
         all (bool): Flag to control whether to call add_dict or add_all (default is False).
     """
     # Open the file and load the JSON data
-    with open(json_file_path, "r") as json_file:
+    with open(json_file_path) as json_file:
         data = json.load(json_file)
 
     # Sort the data by 'nodes'

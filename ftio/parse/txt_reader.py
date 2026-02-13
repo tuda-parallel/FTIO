@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Feb 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import re
 import sys
 import time
@@ -59,7 +69,7 @@ def extract(path: str, args: list, custom: bool = False) -> tuple[dict, int]:
 
 def read(file_path, patterns):
     results = {}
-    with open(file_path, "r") as file:
+    with open(file_path) as file:
         data = file.read()
         for key, pattern in patterns.items():
             match = re.search(pattern, data)
@@ -67,9 +77,9 @@ def read(file_path, patterns):
                 if "," in match.group(1):
                     # If the matched group contains commas, split and convert to integers
                     tmp = match.group(1).replace(", ", ",")
-                    results[key] = list(
+                    results[key] = [
                         float(val) if "." in val else int(val) for val in tmp.split(",")
-                    )
+                    ]
 
                 else:
                     results[key] = int(match.group(1))

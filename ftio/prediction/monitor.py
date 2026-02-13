@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Feb 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 from __future__ import annotations
 
 import fcntl
@@ -12,7 +22,7 @@ from ftio.multiprocessing.async_process import join_procs
 CONSOLE = Console()
 
 
-def monitor(name: str, _cached_stamp: str, procs: list = []) -> tuple[str, list]:
+def monitor(name: str, _cached_stamp: str, procs: list = None) -> tuple[str, list]:
     """Monitors a file for change and can optionally join processes in the mean time
 
     Args:
@@ -23,6 +33,8 @@ def monitor(name: str, _cached_stamp: str, procs: list = []) -> tuple[str, list]
     Returns:
         str: _description_
     """
+    if procs is None:
+        procs = []
     return monitor_stat(name, _cached_stamp, procs)
     # try:
     #     return monitor_stat(name, _cached_stamp, procs)
@@ -63,7 +75,7 @@ def monitor_stat(name: str, _cached_stamp: str, procs: list) -> tuple[str, list]
 
 
 def monitor_list(
-    name: list, n_buffers, _cached_stamp: dict = {}, procs: list = []
+    name: list, n_buffers, _cached_stamp: dict = None, procs: list = None
 ) -> tuple[dict, list]:
     """Monitors a file for changes
 
@@ -75,6 +87,10 @@ def monitor_list(
     Returns:
         str: _description_
     """
+    if procs is None:
+        procs = []
+    if _cached_stamp is None:
+        _cached_stamp = {}
     if not _cached_stamp:
         stamp = {}
         for i in name:

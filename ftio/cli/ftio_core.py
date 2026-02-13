@@ -8,9 +8,9 @@ Currently Darshan, recorder, and traces generated with our internal tool TMIO an
 call ftio -h to see list of supported arguments.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2026 TU Darmstadt, Germany
 Date: Feb 2024
-
+Version: v0.0.7
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
@@ -30,7 +30,7 @@ from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
 from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
 from ftio.freq.autocorrelation import find_autocorrelation
-from ftio.freq.helper import MyConsole
+from ftio.freq.helper import MyConsole, append_messages
 from ftio.freq.prediction import Prediction
 from ftio.freq.time_window import data_in_time_window
 from ftio.parse.extract import get_time_behavior_and_args
@@ -40,7 +40,7 @@ from ftio.processing.print_output import display_prediction
 
 
 def main(
-    cmd_input: list[str], msgs=None
+    cmd_input: list[str], msgs=None, shared_resource=None
 ) -> tuple[list[Prediction], Namespace]:  # -> dict[Any, Any]:
     """
     Main entry point to process input data, perform frequency analysis, and generate predictions.
@@ -55,6 +55,7 @@ def main(
     Args:
         cmd_input (list[str]): A list of input strings containing the command-line arguments or data.
         msgs (optional): ZMQ message, in case the input is not provided via a file.
+        shared_resource (optional): Shared resources among processes, in case of predictor analysis.
 
     Returns:
         tuple[list[Prediction], Namespace]:
@@ -69,6 +70,10 @@ def main(
     console.print(f"\n[cyan]Data imported in:[/] {time.time() - start:.2f} s")
     console.print(f"[cyan]Frequency Analysis:[/] {args.transformation.upper()}")
     console.print(f"[cyan]Mode:[/] {args.mode}")
+
+    # Handle shared resource
+    if shared_resource is not None:
+        data = append_messages(data, shared_resource)
 
     list_analysis_figures = []
     list_predictions = []
@@ -85,7 +90,7 @@ def main(
     display_prediction(args, list_predictions)
     # TODO: convert an plot only if autocorrelation is passed
     convert_and_plot(args, list_predictions, list_analysis_figures)
-    console.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
+    console.print(f"[cyan]Total elapsed time:[/] {time.time() - start:.3f} s\n")
 
     return list_predictions, args
 
@@ -167,8 +172,8 @@ def freq_analysis(
     #! Init
     bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
     time_b = data["time"] if "time" in data else np.array([])
-    total_bytes = data["total_bytes"] if "total_bytes" in data else 0
-    ranks = data["ranks"] if "ranks" in data else 0
+    total_bytes = data.get("total_bytes", 0)
+    ranks = data.get("ranks", 0)
 
     #! Extract relevant data
     bandwidth, time_b, text = data_in_time_window(
@@ -190,6 +195,36 @@ def freq_analysis(
         prediction, analysis_figures, share = ftio_wavelet_cont(
             args, bandwidth, time_b, ranks
         )
+
+    elif any(t in args.transformation for t in ("astft", "efd", "vmd")):
+        # TODO: add a way to pass the results to FTIO
+        try:
+            import vmdpy  # noqa: F401
+        except ImportError:
+            raise RuntimeError(
+                "ASTFT transformation is disabled.\n"
+                "Install with: pip install ftio[amd-libs]"
+            ) from None
+
+        if "astft" in args.transformation:
+            import sys
+
+            from ftio.freq._astft_workflow import ftio_astft
+
+            prediction, analysis_figures, share = ftio_astft(
+                args, bandwidth, time_b, total_bytes, ranks, text
+            )
+            sys.exit()
+
+        if "efd" in args.transformation or "vmd" in args.transformation:
+            import sys
+
+            from ftio.freq._amd_workflow import ftio_amd
+
+            prediction, analysis_figures, share = ftio_amd(
+                args, bandwidth, time_b, total_bytes, ranks, text
+            )
+            sys.exit()
 
     else:
         raise Exception("Unsupported decomposition specified")

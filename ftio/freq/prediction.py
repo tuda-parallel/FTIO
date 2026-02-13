@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Mai 2025
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import numpy as np
 
 
@@ -388,7 +398,7 @@ class Prediction:
         if not np.isnan(freq) and self._n_samples != 0:
             if t_sampled is None:
                 t_sampled = self._t_start + np.arange(0, self._n_samples) * 1 / self._freq
-            if freq != 0 and not freq == self._freq / 2:
+            if freq != 0 and freq != self._freq / 2:
                 amp *= 2 / self._n_samples
             else:
                 amp *= 1 / self._n_samples

@@ -1,16 +1,15 @@
 """
 This module provides functionality for managing data staging in GekkoFS using Cargo. It includes
-adaptive triggering based on predictions, environment setup for Cargo operations, and efficient
+change_detection triggering based on predictions, environment setup for Cargo operations, and efficient
 data transfer mechanisms.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
 Date: Mar 2025
-
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
-https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
-"""
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 import argparse
 import os
@@ -84,9 +83,7 @@ def trigger_flush(sync_trigger: Queue, args: argparse.Namespace) -> None:
     """
     if "flush" in args.strategy:
         strategy_avoid_interference(sync_trigger, args)
-    elif "job_end" in args.strategy:
-        pass
-    elif "buffer_size" in args.strategy:
+    elif "job_end" in args.strategy or "buffer_size" in args.strategy:
         pass
     else:
         raise ValueError("Unknown strategy")
@@ -161,8 +158,8 @@ def strategy_avoid_interference(sync_trigger: Queue, args: argparse.Namespace) -
     # if set to skip, the trigger will skip the latest_prediction if a new one is available
     # if set to cancel, the latest latest_prediction is canceled
     # if empty, cargo is triggered with each latest_prediction
-    # adaptive = ""
-    # adaptive = "skip"
+    # change_detection = ""
+    # change_detection = "skip"
     adaptive = "cancel"
     not_in_time = 0
     skipped = 0
@@ -191,7 +188,7 @@ def strategy_avoid_interference(sync_trigger: Queue, args: argparse.Namespace) -
                         remaining_time = target_time - gkfs_elapsed_time
                         CONSOLE.print(
                             f"[bold green][Trigger {latest_prediction['source']}][/][green]\n"
-                            f"Probability   : {latest_prediction['probability']*100:.0f}%\n"
+                            f"Probability   : {latest_prediction['probability'] * 100:.0f}%\n"
                             f"Elapsed time  : {gkfs_elapsed_time:.3f} s\n"
                             f"Target time   : {target_time:.3f} s\n"
                             f"--> trigger in {remaining_time:.3f} s[/]\n"
@@ -336,8 +333,8 @@ def parse_args_data_stager(
         default="ofi+sockets://127.0.0.1:62000",
     )
     parser.add_argument(
-        "--adaptive",
-        dest="adaptive",
+        "--change_detection",
+        dest="change_detection",
         help="Adaptive flag for flushing",
         default="cancel",
         choices={"skip", "cancel", ""},

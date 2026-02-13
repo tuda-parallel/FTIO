@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Aug 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
@@ -12,7 +22,9 @@ CONSOLE = MyConsole()
 CONSOLE.set(True)
 
 
-def phases_and_timeseries(metrics, data, argv=[]):
+def phases_and_timeseries(metrics, data, argv=None):
+    if argv is None:
+        argv = []
     phasemode_list, t = classify_waves(data, True)
 
     if argv and "-n" in argv:
@@ -22,7 +34,9 @@ def phases_and_timeseries(metrics, data, argv=[]):
         plot_waves_and_timeseries(argv, metrics, phasemode_list, t)
 
 
-def phases(data, argv=[]):
+def phases(data, argv=None):
+    if argv is None:
+        argv = []
     phasemode_list, t = classify_waves(data)
 
     if argv and "-n" in argv:

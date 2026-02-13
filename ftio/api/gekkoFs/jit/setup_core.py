@@ -4,13 +4,12 @@ including the Gekko daemon, proxy, cargo, and FTIO. It also includes functions f
 data in and out, and executing pre- and post-application calls.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
 Date: Aug 2024
-
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
-https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
-"""
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 import os
 
@@ -143,7 +142,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
         wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run)
 
     if not settings.exclude_daemon:
-        jit_print(f"[green]############## Gkfs init finished ##############\n\n\n\n ")
+        jit_print("[green]############## Gkfs init finished ##############\n\n\n\n ")
 
 
 #! Start Proxy
@@ -198,7 +197,7 @@ def start_gekko_proxy(settings: JitSettings) -> None:
             _ = monitor_log_file(settings.gkfs_proxy_err, "Error Proxy")
 
     if not settings.exclude_proxy:
-        jit_print(f"[green]############## Proxy init finished ##############\n\n\n\n ")
+        jit_print("[green]############## Proxy init finished ##############\n\n\n\n ")
 
 
 #! start Cargo
@@ -257,7 +256,7 @@ def start_cargo(settings: JitSettings) -> None:
         # if settings.verbose_error:
         #     _ = monitor_log_file(settings.cargo_err,"Error Cargo")
 
-        process = execute_background_and_log(
+        execute_background_and_log(
             settings, call, settings.cargo_log, "cargo", settings.cargo_err
         )
         if settings.verbose_error:
@@ -274,7 +273,7 @@ def start_cargo(settings: JitSettings) -> None:
         time.sleep(4)
 
     if not settings.exclude_cargo:
-        jit_print(f"[green]############## Cargo init finished ##############\n\n\n\n ")
+        jit_print("[green]############## Cargo init finished ##############\n\n\n\n ")
 
 
 #! start FTIO
@@ -400,7 +399,7 @@ def start_ftio(settings: JitSettings) -> None:
             )
         time.sleep(8)
     if not settings.exclude_ftio:
-        jit_print(f"[green]############## FTIO init finished ##############\n\n\n\n ")
+        jit_print("[green]############## FTIO init finished ##############\n\n\n\n ")
 
 
 #! Stage in
@@ -487,7 +486,7 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
         # adjust regex for flushing
         adjust_regex(settings, "flush")
     if not settings.exclude_all:
-        jit_print(f"[green]############## Stage-in finished ##############\n\n\n\n ")
+        jit_print("[green]############## Stage-in finished ##############\n\n\n\n ")
 
 
 #! Stage out
@@ -504,7 +503,6 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             f"[bold yellow]############## Skipping  Stage out [/][black][{get_time()}][/]"
         )
     else:
-
         jit_print(
             f"[bold green]############## Staging out [/][black][{get_time()}][/]\n",
             f"[cyan]Moving data from {settings.gkfs_mntdir} -> {settings.stage_out_path}[/]",
@@ -528,7 +526,6 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             jit_move(settings)
             elapsed_time(settings, runtime, "Stage out", time.time() - start)
         else:
-
             if not settings.dry_run:
                 try:
                     call = flaged_call(
@@ -571,7 +568,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             relevant_files(settings)
             time.sleep(5)
     if not settings.exclude_all:
-        jit_print(f"[green]############## Stage-Out finished ##############\n\n\n\n ")
+        jit_print("[green]############## Stage-Out finished ##############\n\n\n\n ")
 
 
 #! App call
@@ -630,7 +627,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 # f"strace -f -e trace=read,write,open,close,stat,fstat,lseek,access -o /gpfs/fs1/home/tarrafah/strace_n{settings.app_nodes}_p{settings.procs_app}.txt mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
                 # f" cd {settings.run_dir} && time -p mpiexec --mca errhandler ftmpi --mca mpi_abort_print_stack 1  -np {settings.app_nodes*settings.procs_app} --oversubscribe "
                 # ssh {settings.single_node} 'pwd && cd {settings.run_dir} && pwd  && ls && hostname
-                f" cd {settings.run_dir} && time -p  mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+                f" cd {settings.run_dir} && time -p  mpiexec -np {settings.app_nodes * settings.procs_app} --oversubscribe "
                 f"--hostfile {settings.mpi_hostfile} --map-by node "
                 f"{additional_arguments} "
                 f"{settings.task_set_1} {settings.app_call} {settings.app_flags}"
@@ -660,7 +657,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f" cd {settings.run_dir} && time -p srun "
                 f"--export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
                 f"--jobid={settings.job_id} {settings.app_nodes_command} --disable-status "
-                f"-N {settings.app_nodes} --ntasks={settings.app_nodes*settings.procs_app} "
+                f"-N {settings.app_nodes} --ntasks={settings.app_nodes * settings.procs_app} "
                 f"--cpus-per-task={settings.procs_app} --ntasks-per-node={settings.procs_app} "
                 f"--overcommit --overlap --oversubscribe --mem=0 "
                 f"{settings.task_set_1} {app_call} {settings.app_flags}"
@@ -738,7 +735,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
     os.chdir(original_dir)
     jit_print(f"Changing directory to {os.getcwd()}")
 
-    jit_print(f"[green]############## Application finished ##############\n\n\n\n ")
+    jit_print("[green]############## Application finished ##############\n\n\n\n ")
 
 
 #! Pre app call
@@ -779,7 +776,7 @@ def pre_call(settings: JitSettings) -> None:
         #     settings.pre_app_call, settings.app_log
         # )
         jit_print(
-            f"[green]############## Pre-application call finished ##############\n\n\n\n "
+            "[green]############## Pre-application call finished ##############\n\n\n\n "
         )
 
 
@@ -817,5 +814,5 @@ def post_call(settings: JitSettings) -> None:
                     settings.dry_run,
                 )
         jit_print(
-            f"[green]############## Post-application call finished ##############\n\n\n\n "
+            "[green]############## Post-application call finished ##############\n\n\n\n "
         )

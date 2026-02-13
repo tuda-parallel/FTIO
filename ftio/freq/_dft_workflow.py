@@ -1,4 +1,12 @@
-"""Contains functions that execute workflow using the discrete Fourier Transform."""
+"""Contains functions that execute workflow using the discrete Fourier Transform.
+
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Jan 2025
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 import time
 from argparse import Namespace
@@ -84,7 +92,7 @@ def ftio_dft(
     # welch(bandwidth,freq)
 
     #!  Find the dominant frequency
-    (dominant_index, conf[1 : int(n / 2) + 1], outlier_text) = outlier_detection(
+    dominant_index, conf[1 : int(n / 2) + 1], outlier_text = outlier_detection(
         amp, frequencies, args
     )
 
@@ -146,7 +154,7 @@ def ftio_dft(
         )
         if not args.autocorrelation:
             plot_dft(args, prediction, analysis_figures)
-        console.print(f" --- Done --- \n")
+        console.print(" --- Done --- \n")
 
     if args.autocorrelation:
         share.set_data_from_predicition(b_sampled, prediction)

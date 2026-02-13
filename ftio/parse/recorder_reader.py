@@ -5,7 +5,14 @@ This function can be also executed as a standalone. Just call:
 
 Returns:
     list[dict]: _description_
-"""
+
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Feb 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 import os
 import sys
@@ -46,7 +53,7 @@ def extract_data(path: str, args) -> tuple[list, int]:
     for root, _, files in os.walk(path):
         for file in sorted(files, key=len):
             file = os.path.join(root, file)
-            current_file = open(file, "r")
+            current_file = open(file)
             current_file = current_file.readlines()
             # data.extend([k for k in f if 'MPI_File_w' in k or 'MPI_File_r' in k])
             data.extend([k for k in current_file if " write " in k or " read " in k])

@@ -1,4 +1,12 @@
-"""Module contains function functions to discretize the data."""
+"""Module contains function functions to discretize the data.
+
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Feb 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 from __future__ import annotations
 
@@ -64,18 +72,16 @@ def sample_data(
         text += f"Recommended sampling frequency: {freq:.3e} Hz\n"
         # Apply limit if freq is negative
         N = int(np.floor((t[-1] - t[0]) * freq))
-        # N = N + 1 if N != 0 else 0  # include end point
         limit_N = int(memory_limit // np.dtype(np.float64).itemsize)
         text += f"memory limit: {memory_limit/ 1000**3:.3e} GB ({limit_N} samples)\n"
-        if N > limit_N:
+        if limit_N < N:
             N = limit_N
             freq = N / duration if duration > 0 else 10
             text += f"[yellow]Adjusted sampling frequency due to memory limit: {freq:.3e} Hz[/])\n"
     else:
         text += f"Sampling frequency:  {freq:.3e} Hz\n"
-        # Compute the number of samples
+        # Compute number of samples
         N = int(np.floor((t[-1] - t[0]) * freq))
-        # N = N + 1 if N != 0 else 0  # include end point
 
     text += f"Expected samples: {N}\n"
     # print("    '-> \033[1;Start time: %f s \033[1;0m"%t[0])
@@ -152,7 +158,7 @@ def sample_data_same_size(
     counter = 0
     t_step = 0
     n = len(b)
-    for k in range(0, n_bins):
+    for _k in range(0, n_bins):
         if (t_step < t[0]) or (t_step > t[-1]):
             counter = counter + 1
         else:

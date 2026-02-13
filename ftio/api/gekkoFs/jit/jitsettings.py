@@ -2,13 +2,12 @@
 JIT Settings
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
 Date: Aug 2024
-
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
-https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
-"""
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 import os
 import re
@@ -270,10 +269,10 @@ class JitSettings:
             self.log_suffix = self.log_suffix.replace("F", "")
 
         if self.set_tasks_affinity:
-            self.task_set_0 = f"taskset -c 0-{np.floor(self.procs/2)-1:.0f}"
+            self.task_set_0 = f"taskset -c 0-{np.floor(self.procs / 2) - 1:.0f}"
             if self.procs - np.floor(self.procs / 2) >= self.procs_app:
                 self.task_set_1 = (
-                    f"taskset -c {np.ceil(self.procs/2):.0f}-{self.procs-1:.0f}"
+                    f"taskset -c {np.ceil(self.procs / 2):.0f}-{self.procs - 1:.0f}"
                 )
 
     def set_log_dirs(self):
@@ -504,8 +503,8 @@ class JitSettings:
         # ├─ wrf
         elif "wrf" in self.app:
             if self.exclude_daemon:
-                self.pre_app_call = f"cd /lustre/project/nhr-gekko/tarraf/WRF/test/em_real; du -sh wrfout_d0* ; rm -rf wrfout_d0* rsl.*.*"
-                self.post_app_call = f""
+                self.pre_app_call = "cd /lustre/project/nhr-gekko/tarraf/WRF/test/em_real; du -sh wrfout_d0* ; rm -rf wrfout_d0* rsl.*.*"
+                self.post_app_call = ""
             else:
                 self.run_dir = f"{self.gkfs_mntdir}"
                 self.pre_app_call = f"cd /lustre/project/nhr-gekko/tarraf/WRF/test/em_real_stagein; du -sh wrfout_d0* ; rm -rf wrfout_d0* rsl.*.*; mkdir -p {self.run_dir}; cp /lustre/project/nhr-gekko/tarraf/WRF/test/em_real_stagein/wrf.exe {self.run_dir}"
@@ -536,7 +535,7 @@ class JitSettings:
         # ├─ WRF
         elif "wrf" in self.app:
             self.stage_in_path = (
-                f"/lustre/project/nhr-gekko/tarraf/WRF/test/em_real_stagein"
+                "/lustre/project/nhr-gekko/tarraf/WRF/test/em_real_stagein"
             )
             # self.stage_in_path = f"/lustre/project/nhr-gekko/tarraf/WRF/test/em_real"
             self.stage_out_path = "/lustre/project/nhr-gekko/tarraf/stage-out"
@@ -638,7 +637,7 @@ class JitSettings:
             # Create the folder if it doesn't exist
             os.makedirs(self.stage_in_path, exist_ok=True)
             os.makedirs(self.stage_out_path, exist_ok=True)
-            with open(os.path.join(self.stage_in_path, "test.txt"), "w") as f:
+            with open(os.path.join(self.stage_in_path, "test.txt"), "w"):
                 pass
 
             if "dlio" in self.app:

@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Apr 2025
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import os
 from multiprocessing import Event, Pool, Process
 from time import sleep
@@ -89,7 +99,7 @@ class DataControl:
             full_path = os.path.join(self.settings.gkfs_mntdir, file)
             # Prepare the command for moving the file
             # 1) get time now:
-            now = gkfs_call(self.settings, f"date +%s")
+            now = gkfs_call(self.settings, "date +%s")
 
             # 2) check the time:
             out_time = gkfs_call(self.settings, f"stat -c %Y {full_path}")

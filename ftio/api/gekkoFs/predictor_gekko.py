@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Mär 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import glob
 
 from rich.console import Console
@@ -15,7 +25,7 @@ from ftio.prediction.probability_analysis import find_probability
 from ftio.prediction.shared_resources import SharedResources
 
 
-def main(args: list[str] = []) -> None:
+def main(args: list[str] = None) -> None:
     """
     Main function to monitor files and launch prediction processes.
 
@@ -30,6 +40,8 @@ def main(args: list[str] = []) -> None:
         KeyboardInterrupt: When the function is interrupted by the user.
     """
 
+    if args is None:
+        args = []
     n_buffers = 4
     args = ["-e", "plotly", "-f", "0.01"]
     # path=r'/d/github/FTIO/examples/API/gekkoFs/JSON/*.json'
@@ -109,7 +121,10 @@ def prediction_process(
     # display results
     text = display_result(freq, prediction, shared_resources=shared_resources)
     # data analysis to decrease window
-    text += window_adaptation(parsed_args, prediction, freq, shared_resources)
+    adaptation_text, _, _ = window_adaptation(
+        parsed_args, prediction, freq, shared_resources
+    )
+    text += adaptation_text
     console.print(text)
     while not shared_resources.queue.empty():
         shared_resources.data.append(shared_resources.queue.get())

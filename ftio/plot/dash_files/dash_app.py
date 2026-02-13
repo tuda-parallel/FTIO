@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Feb 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import importlib.util
 import sys
 
@@ -76,7 +86,7 @@ class IOAnalysisApp(DashProxy):
                     id=id.DROPDOWN_FILE,
                     multi=True,
                     style={"marginTop": 10},
-                    disabled=(True if self._plot_core.data.args.merge_plots else False),
+                    disabled=(bool(self._plot_core.data.args.merge_plots)),
                 ),
                 dcc.Checklist(
                     options=self._io_modes,

@@ -4,7 +4,14 @@ Module for Dynamic Time Warping (DTW) calculations.
 This module provides functionality for computing DTW distances using either
 a NumPy-based implementation or FastDTW (if available). It also supports
 multi-threaded DTW evaluation for improved performance.
-"""
+
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Sep 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 import importlib.util
 from threading import Thread

@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Feb 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
@@ -50,12 +60,12 @@ class StackPlot:
             self.fig.update_layout(
                 xaxis_title="Time (s)",
                 yaxis_title="Bandwidth (B/s)",
-                font=dict(family="Courier New, monospace", size=24),
+                font={"family": "Courier New, monospace", "size": 24},
                 width=width,
                 height=height / 1.1,
                 template=template,
             )
-            self.fig.update_layout(legend=dict(groupclick="toggleitem"))
+            self.fig.update_layout(legend={"groupclick": "toggleitem"})
             self.fig.show()
         elif "mat" in self.engine:
             plt.stackplot(self.t, self.b, baseline="zero")

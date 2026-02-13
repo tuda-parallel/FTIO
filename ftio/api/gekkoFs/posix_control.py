@@ -6,13 +6,12 @@ efficiently. It also includes mechanisms for monitoring file modification times 
 compatibility with GekkoFS libraries.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
 Date: Apr 2025
-
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
-https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
-"""
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
 
 import argparse
 import math
@@ -77,7 +76,9 @@ def move_files_os(
         flush_using_tar(args, items_to_submit)
 
 
-def flush_using_tar(args: argparse.Namespace, items_to_submit: list[str] = []):
+def flush_using_tar(args: argparse.Namespace, items_to_submit: list[str] = None):
+    if items_to_submit is None:
+        items_to_submit = []
     tar_cmd = f"tar -rf {args.stage_out_path}/data.tar {' '.join(items_to_submit)}"
     CONSOLE.print(
         f"[bold green][Trigger][/] taring {len(items_to_submit)} items to {args.stage_out_path})\n"
@@ -92,7 +93,7 @@ def flush_using_tar(args: argparse.Namespace, items_to_submit: list[str] = []):
     delete_items(args, items_to_submit)
     CONSOLE.print(
         f"[bold green][Trigger][/][green]: Tar time for {len(items_to_submit)}: tarred in {tar_time} s, "
-        f"deleted in {time.time()-start} s[/]\n"
+        f"deleted in {time.time() - start} s[/]\n"
     )
 
 
@@ -303,7 +304,7 @@ def copy_file_and_unlink(args: argparse.Namespace, item: str) -> None:
 
     CONSOLE.print(
         f"[bold green][Trigger][/][green]: Times  for {item}: copied in {copy_time} s, "
-        f"deleted in {time.time()-start} s[/]\n"
+        f"deleted in {time.time() - start} s[/]\n"
     )
 
 
@@ -570,8 +571,8 @@ def jit_move(settings: JitSettings) -> None:
         default=False,
     )
     parser.add_argument(
-        "--adaptive",
-        dest="adaptive",
+        "--change_detection",
+        dest="change_detection",
         help="Adaptive flag for flushing",
         default="cancel",
         choices={"skip", "cancel", ""},

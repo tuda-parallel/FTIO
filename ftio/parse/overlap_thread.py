@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Feb 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 from threading import Thread
 
 import numpy as np
@@ -5,8 +15,10 @@ import numpy as np
 
 class overlap_thread(Thread):
     # constructor
-    def __init__(self, ts, te, b_rank_sum, b_rank_avr=[]):
+    def __init__(self, ts, te, b_rank_sum, b_rank_avr=None):
         # execute the base constructor
+        if b_rank_avr is None:
+            b_rank_avr = []
         Thread.__init__(self)
         # set out values
         self.n_overlap = []

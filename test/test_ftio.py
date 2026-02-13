@@ -12,44 +12,47 @@ from ftio.processing.print_output import display_prediction
 def test_ftio_core_no_input():
     """Test the core functionality of ftio with no input and no extra options."""
     args = parse_args(["-e", "no"], "ftio")
-    _ = core({}, args)
-    assert True
+    prediction, analysis_figures = core({}, args)
+    assert prediction.is_empty()
+    assert analysis_figures is not None
 
 
 def test_ftio_core_no_input_autocorrelation():
     """Test the core functionality of ftio with no input and autocorrelation."""
     args = parse_args(["-e", "no", "-au"], "ftio")
-    _ = core({}, args)
-    assert True
+    prediction, analysis_figures = core({}, args)
+    assert prediction.is_empty()
+    assert analysis_figures is not None
 
 
 def test_ftio_core():
     """Test the core functionality of ftio with no extra options."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
-    args = [
-        "ftio",
-        file,
-        "-e",
-        "no",
-    ]
-    _ = core({}, args)
-    assert True
+    args = ["ftio", file, "-e", "no"]
+    prediction, parsed_args = main(args)
+    assert len(prediction) > 0
+    assert not prediction[-1].is_empty()
+    assert prediction[-1].t_start == 0.05309
 
 
 def test_ftio_core_autocorrelation():
     """Test the core functionality of ftio with autocorrelation."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no", "-au"]
-    _ = core({}, args)
-    assert True
+    prediction, parsed_args = main(args)
+    assert len(prediction) > 0
+    assert not prediction[-1].is_empty()
+    assert prediction[-1].t_start == 0.05309
 
 
 def test_ftio_n_freq():
     """Test the core functionality of ftio with obtaining n frequencies."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no", "-n", "5"]
-    _, args = main(args)
-    assert True
+    prediction, parsed_args = main(args)
+    assert len(prediction) > 0
+    assert not prediction[-1].is_empty()
+    assert len(prediction[-1].top_freqs["freq"]) == 5
 
 
 def test_ftio_zscore():
@@ -88,6 +91,8 @@ def test_ftio_display_prediction():
     """Test the display prediction functionality of ftio."""
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no"]
-    prediction, args = main(args)
-    display_prediction(args, prediction)
-    assert True
+    prediction, parsed_args = main(args)
+    assert len(prediction) > 0
+    assert not prediction[-1].is_empty()
+    result = display_prediction(parsed_args, prediction)
+    assert result is None

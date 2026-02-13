@@ -4,6 +4,8 @@ Functions for testing the parsing functionality of the ftio package.
 
 import os
 
+import pandas as pd
+
 from ftio.freq.helper import get_mode
 from ftio.parse.extract import extract_fields, get_time_behavior_and_args
 from ftio.parse.scales import Scales
@@ -24,7 +26,11 @@ def test_scales():
         "no",
     ]
     data = Scales(args)
-    assert True
+
+    assert isinstance(data, Scales)
+    assert data.args is not None
+    assert data.n >= 1
+    assert len(data.s) >= 1
 
 
 def test_assign_data():  # type: ignore
@@ -45,8 +51,16 @@ def test_assign_data():  # type: ignore
     # assign the different fields in data (read/write sync/async and io time)
     data.assign_data()
     # extract mode of interest
-    _ = get_mode(data, data.args.mode)
-    assert True
+    mode = get_mode(data, data.args.mode)
+
+    assert hasattr(data, "df_wst")
+    assert hasattr(data, "df_wat")
+    assert hasattr(data, "df_rst")
+    assert hasattr(data, "df_rat")
+    assert hasattr(data, "df_time")
+
+    assert mode is not None
+    assert isinstance(mode, tuple)
 
 
 def test_get_io_mode():
@@ -67,7 +81,10 @@ def test_get_io_mode():
     # assign the different fields in data (read/write sync/async and io time)
     args = data.args
     df = data.get_io_mode(args.mode)
-    assert True
+
+    assert isinstance(df, tuple)
+    assert len(df) == 5
+    assert all(isinstance(d, pd.DataFrame) for d in df)
 
 
 def test_get_time_behavior_and_args():
@@ -85,7 +102,12 @@ def test_get_time_behavior_and_args():
         "no",
     ]
     data, args = get_time_behavior_and_args(args)
-    assert True
+
+    assert isinstance(data, list)
+    assert len(data) > 0
+    assert "bandwidth" in data[0]
+    assert "time" in data[0]
+    assert args is not None
 
 
 def test_extract_fields():
@@ -104,4 +126,8 @@ def test_extract_fields():
     ]
     data, args = get_time_behavior_and_args(args)
     b_sampled, time_b, ranks, total_bytes = extract_fields(data)
-    assert True
+
+    assert len(b_sampled) > 0
+    assert len(time_b) > 0
+    assert isinstance(ranks, int)
+    assert isinstance(total_bytes, int)

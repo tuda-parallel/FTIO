@@ -1,3 +1,13 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.7
+Date: Jul 2024
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import numpy as np
 
 from ftio.cli.ftio_core import core
@@ -6,7 +16,6 @@ from ftio.cli.ftio_core import core
 # from ftio.plot.freq_plot import convert_and_plot
 from ftio.freq.helper import MyConsole
 from ftio.parse.args import parse_args
-from ftio.plot.freq_plot import convert_and_plot
 from ftio.processing.print_output import display_prediction
 
 CONSOLE = MyConsole()
@@ -71,23 +80,50 @@ def ftio_metric_task_save(
 ) -> None:
     prediction = ftio_metric_task(metric, arrays, argv, ranks, show)
     # freq = get_dominant(prediction) #just get a single dominant value
-    if prediction:
-        # data.append(
-        #     {
-        #         "metric": f"{metric}",
-        #         "dominant_freq": prediction.dominant_freq,
-        #         "conf": prediction.conf,
-        #         "amp": prediction.amp,
-        #         "phi": prediction.phi,
-        #         "t_start": prediction.t_start,
-        #         "t_end": prediction.t_end,
-        #         "total_bytes": prediction.total_bytes,
-        #         "ranks": prediction.ranks,
-        #         "freq": prediction.freq,
-        #         "top_freq": prediction.top_freqs,
-        #     }
-        # )
-        prediction.metric = metric
-        data.append(prediction)
+    names = []
+    if prediction.top_freqs:
+        freqs = prediction.top_freqs["freq"]
+        amps = prediction.top_freqs["amp"]
+        phis = prediction.top_freqs["phi"]
+
+        for f, a, p in zip(freqs, amps, phis, strict=True):
+            names.append(prediction.get_wave_name(f, a, p))
+
+        data.append(
+            {
+                "metric": f"{metric}",
+                "dominant_freq": prediction.dominant_freq,
+                "conf": prediction.conf,
+                "amp": prediction.amp,
+                "phi": prediction.phi,
+                "t_start": prediction.t_start,
+                "t_end": prediction.t_end,
+                "total_bytes": prediction.total_bytes,
+                "ranks": prediction.ranks,
+                "freq": float(prediction.freq),
+                "top_freq": prediction.top_freqs,
+                "n_samples": prediction.n_samples,
+                "wave_names": names,
+            }
+        )
+    # if prediction:
+    # data.append(
+    #     {
+    #         "metric": f"{metric}",
+    #         "dominant_freq": prediction.dominant_freq,
+    #         "conf": prediction.conf,
+    #         "amp": prediction.amp,
+    #         "phi": prediction.phi,
+    #         "t_start": prediction.t_start,
+    #         "t_end": prediction.t_end,
+    #         "total_bytes": prediction.total_bytes,
+    #         "ranks": prediction.ranks,
+    #         "freq": prediction.freq,
+    #         "top_freq": prediction.top_freqs,
+    #     }
+    # )
+    # caused issues with msgpack serialization
+    # prediction.metric = metric
+    # data.append(prediction)
     else:
         CONSOLE.info(f"\n[yellow underline]Warning: {metric} returned {prediction}[/]")
