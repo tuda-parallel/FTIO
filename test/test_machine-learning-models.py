@@ -1,4 +1,4 @@
-from machine_learning_models import *
+from ftio.machine_learning_models.machine_learning_models import *
 
 """
 Tests for the active workflow (and application) of the implemented models, dataset and functions.
