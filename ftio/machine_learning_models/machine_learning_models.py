@@ -20,16 +20,16 @@ from ftio.parse.scales import Scales
 from ftio.prediction.unify_predictions import merge_predictions
 
 """
-Example Description: 
-This module contains the entry points for extracting data for training and prediction purpose, 
+Example Description:
+This module contains the entry points for extracting data for training and prediction purpose,
 the hybrid-model, the ARIMA and SARIMA models and their training and forecasting functions.
 As utility it contains a custom dataset intended for the hybrid-model but was initially planned for general purpose use.
 
-Author: Robert Alles  
-Copyright (c) 2025 TU Darmstadt, Germany  
+Author: Robert Alles
+Copyright (c) 2025 TU Darmstadt, Germany
 Date: <January 2026>
 
-Licensed under the BSD 3-Clause License.  
+Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
@@ -470,7 +470,7 @@ def __predict_next_trace(model, dataset):
             # calculate MAE, MSE and RMSE
             mae = 0
             mse = 0
-            for actual, predicted in zip(future, pred_sequence):
+            for actual, predicted in zip(future, pred_sequence, strict=False):
                 inner = actual.item() - predicted[0]
                 mae = mae + abs(inner)
                 mse = mse + (inner * inner)
@@ -480,7 +480,6 @@ def __predict_next_trace(model, dataset):
                 n = 1
             mae = mae / n
             mse = mse / n
-            rmse = np.sqrt(mse)
 
             print("Predicted Bandwidth Trace:")
             print(pred_sequence)
