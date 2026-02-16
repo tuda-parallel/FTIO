@@ -127,6 +127,11 @@ plot-libs = [
     "trace_updater",
 ]
 
+ml-libs = [
+    "torch",
+    "statsmodels"
+]
+
 [tool.setuptools.dynamic]
 version = { attr = "ftio.__version__" }
 readme = { file = ["README.md"] }

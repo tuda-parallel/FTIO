@@ -54,7 +54,7 @@ ftio:
 	$(PYTHON) -m pip install . 
 
 ftio_full: 
-	$(PYTHON) -m pip install '.[external-libs,development-libs,plot-libs]'
+	$(PYTHON) -m pip install '.[external-libs,development-libs,plot-libs,ml-libs]'
 venv: 
 	$(PYTHON) -m venv .venv 
 	@echo -e "Environment created. Using python from .venv/bin/python3" 

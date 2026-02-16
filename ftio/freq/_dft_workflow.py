@@ -156,7 +156,7 @@ def ftio_dft(
             plot_dft(args, prediction, analysis_figures)
         console.print(" --- Done --- \n")
 
-    if args.autocorrelation:
+    if args.autocorrelation or args.machine_learning:
         share.set_data_from_predicition(b_sampled, prediction)
 
     precision_text = ""

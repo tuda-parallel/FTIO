@@ -1,22 +1,29 @@
+import importlib.util
 import os
 from math import inf
 
 import numpy as np
 import pandas
 import pandas as pd
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from statsmodels.tsa.arima.model import ARIMA
-from statsmodels.tsa.statespace.sarimax import SARIMAX
-from statsmodels.tsa.stattools import adfuller, kpss
-from torch.utils.data import Dataset
+
+TORCH_AVAILABLE = importlib.util.find_spec("torch") is not None
+if TORCH_AVAILABLE:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    import torch.optim as optim
+    from statsmodels.tsa.arima.model import ARIMA
+    from statsmodels.tsa.statespace.sarimax import SARIMAX
+    from statsmodels.tsa.stattools import adfuller, kpss
+    from torch.utils.data import Dataset
+else:
+    raise RuntimeError(
+        "Tocrch module not found. Please install it using 'make full' or 'pip install ftio[ml-libs]'."
+    )
 
 from ftio.cli.ftio_core import freq_analysis
 from ftio.freq.autocorrelation import find_autocorrelation
-from ftio.parse.extract import get_time_behavior
-from ftio.parse.scales import Scales
+from ftio.parse.extract import get_time_behavior_and_args
 from ftio.prediction.unify_predictions import merge_predictions
 
 """
@@ -26,8 +33,8 @@ the hybrid-model, the ARIMA and SARIMA models and their training and forecasting
 As utility it contains a custom dataset intended for the hybrid-model but was initially planned for general purpose use.
 
 Author: Robert Alles
-Copyright (c) 2025 TU Darmstadt, Germany
-Date: <January 2026>
+Copyright (c) 2026 TU Darmstadt, Germany
+Date: January 2026
 
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
@@ -83,7 +90,6 @@ class BandwidthDataset(Dataset):
             self.num_parts = 3
 
         for seq in data_list:
-
             seq = torch.tensor(seq, dtype=torch.float32)
             bandwidth = seq[:, 0].unsqueeze(-1)
 
@@ -237,10 +243,11 @@ def train_hybrid_model(
         frequency = []
         # extraction of data through frequency analysis for darshan & json
         if x.endswith(".darshan") | x.endswith(".jsonl"):
+            cmd_input = ["ftio", x]
             if additional_ftio_args is not None:
-                frequency, set = extract(cmd_input=["ftio", x, additional_ftio_args])
-            else:
-                frequency, set = extract(cmd_input=["ftio", x])
+                cmd_input += additional_ftio_args
+                print(cmd_input)
+            frequency, set = extract(cmd_input=cmd_input)
 
         # extraction from .csv files of the sdumont traces ; not a general method to extract from any .csv file
         if x.endswith(".csv"):
@@ -401,10 +408,10 @@ def predict_next_sequence(
         frequency = []
         # extraction of data through frequency analysis for darshan & json
         if x.endswith(".darshan") | x.endswith(".jsonl"):
+            cmd_input = ["ftio", x]
             if additional_ftio_args is not None:
-                frequency, set = extract(cmd_input=["ftio", x, additional_ftio_args])
-            else:
-                frequency, set = extract(cmd_input=["ftio", x])
+                cmd_input += additional_ftio_args
+            frequency, set = extract(cmd_input=cmd_input)
         # extract data from traces obtained from sdumont dataset, most certainly not an approach for any .csv file
         if x.endswith(".csv"):
             csv_file = pandas.read_csv(x)
@@ -498,12 +505,9 @@ def extract(cmd_input, msgs=None) -> list:
         list[ n , list[bandwidth], ...]
     """
     # taken from get_time_behavior_and_args from extract.py
-    data = Scales(cmd_input, msgs)
-    args = data.args
-    df = data.get_io_mode(args.mode)
-    data = get_time_behavior(df)
-
+    data, args = get_time_behavior_and_args(cmd_input, msgs)
     dfs_out = [[], [], [], []]
+    args.machine_learning = True
     prediction = None
     # taken from ftio_core.py's main
     for sim in data:
@@ -517,7 +521,8 @@ def extract(cmd_input, msgs=None) -> list:
         prediction = merge_predictions(args, prediction_dft, prediction_auto, dfs_out)
 
     # extraction of the relevant data from the dataframes
-    b_sampled = dfs_out.b_sampled.tolist()
+    # b_sampled = dfs_out.b_sampled.tolist()
+    b_sampled = share.get("b_sampled")
 
     result = []
 
@@ -531,13 +536,16 @@ def extract(cmd_input, msgs=None) -> list:
     return [n, result]
 
 
-def train_arima(file_or_directory, max_depth=3, model_architecture="SARIMA"):
+def train_arima(
+    file_or_directory, max_depth=3, model_architecture="SARIMA", additional_ftio_args=None
+):
     """The entry point for training the ARIMA and SARIMA models
 
     Args:
         file_or_directory: the file or directory to train the ARIMA model
         max_depth: the maximum depth of the ARIMA model
         model_architecture: choose between SARIMA or ARIMA architecture
+        additional_ftio_args: additional supported ftio arguments that aren't the initial ftio call and files
 
     """
     # checks if file_or_path is either just a singular file OR a path to a directory with files
@@ -561,11 +569,13 @@ def train_arima(file_or_directory, max_depth=3, model_architecture="SARIMA"):
     predictions = []
     sequences = []
     for file in files:
-        n, bandwidth_sequence = extract(cmd_input=["ftio", file])
+        cmd_input = ["ftio", file]
+        if additional_ftio_args is not None:
+            cmd_input += additional_ftio_args
+        n, bandwidth_sequence = extract(cmd_input=cmd_input)
         sequences.append([n, bandwidth_sequence])
 
     for sequence in sequences:
-
         # initial min-max normalization
         min_val_initial, max_val_initial = inf, -inf
         for value in sequence[1]:
@@ -602,7 +612,6 @@ def train_arima(file_or_directory, max_depth=3, model_architecture="SARIMA"):
                 adf = 1.0
 
             while d is not max_depth and kps > 0.05 > adf:
-
                 partial_sequence = partial_sequence.diff()
                 d = d + 1
 

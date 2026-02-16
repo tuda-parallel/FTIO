@@ -251,6 +251,14 @@ Full documentation:
         )
         parser.set_defaults(autocorrelation=False)
         parser.add_argument(
+            "-ml",
+            "--machine_learning",
+            dest="machine_learning",
+            action="store_true",
+            help="if set, machine learning is enabled (api call only)",
+        )
+        parser.set_defaults(machine_learning=False)
+        parser.add_argument(
             "-w",
             "--window_adaptation",
             dest="window_adaptation",
