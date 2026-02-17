@@ -5,11 +5,11 @@ This module provides change_detection change point detection algorithms for dete
 I/O pattern changes in streaming data.
 It includes ADWIN: Adaptive Windowing with Hoeffding bounds for statistical guarantees
 
-
 Author: Amine Aherbil
-Copyright (c) 2025 TU Darmstadt, Germany
-Date: January 2025
 Editor: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Version: v0.0.8
+Date: January 2025
 
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:

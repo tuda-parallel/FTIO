@@ -1,3 +1,18 @@
+"""
+This module contains the entry points for extracting data for training and prediction purpose,
+the hybrid-model, the ARIMA and SARIMA models and their training and forecasting functions.
+As utility it contains a custom dataset intended for the hybrid-model but was initially planned for general purpose use.
+
+Author: Robert Alles
+Editor: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
+Date: January 2026
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import importlib.util
 import os
 from math import inf
@@ -22,21 +37,6 @@ else:
     )
 
 from ftio.cli import ftio_core
-
-"""
-Example Description:
-This module contains the entry points for extracting data for training and prediction purpose,
-the hybrid-model, the ARIMA and SARIMA models and their training and forecasting functions.
-As utility it contains a custom dataset intended for the hybrid-model but was initially planned for general purpose use.
-
-Author: Robert Alles
-Copyright (c) 2026 TU Darmstadt, Germany
-Date: January 2026
-
-Licensed under the BSD 3-Clause License.
-For more information, see the LICENSE file in the project root:
-https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
-"""
 
 
 class PositionalEncoding(nn.Module):

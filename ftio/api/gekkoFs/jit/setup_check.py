@@ -5,11 +5,13 @@ is correctly configured.
 
 Author: Ahmad Tarraf
 Copyright (c) 2026 TU Darmstadt, Germany
-Version: v0.0.7
+Version: v0.0.8
 Date: Aug 2024
+
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
-https://github.com/tuda-parallel/FTIO/blob/main/LICENSE"""
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
 
 import os
 import time
