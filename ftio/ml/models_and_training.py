@@ -21,10 +21,7 @@ else:
         "Tocrch module not found. Please install it using 'make full' or 'pip install ftio[ml-libs]'."
     )
 
-from ftio.cli.ftio_core import freq_analysis
-from ftio.freq.autocorrelation import find_autocorrelation
-from ftio.parse.extract import get_time_behavior_and_args
-from ftio.prediction.unify_predictions import merge_predictions
+from ftio.cli import ftio_core
 
 """
 Example Description:
@@ -246,7 +243,6 @@ def train_hybrid_model(
             cmd_input = ["ftio", x]
             if additional_ftio_args is not None:
                 cmd_input += additional_ftio_args
-                print(cmd_input)
             frequency, set = extract(cmd_input=cmd_input)
 
         # extraction from .csv files of the sdumont traces ; not a general method to extract from any .csv file
@@ -504,35 +500,19 @@ def extract(cmd_input, msgs=None) -> list:
     Returns:
         list[ n , list[bandwidth], ...]
     """
-    # taken from get_time_behavior_and_args from extract.py
-    data, args = get_time_behavior_and_args(cmd_input, msgs)
-    dfs_out = [[], [], [], []]
-    args.machine_learning = True
-    prediction = None
-    # taken from ftio_core.py's main
-    for sim in data:
-        # get prediction
-        # Perform frequency analysis (dft/wavelet)
-        prediction_dft, dfs_out, share = freq_analysis(args, sim)
-
-        # Perform autocorrelation if args.autocorrelation is true + Merge the results into a single prediction
-        prediction_auto = find_autocorrelation(args, sim, dfs_out, share)
-        # Merge results
-        prediction = merge_predictions(args, prediction_dft, prediction_auto, dfs_out)
-
-    # extraction of the relevant data from the dataframes
-    # b_sampled = dfs_out.b_sampled.tolist()
-    b_sampled = share.get("b_sampled")
-
     result = []
-
-    for x in b_sampled:
-        result.append([x])
-
-    # calculates the amount of partial patterns using the predicted dominant frequency of FTIO
     n = 3
-    if (prediction.dominant_freq.size != 0) and (prediction.dominant_freq[0] != 0):
-        n = int(prediction.t_end / (1 / prediction.dominant_freq[0]))
+    cmd_input.append("--machine_learning")
+    prediction_list, args = ftio_core.main(cmd_input)
+    # take only the latest for now
+    if prediction_list:
+        prediction = prediction_list[-1]
+        b_sampled = prediction._b_sampled
+        for x in b_sampled:
+            result.append([x])
+        # calculates the amount of partial patterns using the predicted dominant frequency of FTIO
+        if (prediction.dominant_freq.size != 0) and (prediction.dominant_freq[0] != 0):
+            n = int(prediction.t_end / (1 / prediction.dominant_freq[0]))
     return [n, result]
 
 

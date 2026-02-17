@@ -59,6 +59,7 @@ class Prediction:
         self._candidates = np.array([])
         self._ranges = np.array([])
         self._metric = ""
+        self._b_sampled = np.array([])
 
     @property
     def source(self):
@@ -248,6 +249,16 @@ class Prediction:
     @metric.setter
     def metric(self, value):
         self._metric = str(value)
+
+    @property
+    def b_sampled(self):
+        return self._b_sampled
+
+    @b_sampled.setter
+    def b_sampled(self, value):
+        if not isinstance(value, (list, np.ndarray)):
+            raise TypeError("b_sampled must be a list or numpy array")
+        self._b_sampled = value
 
     def get(self, key: str):
         """
@@ -456,7 +467,7 @@ class Prediction:
             if not np.isnan(f_d):
                 text = (
                     f"[cyan underline]Prediction results:[/]\n[cyan]Frequency:[/] {f_d:.3e} Hz"
-                    f"[cyan]->[/] {np.round(1/f_d, 4)} s\n"
+                    f"[cyan]->[/] {np.round(1 / f_d, 4)} s\n"
                     f"[cyan]Confidence:[/] {color_pred(c_d)}"
                     f"{np.round(c_d * 100, 2)}[/] %\n"
                 )

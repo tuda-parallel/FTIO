@@ -18,7 +18,6 @@ import numpy as np
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft_workflow import ftio_dft
 from ftio.freq._dft_x_dwt import analyze_correlation
-from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq._wavelet import wavelet_disc
 from ftio.freq._wavelet_helpers import (
     decomposition_level,
@@ -55,7 +54,6 @@ def ftio_wavelet_disc(
         total_bytes (int): total transferred bytes (default is 0).
     """
     # Default values for variables
-    share = SharedSignalData()
     prediction = {
         "source": {args.transformation},
         "dominant_freq": [],
@@ -90,7 +88,7 @@ def ftio_wavelet_disc(
     if args.level == 0:
         if method == "dft":
             args.transformation = "dft"
-            prediction, _, _ = ftio_dft(args, bandwidth, time_stamps, total_bytes, ranks)
+            prediction, _ = ftio_dft(args, bandwidth, time_stamps, total_bytes, ranks)
             if len(prediction.dominant_freq) > 0:
                 args.level = int(1 / (5 * prediction.get_dominant_freq()))
                 console.print(f"[green]Decomposition level adjusted to {args.level}[/]")
@@ -151,7 +149,7 @@ def ftio_wavelet_disc(
     if "dft_on_approx_coeff" in analysis:
         args.transformation = "dft"
         # Option 1: Filter using wavelet and call DFT on lowest last coefficient
-        prediction, analysis_figures_dft, share = ftio_dft(
+        prediction, analysis_figures_dft = ftio_dft(
             args, coefficients_upsampled[0], t_sampled, total_bytes, ranks
         )
         analysis_figures_wavelet += analysis_figures_dft
@@ -187,7 +185,7 @@ def ftio_wavelet_disc(
     elif "dft_x_dwt" in analysis:
         args.transformation = "dft"
         # 1): compute DFT on lowest last coefficient
-        prediction, analysis_figures_dft, share = ftio_dft(
+        prediction, analysis_figures_dft = ftio_dft(
             args, coefficients_upsampled[0], t_sampled, total_bytes, ranks
         )
         # 2) compare the results
@@ -205,4 +203,4 @@ def ftio_wavelet_disc(
         )
         exit()
 
-    return prediction, analysis_figures_wavelet, share
+    return prediction, analysis_figures_wavelet

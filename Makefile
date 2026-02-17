@@ -32,7 +32,7 @@ all: install
 install: clean venv ftio_venv msg 
 
 # Installs with external dependencies
-full: clean venv ftio_venv_full msg 
+full: venv ftio_venv_full msg
 
 # Installs debug version external dependencies
 debug: venv ftio_debug_venv msg 
@@ -54,7 +54,8 @@ ftio:
 	$(PYTHON) -m pip install . 
 
 ftio_full: 
-	$(PYTHON) -m pip install '.[external-libs,development-libs,plot-libs,ml-libs]'
+	$(PYTHON) -m pip install -e '.[external-libs,development-libs,plot-libs,ml-libs]' --no-cache-dir || \
+	(echo "Installing external libs failed, trying fallback..." && $(PYTHON) -m pip install -e . --no-cache-dir)
 venv: 
 	$(PYTHON) -m venv .venv 
 	@echo -e "Environment created. Using python from .venv/bin/python3" 
@@ -113,6 +114,13 @@ test_all:
 
 test:
 	cd test && python3 -m pytest && make clean
+
+test_parallel:
+	@python3 -m pip show pytest-xdist > /dev/null 2>&1 || python3 -m pip install pytest-xdist
+	cd test && python3 -m pytest -n 4 && make clean
+
+test_failed:
+	cd test && python3 -m pytest --ff && make clean
 
 check_style: check_tools
 	black .

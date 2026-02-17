@@ -27,7 +27,7 @@ def test_hybrid_model():
     model = train_hybrid_model(
         file, epochs=10, lr=0.003, additional_ftio_args=["-e", "no"]
     )
-    _ = predict_next_sequence(model, file)
+    _ = predict_next_sequence(model, file, additional_ftio_args=["-e", "no"])
     assert True
 
 
@@ -36,7 +36,7 @@ def test_hybrid_model_resume_training():
     Tests the saving of the hybrid model's checkpoint and resuming of training of the model.
     """
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
-    model = train_hybrid_model(
+    _ = train_hybrid_model(
         file, epochs=10, lr=0.003, save=True, additional_ftio_args=["-e", "no"]
     )
     model = train_hybrid_model(
@@ -46,7 +46,7 @@ def test_hybrid_model_resume_training():
         load_state_dict_and_optimizer_state="model_and_optimizer.pth",
         additional_ftio_args=["-e", "no"],
     )
-    _ = predict_next_sequence(model, file)
+    _ = predict_next_sequence(model, file, additional_ftio_args=["-e", "no"])
     assert True
 
 
@@ -57,8 +57,6 @@ def test_extract():
     file = os.path.join(os.path.dirname(__file__), "../examples/tmio/JSONL/8.jsonl")
     args = ["ftio", file, "-e", "no"]
     n, data = extract(args)
-    print(data)
-    print(n)
     assert True
 
 

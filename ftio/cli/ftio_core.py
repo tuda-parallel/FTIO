@@ -26,7 +26,6 @@ import numpy as np
 
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft_workflow import ftio_dft
-from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
 from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
 from ftio.freq.autocorrelation import find_autocorrelation
@@ -119,9 +118,11 @@ def core(sim: dict, args: Namespace) -> tuple[Prediction, AnalysisFigures]:
         return Prediction(), AnalysisFigures()
 
     # Perform frequency analysis (dft/wavelet)
-    prediction_freq_analysis, analysis_figures, share = freq_analysis(args, sim)
+    prediction_freq_analysis, analysis_figures = freq_analysis(args, sim)
     # Perform autocorrelation if args.autocorrelation is true + Merge the results into a single prediction
-    prediction_auto = find_autocorrelation(args, sim, analysis_figures, share)
+    prediction_auto = find_autocorrelation(
+        args, sim, analysis_figures, prediction_freq_analysis
+    )
     # Merge results
     prediction = merge_predictions(
         args, prediction_freq_analysis, prediction_auto, analysis_figures
@@ -130,9 +131,7 @@ def core(sim: dict, args: Namespace) -> tuple[Prediction, AnalysisFigures]:
     return prediction, analysis_figures
 
 
-def freq_analysis(
-    args: Namespace, data: dict
-) -> tuple[Prediction, AnalysisFigures, SharedSignalData]:
+def freq_analysis(args: Namespace, data: dict) -> tuple[Prediction, AnalysisFigures]:
     """
     Performs frequency analysis (DFT, continuous wavelet, or discrete wavelet) and prepares data for plotting.
 
@@ -153,20 +152,13 @@ def freq_analysis(
 
     Returns:
         tuple: A tuple containing:
-            - Prediction: Contains the prediction results, including:
+            - Prediction: Contains the prediction results, including
                 - "dominant_freq" (list): The identified dominant frequencies.
                 - "conf" (np.ndarray): Confidence values corresponding to the dominant frequencies.
                 - "t_start" (int): Start time of the analysis.
                 - "t_end" (int): End time of the analysis.
                 - "total_bytes" (int): Total bytes involved in the analysis.
             - AnalysisFigures
-            - SharedSignalData: Contains sampled data used for sharing (e.g., autocorrelation) containing
-            the following fields:
-                - "b_sampled" (np.ndarray): The sampled bandwidth data.
-                - "freq" (np.ndarray): Frequencies corresponding to the sampled data.
-                - "t_start" (int): Start time of the sampled data.
-                - "t_end" (int): End time of the sampled data.
-                - "total_bytes" (int): Total bytes from the sampled data.
     """
 
     #! Init
@@ -182,19 +174,17 @@ def freq_analysis(
 
     #! Perform transformation
     if "dft" in args.transformation:
-        prediction, analysis_figures, share = ftio_dft(
+        prediction, analysis_figures = ftio_dft(
             args, bandwidth, time_b, total_bytes, ranks, text
         )
 
     elif "wave_disc" in args.transformation:
-        prediction, analysis_figures, share = ftio_wavelet_disc(
+        prediction, analysis_figures = ftio_wavelet_disc(
             args, bandwidth, time_b, ranks, total_bytes
         )
 
     elif "wave_cont" in args.transformation:
-        prediction, analysis_figures, share = ftio_wavelet_cont(
-            args, bandwidth, time_b, ranks
-        )
+        prediction, analysis_figures = ftio_wavelet_cont(args, bandwidth, time_b, ranks)
 
     elif any(t in args.transformation for t in ("astft", "efd", "vmd")):
         # TODO: add a way to pass the results to FTIO
@@ -211,7 +201,7 @@ def freq_analysis(
 
             from ftio.freq._astft_workflow import ftio_astft
 
-            prediction, analysis_figures, share = ftio_astft(
+            prediction, analysis_figures = ftio_astft(
                 args, bandwidth, time_b, total_bytes, ranks, text
             )
             sys.exit()
@@ -221,7 +211,7 @@ def freq_analysis(
 
             from ftio.freq._amd_workflow import ftio_amd
 
-            prediction, analysis_figures, share = ftio_amd(
+            prediction, analysis_figures = ftio_amd(
                 args, bandwidth, time_b, total_bytes, ranks, text
             )
             sys.exit()
@@ -229,7 +219,7 @@ def freq_analysis(
     else:
         raise Exception("Unsupported decomposition specified")
 
-    return prediction, analysis_figures, share
+    return prediction, analysis_figures
 
 
 def run():

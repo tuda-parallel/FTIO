@@ -17,7 +17,6 @@ from scipy.signal import find_peaks
 
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft_workflow import ftio_dft
-from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq._wavelet import wavelet_cont
 from ftio.freq._wavelet_helpers import get_scales
 from ftio.freq.discretize import sample_data
@@ -49,7 +48,6 @@ def ftio_wavelet_cont(
         ranks (int): The rank value (default is 0).
     """
     #! Default values for variables
-    share = SharedSignalData()
     prediction = Prediction(args.transformation)
     console = MyConsole(verbose=args.verbose)
 
@@ -90,7 +88,7 @@ def ftio_wavelet_cont(
         use_dominant_only = False
         scales = []
         t_sampled = time_stamps[0] + np.arange(0, len(b_sampled)) * 1 / args.freq
-        prediction, analysis_figures, share = ftio_dft(args, b_sampled, t_sampled)
+        prediction, analysis_figures = ftio_dft(args, b_sampled, t_sampled)
         dominant_freq, _ = get_dominant_and_conf(prediction)
 
         # Adjust wavelet
@@ -237,4 +235,4 @@ def ftio_wavelet_cont(
         f"\n[cyan]{args.transformation.upper()} + {args.outlier} finished:[/] {time.time() - tik:.3f} s"
     )
 
-    return prediction, analysis_figures, share
+    return prediction, analysis_figures

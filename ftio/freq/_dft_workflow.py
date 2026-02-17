@@ -21,7 +21,6 @@ from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft import dft
 from ftio.freq._filter import filter_signal
 from ftio.freq._fourier_fit import fourier_fit
-from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq.discretize import sample_data
 from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
@@ -35,7 +34,7 @@ def ftio_dft(
     total_bytes: int = 0,
     ranks: int = 1,
     text: str = "",
-) -> tuple[Prediction, AnalysisFigures, SharedSignalData]:
+) -> tuple[Prediction, AnalysisFigures]:
     """
     Performs a Discrete Fourier Transform (DFT) on the sampled bandwidth data, finds the dominant frequency, followed by outlier
     detection to spot the dominant frequency. This function also  prepares the necessary outputs for plotting or reporting.
@@ -52,10 +51,8 @@ def ftio_dft(
         tuple:
             - prediction (Prediction): Contains prediction results including dominant frequency, confidence, amplitude, etc.
             - analysis_figures (AnalysisFigures): Data and plot figures.
-            - share (SharedSignalData): Contains shared information, including sampled bandwidth and total bytes.
     """
     #! Default values for variables
-    share = SharedSignalData()
     prediction = Prediction(args.transformation)
     analysis_figures = AnalysisFigures(args)
     console = MyConsole(verbose=args.verbose)
@@ -157,7 +154,7 @@ def ftio_dft(
         console.print(" --- Done --- \n")
 
     if args.autocorrelation or args.machine_learning:
-        share.set_data_from_predicition(b_sampled, prediction)
+        prediction.b_sampled = b_sampled
 
     precision_text = ""
     # precision_text = precision_dft(amp, phi, dominant_index, b_sampled, t_sampled, frequencies, args.engine)
@@ -175,4 +172,4 @@ def ftio_dft(
     console.print(
         f"\n[cyan]{args.transformation.upper()} + {args.outlier} finished:[/] {time.time() - tik:.3f} s"
     )
-    return prediction, analysis_figures, share
+    return prediction, analysis_figures
