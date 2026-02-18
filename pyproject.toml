@@ -145,6 +145,7 @@ filterwarnings = [
     "ignore::statsmodels.tools.sm_exceptions.InterpolationWarning",
     "ignore::statsmodels.tools.sm_exceptions.ConvergenceWarning",
     "ignore::UserWarning",
+    "ignore::DeprecationWarning:_plotly_utils",
 ]
 
 [tool.coverage.run]

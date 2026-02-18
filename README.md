@@ -376,10 +376,13 @@ the [EuroHPC ADMIRE project](https://admire-eurohpc.eu/).
 
 ## Publications
 
-1. A. Tarraf, A. Bandet, F. Boito, G. Pallez, and F. Wolf, “Capturing Periodic I/O Using Frequency Techniques,” in 2024
+1. A. Tarraf, A. Bandet, F. Boito, G. Pallez, and F. Wolf, "Capturing Periodic I/O Using Frequency Techniques," in 2024
    IEEE International Parallel and Distributed Processing Symposium (IPDPS), San Francisco, CA, USA, May 2024, pp. 1–14.
 
-2. A. Tarraf, A. Bandet, F. Boito, G. Pallez, and F. Wolf, “FTIO: Detecting I/O periodicity using frequency techniques.”
+2. A. Tarraf and F. Wolf, "Improving I/O Phase Predictions in Ftio Using Hybrid Wavelet-Fourier Analysis," Frontiers
+   in High Performance Computing (Volume 3 - 2025), Feb, 2026 (https://doi.org/10.3389/fhpcp.2025.1638924)
+
+3. Tarraf, A. Bandet, F. Boito, G. Pallez, and F. Wolf, “FTIO: Detecting I/O periodicity using frequency techniques.”
    arXiv preprint arXiv:2306.08601 (2023).
 
 <p align="right"><a href="#ftio">⬆</a></p>
