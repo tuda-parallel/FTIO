@@ -27,6 +27,7 @@ import numpy as np
 
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft_workflow import ftio_dft
+from ftio.freq._stft_workflow import ftio_stft
 from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
 from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
 from ftio.freq.autocorrelation import find_autocorrelation
@@ -186,6 +187,11 @@ def freq_analysis(args: Namespace, data: dict) -> tuple[Prediction, AnalysisFigu
 
     elif "wave_cont" in args.transformation:
         prediction, analysis_figures = ftio_wavelet_cont(args, bandwidth, time_b, ranks)
+
+    elif "stft" in args.transformation:
+        prediction, analysis_figures = ftio_stft(
+            args, bandwidth, time_b, total_bytes, ranks, text
+        )
 
     elif any(t in args.transformation for t in ("astft", "efd", "vmd")):
         # TODO: add a way to pass the results to FTIO

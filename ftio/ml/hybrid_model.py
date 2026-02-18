@@ -19,8 +19,6 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 
 import importlib.util
 
-import numpy as np
-
 TORCH_AVAILABLE = importlib.util.find_spec("torch") is not None
 if TORCH_AVAILABLE:
     import torch

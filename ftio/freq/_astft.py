@@ -58,8 +58,8 @@ def astft(b_sampled, freq, bandwidth, time_b, args):
 
 # mix & match
 def astft_3step(signal, freq, time_b, args, filtered=None):
-    if args.ptfr_window:
-        win_len = args.ptfr_window
+    if args.stft_window:
+        win_len = args.stft_window
     elif filtered is None:
         win_len = cm5(signal, freq)
     else:

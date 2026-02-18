@@ -42,10 +42,10 @@ def create_html(figs: list, render: str, configuration: dict, name: str = "freq"
             s = s + fig.to_html(config=configuration, include_plotlyjs=False) + "\n"
 
         template = template.format(plotly=get_plotlyjs(), plots=s)
-        with open(f"{name}.html", "a") as file:
-            file.write(template)
+        with open(f"{name}.html", "w") as file:
+            file.write(template.strip())
 
-        os.system(f"open ./{name}.html &\n")
+        os.system(f'open "./{name}.html" &\n')
         console.print(f"[cyan]{name}.html created[/cyan]")
     else:
         os.mkdir("io_predicition_anomality_images")

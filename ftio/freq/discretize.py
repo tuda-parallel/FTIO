@@ -99,8 +99,8 @@ def sample_data(
     # error   = 0
     # errorStep   = 0
     for _ in range(0, N):
-        for i in range(n_old, n):
-            if (t_step >= t[i]) and (t_step < t[i + 1]) or i == n - 1:
+        for i in range(min(n_old, n - 1), n):
+            if (t_step >= t[i]) and (t_step < t[i + 1]) if i < n - 1 else True:
                 n_old = i  # no need to iterate over entire array
                 b_sampled[counter] = b[i]
                 counter = counter + 1
@@ -109,7 +109,12 @@ def sample_data(
 
     #! Abstraction error
     v_a = np.sum(np.abs(b_sampled * np.repeat(1 / freq, len(b_sampled))))
-    v_0 = np.sum(b * (np.concatenate([t[1:], t[-1:]]) - t))
+    # Ensure lengths match for v_0 calculation
+    min_len = min(len(b), len(t))
+    b_sub = b[:min_len]
+    t_sub = t[:min_len]
+    v_0 = np.sum(b_sub * (np.concatenate([t_sub[1:], t_sub[-1:]]) - t_sub))
+
     # E = (abs(error))/(V0) if V0 > 0 else 0
     error = (abs(v_a - v_0)) / v_0 if v_0 > 0 else 0
     text += f"Abstraction error: {error:.5e}\n"

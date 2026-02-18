@@ -151,7 +151,7 @@ Full documentation:
             "--transformation",
             dest="transformation",
             type=str,
-            help="Specifies the frequency technique to use. Supported modes are: dft (default), wave_disc, and wave_cont",
+            help="Specifies the frequency technique to use. Supported modes are: dft (default), wave_disc, wave_cont, and stft",
         )
         parser.set_defaults(transformation="dft")
         parser.add_argument(
@@ -359,6 +359,12 @@ Full documentation:
             type=int,
             default=0,
             help="Window length of STFT in PTFR in ASTFT-based analysis.",
+        )
+        parser.add_argument(
+            "--stft_window",
+            type=int,
+            default=0,
+            help="Window length for STFT analysis in samples. If 0, it is automatically calculated based on the dominant frequency.",
         )
 
     #! IOPLOT Settings
