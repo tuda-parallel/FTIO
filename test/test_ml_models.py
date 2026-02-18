@@ -6,7 +6,7 @@ import pytest
 if importlib.util.find_spec("torch") is None:
     pytest.skip("Torch not available, skipping ML tests.", allow_module_level=True)
 
-from ftio.ml.models_and_training import (
+from ftio.ml import (
     BandwidthDataset,
     extract,
     predict_next_sequence,

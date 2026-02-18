@@ -23,7 +23,6 @@ import pandas
 TORCH_AVAILABLE = importlib.util.find_spec("torch") is not None
 if TORCH_AVAILABLE:
     import torch
-    import torch.optim as optim
 else:
     raise RuntimeError(
         "Torch module not found. Please install it using 'make full' or 'pip install ftio[ml-libs]'."
@@ -142,7 +141,7 @@ def train_model(model, dataset, epochs=3, lr=1e-3, load_optimizer=None, optimize
 
     Args:
         model: The hybrid model to be trained.
-        dataset: The bandwidth dataset containing all datapoints to train the model.
+        dataset: The bandwidth dataset contains all datapoints to train the model.
         epochs: The amount of epochs used to train the model.
         lr: The learn rate of the model.
         load_optimizer: Optimizer dic in case the model was previously trained and not lose the optimizer state.
@@ -154,12 +153,12 @@ def train_model(model, dataset, epochs=3, lr=1e-3, load_optimizer=None, optimize
     """
     # check if customizer needs to be loaded or initialized
     if optimizer is None:
-        optimizer = optim.AdamW(model.parameters(), lr=lr)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     if load_optimizer is not None:
         optimizer.load_state_dict(load_optimizer)
 
     # beginning of the training loop
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.5, patience=3
     )
     model.train()
@@ -346,7 +345,7 @@ def extract(cmd_input, msgs=None) -> list:
         msgs: ZMQ message (not used / no use intended yet)
 
     Returns:
-        list[ n , list[bandwidth], ...]
+        list[ n, list[bandwidth], ...]
     """
     result = []
     n = 3

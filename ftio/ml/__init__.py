@@ -9,8 +9,7 @@ This module provides machine learning models for I/O bandwidth prediction:
 - train_arima: Training function for ARIMA/SARIMA models
 - extract: Data extraction function using FTIO frequency analysis
 
-Author: Robert Alles
-Editor: Ahmad Tarraf
+Author: Ahmad Tarraf
 Copyright (c) 2026 TU Darmstadt, Germany
 Date: January 2026
 
@@ -20,6 +19,7 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 # Re-export for backward compatibility with models_and_training imports
+from ftio.ml.arima import train_arima
 from ftio.ml.hybrid_model import (
     BandwidthDataset,
     HybridModel,
@@ -32,7 +32,6 @@ from ftio.ml.hybrid_training import (
     train_hybrid_model,
     train_model,
 )
-from ftio.ml.arima import train_arima
 
 __all__ = [
     "BandwidthDataset",
