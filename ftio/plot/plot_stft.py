@@ -269,6 +269,9 @@ def plot_stft_plotly_dominant_freq(args, prediction, b_sampled, fs, t_stft):
         template="plotly",
     )
 
+    # Put legend inside
+    fig.update_layout(legend={"yanchor": "top", "y": 0.99, "xanchor": "right", "x": 0.99})
+
     return format_plot(fig)
 
 
@@ -277,7 +280,7 @@ def plot_stft_matplotlib_dominant_freq(args, prediction, b_sampled, fs, t_stft):
     Plots the dominant frequency tracking over time using Matplotlib.
     Includes a secondary axis for period (T=1/f).
     """
-    fig, ax1 = plt.subplots(figsize=(12, 4))
+    fig, ax1 = plt.subplots(figsize=(10, 4))
 
     ax1.plot(
         t_stft, prediction.dominant_freq, "r-o", label="Dominant Frequency", markersize=4
@@ -298,6 +301,10 @@ def plot_stft_matplotlib_dominant_freq(args, prediction, b_sampled, fs, t_stft):
 
     fig.suptitle("Dominant Frequency in Each STFT Window")
     ax1.grid(True)
+    # Put legend inside
+    ax1.legend(loc="upper left")
+    fig.tight_layout()
+    return fig
     # Put legend outside to match sizing of other figures
     ax1.legend(loc="upper left")
     fig.tight_layout()
