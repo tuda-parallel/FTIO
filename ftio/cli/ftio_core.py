@@ -35,7 +35,6 @@ from ftio.freq.helper import MyConsole, append_messages
 from ftio.freq.prediction import Prediction
 from ftio.freq.time_window import data_in_time_window
 from ftio.parse.extract import get_time_behavior_and_args
-from ftio.plot.freq_plot import convert_and_plot
 from ftio.prediction.unify_predictions import merge_predictions
 from ftio.processing.print_output import display_prediction
 
@@ -89,8 +88,8 @@ def main(
 
     # show merge results
     display_prediction(args, list_predictions)
-    # TODO: convert an plot only if autocorrelation is passed
-    convert_and_plot(args, list_predictions, list_analysis_figures)
+    for analysis_figures in list_analysis_figures:
+        analysis_figures.show()
     console.print(f"[cyan]Total elapsed time:[/] {time.time() - start:.3f} s\n")
 
     return list_predictions, args
@@ -180,48 +179,50 @@ def freq_analysis(args: Namespace, data: dict) -> tuple[Prediction, AnalysisFigu
             args, bandwidth, time_b, total_bytes, ranks, text
         )
 
-    elif "wave_disc" in args.transformation:
+    elif "wave_disc" in args.transformation or "dwt" in args.transformation:
         prediction, analysis_figures = ftio_wavelet_disc(
             args, bandwidth, time_b, ranks, total_bytes
         )
 
-    elif "wave_cont" in args.transformation:
+    elif "wave_cont" in args.transformation or "cwt" in args.transformation:
         prediction, analysis_figures = ftio_wavelet_cont(args, bandwidth, time_b, ranks)
 
-    elif "stft" in args.transformation:
+    elif "stft" in args.transformation and "astft" not in args.transformation:
         prediction, analysis_figures = ftio_stft(
             args, bandwidth, time_b, total_bytes, ranks, text
         )
 
-    elif any(t in args.transformation for t in ("astft", "efd", "vmd")):
-        # TODO: add a way to pass the results to FTIO
+    elif "astft" in args.transformation:
+        # Check dependencies for AMD-based methods
         try:
             import vmdpy  # noqa: F401
         except ImportError:
             raise RuntimeError(
                 "ASTFT transformation is disabled.\n"
-                "Install with: pip install ftio[amd-libs]"
+                'Install with: pip install "ftio[amd-libs]" or pip install -e ".[amd-libs]"'
             ) from None
 
-        if "astft" in args.transformation:
-            import sys
+        from ftio.freq._astft_workflow import ftio_astft
 
-            from ftio.freq._astft_workflow import ftio_astft
+        prediction, analysis_figures = ftio_astft(
+            args, bandwidth, time_b, total_bytes, ranks, text
+        )
 
-            prediction, analysis_figures = ftio_astft(
-                args, bandwidth, time_b, total_bytes, ranks, text
-            )
-            sys.exit()
+    elif any(t in args.transformation for t in ("efd", "vmd")):
+        # Check dependencies for AMD-based methods
+        try:
+            import vmdpy  # noqa: F401
+        except ImportError:
+            raise RuntimeError(
+                f"{args.transformation.upper()} transformation is disabled.\n"
+                'Install with: pip install "ftio[amd-libs]" or pip install -e ".[amd-libs]"'
+            ) from None
 
-        if "efd" in args.transformation or "vmd" in args.transformation:
-            import sys
+        from ftio.freq._amd_workflow import ftio_amd
 
-            from ftio.freq._amd_workflow import ftio_amd
-
-            prediction, analysis_figures = ftio_amd(
-                args, bandwidth, time_b, total_bytes, ranks, text
-            )
-            sys.exit()
+        prediction, analysis_figures = ftio_amd(
+            args, bandwidth, time_b, total_bytes, ranks, text
+        )
 
     else:
         raise Exception("Unsupported decomposition specified")

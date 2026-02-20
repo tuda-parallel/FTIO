@@ -165,7 +165,7 @@ Full documentation:
             "-rp",
             "--runtime_plots",
             action="store_true",
-            help="if set, shows the plot at at runtime (works only with plotly",
+            help="if set, shows the plot at at runtime",
         )
         parser.set_defaults(runtime_plots=False)
         parser.add_argument(
@@ -355,16 +355,10 @@ Full documentation:
             help="Number of time-frequency peak filtering iterations.",
         )
         parser.add_argument(
-            "--ptfr_window",
-            type=int,
-            default=0,
-            help="Window length of STFT in PTFR in ASTFT-based analysis.",
-        )
-        parser.add_argument(
             "--stft_window",
-            type=int,
-            default=0,
-            help="Window length for STFT analysis in samples. If 0, it is automatically calculated based on the dominant frequency.",
+            type=str,
+            default="0",
+            help="Window length for STFT analysis in samples or time (e.g., '20s'). If 0, it is automatically calculated based on the dominant frequency.",
         )
 
     #! IOPLOT Settings
@@ -456,10 +450,11 @@ Full documentation:
     # default values:
     if "ftio" in name.lower() or "predictor" in name.lower():
         if "wave" in args.transformation:
-            if "cont" in args.transformation:
-                args.wavelet = "morl"
-            else:
-                args.wavelet = "db1"
+            if not args.wavelet:
+                if "cont" in args.transformation:
+                    args.wavelet = "morl"
+                else:
+                    args.wavelet = "db1"
 
         recon = []
         if args.reconstruction:

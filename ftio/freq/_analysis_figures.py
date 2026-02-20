@@ -143,32 +143,46 @@ class AnalysisFigures:
 
     def add_figure(self, fig_list=None, source: str = ""):
         if fig_list is not None:
+            if not isinstance(fig_list, list):
+                fig_list = [fig_list]
             self.figures.append(fig_list)
             self.figure_titles.append(source)
 
     def add_figure_and_show(self, fig_list: list, source: str = ""):
         self.add_figure(fig_list, source)
-        self.show_figs(fig_list, source)
+        if self.args.runtime_plots:
+            self.show_figs(fig_list, source)
 
     def show_figs(self, fig_list, name, condition=None):
         if condition is None:
-            condition = self.args.runtime_plots or "mat" in self.args.engine
+            condition = any(x in self.args.engine for x in ["mat", "plot"])
         if condition:
             if "mat" in self.args.engine:
+                figs_to_show = []
                 for fig in fig_list:
                     if isinstance(fig, matplotlib.figure.Figure):
-                        plt.figure(fig.number)
-
-                plt.show()
+                        # Matplotlib clears the figure after show()
+                        # If it has no axes, it's already been shown and cleared
+                        if fig.get_axes() and plt.fignum_exists(fig.number):
+                            plt.figure(fig.number)
+                            figs_to_show.append(fig)
+                if figs_to_show:
+                    plt.show()
             else:
                 conf = {"toImageButtonOptions": {"format": "png", "scale": 4}}
                 create_html(fig_list, self.args.render, conf, name)
 
     def show(self):
         if self.args is not None:
-            condition = "plot" in self.args.engine and not self.args.runtime_plots
+            # Track shown figures by list id to avoid duplicates
+            shown_ids = set()
             for i, fig_list in enumerate(self.figures):
-                self.show_figs(fig_list, self.figure_titles[i], condition)
+                if not fig_list:
+                    continue
+                list_id = id(fig_list)
+                if list_id not in shown_ids:
+                    self.show_figs(fig_list, self.figure_titles[i])
+                    shown_ids.add(list_id)
 
     def __str__(self):
         attrs = [

@@ -21,6 +21,8 @@ def compute_stft(
     window: str = "hann",
     nperseg: int = 256,
     noverlap: int = None,
+    boundary: str = None,
+    padded: bool = False,
 ):
     """
     Compute the Short-Time Fourier Transform (STFT) of the signal.
@@ -31,6 +33,8 @@ def compute_stft(
     - window: str, window function to use (default='hann').
     - nperseg: int, length of each segment (default=256).
     - noverlap: int, number of points to overlap between segments (default=None, which is nperseg // 2).
+    - boundary: str, boundary padding (default=None).
+    - padded: bool, whether to pad the signal (default=False).
 
     Returns:
     - f: np.ndarray, array of sample frequencies.
@@ -40,5 +44,13 @@ def compute_stft(
     if nperseg > len(b_sampled):
         nperseg = len(b_sampled)
 
-    f, t, Zxx = stft(b_sampled, fs=fs, window=window, nperseg=nperseg, noverlap=noverlap)
+    f, t, Zxx = stft(
+        b_sampled,
+        fs=fs,
+        window=window,
+        nperseg=nperseg,
+        noverlap=noverlap,
+        boundary=boundary,
+        padded=padded,
+    )
     return f, t, Zxx

@@ -3,22 +3,23 @@ import os
 
 import pytest
 
-if importlib.util.find_spec("torch") is None:
-    pytest.skip("Torch not available, skipping ML tests.", allow_module_level=True)
+torch_available = importlib.util.find_spec("torch") is not None
 
-from ftio.ml import (
-    BandwidthDataset,
-    extract,
-    predict_next_sequence,
-    train_arima,
-    train_hybrid_model,
-)
+if torch_available:
+    from ftio.ml import (
+        BandwidthDataset,
+        extract,
+        predict_next_sequence,
+        train_arima,
+        train_hybrid_model,
+    )
 
 """
 Tests for the active workflow (and application) of the implemented models, dataset and functions.
 """
 
 
+@pytest.mark.skipif(not torch_available, reason="Torch not available, skipping ML tests.")
 def test_hybrid_model():
     """
     Tests the training and prediction of the hybrid-model.
@@ -31,6 +32,7 @@ def test_hybrid_model():
     assert True
 
 
+@pytest.mark.skipif(not torch_available, reason="Torch not available, skipping ML tests.")
 def test_hybrid_model_resume_training():
     """
     Tests the saving of the hybrid model's checkpoint and resuming of training of the model.
@@ -50,6 +52,7 @@ def test_hybrid_model_resume_training():
     assert True
 
 
+@pytest.mark.skipif(not torch_available, reason="Torch not available, skipping ML tests.")
 def test_extract():
     """
     Tests the extract functionality when providing FTIO arguments.
@@ -60,6 +63,7 @@ def test_extract():
     assert True
 
 
+@pytest.mark.skipif(not torch_available, reason="Torch not available, skipping ML tests.")
 def test_dataset():
     """
     Tests the correct initialization of the dataset.
@@ -71,6 +75,7 @@ def test_dataset():
     assert True
 
 
+@pytest.mark.skipif(not torch_available, reason="Torch not available, skipping ML tests.")
 def test_arima_model():
     """
     Tests the training and prediction of the ARIMA model.
@@ -80,6 +85,7 @@ def test_arima_model():
     assert True
 
 
+@pytest.mark.skipif(not torch_available, reason="Torch not available, skipping ML tests.")
 def test_sarima_model():
     """
     Tests the training and prediction of the SARIMA model.

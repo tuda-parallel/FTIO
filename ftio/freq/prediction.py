@@ -10,6 +10,7 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 import numpy as np
+from rich.table import Table
 
 
 class Prediction:
@@ -375,10 +376,10 @@ class Prediction:
 
     def get_dominant_index(self):
         # or use conf?
-        if self._amp is not None and len(self._amp) > 0:
+        if self._amp is not None and self._amp.size > 0:
             return np.argmax(self._amp)
-        elif self._conf is not None and len(self._conf) > 0:
-            return np.argmax(self.conf)
+        elif self._conf is not None and self._conf.size > 0:
+            return np.argmax(self._conf)
         else:
             return None
 
@@ -468,7 +469,7 @@ class Prediction:
             if not np.isnan(f_d):
                 text = (
                     f"[cyan underline]Prediction results:[/]\n[cyan]Frequency:[/] {f_d:.3e} Hz"
-                    f"[cyan]->[/] {np.round(1 / f_d, 4)} s\n"
+                    f"[cyan]->[/] {np.round(1 / f_d, 4) if f_d > 0 else 0} s\n"
                     f"[cyan]Confidence:[/] {color_pred(c_d)}"
                     f"{np.round(c_d * 100, 2)}[/] %\n"
                 )
@@ -488,6 +489,16 @@ class Prediction:
             return ""
 
     def disp_ranges(self) -> str:
+        """
+        Generates a formatted string representation of the valid time ranges stored
+        in the 'ranges' attribute. Each valid time range is displayed with its start
+        and end points rounded to two decimal places. If no valid time ranges
+        exist, an empty string is returned.
+
+        Returns:
+            str: A formatted string showing all valid time ranges. Returns an empty
+            string if no ranges are available.
+        """
         if len(self.ranges) > 0:
             text = "[cyan]Valid time segments:\n[/]"
             for start, end in self.ranges:
@@ -496,6 +507,36 @@ class Prediction:
             return text
         else:
             return ""
+
+    def display_frequencies_in_ranges(self):
+        if len(self.dominant_freq) > 1:
+            table = Table(
+                show_header=True, header_style="bold cyan", title="Identified segments"
+            )
+            table.add_column("Window", justify="right", style="white", no_wrap=True)
+            table.add_column("Freq (Hz)", justify="right", style="white", no_wrap=True)
+            table.add_column("Period (s)", justify="right", style="white", no_wrap=True)
+            table.add_column("Conf. (%)", justify="right", style="white", no_wrap=True)
+            table.add_column(
+                "Time Range (s)", justify="right", style="white", no_wrap=True
+            )
+
+            for i in range(1, len(self.dominant_freq)):
+                t_range = (
+                    f"[{self.ranges[i][0]:.2f}, {self.ranges[i][1]:.2f}]"
+                    if len(self.ranges) > i
+                    else 0
+                )
+
+                table.add_row(
+                    str(i - 1),
+                    f"{self.dominant_freq[i]:.3e}",
+                    f"{np.round(1 / self.dominant_freq[i], 4) if self.dominant_freq[i] > 0 else 0:.4f}",
+                    f"{np.round(self.conf[i] * 100, 2):.2f}",
+                    t_range,
+                )
+            return table
+        return ""
 
     def to_dict(self):
         """

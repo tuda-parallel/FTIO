@@ -80,6 +80,10 @@ def ftio_wavelet_disc(
     tik = time.time()
     console.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
 
+    # Ensure wavelet is set early
+    if not args.wavelet:
+        args.wavelet = "db1"
+
     # ! Find the level for the discrete wavelet
     # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1
     # -Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20
@@ -102,7 +106,6 @@ def ftio_wavelet_disc(
             args.level = decomposition_level(args, len(b_sampled))
 
     # ! calculate the coefficients using the discrete wavelet
-    # args.wavelet = "db8"
     # coefficients ->  [cA_n, cD_n, cD_n-1, …, cD2, cD1]
     coefficients = wavelet_disc(b_sampled, args.wavelet, args.level)
     # compute the frequency ranges
@@ -131,11 +134,14 @@ def ftio_wavelet_disc(
             args, t_sampled, coefficients_upsampled, freq_ranges
         )
 
-        analysis_figures_wavelet.add_figure([f1], "wavelet_disc")
-        analysis_figures_wavelet.add_figure([f2], "wavelet_disc_spectrum")
+        analysis_figures_wavelet.add_figure(f1, "wavelet_disc")
+        analysis_figures_wavelet.add_figure(f2, "wavelet_disc_spectrum")
+
+        if args.runtime_plots:
+            analysis_figures_wavelet.show()
         console.print(" --- Done --- \n")
     else:
-        analysis_figures_wavelet = AnalysisFigures()
+        analysis_figures_wavelet = AnalysisFigures(args)
 
     # ! Perform analysis on the result from the DWT
     # analysis = "dft_on_approx_coeff"
@@ -175,11 +181,17 @@ def ftio_wavelet_disc(
 
             # Process futures as they complete
             for future in as_completed(futures):
-                prediction, analysis_figures_dft, _ = future.result()
+                prediction, analysis_figures_dft = future.result()
                 display_prediction(["ftio"], prediction)
                 index = futures[future]
                 analyze_correlation(
-                    args, prediction, coefficients_upsampled[index], t_sampled
+                    args,
+                    prediction,
+                    coefficients_upsampled[index],
+                    t_sampled,
+                    analysis_figures_dft,
+                    bandwidth,
+                    time_stamps,
                 )
                 console.print(f"[green]{index} completed[/]")
             exit()
@@ -192,7 +204,15 @@ def ftio_wavelet_disc(
             args, coefficients_upsampled[0], t_sampled, total_bytes, ranks
         )
         # 2) compare the results
-        analyze_correlation(args, prediction, coefficients_upsampled[0], t_sampled)
+        analyze_correlation(
+            args,
+            prediction,
+            coefficients_upsampled[0],
+            t_sampled,
+            analysis_figures_dft,
+            bandwidth,
+            time_stamps,
+        )
         if any(x in args.engine for x in ["mat", "plot"]):
             analysis_figures_wavelet += analysis_figures_dft
 
@@ -204,6 +224,11 @@ def ftio_wavelet_disc(
             args.freq,
             analysis_figures_wavelet,
         )
+        if any(x in args.engine for x in ["mat", "plot"]) and args.runtime_plots:
+            analysis_figures_wavelet.show()
         exit()
+
+    if any(x in args.engine for x in ["mat", "plot"]) and args.runtime_plots:
+        analysis_figures_wavelet.show()
 
     return prediction, analysis_figures_wavelet

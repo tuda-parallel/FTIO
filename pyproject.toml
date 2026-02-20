@@ -12,7 +12,7 @@ find = { }
 name = "ftio-hpc"
 dynamic = ["version"]
 dependencies = [
-    "numpy",
+    "numpy>=1.26.4",
     "scikit-learn",
     "pyzmq",
     "numba",
@@ -137,13 +137,15 @@ version = { attr = "ftio.__version__" }
 readme = { file = ["README.md"] }
 
 [tool.pytest.ini_options]
+testpaths = ["test"]
+norecursedirs = ["artifacts", "dist", "build", ".venv", ".git", ".pytest_cache", ".ruff_cache"]
 log_cli = true
 log_cli_level = "INFO"
 log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 filterwarnings = [
-    "ignore::statsmodels.tools.sm_exceptions.InterpolationWarning",
-    "ignore::statsmodels.tools.sm_exceptions.ConvergenceWarning",
+    "ignore:.*InterpolationWarning.*",
+    "ignore:.*ConvergenceWarning.*",
     "ignore::UserWarning",
     "ignore::DeprecationWarning:_plotly_utils",
 ]
