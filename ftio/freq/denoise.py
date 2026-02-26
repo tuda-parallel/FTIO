@@ -7,7 +7,7 @@ and includes utilities for signal scaling, reconstruction, and visualization.
 
 The current implementation is intended for experimental and exploratory use.
 Several parameters (e.g., scaling factor, lag window length, and peak frequency
-range) are heuristic and should be made change_detection for robust applications.
+range) are heuristic and should be made adaptive for robust applications.
 
 Author: josefinez
 Editor: Ahmad Tarraf
@@ -46,7 +46,7 @@ def tfpf_wvd(x, fs, time):
     tau = (0.634 * fs) / (np.pi * f_peak)
     tau = int(tau) + 1 - (tau % 2)
 
-    # TODO: make lag window length change_detection
+    # TODO: make lag window length adaptive
     tau = 21
 
     # endpoint extension

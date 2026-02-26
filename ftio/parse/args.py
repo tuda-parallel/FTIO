@@ -347,7 +347,7 @@ Full documentation:
             default=4,
             help="Order of Butterworth filter.",
         )
-        # change_detection tsa arguments
+        # adaptive tsa arguments
         parser.add_argument(
             "--tfpf",
             type=int,

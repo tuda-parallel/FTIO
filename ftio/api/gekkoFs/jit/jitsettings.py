@@ -60,7 +60,7 @@ class JitSettings:
         self.parallel_move_threads = 32  # Can be slower if many files are moved
         self.lock_generator = False
         self.lock_consumer = False
-        self.adaptive = "cancel"
+        self.handle_new_prediction = "cancel"
         self.job_id = 0
         self.static_allocation = False
         self.ftio_node = ""

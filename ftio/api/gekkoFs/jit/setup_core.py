@@ -325,8 +325,10 @@ def start_ftio(settings: JitSettings) -> None:
                 f"--ld_preload {settings.gkfs_intercept} --host_file {settings.gkfs_hostfile} --gkfs_mntdir {settings.gkfs_mntdir} "
             )
 
-            if settings.adaptive:
-                ftio_data_staget_args += f"--adaptive '{settings.adaptive}' "
+            if settings.handle_new_prediction:
+                ftio_data_staget_args += (
+                    f"--handle_new_prediction '{settings.handle_new_prediction}' "
+                )
 
             if settings.regex_match:
                 ftio_data_staget_args += f"--regex '{settings.regex_match}' "

@@ -29,7 +29,7 @@ from ftio.plot.plot_amd import plot_amd_components, plot_imfs
 
 def amd(b_sampled, freq, time_b, args, b_orig=None, t_orig=None):
     """
-    Identify periodic time windows with change_detection mode decomposition.
+    Identify periodic time windows with adaptive mode decomposition.
     """
     t_start, t_end = time_b[0], time_b[-1]
     N = len(b_sampled)

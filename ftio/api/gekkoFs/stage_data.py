@@ -1,6 +1,6 @@
 """
 This module provides functionality for managing data staging in GekkoFS using Cargo. It includes
-change_detection triggering based on predictions, environment setup for Cargo operations, and efficient
+handle_new_prediction triggering based on predictions, environment setup for Cargo operations, and efficient
 data transfer mechanisms.
 
 Author: Ahmad Tarraf
@@ -162,7 +162,8 @@ def strategy_avoid_interference(sync_trigger: Queue, args: argparse.Namespace) -
     # if empty, cargo is triggered with each latest_prediction
     # change_detection = ""
     # change_detection = "skip"
-    adaptive = "cancel"
+    # adaptive = "cancel"
+    handle_new_prediction = args.handle_new_prediction
     not_in_time = 0
     skipped = 0
     cancel_counter = 0
@@ -201,9 +202,9 @@ def strategy_avoid_interference(sync_trigger: Queue, args: argparse.Namespace) -
                             while time.time() < countdown:
                                 # ? 3) While waiting, cancel new latest_prediction is available
                                 condition = True
-                                if adaptive:
+                                if handle_new_prediction:
                                     if not sync_trigger.empty():
-                                        if "skip" in adaptive:
+                                        if "skip" in handle_new_prediction:
                                             skipped += 1
                                             condition = False
                                             # if skipped more than 2, force flushing
@@ -335,8 +336,8 @@ def parse_args_data_stager(
         default="ofi+sockets://127.0.0.1:62000",
     )
     parser.add_argument(
-        "--change_detection",
-        dest="change_detection",
+        "--handle_new_prediction",
+        dest="handle_new_prediction",
         help="Adaptive flag for flushing",
         default="cancel",
         choices={"skip", "cancel", ""},

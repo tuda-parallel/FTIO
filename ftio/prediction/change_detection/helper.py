@@ -74,7 +74,7 @@ def change_post_processing(args, prediction_count, t_e, t_s, adaptive_start_time
         tuple[float, str]: Updated start time and log text.
     """
     if text:
-        # Safe change_detection start
+        # Safe adaptive start
         algorithm_name = args.window_adaptation.upper()
         min_window_size = 1.0
         safe_adaptive_start = min(adaptive_start_time, t_e - min_window_size)

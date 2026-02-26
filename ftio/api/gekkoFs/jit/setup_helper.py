@@ -195,7 +195,7 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         help="Protocol for GekkoFS daemon (ofi+verbs or ofi+sockets).",
     )
     parser.add_argument(
-        "--change_detection",
+        "--handle_new_prediction",
         type=str,
         help="Adaptive flag for flushing",
         default="cancel",
@@ -331,8 +331,8 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         settings.port_ftio = parsed_args.port
     if parsed_args.gkfs_daemon_protocol:
         settings.gkfs_daemon_protocol = parsed_args.gkfs_daemon_protocol
-    if parsed_args.adaptive:
-        settings.adaptive = parsed_args.adaptive
+    if parsed_args.handle_new_prediction:
+        settings.handle_new_prediction = parsed_args.handle_new_prediction
 
     if parsed_args.exclude:
         jit_print("[bold  yellow]Excluding: [/]")

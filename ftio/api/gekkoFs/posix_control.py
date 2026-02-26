@@ -573,8 +573,8 @@ def jit_move(settings: JitSettings) -> None:
         default=False,
     )
     parser.add_argument(
-        "--change_detection",
-        dest="change_detection",
+        "--handle_new_prediction",
+        dest="handle_new_prediction",
         help="Adaptive flag for flushing",
         default="cancel",
         choices={"skip", "cancel", ""},
