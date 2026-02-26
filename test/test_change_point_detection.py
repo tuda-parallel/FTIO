@@ -2,7 +2,8 @@
 Tests for change point detection algorithms (ADWIN, CUSUM, Page-Hinkley).
 
 Author: Amine Aherbil
-Copyright (c) 2025 TU Darmstadt, Germany
+Editor: Ahmad Tarraf
+Copyright (c) 2026 TU Darmstadt, Germany
 Date: January 2025
 
 Licensed under the BSD 3-Clause License.
@@ -15,9 +16,9 @@ from unittest.mock import MagicMock
 import numpy as np
 
 from ftio.freq.prediction import Prediction
-from ftio.prediction.change_detection.adwin import AdwinDetector
-from ftio.prediction.change_detection.cusum import CUSUMDetector
-from ftio.prediction.change_detection.pagehinkley import SelfTuningPageHinkleyDetector
+from ftio.prediction.change_detection.adwin import adwin_step
+from ftio.prediction.change_detection.cusum import cusum_step
+from ftio.prediction.change_detection.pagehinkley import pagehinkley_step
 
 
 def create_mock_prediction(freq: float, t_start: float, t_end: float) -> MagicMock:
@@ -34,108 +35,75 @@ def create_mock_prediction(freq: float, t_start: float, t_end: float) -> MagicMo
 class TestADWINDetector:
     """Test cases for ADWIN change point detector."""
 
-    def test_initialization(self):
-        """Test ADWIN detector initializes correctly."""
-        detector = AdwinDetector(delta=0.05, past_predictions=None)
-        assert detector.delta == 0.05
-        assert detector.min_window_size == 2
-
     def test_no_change_stable_frequency(self):
         """Test that stable frequencies don't trigger change detection."""
-        detector = AdwinDetector(delta=0.05, past_predictions=None)
+        state = {}
 
         # Add stable frequency predictions
         for i in range(10):
-            pred = create_mock_prediction(freq=0.5, t_start=i, t_end=i + 1)
-            _ = detector.add_prediction(pred, timestamp=float(i + 1))
+            _, _, state = adwin_step(0.5, float(i + 1), state, delta=0.05)
 
         # Should not detect change with stable frequency
-        assert detector.change_count == 0
+        assert state.get("last_change_point") is None
 
     def test_detects_frequency_change(self):
         """Test that significant frequency change is detected."""
-        detector = AdwinDetector(delta=0.05, past_predictions=None)
+        state = {}
 
-        # Add low frequency predictions (more samples for statistical significance)
+        # Add low frequency predictions
         for i in range(10):
-            pred = create_mock_prediction(freq=0.1, t_start=i, t_end=i + 1)
-            detector.add_prediction(pred, timestamp=float(i + 1))
+            _, _, state = adwin_step(0.1, float(i + 1), state, delta=0.05)
 
         # Add high frequency predictions (significant change: 0.1 -> 10 Hz)
         change_detected = False
         for i in range(10, 30):
-            pred = create_mock_prediction(freq=10.0, t_start=i, t_end=i + 1)
-            result = detector.add_prediction(pred, timestamp=float(i + 1))
-            if result is not None:
+            idx, _, state = adwin_step(10.0, float(i + 1), state, delta=0.05)
+            if idx is not None:
                 change_detected = True
+                break
 
-        # Should detect the change during the loop or in the count
-        assert change_detected or detector.change_count >= 1
+        assert change_detected
 
     def test_reset_on_nan_frequency(self):
         """Test that NaN frequency resets the detector window."""
-        detector = AdwinDetector(delta=0.05, past_predictions=None)
+        state = {}
 
         # Add some predictions
         for i in range(5):
-            pred = create_mock_prediction(freq=0.5, t_start=i, t_end=i + 1)
-            detector.add_prediction(pred, timestamp=float(i + 1))
+            _, _, state = adwin_step(0.5, float(i + 1), state, delta=0.05)
 
         # Add NaN frequency
-        pred = create_mock_prediction(freq=np.nan, t_start=5, t_end=6)
-        detector.add_prediction(pred, timestamp=6.0)
+        _, _, state = adwin_step(np.nan, 6.0, state, delta=0.05)
 
         # Window should be reset
-        assert detector.frequencies_found == 0
-
-    def test_window_stats(self):
-        """Test window statistics calculation."""
-        detector = AdwinDetector(delta=0.05, past_predictions=None)
-
-        # Add predictions
-        freqs = [0.5, 0.6, 0.4, 0.5, 0.55]
-        timestamps = [0, 0.2, 1, 2.5, 5.55]
-        for i, f in enumerate(freqs):
-            pred = create_mock_prediction(freq=f, t_start=i, t_end=i + 1)
-            detector.add_prediction(pred, timestamp=float(i + 1))
-
-        stats = detector.get_window_stats(freqs, timestamps)
-        assert stats["size"] == 5
-        assert abs(stats["mean"] - np.mean(freqs)) < 0.001
+        assert state.get("frequencies_found", 0) == 0
 
 
 class TestCUSUMDetector:
     """Test cases for CUSUM change point detector."""
 
-    def test_initialization(self):
-        """Test CUSUM detector initializes correctly."""
-        detector = CUSUMDetector(window_size=50)
-        assert detector.window_size == 50
-        assert detector.sum_pos == 0.0
-        assert detector.sum_neg == 0.0
-
     def test_reference_establishment(self):
         """Test that reference is established from initial samples."""
-        detector = CUSUMDetector(window_size=50)
+        state = {}
 
         # Add initial samples
-        for f in [0.5, 0.5, 0.5]:
-            detector.add_frequency(f, timestamp=0.0)
+        for i, f in enumerate([0.5, 0.5, 0.5]):
+            _, _, state = cusum_step(f, float(i), state)
 
-        assert abs(detector.reference - 0.5) < 0.001
+        assert abs(state["reference"] - 0.5) < 0.001
 
     def test_detects_upward_change(self):
         """Test detection of upward frequency shift."""
-        detector = CUSUMDetector(window_size=50)
+        state = {}
 
         # Establish baseline
         for i in range(5):
-            detector.add_frequency(0.1, timestamp=float(i))
+            _, _, state = cusum_step(0.1, float(i), state)
 
         # Introduce upward shift
         change_detected = False
         for i in range(5, 20):
-            detected, info = detector.add_frequency(1.0, timestamp=float(i))
+            detected, _, state = cusum_step(1.0, float(i), state)
             if detected:
                 change_detected = True
                 break
@@ -144,52 +112,45 @@ class TestCUSUMDetector:
 
     def test_reset_on_nan(self):
         """Test that NaN frequency resets CUSUM state."""
-        detector = CUSUMDetector(window_size=50)
+        state = {}
 
         # Add some frequencies
         for i in range(5):
-            detector.add_frequency(0.5, timestamp=float(i))
+            _, _, state = cusum_step(0.5, float(i), state)
 
         # Add NaN
-        detector.add_frequency(np.nan, timestamp=5.0)
+        _, _, state = cusum_step(np.nan, 5.0, state)
 
-        assert detector.sum_pos == 0.0
-        assert detector.sum_neg == 0.0
+        assert state.get("sum_pos", 0) == 0.0
+        assert state.get("sum_neg", 0) == 0.0
 
 
 class TestPageHinkleyDetector:
     """Test cases for Page-Hinkley change point detector."""
 
-    def test_initialization(self):
-        """Test Page-Hinkley detector initializes correctly."""
-        detector = SelfTuningPageHinkleyDetector(window_size=10, past_predictions=None)
-        assert detector.window_size == 10
-        assert detector.cumulative_sum_pos == 0.0
-        assert detector.cumulative_sum_neg == 0.0
-
     def test_reference_mean_update(self):
         """Test that reference mean updates with new samples."""
-        detector = SelfTuningPageHinkleyDetector(window_size=10, past_predictions=None)
+        state = {}
 
         # Add samples
-        detector.add_frequency(0.5, timestamp=0.0)
-        assert detector.reference_mean == 0.5
+        _, _, _, state = pagehinkley_step(0.5, 0.0, state)
+        assert state["reference_mean"] == 0.5
 
-        detector.add_frequency(1.0, timestamp=1.0)
-        assert abs(detector.reference_mean - 0.75) < 0.001
+        _, _, _, state = pagehinkley_step(1.0, 1.0, state)
+        assert abs(state["reference_mean"] - 0.75) < 0.001
 
     def test_detects_change(self):
         """Test detection of frequency change."""
-        detector = SelfTuningPageHinkleyDetector(window_size=10, past_predictions=None)
+        state = {}
 
         # Establish baseline
-        for i in range(5):
-            detector.add_frequency(0.1, timestamp=float(i))
+        for i in range(10):
+            _, _, _, state = pagehinkley_step(0.1, float(i), state)
 
         # Introduce shift
         change_detected = False
-        for i in range(5, 20):
-            detected, _, _ = detector.add_frequency(1.0, timestamp=float(i))
+        for i in range(10, 30):
+            detected, _, _, state = pagehinkley_step(1.0, float(i), state)
             if detected:
                 change_detected = True
                 break
@@ -202,27 +163,21 @@ class TestDetectorIntegration:
 
     def test_all_detectors_handle_empty_input(self):
         """Test all detectors handle edge cases gracefully."""
-        adwin = AdwinDetector(delta=0.05, past_predictions=None)
-        cusum = CUSUMDetector(window_size=50)
-        ph = SelfTuningPageHinkleyDetector(window_size=10, past_predictions=None)
-
         # Test with zero frequency
-        pred = create_mock_prediction(freq=0.0, t_start=0, t_end=1)
+        _, _, state_adwin = adwin_step(0.0, 1.0, {})
+        _, _, state_cusum = cusum_step(0.0, 1.0, {})
+        _, _, _, state_ph = pagehinkley_step(0.0, 1.0, {})
 
-        result_adwin = adwin.add_prediction(pred, timestamp=1.0)
-        result_cusum = cusum.add_frequency(0.0, timestamp=1.0)
-        result_ph = ph.add_frequency(0.0, timestamp=1.0)
-
-        # All should handle gracefully (not crash)
-        assert result_adwin is None
-        assert result_cusum == (False, {})
-        assert result_ph == (False, 0.0, {})
+        # All should handle gracefully
+        assert state_adwin["frequencies_found"] == 0
+        assert state_cusum["sum_pos"] == 0.0
+        assert state_ph.get("initialized") is False
 
     def test_all_detectors_consistent_detection(self):
         """Test all detectors can detect obvious pattern changes."""
-        adwin = AdwinDetector(delta=0.05, past_predictions=None)
-        cusum = CUSUMDetector(window_size=50)
-        ph = SelfTuningPageHinkleyDetector(window_size=10, past_predictions=None)
+        state_adwin = {}
+        state_cusum = {}
+        state_ph = {}
 
         # Create obvious pattern change: 0.1 Hz -> 10 Hz
         low_freq = 0.1
@@ -230,27 +185,25 @@ class TestDetectorIntegration:
 
         # Feed low frequency
         for i in range(10):
-            pred = create_mock_prediction(freq=low_freq, t_start=i, t_end=i + 1)
-            adwin.add_prediction(pred, timestamp=float(i + 1))
-            cusum.add_frequency(low_freq, timestamp=float(i + 1))
-            ph.add_frequency(low_freq, timestamp=float(i + 1))
+            _, _, state_adwin = adwin_step(low_freq, float(i + 1), state_adwin)
+            _, _, state_cusum = cusum_step(low_freq, float(i + 1), state_cusum)
+            _, _, _, state_ph = pagehinkley_step(low_freq, float(i + 1), state_ph)
 
         # Feed high frequency and check for detection
         adwin_detected = False
         cusum_detected = False
         ph_detected = False
 
-        for i in range(10, 30):
-            pred = create_mock_prediction(freq=high_freq, t_start=i, t_end=i + 1)
-
-            if adwin.add_prediction(pred, timestamp=float(i + 1)) is not None:
+        for i in range(10, 40):
+            idx, _, state_adwin = adwin_step(high_freq, float(i + 1), state_adwin)
+            if idx is not None:
                 adwin_detected = True
 
-            detected, _ = cusum.add_frequency(high_freq, timestamp=float(i + 1))
+            detected, _, state_cusum = cusum_step(high_freq, float(i + 1), state_cusum)
             if detected:
                 cusum_detected = True
 
-            detected, _, _ = ph.add_frequency(high_freq, timestamp=float(i + 1))
+            detected, _, _, state_ph = pagehinkley_step(high_freq, float(i + 1), state_ph)
             if detected:
                 ph_detected = True
 

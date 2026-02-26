@@ -24,11 +24,9 @@ from ftio.freq.prediction import Prediction
 from ftio.gui.socket_logger import get_socket_logger, log_to_gui_and_console
 from ftio.plot.units import set_unit
 from ftio.prediction.change_detection.adwin import (
-    AdwinDetector,
     detect_pattern_change_adwin,
 )
 from ftio.prediction.change_detection.cusum import (
-    CUSUMDetector,
     detect_pattern_change_cusum,
 )
 from ftio.prediction.change_detection.helper import (
@@ -36,7 +34,6 @@ from ftio.prediction.change_detection.helper import (
     create_change_point_info,
 )
 from ftio.prediction.change_detection.pagehinkley import (
-    SelfTuningPageHinkleyDetector,
     detect_pattern_change_pagehinkley,
 )
 from ftio.prediction.helper import get_dominant
@@ -198,42 +195,22 @@ def window_adaptation(
     if args.window_adaptation is not None:
         # Select and run the appropriate detector
         if args.window_adaptation in {"cusum", "ph", "adwin"}:
-            # create a local copy so that it is not affected by other procs
-            past_predictions = list(shared_resources.data)
-            online_detection = dict(shared_resources.online_detection)
             if args.window_adaptation == "cusum":
-                detector = CUSUMDetector(
-                    window_size=50,
-                    past_predictions=past_predictions,
-                    online_detection=online_detection,
-                    verbose=args.verbose,
-                )
                 change_detected, log, detected_t_s, old_freq, new_freq = (
                     detect_pattern_change_cusum(
-                        args, shared_resources, prediction, detector, prediction_count
+                        args, shared_resources, prediction, prediction_count
                     )
                 )
             elif args.window_adaptation == "ph":
-                detector = SelfTuningPageHinkleyDetector(
-                    past_predictions=past_predictions,
-                    online_detection=online_detection,
-                    verbose=args.verbose,
-                )
                 change_detected, log, detected_t_s, old_freq, new_freq = (
                     detect_pattern_change_pagehinkley(
-                        args, shared_resources, prediction, detector, prediction_count
+                        args, shared_resources, prediction, prediction_count
                     )
                 )
             elif args.window_adaptation == "adwin":
-                detector = AdwinDetector(
-                    delta=0.05,
-                    past_predictions=past_predictions,
-                    online_detection=online_detection,
-                    verbose=args.verbose,
-                )
                 change_detected, log, detected_t_s, old_freq, new_freq = (
                     detect_pattern_change_adwin(
-                        args, shared_resources, prediction, detector, prediction_count
+                        args, shared_resources, prediction, prediction_count
                     )
                 )
             else:
@@ -300,27 +277,34 @@ def window_adaptation(
 
         # ---------------------- Summary ----------------------
         if not np.isnan(freq):
-            frequencies = [get_dominant(d) for d in list(shared_resources.data)]
-            frequencies.append(freq)
-            samples = len(frequencies)
-            changes = shared_resources.online_detection["change_count"]
-            recent_freqs = (
-                list(frequencies)[-5:] if len(frequencies) >= 5 else list(frequencies)
-            )
-            success_rate = (
-                samples / (prediction_count + 1) * 100 if prediction_count + 1 > 0 else 0
-            )
+            # Get all captured data
+            all_data = list(shared_resources.data)
+
+            # Count how many valid frequencies we have in history
+            history_freqs = [get_dominant(d) for d in all_data]
+            valid_history_count = len([f for f in history_freqs if not np.isnan(f)])
+
+            # Total valid samples (history + current)
+            samples = valid_history_count + 1
+
+            # Total attempts (history length + current).
+            # We use the max with prediction_count to handle race conditions gracefully.
+            total_attempts = max(len(all_data) + 1, prediction_count + 1)
+
+            changes = shared_resources.online_detection.get("change_count", 0)
+            success_rate = (samples / total_attempts * 100) if total_attempts > 0 else 0
 
             text += (
                 f"\n[purple][PREDICTOR] (#{prediction_count}): [bold cyan]{'=' * 50}[/]\n"
             )
             text += f"[purple][PREDICTOR] (#{prediction_count}): [bold cyan]{args.window_adaptation.upper()} ANALYSIS (Prediction #{prediction_count})[/]\n"
-            text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Frequency detections: {samples}/{prediction_count + 1} ({success_rate:.1f}% coverage)[/]\n"
+            text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Frequency detections: {samples}/{total_attempts} ({success_rate:.1f}% coverage)[/]\n"
             text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Pattern changes detected: {changes}[/]\n"
             text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Current frequency: {freq:.3f} Hz ({1 / freq:.2f}s period)[/]\n"
             text += f"[purple][PREDICTOR] (#{prediction_count}): [cyan]Time window: [{t_s:.2f} -- {t_e:.2f}] s[/]\n"
 
             if samples > 1 and args.verbose:
+                recent_freqs = [f for f in history_freqs if not np.isnan(f)][-4:] + [freq]
                 text += f"[cyan][purple][PREDICTOR] (#{prediction_count}): Recent freq history: {[f'{f:.3f}Hz' for f in recent_freqs]}[/]\n"
                 if len(recent_freqs) >= 2:
                     trend = (

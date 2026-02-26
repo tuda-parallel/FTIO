@@ -1,9 +1,8 @@
 """
 Change point detection algorithms for FTIO online predictor.
 
-This module provides change_detection change point detection algorithms for detecting
+This module provides functional ADWIN change point detection algorithms for detecting
 I/O pattern changes in streaming data.
-It includes ADWIN: Adaptive Windowing with Hoeffding bounds for statistical guarantees
 
 Author: Amine Aherbil
 Editor: Ahmad Tarraf
@@ -34,352 +33,178 @@ CONSOLE = MyConsole()
 CONSOLE.set(True)
 
 
-class AdwinDetector:
-    """ADWIN detector for I/O pattern changes with automatic window sizing."""
+def adwin_step(
+    freq: float,
+    timestamp: float,
+    state: dict[str, Any],
+    delta: float = 0.05,
+    verbose: bool = False,
+) -> tuple[int | None, float | None, dict[str, Any]]:
+    """
+    Perform one step of the ADWIN algorithm.
 
-    def __init__(
-        self,
-        delta: float = 0.05,
-        past_predictions=None,
-        online_detection=None,
-        verbose: bool = False,
-    ):
-        """Initialize ADWIN detector with confidence parameter delta (default: 0.05)."""
-        self.min_window_size = 2
-        self.verbose = verbose
-        CONSOLE.set(verbose)
-        # assign default values
-        self.delta = min(max(delta, 1e-12), 1 - 1e-12)
-        self.last_change_point: int | None = None
+    Returns:
+        A tuple of (change_point_index, change_timestamp, new_state).
+    """
+    CONSOLE.set(verbose)
+    new_state = state.copy()
+    min_window_size = 2
 
-        # assign based on previous changes
-        self.change_count = 0
-        self.last_change_time = 0
-        if online_detection:
-            self.change_count = online_detection["change_count"]
-            self.last_change_time = online_detection["last_change_time"]
-
-        # assign based on predictions
-        if past_predictions is None:
-            shared_resources = SharedResources()
-            past_predictions = list(shared_resources.data)
-
-        self.frequencies_found = len(past_predictions)
-        self.frequencies = get_frequencies(past_predictions)
-        self.timestamps = get_timestamps(past_predictions)
-        self.state = {}
-
+    if np.isnan(freq) or freq <= 0:
         if verbose:
-            CONSOLE.print(
-                f"[green][ADWIN] Initialized with δ={delta:.3f} "
-                f"({(1 - delta) * 100:.0f}% confidence) [/]"
-            )
-
-    def _reset_window(self):
-        self.frequencies_found = 0
-        self.last_change_time = 0
-        self.state = {}
-
-        CONSOLE.print(
-            "[dim yellow][ADWIN] Window cleared: No frequency data to analyze[/]"
-        )
-
-    def add_prediction(
-        self,
-        prediction: Prediction,
-        timestamp: float = None,
-    ) -> tuple[int, float] | None:
-
-        freq = get_dominant(prediction)
-        if timestamp is None:
-            timestamp = prediction.t_end
-
-        if np.isnan(freq) or freq <= 0:
             CONSOLE.print(
                 "[yellow][ADWIN] No frequency found - resetting window history[/]"
             )
-            self._reset_window()
-            return None
+        return None, None, {"frequencies": [], "timestamps": [], "frequencies_found": 0}
 
-        # create snapshot of the current prediction
-        self.frequencies.append(freq)
-        self.timestamps.append(timestamp)
-        self.frequencies_found += 1
+    frequencies = new_state.get("frequencies", [])
+    timestamps = new_state.get("timestamps", [])
+    frequencies.append(freq)
+    timestamps.append(timestamp)
+    frequencies_found = new_state.get("frequencies_found", 0) + 1
 
-        if len(self.frequencies) < self.min_window_size:
-            return None
+    if len(frequencies) < 2 * min_window_size:
+        new_state.update(
+            {
+                "frequencies": frequencies,
+                "timestamps": timestamps,
+                "frequencies_found": frequencies_found,
+            }
+        )
+        return None, None, new_state
 
-        change_point = self._detect_change()
-
-        if change_point is not None:
-            exact_change_timestamp = self.timestamps[change_point]
-            self._process_change_point(change_point)
-            self.change_count += 1
-
-            return change_point, exact_change_timestamp
-
-        return None
-
-    def _detect_change(self) -> int | None:
-
-        n = len(self.frequencies)
-        if n < 2 * self.min_window_size:
-            return None
-
-        for cut in range(self.min_window_size, n - self.min_window_size + 1):
-            if self._test_cut_point(cut):
+    # Detect change
+    change_point = None
+    n = len(frequencies)
+    for cut in range(min_window_size, n - min_window_size + 1):
+        if _test_cut_point(frequencies, cut, delta, verbose):
+            if verbose:
                 CONSOLE.print(
                     f"[blue][ADWIN] Change detected at position {cut}/{n}, "
-                    f"time={self.timestamps[cut]:.3f}s[/]"
+                    f"time={timestamps[cut]:.3f}s[/]"
                 )
-                return cut
+            change_point = cut
+            break
 
-        return None
+    if change_point is not None:
+        change_time = timestamps[change_point]
 
-    def _test_cut_point(self, cut: int) -> bool:
-        """
-        Test whether a given cut point represents a statistically significant
-        change in the frequency stream using the ADWIN criterion.
+        # Trim window
+        new_frequencies = frequencies[change_point:]
+        new_timestamps = timestamps[change_point:]
 
-        The method splits the frequency window into two segments at `cut`,
-        computes their means, and checks whether the absolute mean difference
-        exceeds an change_detection threshold derived from the confidence parameter
-        `delta` and the harmonic mean of the segment sizes.
-
-        Args:
-            cut (int): Index at which to split the frequency window.
-
-        Returns:
-            bool: True if a change point is detected at the given cut, False otherwise.
-        """
-
-        # Split window
-        left_data = self.frequencies[:cut]
-        right_data = self.frequencies[cut:]
-
-        n0 = len(left_data)
-        n1 = len(right_data)
-
-        if n0 <= 0 or n1 <= 0:
-            return False
-
-        mean0 = np.mean(left_data)
-        mean1 = np.mean(right_data)
-        mean_diff = abs(mean1 - mean0)
-
-        # Harmonic mean of sample sizes
-        n_harmonic = (n0 * n1) / (n0 + n1)
-
-        try:
-            confidence_term = math.log(2.0 / self.delta) / (2.0 * n_harmonic)
-            threshold = math.sqrt(2.0 * confidence_term)
-        except (ValueError, ZeroDivisionError):
-            confidence_term = 0.0
-            threshold = 0.05
-
-        # test
-        # threshold = threshold / 10
-
-        if self.verbose:
-            CONSOLE.print(
-                "[blue][PREDICTOR: ADWIN] Cut={cut}[/]\n"
-                f"  [dim]• Left window: {n0} samples, mean={mean0:.3f} Hz[/]\n"
-                f"  [dim]• Right window: {n1} samples, mean={mean1:.3f} Hz[/]\n"
-                f"  [dim]• Mean difference: |{mean1:.3f} − {mean0:.3f}| = {mean_diff:.3f}[/]\n"
-                f"  [dim]• Harmonic mean: {n_harmonic:.1f}[/]\n"
-                f"  [dim]• Confidence term: log(2/{self.delta}) / (2×{n_harmonic:.1f}) = {confidence_term:.6f}[/]\n"
-                f"  [dim]• Threshold: √(2×{confidence_term:.6f}) = {threshold:.3f}[/]\n"
-                f"  [dim]• Test: {mean_diff:.3f} > {threshold:.3f} ? "
-                f"{'CHANGE!' if mean_diff > threshold else 'No change'}[/]"
-            )
-
-        return mean_diff > threshold
-
-    def _process_change_point(self, change_point: int):
-        """
-        Apply a detected change point by trimming the historical frequency
-        window and updating change-point metadata.
-
-        The method:
-        - Records the change point index
-        - Updates the last change time
-        - Shrinks the frequency and timestamp windows
-        - Logs window adaptation statistics
-
-        Args:
-            change_point (int): Index at which the change was detected.
-        """
-        self.last_change_point = change_point
-        change_time = self.timestamps[change_point]
-        self.last_change_time = change_time if change_time is not None else 0.0
-
-        old_window_size = len(self.frequencies)
-        old_freq = np.mean(self.frequencies[:change_point]) if change_point > 0 else 0.0
-
-        # Trim window in-place (keep same list object)
-        frequencies = self.frequencies[change_point:]
-        timestamps = self.timestamps[change_point:]
-
-        new_window_size = len(frequencies)
-        new_freq = np.mean(frequencies) if frequencies else 0.0
-
-        freq_change = abs(new_freq - old_freq) / old_freq * 100.0 if old_freq > 0 else 0.0
-        time_span = timestamps[-1] - timestamps[0] if len(timestamps) > 1 else 0.0
-
-        CONSOLE.print(
-            "[green][ADWIN] Window adapted:[/] "
-            f"{old_window_size} → {new_window_size} samples\n"
-            "[green][ADWIN] Frequency shift:[/] "
-            f"{old_freq:.3f} → {new_freq:.3f} Hz ({freq_change:.1f}%)\n"
-            "[green][ADWIN] New window span:[/] "
-            f"{time_span:.2f} seconds"
-        )
-
-    def get_adaptive_start_time(
-        self, current_prediction: Prediction, timestamps
-    ) -> float:
-        """
-        Compute an change_detection start time for the next FTIO window based on
-        the most recent detected change point.
-
-        The start time is constrained by a minimum window size and a
-        maximum lookback period to ensure stable predictions.
-
-        Args:
-            current_prediction (Prediction): The current prediction object.
-
-        Returns:
-            float: Adaptive window start time.
-        """
-        if not timestamps:
-            return current_prediction.t_start
-
-        last_change_time = self.last_change_time
-        if last_change_time is not None:
-            min_window = 0.5
-            max_lookback = 10.0
-
-            window_span = current_prediction.t_end - last_change_time
-
-            if window_span < min_window:
-                adaptive_start = max(0.0, current_prediction.t_end - min_window)
-                CONSOLE.print(
-                    "[yellow][ADWIN] Change point too recent, using min window:[/] "
-                    f"{adaptive_start:.6f}s"
-                )
-            elif window_span > max_lookback:
-                adaptive_start = max(0.0, current_prediction.t_end - max_lookback)
-                CONSOLE.print(
-                    "[yellow][ADWIN] Change point too old, using max lookback:[/] "
-                    f"{adaptive_start:.6f}s"
-                )
-            else:
-                adaptive_start = last_change_time
-                CONSOLE.print(
-                    "[green][ADWIN] Using EXACT change point timestamp:[/] "
-                    f"{adaptive_start:.6f}s (window span: {window_span:.3f}s)"
-                )
-
-            return adaptive_start
-
-        # Fallback: use earliest timestamp with bounds
-        window_start = timestamps[0]
-        min_start = current_prediction.t_end - 10.0
-        max_start = current_prediction.t_end - 0.5
-
-        return max(min_start, min(window_start, max_start))
-
-    def get_window_stats(self, frequencies, timestamps) -> dict[str, Any]:
-        """
-        Return current ADWIN window statistics for debugging and logging.
-
-        Summarizes the active frequency window used by the change detector.
-        """
-        total_samples = self.frequencies_found
-        change_count = self.change_count
-
-        size = len(frequencies)
-        mean = float(np.mean(frequencies)) if frequencies else 0.0
-        std = float(np.std(frequencies)) if frequencies else 0.0
-        value_range = (
-            [float(np.min(frequencies)), float(np.max(frequencies))]
-            if frequencies
-            else [0.0, 0.0]
-        )
-        time_span = float(timestamps[-1] - timestamps[0]) if len(timestamps) > 1 else 0.0
-
-        return {
-            "size": size,
-            "mean": mean,
-            "std": std,
-            "range": value_range,
-            "time_span": time_span,
-            "total_samples": total_samples,
-            "change_count": change_count,
+        new_state = {
+            "frequencies": new_frequencies,
+            "timestamps": new_timestamps,
+            "frequencies_found": len(new_frequencies),
+            "last_change_point": change_point,
+            "last_change_time": change_time,
         }
+        return change_point, change_time, new_state
 
-    def log_change_point(
-        self, counter: int, old_freq: float, new_freq: float, stats
-    ) -> str:
+    new_state.update(
+        {
+            "frequencies": frequencies,
+            "timestamps": timestamps,
+            "frequencies_found": frequencies_found,
+        }
+    )
+    return None, None, new_state
 
-        last_change_time = self.last_change_time
-        if last_change_time is None:
-            return ""
 
-        freq_change_pct = abs(new_freq - old_freq) / old_freq * 100 if old_freq > 0 else 0
+def _test_cut_point(
+    frequencies: list[float], cut: int, delta: float, verbose: bool
+) -> bool:
+    left_data = frequencies[:cut]
+    right_data = frequencies[cut:]
 
-        log_msg = (
-            f"[red bold][CHANGE_POINT] t_s={last_change_time:.3f} sec[/]\n"
-            f"[purple][PREDICTOR] (#{counter}):[/][yellow] "
-            f"ADWIN detected pattern change: {old_freq:.3f} → {new_freq:.3f} Hz "
-            f"({freq_change_pct:.1f}% change)[/]\n"
-            f"[purple][PREDICTOR] (#{counter}):[/][yellow] "
-            f"Adaptive window: {stats['size']} samples, "
-            f"span={stats['time_span']:.1f}s, "
-            f"changes={stats['change_count']}/{stats['total_samples']}[/]\n"
-            f"[dim blue]ADWIN ANALYSIS: Statistical significance detected using Hoeffding bounds[/]\n"
-            f"[dim blue]Window split analysis found mean difference > confidence threshold[/]\n"
-            f"[dim blue]Confidence level: {(1 - self.delta) * 100:.0f}% (δ={self.delta:.3f})[/]"
+    n0 = len(left_data)
+    n1 = len(right_data)
+
+    mean0 = np.mean(left_data)
+    mean1 = np.mean(right_data)
+    mean_diff = abs(mean1 - mean0)
+
+    n_harmonic = (n0 * n1) / (n0 + n1)
+    confidence_term = math.log(2.0 / delta) / (2.0 * n_harmonic)
+    threshold = math.sqrt(2.0 * confidence_term)
+
+    if verbose:
+        CONSOLE.print(
+            f"[dim blue]ADWIN Cut={cut}: Δ={mean_diff:.3f}, ε={threshold:.3f}[/]"
         )
 
-        self.last_change_point = None
+    return mean_diff > threshold
 
-        return log_msg
+
+def get_adaptive_start_time(
+    current_time: float, last_change_time: float | None, original_start_time: float
+) -> float:
+    if last_change_time is not None:
+        min_window = 0.5
+        max_lookback = 10.0
+        window_span = current_time - last_change_time
+
+        if window_span < min_window:
+            return max(0.0, current_time - min_window)
+        elif window_span > max_lookback:
+            return max(0.0, current_time - max_lookback)
+        else:
+            return last_change_time
+
+    return original_start_time
 
 
 def detect_pattern_change_adwin(
     args: Namespace,
     shared_resources: SharedResources,
     current_prediction: Prediction,
-    detector: AdwinDetector,
     counter: int,
 ) -> tuple[bool, str | None, float, float | None, float | None]:
+    """Functional wrapper for ADWIN detection."""
+    current_freq = get_dominant(current_prediction)
+    current_time = current_prediction.t_end
+
+    # Restore state
+    state = shared_resources.online_detection.get("state", {})
+    if "frequencies" not in state:
+        state["frequencies"] = get_frequencies(list(shared_resources.data))
+        state["timestamps"] = get_timestamps(list(shared_resources.data))
+
+    change_idx, change_time, new_state = adwin_step(
+        current_freq, current_time, state, delta=0.05, verbose=args.verbose
+    )
 
     change_detected = False
     new_start_time = current_prediction.t_start
-    change_log, old_freq, current_freq = None, None, None
+    change_log, old_freq = None, None
 
-    change_point = detector.add_prediction(current_prediction)
-    if change_point is not None:
+    if change_idx is not None:
         change_detected = True
-        change_idx, change_time = change_point
-
-        current_freq = get_dominant(current_prediction)
-        old_freq = current_freq  # fallback if no history
-
-        window_stats = detector.get_window_stats(
-            detector.frequencies, detector.timestamps
-        )
-        if len(detector.frequencies) > 1:
-            old_freq = max(0.1, window_stats["mean"] * 0.9)
-
-        change_log = detector.log_change_point(
-            counter, old_freq, current_freq, window_stats
+        old_freq = (
+            np.mean(state["frequencies"][:change_idx]) if change_idx > 0 else current_freq
         )
 
-        new_start_time = detector.get_adaptive_start_time(
-            current_prediction, detector.timestamps
+        freq_change_pct = (
+            abs(current_freq - old_freq) / old_freq * 100 if old_freq > 0 else 0
         )
+
+        change_log = (
+            f"[magenta bold][CHANGE_POINT] t_s={change_time:.3f} sec[/]\n"
+            f"[purple][PREDICTOR] (#{counter}):[/][yellow] "
+            f"ADWIN detected pattern change: {old_freq:.3f} → {current_freq:.3f} Hz "
+            f"({freq_change_pct:.1f}% change)[/]\n"
+            f"[dim blue]ADWIN ANALYSIS: Statistical significance detected using Hoeffding bounds[/]"
+        )
+
+        new_start_time = get_adaptive_start_time(
+            current_time, change_time, current_prediction.t_start
+        )
+
+        shared_resources.online_detection["change_count"] = (
+            shared_resources.online_detection.get("change_count", 0) + 1
+        )
+        shared_resources.online_detection["last_change_time"] = change_time
 
         if args.gui:
             try:
@@ -400,10 +225,14 @@ def detect_pattern_change_adwin(
                     )
             except ImportError:
                 pass
+    else:
+        old_freq = (
+            np.mean(new_state["frequencies"])
+            if new_state["frequencies"]
+            else current_freq
+        )
 
-        # assign shared stuff:
-        shared_resources.online_detection["change_count"] = detector.change_count
-        shared_resources.online_detection["last_change_time"] = detector.last_change_time
-        shared_resources.online_detection["state"] = detector.state
+    # Save state
+    shared_resources.online_detection["state"] = new_state
 
     return change_detected, change_log, new_start_time, old_freq, current_freq
