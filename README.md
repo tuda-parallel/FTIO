@@ -375,10 +375,10 @@ Distributed under the BSD 3-Clause License. See [LICENCE](./LICENSE) for more in
 <!-- ACKNOWLEDGMENTS -->
 
 ## Acknowledgments
+FTIO is developed and maintained by the [Parallel Programming](https://www.parallel.informatik.tu-darmstadt.de/) group at TU Darmstadt.
+The main author of this project is Ahmad Tarraf.
 
-Authors:
-
-- Ahmad Tarraf
+For a full list of contributors, please see [CONTRIBUTORS.md](./CONTRIBUTORS.md).
 
 This work is a result of cooperation between the Technical University of Darmstadt and INRIA in the scope of
 the [EuroHPC ADMIRE project](https://admire-eurohpc.eu/).

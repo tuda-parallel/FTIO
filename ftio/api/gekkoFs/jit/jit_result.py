@@ -5,8 +5,8 @@ for adding experiments, processing data from dictionaries, sorting data based on
 and generating plots for analysis.
 
 Author: Ahmad Tarraf
-Copyright (c) 2026 TU Darmstadt, Germany
-Version: v0.0.8
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: Mar 2025
 
 Licensed under the BSD 3-Clause License.

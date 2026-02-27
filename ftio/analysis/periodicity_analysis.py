@@ -3,8 +3,8 @@ This file provides functions for periodicity analysis in frequency data using va
 including Recurrence Period Density Entropy, Spectral Flatness, Correlation, Correlation of Individual Periods, and Peak Sharpness.
 
 Author: Anton Holderied
-Copyright (c) 2026 TU Darmstadt, Germany
-Version: v0.0.8
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: Jul 2025
 
 Licensed under the BSD 3-Clause License.

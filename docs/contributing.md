@@ -309,7 +309,7 @@ It includes utilities for checking ports, parsing options, allocating resources,
 handling signals, and managing components like FTIO, GekkoFS, and Cargo.
 
 Author: Your Name  
-Copyright (c) 2025 TU Darmstadt, Germany  
+Copyright (c) 2024-2026 TU Darmstadt, Germany  
 Date: <Month Year>
 
 Licensed under the BSD 3-Clause License.  
@@ -380,13 +380,5 @@ To ensure proper documentation for your work, follow these steps:
 
 ---
 
-We sincerely thank the following contributors for their valuable contributions:
-
-- [Ahmad Tarraf](https://github.com/a-tarraf)
-- [Jean-Baptiste Bensard](https://github.com/besnardjb): Metric proxy integration
-- [Anton Holderied](https://github.com/AntonBeasis): bachelor thesis –> new periodicity score
-- [Tim Dieringer](https://github.com/Tim-Dieringer): bachelor thesis -> Additional integration for Metric Proxy
-- [Amine Aherbil](https://github.com/amineaherbil): bachelor thesis -> adaptive change point detection
-- [Julian Opper](https://github.com/JulianOpper), [Luca Schultze](https://github.com/lucasch03): PPT Lab -> Improved
-  CI/CD pipeline
+We sincerely thank our [contributors](../CONTRIBUTORS.md) for their valuable contributions!
 

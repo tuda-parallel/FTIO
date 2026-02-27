@@ -5,8 +5,8 @@ This module provides a Dash-based web dashboard for visualizing FTIO predictions
 and change point detection results in real-time.
 
 Author: Amine Aherbil
-Copyright (c) 2026 TU Darmstadt, Germany
-Version: v0.0.8
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: January 2025
 
 Licensed under the BSD 3-Clause License.
