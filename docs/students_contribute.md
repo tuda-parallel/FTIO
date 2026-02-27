@@ -26,11 +26,10 @@
     - Before starting your work, please create a GitHub account if you don’t have one already and send me your GitHub
       username. This will be necessary to set up your branch and reflect your contributions to the code.
 
-2. **Branch Creation**:
-    - Ahmad will create a branch for your work once your thesis starts. This branch will be linked to an issue that
-      allows you to track your progress. Our meetings are reserved for content discussion. The discussions in the issue
-      are only related to code errors.
-    - You **do not** create branches yourself. Also, **do not** work on other student branches.
+2. **Branch Creation or Forking**:
+    - Ahmad will create a branch for your work once your thesis starts. Alternatively, you can **fork** the repository and work on your own fork. Working on a fork is often preferred as it gives you more control over your environment. 
+    - If you work on the main repository, Ahmad will set up a branch linked to an issue to track your progress. Our meetings are reserved for content discussion. The discussions in the issue are only related to code errors.
+    - You **do not** create branches yourself on the main repository. Also, **do not** work on other student branches.
 
 3. **Creating Issues**:
     - Once your thesis starts, create an issue to describe the feature, bug fix, or enhancement you plan to implement.
@@ -44,9 +43,9 @@
     - You should regularly update the issue (at least every few weeks).
 
 4. **Development Workflow**:
-    - Work only on the branch assigned to you.
-    - Regularly pull updates from the `development` branch and merge them into your branch to stay up-to-date (at least
-      every two weeks).
+    - Work only on the branch assigned to you or on your fork.
+    - Regularly pull updates from the `development` branch of the main repository and merge them into your branch to
+      stay up-to-date (at least every two weeks).
     - Build FTIO with the debug flag so that changes made in the directory are directly visible to the command line call
       without reinstalling FTIO. For that call:
 
@@ -80,7 +79,9 @@
 
 ### 1. Keeping Your Branch Updated
 
-- Periodically update your branch with changes from `development`:
+- Periodically update your branch with changes from the main `development` branch:
+  
+  **If you work on the main repository:**
   ```bash
   git checkout development
   git pull origin development
@@ -90,6 +91,15 @@
   git merge development
   # Or rebase for a linear history
   git rebase development
+  ```
+  
+  **If you work on a fork:**
+  ```bash
+  # First, add the main repo as a remote (one-time setup)
+  git remote add upstream https://github.com/tuda-parallel/FTIO.git
+  git fetch upstream
+  git checkout your-branch
+  git merge upstream/development
   ```
 - Resolve any merge conflicts promptly and test your work.
 
@@ -154,9 +164,15 @@ That's it. Now every time you commit, the code is formatted correctly.
 
 ### 3. Working With Issues
 
-- Link commits to your assigned issue.
-- Update issues regularly.
-- Use issue discussion only for code-related questions.
+- **Link your work**: Link commits to your assigned issue in the main repository.
+- **If working on a fork**: To link your fork's commits to an issue in the main repository (`tuda-parallel/FTIO`), use the full repository reference in your commit messages or pull request descriptions.
+  - **Commit messages**: Include `tuda-parallel/FTIO#<issue_number>` in your commit message. For example:
+    ```bash
+    git commit -m "Add feature X (ref: tuda-parallel/FTIO#123)"
+    ```
+  - **Pull Request descriptions**: Use keywords like `Closes tuda-parallel/FTIO#123` or `Fixes tuda-parallel/FTIO#123` to automatically link and eventually close the issue.
+- **Update issues regularly**: Post updates or ask code-related questions directly in the issue on the main repository.
+- **Use issue discussion**: Use issue discussion only for code-related questions. For content discussion, wait for the scheduled meetings.
 
 ### 4. Adding Examples, Tests, and Documentation
 
@@ -173,14 +189,13 @@ That's it. Now every time you commit, the code is formatted correctly.
 
 ### 6. Submitting Your Work
  - Make sure all above points are addressed (especially **4** and **5**)
- - Tag your final version:
+ - **Pull Request Deadline**: You must create a **pull request (PR)** to merge your work into the `development` branch **at least two weeks before the end of your thesis**. This allows for early feedback and review. You can (and should) continue to update the PR with new commits until the final submission of your thesis.
+ - When you are done with the thesis, tag your final version:
      ```bash
      git tag -a BA_time_window_adaptation -m "Bachelor Thesis: implementation and evaluation of time window adaptation"
      git push --tags
      ```
- - Check that all previous points are covered (especially **Point 6**).
- - When your thesis is complete, create a **pull request (PR)** to merge your branch into the `development` branch.
- - Include a summary of your work and link the pull request to your issue for reference.
+ - Include a summary of your work in the PR and link it to your issue for reference.
  - Don’t forget to add yourself to the [list of contributors](/docs/contributing.md#list-of-contributors).
 
 
