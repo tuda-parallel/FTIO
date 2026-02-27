@@ -2,8 +2,8 @@
 Contains functions that execute workflow using the discrete Fourier Transform.
 
 Author: Ahmad Tarraf
-Copyright (c) 2026 TU Darmstadt, Germany
-Version: v0.0.8
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: Jan 2025
 
 Licensed under the BSD 3-Clause License.

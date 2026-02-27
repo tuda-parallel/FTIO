@@ -5,7 +5,8 @@ This module exposes the main entry points for the FTIO CLI tools,
 including the core analysis and the predictor.
 
 Author: Ahmad Tarraf
-Copyright (c) 2026 TU Darmstadt, Germany
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: January 2026
 
 Licensed under the BSD 3-Clause License.

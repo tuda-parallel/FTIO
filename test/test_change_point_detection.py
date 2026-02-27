@@ -3,7 +3,8 @@ Tests for change point detection algorithms (ADWIN, CUSUM, Page-Hinkley).
 
 Author: Amine Aherbil
 Editor: Ahmad Tarraf
-Copyright (c) 2026 TU Darmstadt, Germany
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: January 2025
 
 Licensed under the BSD 3-Clause License.

@@ -322,7 +322,7 @@ It includes utilities for checking ports, parsing options, allocating resources,
 handling signals, and managing components like FTIO, GekkoFS, and Cargo.
 
 Author: Your Name  
-Copyright (c) 2025 TU Darmstadt, Germany  
+Copyright (c) 2024-2026 TU Darmstadt, Germany  
 Date: <Month Year>
 
 Licensed under the BSD 3-Clause License.  
@@ -392,6 +392,8 @@ To ensure proper documentation for your work, follow these steps:
 4. If you made changes to the command line arguments, please update the usage section in the [readme](/README.md#usage).
 
 ---
+
+We sincerely thank our [contributors](../CONTRIBUTORS.md) for their valuable contributions!
 
 Thanks a lot for your contribution! I look forward to seeing the progress we will make together. Let's make this a great
 experience! 🚀🚀

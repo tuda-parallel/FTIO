@@ -4,8 +4,8 @@ change_detection triggering based on predictions, environment setup for Cargo op
 data transfer mechanisms.
 
 Author: Ahmad Tarraf
-Copyright (c) 2026 TU Darmstadt, Germany
-Version: v0.0.8
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: Mar 2025
 
 Licensed under the BSD 3-Clause License.

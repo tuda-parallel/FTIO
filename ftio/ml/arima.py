@@ -7,7 +7,8 @@ models for I/O bandwidth prediction.
 
 Author: Robert Alles
 Editor: Ahmad Tarraf
-Copyright (c) 2026 TU Darmstadt, Germany
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: January 2026
 
 Licensed under the BSD 3-Clause License.

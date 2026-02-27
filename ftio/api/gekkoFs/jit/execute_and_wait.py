@@ -4,8 +4,8 @@ It includes functions to execute commands in blocking and non-blocking modes, lo
 monitor log files, and wait for specific lines or files to appear.
 
 Author: Ahmad Tarraf
-Copyright (c) 2026 TU Darmstadt, Germany
-Version: v0.0.8
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: Aug 2024
 
 Licensed under the BSD 3-Clause License.
