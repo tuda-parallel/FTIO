@@ -42,7 +42,7 @@ class JitSettings:
         ##############
         self.set_tasks_affinity = True  # required for ls and cp
         self.cargo_mode = "posix"  # "parallel" or "posix"
-        self.debug_lvl = 0
+        self.debug_lvl = 3
         self.verbose = True
         self.verbose_error = True
         self.node_local = True  # execute in node local space or memory
@@ -391,10 +391,14 @@ class JitSettings:
         # ****** app call ******
         #  ├─ IOR
         if "ior" in self.app:
-            self.app_call = "/lustre/project/nhr-gekko/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
+            self.app_call = "./ior "
+            self.run_dir = "/lustre/project/nhr-gekko/tarraf/ior/src"
+            self.app_flags = f"-a POSIX -i 4 -o ./iortest -t 128k -b 512m -F"
         #  ├─ HACCIO
         elif "hacc" in self.app:
-            self.app_call = "/lustre/project/nhr-gekko/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
+            self.app_call = "./HACC_ASYNC_IO"
+            self.run_dir = "/lustre/project/nhr-gekko/tarraf/HACC-IO"
+            self.app_flags = f"1000000 test_run/mpi"
         # ├─ NEK5000 --> change gkfs_daemon_protocol to socket
         elif "nek" in self.app:
             self.app_call = "./nek5000"
@@ -432,7 +436,7 @@ class JitSettings:
             self.app_call = "/lustre/project/nhr-gekko/shared/S3D-IO/s3d_io.x"
             self.run_dir = "."
             if not self.app_flags:  # default value if app_flags is not set
-                self.app_flags = "600 600 600 6 6 6 0 F ."
+                self.app_flags = "200 200 200 2 2 2 0 F ."
         #  └─ WRF
         elif "wrf" in self.app:
             self.app_call = "./wrf.exe"
@@ -502,6 +506,20 @@ class JitSettings:
             self.post_app_call = ""
             if not self.exclude_daemon:
                 self.app_flags = self.app_flags.replace(".", f"{self.gkfs_mntdir}")
+        # ├─ IOR
+        if "ior" in self.app:
+            self.pre_app_call = ""
+            self.post_app_call = ""
+            if not self.exclude_daemon:
+                self.app_flags = self.app_flags.replace(
+                    "./iortest", f"{self.gkfs_mntdir}/iortest"
+                )
+        #  ├─ HACCIO
+        elif "hacc" in self.app:
+            self.pre_app_call = ""
+            self.post_app_call = ""
+            if not self.exclude_daemon:
+                self.app_flags = self.app_flags.replace("test_run", f"{self.gkfs_mntdir}")
         # ├─ wrf
         elif "wrf" in self.app:
             if self.exclude_daemon:
@@ -690,3 +708,10 @@ class JitSettings:
                 self.stage_in_path = "/tmp/input"
                 if not self.exclude_daemon:
                     self.app_flags = re.sub(r"/[^\s]+", self.gkfs_mntdir, self.app_flags)
+            elif "hacc" in self.app:
+                self.run_dir = "/d/github/HACC-IO"
+                if not self.exclude_daemon:
+                    self.app_flags = re.sub(r"/[^\s]+", self.gkfs_mntdir, self.app_flags)
+            elif "ior" in self.app:
+                self.run_dir = "/d/github/IOR"
+                self.app_flags = re.sub(r"/[^\s]+", self.gkfs_mntdir, self.app_flags)

@@ -802,26 +802,26 @@ def adjust_regex(settings: JitSettings, mode: str = "stage_out") -> None:
         settings (JitSettings): The JIT settings object.
         mode (str, optional): Mode for regex adjustment. Defaults to "stage_out".
     """
-    if settings.cluster:
-        if "stage_out" in mode:
-            settings.regex_match = settings.regex_stage_out_match
-        elif "stage_in" in mode:
-            settings.regex_match = settings.regex_stage_in_match
-        elif "flush" in mode:
-            settings.regex_match = settings.regex_flush_match
-        else:
-            raise ValueError(f"Unsupported mode for regex: {mode} passed")
+    # if settings.cluster:
+    if "stage_out" in mode:
+        settings.regex_match = settings.regex_stage_out_match
+    elif "stage_in" in mode:
+        settings.regex_match = settings.regex_stage_in_match
+    elif "flush" in mode:
+        settings.regex_match = settings.regex_flush_match
+    else:
+        raise ValueError(f"Unsupported mode for regex: {mode} passed")
 
-        jit_print(f"[cyan]Resetting regex for {mode} to {settings.regex_match}[/]")
-        with open(settings.regex_file, "w") as file:
-            file.write(f"{settings.regex_match}\n")
+    jit_print(f"[cyan]Resetting regex for {mode} to {settings.regex_match}[/]")
+    with open(settings.regex_file, "w") as file:
+        file.write(f"{settings.regex_match}\n")
 
-        # Optionally jit_print the contents of the regex file
-        if settings.debug_lvl > 1:
-            with open(settings.regex_file) as file:
-                content = file.read()
+    # Optionally jit_print the contents of the regex file
+    if settings.debug_lvl > 1:
+        with open(settings.regex_file) as file:
+            content = file.read()
 
-            jit_print(f"[bold  cyan] cat {settings.regex_file}: \n{content} [/]\n")
+        jit_print(f"[bold  cyan] cat {settings.regex_file}: \n{content} [/]\n")
 
 
 def total_time(log_dir: str) -> None:
