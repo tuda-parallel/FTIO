@@ -63,7 +63,7 @@ def tfpf_wvd(x, fs, time):
     x_scaled = scale_signal(x_ext)
 
     # encode
-    mu = 0.5  # TODO: don't know, guessed
+    mu = 0.5  # TODO: guessed
 
     z_x = np.zeros((len(x_scaled),), dtype=np.complex128)
     sum = 0.0

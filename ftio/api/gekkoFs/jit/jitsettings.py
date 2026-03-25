@@ -393,12 +393,12 @@ class JitSettings:
         if "ior" in self.app:
             self.app_call = "./ior "
             self.run_dir = "/lustre/project/nhr-gekko/tarraf/ior/src"
-            self.app_flags = f"-a POSIX -i 4 -o ./iortest -t 128k -b 512m -F"
+            self.app_flags = "-a POSIX -i 4 -o ./iortest -t 128k -b 512m -F"
         #  ├─ HACCIO
         elif "hacc" in self.app:
             self.app_call = "./HACC_ASYNC_IO"
             self.run_dir = "/lustre/project/nhr-gekko/tarraf/HACC-IO"
-            self.app_flags = f"1000000 test_run/mpi"
+            self.app_flags = "1000000 test_run/mpi"
         # ├─ NEK5000 --> change gkfs_daemon_protocol to socket
         elif "nek" in self.app:
             self.app_call = "./nek5000"
@@ -507,7 +507,7 @@ class JitSettings:
             if not self.exclude_daemon:
                 self.app_flags = self.app_flags.replace(".", f"{self.gkfs_mntdir}")
         # ├─ IOR
-        if "ior" in self.app:
+        elif "ior" in self.app:
             self.pre_app_call = ""
             self.post_app_call = ""
             if not self.exclude_daemon:

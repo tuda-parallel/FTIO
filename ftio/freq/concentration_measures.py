@@ -39,7 +39,6 @@ p = 4
 L = 105
 
 
-# don't know
 # https://de.mathworks.com/matlabcentral/answers/356692-how-to-normalize-a-fft-to-plot-in-frequency-domain
 def normalize_fft(yf):
     yf_norm = fftshift(yf / len(yf))
