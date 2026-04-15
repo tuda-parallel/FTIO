@@ -137,8 +137,8 @@ class PrintHtml:
             if self.names:
                 # self.names = list(set(self.names))
                 file.write("<br><br> Folders map to:<ul>\n")
-                for i in self.names:
-                    file.write(f"<li> Run {self.names.index(i)}: {i} </li>\n")
+                for index, name in enumerate(self.names):
+                    file.write(f"<li> Run {index}: {name} </li>\n")
                 file.write("</ul> \n")
             file.write("</body></html> \n")
         CONSOLE.print("    └──  [green]done    [/]")
@@ -209,11 +209,10 @@ def figures_to_html(
             + "\n"
         )
 
-    run_names = ""
     if names:
         run_names = "<br><br> Folders map to:<ul>\n"
-        for i in names:
-            run_names = run_names + (f"<li> Run {names.index(i)}: {i} </li>\n")
+        for index, name in enumerate(names):
+            run_names = run_names + (f"<li> Run {index}: {name} </li>\n")
         run_names = run_names + "</ul> \n"
 
     template = template.format(

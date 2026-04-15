@@ -72,6 +72,10 @@ class Scales:
 
         self.check_same_path()
         console = Console()
+
+        # Mapping from directory to run_index
+        dir_to_index = {}
+
         for path in self.paths:
             #! load folders
             # Recorder folder
@@ -79,7 +83,11 @@ class Scales:
                 console.print(
                     f"\n[cyan]Loading Recorder folder({self.paths.index(path) + 1},{len(self.paths)}):[/] {path}"
                 )
-                run = ParseRecorder(path).to_simrun(self.args)
+                if path not in dir_to_index:
+                    dir_to_index[path] = len(dir_to_index)
+                    self.names.append(os.path.basename(path))
+
+                run = ParseRecorder(path).to_simrun(self.args, dir_to_index[path])
                 self.s.append(run)
 
             # Folder
@@ -123,10 +131,13 @@ class Scales:
                                 console.print(
                                     f"[red]Something went wrong with the limit. Error is {error}[/]"
                                 )
-                            self.names.append(root[root.rfind("/") + 1 :])
+
+                            if root not in dir_to_index:
+                                dir_to_index[root] = len(dir_to_index)
+                                self.names.append(os.path.basename(root))
+
                             console.print(f"[cyan]Current file:[/] {file}")
-                            self.load_file(file_path, self.paths.index(path))
-                    break  # no reclusive walk
+                            self.load_file(file_path, dir_to_index[root])
 
             # Compare Several files
             elif (
@@ -134,25 +145,27 @@ class Scales:
                 and ".json" in path[-6:]
                 and "ftio" not in self.prog_name.lower()
             ):
-                self.names.append(path)
+                parent_dir = os.path.dirname(path) or "."
+                if parent_dir not in dir_to_index:
+                    dir_to_index[parent_dir] = len(dir_to_index)
+                    self.names.append(path)
+
                 console.print(f"[cyan]Current file:[/] {path}")
-                self.load_file(path, self.paths.index(path))
+                self.load_file(path, dir_to_index[parent_dir])
 
             # Single file
             else:
-                self.names.append(get_filename(path))
+                parent_dir = os.path.dirname(path) or "."
+                if parent_dir not in dir_to_index:
+                    dir_to_index[parent_dir] = len(dir_to_index)
+                    self.names.append(get_filename(path))
+
                 if "predictor" not in self.prog_name.lower():
                     console.print(f"[cyan]Current file:[/] {path}\n")
-                self.load_file(path)
+                self.load_file(path, dir_to_index[parent_dir])
 
         # print('--------------------------------------------\n')
         self.n = len(self.s)
-        if self.names:
-            names = self.names
-            self.names = []
-            for i in names:
-                if i not in self.names:
-                    self.names.append(i)
 
     def load_file(self, file_path: str, file_index=0) -> None:
         """Load file content into an Simrun object
