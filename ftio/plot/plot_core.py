@@ -498,10 +498,8 @@ class PlotCore:
                 len(df_t[1]["file_index"][index]) != 0
                 or len(df_t[3]["file_index"][index_ind]) != 0
             ):
-                for j in range(
-                    int(df_t[1]["file_index"][index].min()),
-                    int(df_t[1]["file_index"][index].max() + 1),
-                ):
+                for j in pd.unique(df_t[1]["file_index"][index]):
+                    j = int(j)
                     f.append(go.Figure())
                     index2 = df_t[1]["file_index"][index].isin([j])
                     index2_ind = df_t[3]["file_index"][index_ind].isin([j])
@@ -612,9 +610,8 @@ class PlotCore:
                     f[-1] = format_plot(f[-1], 17)
 
                     if self.names and (args.avr or args.sum or args.ind):
-                        run_index = ranks.index[ranks.astype(int) == i].tolist()[j]
                         f[-1].update_layout(
-                            title=f"{i} Ranks (Run {run_index}: {self.names[run_index]})",
+                            title=f"{i} Ranks (Run {j}: {self.names[j]})",
                         )
 
                     if args.avr or args.sum or args.ind:

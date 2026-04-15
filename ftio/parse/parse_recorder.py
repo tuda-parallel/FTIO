@@ -20,13 +20,14 @@ class ParseRecorder:
         if self.path[-1] == "/":
             self.path = self.path[:-1]
 
-    def to_simrun(self, args):
+    def to_simrun(self, args, index: int = 0):
         """Convert to Simrun class
         Args:
             ts (double): [optional] desired start time
+            index (int): file index
         Returns:
             Simrun: Simrun object
         """
         data, ranks = extract(self.path, args)
 
-        return Simrun(data, "recorder", str(ranks), args)
+        return Simrun(data, "recorder", str(ranks), args, index)
