@@ -37,6 +37,7 @@ TERMINAL_WIDTH = console.size.width
 JIT_LOGGER = Logger(prefix="jit").get()
 DAEMON_LOGGER = Logger(prefix="daemon").get()
 PROXY_LOGGER = Logger(prefix="proxy").get()
+PROXY_LOGGER = Logger(prefix="fuse").get()
 DLIO_LOGGER = Logger(prefix="dlio").get()
 FTIO_LOGGER = Logger(prefix="ftio").get()
 ERROR_LOGGER = Logger(prefix="error").get()
@@ -759,6 +760,10 @@ def print_file(file, src=""):
 
         elif "proxy" in src.lower():
             logger = PROXY_LOGGER
+            wait_time = 0.2
+
+        if "fuse" in src.lower():
+            logger = FUSE_LOGGER
             wait_time = 0.2
 
         elif any(keyword in src.lower() for keyword in ["dlio", "lammp"]):

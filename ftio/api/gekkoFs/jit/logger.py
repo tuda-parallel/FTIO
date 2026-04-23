@@ -22,7 +22,8 @@ ANSI_COLORS = {
     "ftio": "\033[36m",  # cyan
     "proxy": "\033[35m",  # purple
     "daemon": "\033[95m",  # pink
-    "dlio": "\033[33m",  # yellow
+    "fuse": "\033[30m",  # blue
+    "dlio": "\033[33m",  # yellow"\033[34m"
     "lammp": "\033[33m",  # yellow
     "jit": "\033[32m",  # green
     "error": "\033[31m",  # red

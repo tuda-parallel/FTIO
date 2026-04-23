@@ -147,6 +147,69 @@ def start_gekko_daemon(settings: JitSettings) -> None:
         jit_print("[green]############## Gkfs init finished ##############\n\n\n\n ")
 
 
+#! Start FUSE
+#!###############################
+def start_fuse(settings: JitSettings) -> None:
+    """Starts the Gekko daemon.
+
+    Args:
+        settings (JitSettings): jit settings
+    """
+    if settings.exclude_daemon or not settings.fuse:
+        jit_print(
+            f"[bold yellow]############## Skipping FUSE [/][black][{get_time()}][/]"
+        )
+    else:
+        jit_print(f"[bold green]############## Starting FUSE [/][black][{get_time()}][/]")
+        wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run)
+
+        if settings.cluster:
+            if settings.use_mpirun:
+                # mpiexec
+                call = (
+                    f"{settings.gkfs_fuse} -o max_idle_threads=32 "
+                    f"-o direct_io -f -o fifo -o auto_unmount {settings.gkfs_mntdir}"
+                )
+                call = mpiexec_call(
+                    settings,
+                    call,
+                    settings.app_nodes,
+                )
+            else:
+                call = (
+                    f"srun  --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                    #   f"--ntasks={settings.app_nodes*settings.procs_daemon} --cpus-per-task={settings.procs_daemon} --ntasks-per-node={settings.procs_daemon} --overcommit --overlap "
+                    f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
+                    f"--oversubscribe --mem=0 {settings.task_set_0} "
+                    f"{settings.gkfs_fuse} -o max_idle_threads=32 "
+                    f"-o direct_io -f -o fifo -o auto_unmount {settings.gkfs_mntdir}"
+                )
+        else:
+            call = (
+                f" LIBGKFS_LOG=all  GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+                f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l lo -P {settings.gkfs_daemon_protocol}"
+            )
+            if not settings.exclude_proxy:
+                # Demon call with proxy
+                call += (
+                    " --proxy-listen lo --proxy-protocol {settings.gkfs_daemon_protocol}"
+                )
+
+        jit_print("[cyan]Starting FUSE Demons[/]", True)
+        _ = execute_background_and_log(
+            settings,
+            call,
+            settings.gkfs_fuse_log,
+            "fuse",
+            settings.gkfs_fuse_err,
+        )
+        if settings.verbose_error:
+            _ = monitor_log_file(settings.gkfs_daemon_err, "Error Fuse")
+
+    if not settings.exclude_daemon:
+        jit_print("[green]############## Gkfs FUSE init finished ##############\n\n\n\n ")
+
+
 #! Start Proxy
 #!############################################
 def start_gekko_proxy(settings: JitSettings) -> None:

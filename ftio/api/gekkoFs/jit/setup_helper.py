@@ -273,6 +273,11 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         action="store_true",
         help="If set, At Open we wait until (40 seconds~) for the lock file to disappear. No modifications needed on the client, it is transparent.",
     )
+    parser.add_argument(
+        "--fuse",
+        action="store_true",
+        help="If set, FUSE is used.",
+    )
 
     parsed_args = parser.parse_args(args)
 
@@ -391,6 +396,8 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         settings.lock_generator = True
     if parsed_args.lock_consumer:
         settings.lock_consumer = True
+    if parsed_args.fuse:
+        settings.fuse = True
 
     # Save the original call as a string
     settings.cmd_call = "jit " + " ".join(args)

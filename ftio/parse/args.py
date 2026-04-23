@@ -22,7 +22,7 @@ def parse_args(argv: list, name="") -> argparse.Namespace:
         name = argv[0]
         name = name[name.rfind("/") + 1 :]
     else:
-        # API call
+        # API callj
         flag = False
 
     if "plot" in name:

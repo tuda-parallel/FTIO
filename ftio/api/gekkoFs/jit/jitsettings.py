@@ -78,6 +78,8 @@ class JitSettings:
         self.mpi_hostfile = ""
         self.parsed_gkfs_daemon = ""
         self.parsed_gkfs_intercept = ""
+        self.home = ""
+        self.fuse = False
 
         self.log_dir = ""
         self.gkfs_daemon_log = ""
@@ -149,18 +151,22 @@ class JitSettings:
     def set_cluster_mode(self) -> None:
         """automatically identifies if it's a cluster or local machine"""
         hostname = socket.gethostname()
-        if "cpu" in hostname or "mogon" in hostname:
+        if any(x in hostname for x in ("cpu", "mogon", "login", "gp")):
             self.cluster = True
-            if "mogon" in hostname:
+            if any(x in hostname for x in ("login", "mogon")):
                 console.print(
                     "[bold red]Execute this script on CPU nodes\n mpiexec still has some bugs[/]"
                 )
 
         console.print(f"[bold  green]CLUSTER MODE: {self.cluster}[/]")
 
+        if "gp" in hostname:
+            self.fuse = True
+            console.print("[bold green]FUSE MODE: ON[/]")
+
     def update(self) -> None:
         """updates the flags and pass variables after the passed options are read.
-        This is necessary, to adapt to the cluster mode and the installation path
+        This is necessary to adapt to the cluster mode and the installation path
         """
         self.set_flags()
         self.set_variables()
@@ -283,6 +289,8 @@ class JitSettings:
         self.gkfs_proxy_log = os.path.join(self.log_dir, "gekko_proxy.log")
         self.gkfs_proxy_err = os.path.join(self.log_dir, "gekko_proxy.err")
         self.gkfs_client_log = os.path.join(self.log_dir, "gekko_client.log")
+        self.gkfs_fuse_log = os.path.join(self.log_dir, "gekko_fuse.log")
+        self.gkfs_fuse_err = os.path.join(self.log_dir, "gekko_fuse.err")
         self.cargo_log = os.path.join(self.log_dir, "cargo.log")
         self.cargo_err = os.path.join(self.log_dir, "cargo.err")
         self.ftio_log = os.path.join(self.log_dir, "ftio.log")
@@ -357,34 +365,35 @@ class JitSettings:
 
         # ? Tools
         # ?##########################
+        # self.home = "/lustre/project/nhr-gekko/tarraf"  # mogon
+        self.home = str(os.path.expanduser("~"))  # bsc
+
         # ****** ftio variables ******
-        self.ftio_bin_location = "/lustre/project/nhr-gekko/tarraf/FTIO/.venv/bin"
+        self.ftio_bin_location = f"{self.home}/FTIO/.venv/bin"
 
         # ****** gkfs variables ******
-        self.gkfs_deps = "/lustre/project/nhr-gekko/tarraf/deps"  # _gcc12_2"
+        # self.gkfs_dir = f"{self.home}/deps/gekkofs_zmq_install"  # mogon
+        self.gkfs_dir = f"/apps/GPP/GEKKOFS/gkfs-master/"  # bsc
         if self.parsed_gkfs_daemon:
             self.gkfs_daemon = self.parsed_gkfs_daemon
         else:
-            self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
+            self.gkfs_daemon = f"{self.gkfs_dir}/bin/gkfs_daemon"
 
         if self.parsed_gkfs_intercept:
             self.gkfs_intercept = self.parsed_gkfs_intercept
         else:
-            self.gkfs_intercept = (
-                f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
-            )
+            self.gkfs_intercept = f"{self.gkfs_dir}/lib64/libgkfs_intercept.so"
 
+        self.gkfs_fuse = f"{self.gkfs_dir}/bin/fuse_client"
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
-        self.gkfs_hostfile = "/lustre/project/nhr-gekko/tarraf/gkfs_hosts.txt"
-        self.gkfs_proxy = (
-            "/lustre/project/nhr-gekko/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
-        )
+        self.gkfs_hostfile = f"{self.home}/gkfs_hosts.txt"
+        self.gkfs_proxy = f"{self.home}/gekkofs/build/src/proxy/gkfs_proxy"
         self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
         self.update_files_with_gkfs_mntdir = []
 
         # ****** cargo variables ******
-        self.cargo_bin = f"{self.gkfs_deps}/gekkofs_zmq_install/bin"  # "/lustre/project/nhr-gekko/tarraf/cargo/build/cli"
+        self.cargo_bin = f"{self.gkfs_dir}/bin"  # f"{self.home}/cargo/build/cli"
 
         # ? APP settings
         # ?##########################
@@ -392,12 +401,12 @@ class JitSettings:
         #  ├─ IOR
         if "ior" in self.app:
             self.app_call = "./ior "
-            self.run_dir = "/lustre/project/nhr-gekko/tarraf/ior/src"
+            self.run_dir = f"{self.home}/ior/src"
             self.app_flags = "-a POSIX -i 4 -o ./iortest -t 128k -b 512m -F"
         #  ├─ HACCIO
         elif "hacc" in self.app:
             self.app_call = "./HACC_ASYNC_IO"
-            self.run_dir = "/lustre/project/nhr-gekko/tarraf/HACC-IO"
+            self.run_dir = f"{self.home}/HACC-IO"
             self.app_flags = "1000000 test_run/mpi"
         # ├─ NEK5000 --> change gkfs_daemon_protocol to socket
         elif "nek" in self.app:
@@ -407,9 +416,9 @@ class JitSettings:
         #  ├─ Wacom++ --> change wacom.json if needed
         elif "wacom" in self.app:
             self.app_call = "./wacommplusplus"
-            # self.run_dir = "/lustre/project/nhr-gekko/tarraf/wacommplusplus/build"
-            # self.run_dir = "/lustre/project/nhr-gekko/tarraf/wacommplusplus/roms"
-            self.run_dir = "/lustre/project/nhr-gekko/tarraf/wacommplusplus/build_new"
+            # self.run_dir = f"{self.home}/wacommplusplus/build"
+            # self.run_dir = f"{self.home}/wacommplusplus/roms"
+            self.run_dir = f"{self.home}/wacommplusplus/build_new"
             if not self.app_flags:  # default value if app_flags is not set
                 self.app_flags = ""
         #  ├─ LAMMPS
@@ -440,7 +449,7 @@ class JitSettings:
         #  └─ WRF
         elif "wrf" in self.app:
             self.app_call = "./wrf.exe"
-            self.run_dir = "/lustre/project/nhr-gekko/tarraf/WRF/test/em_real"
+            self.run_dir = f"{self.home}/WRF/test/em_real"
             self.app_flags = ""
 
         else:
@@ -474,7 +483,7 @@ class JitSettings:
                     f"++workload.dataset.data_folder={self.gkfs_mntdir}/data ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints "
                     f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log "
                 )
-                self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.dataset.data_folder=/lustre/project/nhr-gekko/tarraf/stage-in/data"
+                self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.dataset.data_folderf={self.home}/stage-in/data"
                 self.post_app_call = ""
         # ├─ Nek5000
         elif "nek" in self.app:
@@ -523,11 +532,11 @@ class JitSettings:
         # ├─ wrf
         elif "wrf" in self.app:
             if self.exclude_daemon:
-                self.pre_app_call = "cd /lustre/project/nhr-gekko/tarraf/WRF/test/em_real; du -sh wrfout_d0* ; rm -rf wrfout_d0* rsl.*.*"
+                self.pre_app_call = "cdf {self.home}/WRF/test/em_real; du -sh wrfout_d0* ; rm -rf wrfout_d0* rsl.*.*"
                 self.post_app_call = ""
             else:
                 self.run_dir = f"{self.gkfs_mntdir}"
-                self.pre_app_call = f"cd /lustre/project/nhr-gekko/tarraf/WRF/test/em_real_stagein; du -sh wrfout_d0* ; rm -rf wrfout_d0* rsl.*.*; mkdir -p {self.run_dir}; cp /lustre/project/nhr-gekko/tarraf/WRF/test/em_real_stagein/wrf.exe {self.run_dir}"
+                self.pre_app_call = f"cdf {self.home}/WRF/test/em_real_stagein; du -sh wrfout_d0* ; rm -rf wrfout_d0* rsl.*.*; mkdir -p {self.run_dir}; cpf {self.home}/WRF/test/em_real_stagein/wrf.exe {self.run_dir}"
                 self.post_app_call = ""
                 self.app_call = f"{self.run_dir}/wrf.exe"
         else:
@@ -539,34 +548,32 @@ class JitSettings:
         # ├─ Nek5000
         if "nek" in self.app:
             self.stage_in_path = f"{self.run_dir}/input"
-            self.stage_out_path = "/lustre/project/nhr-gekko/tarraf/stage-out"
+            self.stage_out_path = f"{self.home}/stage-out"
         # ├─ Wacom++
         elif "wacom" in self.app:
             self.stage_in_path = f"{self.run_dir}/stage-in"
-            self.stage_out_path = "/lustre/project/nhr-gekko/tarraf/stage-out"
+            self.stage_out_path = f"{self.home}/stage-out"
         # ├─ DLIO
         elif "dlio" in self.app:
-            self.stage_in_path = "/lustre/project/nhr-gekko/tarraf/stage-in"
-            self.stage_out_path = "/lustre/project/nhr-gekko/tarraf/stage-out"
+            self.stage_in_path = f"{self.home}/stage-in"
+            self.stage_out_path = f"{self.home}/stage-out"
         # ├─ LAMMPS
         elif "lammps" in self.app:
             self.stage_in_path = "/lustre/project/nhr-gekko/shared/mylammps/examples/HEAT"
-            self.stage_out_path = "/lustre/project/nhr-gekko/tarraf/stage-out"
+            self.stage_out_path = f"{self.home}/stage-out"
         # ├─ WRF
         elif "wrf" in self.app:
-            self.stage_in_path = (
-                "/lustre/project/nhr-gekko/tarraf/WRF/test/em_real_stagein"
-            )
-            # self.stage_in_path = f"/lustre/project/nhr-gekko/tarraf/WRF/test/em_real"
-            self.stage_out_path = "/lustre/project/nhr-gekko/tarraf/stage-out"
+            self.stage_in_path = f"{self.home}/WRF/test/em_real_stagein"
+            # self.stage_in_path = ff"{self.home}/WRF/test/em_real"
+            self.stage_out_path = f"{self.home}/stage-out"
         # └─ Other
         else:
-            self.stage_in_path = "/lustre/project/nhr-gekko/tarraf/stage-in"
-            self.stage_out_path = "/lustre/project/nhr-gekko/tarraf/stage-out"
+            self.stage_in_path = f"{self.home}/stage-in"
+            self.stage_out_path = f"{self.home}/stage-out"
 
         # ? Regex relevant files (move matches out and in)
         # ?##########################
-        self.regex_file = "/lustre/project/nhr-gekko/shared/nek_regex4cargo.txt"
+        self.regex_file = f"{self.home}/nek_regex4cargo.txt"
         # ├─ Nek5000
         if "nek" in self.app_call:
             self.regex_flush_match = ".*/[a-zA-Z0-9]*turbPipe0\\.f\\d+"
