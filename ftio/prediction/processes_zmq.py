@@ -87,15 +87,27 @@ def bind_socket(addr: str, port: str):
     except zmq.error.ZMQError as e:
         CONSOLE.print(f"[yellow]Error encountered:\n{e}[/]")
         CONSOLE.print("[yellow]Wrong IP address. Attempting to correct...[/]")
-        addr = str(
-            subprocess.check_output(
-                "ip addr | grep 'inet 10' | awk  '{print $2}'", shell=True
-            )
+        # addr = str(
+        #     subprocess.check_output(
+        #         "ip addr | grep 'inet 10' | awk  '{print $2}'", shell=True
+        #     )
+        # )
+        # end = addr.rfind("/")
+        # start = addr.find("'")
+        # addr = addr[start + 1 : end]
+        # CONSOLE.print("[bold green]Corrected IP address:[/]", addr)
+        # socket.bind(f"tcp://{addr}:{port}")
+        output = subprocess.check_output(
+            "ip addr | grep 'inet 10' | awk '{print $2}'",
+            shell=True,
+            text=True,  # returns str instead of bytes
         )
-        end = addr.rfind("/")
-        start = addr.find("'")
-        addr = addr[start + 1 : end]
+
+        # Take first matching address
+        addr = output.splitlines()[0].split("/")[0]
+
         CONSOLE.print("[bold green]Corrected IP address:[/]", addr)
+
         socket.bind(f"tcp://{addr}:{port}")
 
     CONSOLE.print(f"[green]FTIO is running on: {addr}:{port}[/]")

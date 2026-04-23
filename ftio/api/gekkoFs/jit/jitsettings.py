@@ -40,7 +40,7 @@ class JitSettings:
 
         # flags
         ##############
-        self.set_tasks_affinity = True  # required for ls and cp
+        self.set_tasks_affinity = False  # required for ls and cp
         self.cargo_mode = "posix"  # "parallel" or "posix"
         self.debug_lvl = 3
         self.verbose = True
@@ -79,7 +79,7 @@ class JitSettings:
         self.parsed_gkfs_daemon = ""
         self.parsed_gkfs_intercept = ""
         self.home = ""
-        self.fuse = False
+        self.fuse = True
 
         self.log_dir = ""
         self.gkfs_daemon_log = ""
@@ -151,7 +151,7 @@ class JitSettings:
     def set_cluster_mode(self) -> None:
         """automatically identifies if it's a cluster or local machine"""
         hostname = socket.gethostname()
-        if any(x in hostname for x in ("cpu", "mogon", "login", "gp")):
+        if any(x in hostname for x in ("cpu", "mogon", "login", "gs")):
             self.cluster = True
             if any(x in hostname for x in ("login", "mogon")):
                 console.print(
@@ -162,7 +162,9 @@ class JitSettings:
 
         if "gp" in hostname:
             self.fuse = True
+            self.procs = os.cpu_count()/2
             console.print("[bold green]FUSE MODE: ON[/]")
+            self.port_ftio = "5558"  
 
     def update(self) -> None:
         """updates the flags and pass variables after the passed options are read.
@@ -373,7 +375,7 @@ class JitSettings:
 
         # ****** gkfs variables ******
         # self.gkfs_dir = f"{self.home}/deps/gekkofs_zmq_install"  # mogon
-        self.gkfs_dir = f"/apps/GPP/GEKKOFS/gkfs-master/"  # bsc
+        self.gkfs_dir = f"/apps/GPP/GEKKOFS/gkfs-master"  # bsc
         if self.parsed_gkfs_daemon:
             self.gkfs_daemon = self.parsed_gkfs_daemon
         else:

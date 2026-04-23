@@ -1396,6 +1396,7 @@ def print_settings(settings: JitSettings) -> None:
     # Default values
     ftio_status = "[bold green]ON[/]"
     gkfs_daemon_status = "[bold green]ON[/]"
+    gkfs_fuse_status = "[bold green]ON[/]"
     gkfs_proxy_status = "[bold green]ON[/]"
     cargo_status = "[bold green]ON[/]"
 
@@ -1419,6 +1420,7 @@ def print_settings(settings: JitSettings) -> None:
 
     gkfs_daemon_text = f"""
 ├─ gkfs daemon    : {settings.gkfs_daemon}
+├─ gkfs fuse      : {settings.gkfs_fuse}
 ├─ gkfs intercept : {settings.gkfs_intercept}
 ├─ gkfs mntdir    : {settings.gkfs_mntdir}
 ├─ gkfs rootdir   : {settings.gkfs_rootdir}
@@ -1453,13 +1455,18 @@ def print_settings(settings: JitSettings) -> None:
         gkfs_daemon_text = """
 ├─ gkfs daemon    : [yellow]none[/]
 ├─ gkfs intercept : [yellow]none[/]
+├─ gkfs fuse      : [yellow]none[/]
 ├─ gkfs mntdir    : [yellow]none[/]
 ├─ gkfs rootdir   : [yellow]none[/]
 ├─ gkfs protocol  : [yellow]none[/]
 ├─ gkfs hostfile  : [yellow]none[/]"""
         gkfs_daemon_status = "[bold yellow]off[/]"
+        gkfs_fuse_status = "[bold yellow]off[/]"
         task_daemon = "[bold yellow]-[/]"
         cpu_daemon = "[bold yellow]-[/]"
+    
+    if not settings.fuse:
+        gkfs_fuse_status = "[bold yellow]off[/]"
 
     if settings.exclude_proxy:
         gkfs_proxy_text = """
@@ -2056,7 +2063,8 @@ def srun_call(
 
     call = (
         f"srun "
-        f"--export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
+        # f"--export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
+        f"--export=ALL,{additional_arguments} "
         f"--jobid={settings.job_id} {node_list} --disable-status "
         f"-N {nodes} --ntasks={nodes * procs} "
         f"--cpus-per-task={procs} --ntasks-per-node={procs} "
