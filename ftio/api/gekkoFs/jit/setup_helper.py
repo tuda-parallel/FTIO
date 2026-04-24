@@ -1117,7 +1117,7 @@ def soft_kill(settings: JitSettings) -> None:
             jit_print("[bold  cyan]killed GEKKO FUSE [/]")
         except:
             jit_print("[bold  cyan]Unable to soft kill GEKKO FUSE [/]")
-        
+
     if not settings.exclude_proxy:
         try:
             shut_down(settings, "GEKKO", settings.gkfs_proxy_pid)
@@ -2052,6 +2052,7 @@ def mpiexec_call(
     )
     return call
 
+
 def srun_call(
     settings: JitSettings,
     command: str,
@@ -2090,7 +2091,7 @@ def srun_call(
             procs = int(nprocs)
             if nodes == 1:
                 nodes = settings.app_nodes
-                procs = int(nprocs/(nodes*nodes))
+                procs = int(nprocs / (nodes * nodes))
 
     call = (
         f"srun "
@@ -2128,6 +2129,7 @@ def clean_call(call: str, procs: int) -> tuple:
 
     return call, procs
 
+
 def clean_mpi_command(command: str):
     """
     Convert an MPI command (mpirun/mpiexec) into a clean command
@@ -2161,6 +2163,7 @@ def clean_mpi_command(command: str):
         i += 1
 
     return " ".join(cleaned), nprocs
+
 
 def get_executable_realpath(executable_name: str, search_location: str = None) -> str:
     """

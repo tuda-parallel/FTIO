@@ -864,7 +864,7 @@ def wait_for_line(
     msg: str = "",
     timeout: int = 60,
     dry_run=False,
-    occurrences: int = 1,  
+    occurrences: int = 1,
 ) -> bool:
     """Waits for a specific line to appear in a log file.
 
@@ -922,11 +922,15 @@ def wait_for_line(
 
                     if count >= occurrences:
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                        status.update(f"Found target line {count}/{occurrences}: '{target_line}'")
+                        status.update(
+                            f"Found target line {count}/{occurrences}: '{target_line}'"
+                        )
                         jit_print(f"[cyan]Stopped waiting at [{timestamp}]")
                         break
                     else:
-                        status.update(f"Found {count}/{occurrences} occurrences of '{target_line}'")
+                        status.update(
+                            f"Found {count}/{occurrences} occurrences of '{target_line}'"
+                        )
 
         return success
 

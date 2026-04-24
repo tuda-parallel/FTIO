@@ -187,7 +187,6 @@ def start_fuse(settings: JitSettings) -> None:
                 )
         else:
             raise RuntimeError("Not implemented fuse")
-            
 
         jit_print("[cyan]Starting FUSE Demons[/]", True)
         _ = execute_background_and_log(
@@ -204,11 +203,12 @@ def start_fuse(settings: JitSettings) -> None:
         settings.gkfs_intercept = ""
 
         # wait for clients to start
-        _ = wait_for_line(settings.gkfs_fuse_log, "root node allocated",occurrences=settings.app_nodes)
+        _ = wait_for_line(
+            settings.gkfs_fuse_log, "root node allocated", occurrences=settings.app_nodes
+        )
 
     if not settings.exclude_daemon:
         jit_print("[green]############## Gkfs FUSE init finished ##############\n\n\n\n ")
-
 
 
 #! Start Proxy
