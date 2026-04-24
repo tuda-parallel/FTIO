@@ -391,7 +391,7 @@ def start_ftio(settings: JitSettings) -> None:
                 f"--stage_out_path {settings.stage_out_path} --stage_in_path {settings.stage_in_path} "
                 f" --host_file {settings.gkfs_hostfile} --gkfs_mntdir {settings.gkfs_mntdir} "
             )
-            if settings.fuse:
+            if not settings.fuse:
                 ftio_data_staget_args += f"--ld_preload {settings.gkfs_intercept} "
 
             if settings.handle_new_prediction:

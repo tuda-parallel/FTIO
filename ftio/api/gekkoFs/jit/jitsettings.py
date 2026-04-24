@@ -436,7 +436,9 @@ class JitSettings:
             # workload = " workload=bert "
             # workload = " workload=bert_small "
             # workload = " workload=bert_v100_pytorch " #paper
-            workload = " workload=bert_v100_pytorch_2 "
+            # workload = " workload=bert_v100_pytorch_2 " # good 
+            # workload = " workload=resnet50_v100 "# work with fues on bsc
+            workload = " resnet50_a100_new " #bsc
             # workload = " workload=bert_v100_pytorch_allranks.yaml "
             # workload = " workload=unet3d_my_a100 "
             # workload = " workload=resnet50_my_a100 "

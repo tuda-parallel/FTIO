@@ -21,6 +21,7 @@ import signal
 import subprocess
 import sys
 import time
+import socket
 from datetime import datetime
 
 from rich.console import Console
@@ -1303,11 +1304,21 @@ def set_dir_gekko(settings: JitSettings) -> None:
         # old_gkfs_rootdir = settings.gkfs_rootdir
         old_gkfs_mntdir = settings.gkfs_mntdir
 
+        # decide where node local is
+        hostname = socket.gethostname()
+        if "gs" in hostname or "bsc" in os.path.expanduser("~"):
+            nodelocal = "/scratch/tmp"
+        elif "cpu" in hostname: 
+            nodelocal = "/localscratch"
+        else:
+            raise RuntimeError("Unsupported location to Nodelocal. Add it here.")
+
+        print(f"nodelocal is {nodelocal}")
         settings.gkfs_rootdir = (
-            f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_rootdir)}"
+            f"{nodelocal}/{settings.job_id}/{os.path.basename(settings.gkfs_rootdir)}"
         )
         settings.gkfs_mntdir = (
-            f"/localscratch/{settings.job_id}/{os.path.basename(settings.gkfs_mntdir)}"
+            f"{nodelocal}/{settings.job_id}/{os.path.basename(settings.gkfs_mntdir)}"
         )
         jit_print(f" |-> Gekko root dir updated to: {settings.gkfs_rootdir}")
         jit_print(f" |-> Gekko mnt dir updated to: {settings.gkfs_mntdir}")

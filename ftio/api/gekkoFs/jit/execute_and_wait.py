@@ -37,7 +37,7 @@ TERMINAL_WIDTH = console.size.width
 JIT_LOGGER = Logger(prefix="jit").get()
 DAEMON_LOGGER = Logger(prefix="daemon").get()
 PROXY_LOGGER = Logger(prefix="proxy").get()
-PROXY_LOGGER = Logger(prefix="fuse").get()
+FUSE_LOGGER = Logger(prefix="fuse").get()
 DLIO_LOGGER = Logger(prefix="dlio").get()
 FTIO_LOGGER = Logger(prefix="ftio").get()
 ERROR_LOGGER = Logger(prefix="error").get()
