@@ -20,7 +20,6 @@ from rich.console import Console
 
 console = Console()
 
-
 class JitSettings:
     def __init__(self) -> None:
         """sets the internal variables, don't modify this part (except flags if needed).
@@ -42,7 +41,7 @@ class JitSettings:
         ##############
         self.set_tasks_affinity = False  # required for ls and cp
         self.cargo_mode = "posix"  # "parallel" or "posix"
-        self.debug_lvl = 3
+        self.debug_lvl = 1 # >0 FTIO, >1 GKFS & FTIO, >2 GKFS & FTIO & CARGO
         self.verbose = True
         self.verbose_error = True
         self.node_local = True  # execute in node local space or memory
@@ -106,6 +105,7 @@ class JitSettings:
         ################
         self.ftio_pid = 0
         self.gkfs_daemon_pid = 0
+        self.gkfs_fuse_pid = 0
         self.gkfs_proxy_pid = 0
         self.cargo_pid = 0
         self.app_pid = 0
@@ -129,7 +129,7 @@ class JitSettings:
         self.trap_exit = True
         self.soft_kill = True
         self.hard_kill = True
-        self.procs = os.cpu_count() or 128
+        self.procs = min((len(os.sched_getaffinity(0)), os.cpu_count() or 1, 128))
         self.omp_threads = 64
         self.task_set_0 = ""
         self.task_set_1 = ""
@@ -162,7 +162,8 @@ class JitSettings:
 
         if "gp" in hostname:
             self.fuse = True
-            self.procs = os.cpu_count() / 2
+            self.gkfs_use_syscall = True 
+            # self.procs = os.cpu_count() / 2
             console.print("[bold green]FUSE MODE: ON[/]")
             self.port_ftio = "5558"
 
@@ -368,14 +369,24 @@ class JitSettings:
         # ? Tools
         # ?##########################
         # self.home = "/lustre/project/nhr-gekko/tarraf"  # mogon
+        # self.tmp_dir = self.home # dir tro store stage in and out files
         self.home = str(os.path.expanduser("~"))  # bsc
+        self.tmp_dir = os.getenv("STAGE_DIR")
+        
+        if self.tmp_dir is None:
+            raise RuntimeError(
+                "STAGE_DIR is not set. "
+                "Either define it in the environment or specify it in this file (jitsettings)."
+                )
 
         # ****** ftio variables ******
         self.ftio_bin_location = f"{self.home}/FTIO/.venv/bin"
 
         # ****** gkfs variables ******
         # self.gkfs_dir = f"{self.home}/deps/gekkofs_zmq_install"  # mogon
-        self.gkfs_dir = "/apps/GPP/GEKKOFS/gkfs-master"  # bsc
+        # self.gkfs_dir = "/apps/GPP/GEKKOFS/gkfs-master"  # bsc
+        self.gkfs_dir = f"{self.home}/deps/install"  # bsc
+
         if self.parsed_gkfs_daemon:
             self.gkfs_daemon = self.parsed_gkfs_daemon
         else:
@@ -431,14 +442,15 @@ class JitSettings:
         #  ├─ DLIO
         elif "dlio" in self.app:
             self.app_call = "dlio_benchmark"
-            self.run_dir = "."
+            # self.run_dir = "."
+            self.run_dir = self.tmp_dir
             # workload = " workload=cosmoflow_a100 "
             # workload = " workload=bert "
             # workload = " workload=bert_small "
             # workload = " workload=bert_v100_pytorch " #paper
             # workload = " workload=bert_v100_pytorch_2 " # good
             # workload = " workload=resnet50_v100 "# work with fues on bsc
-            workload = " resnet50_a100_new "  # bsc
+            workload = " workload=resnet50_v100_new "  # bsc
             # workload = " workload=bert_v100_pytorch_allranks.yaml "
             # workload = " workload=unet3d_my_a100 "
             # workload = " workload=resnet50_my_a100 "
@@ -476,7 +488,8 @@ class JitSettings:
                     f"++workload.output.output_folder={self.run_dir}/hydra_log "
                 )
                 # self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
-                self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                # self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                self.pre_app_call = f"mpirun -np $APP_PROCS dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                 self.post_app_call = ""
             else:
                 # self.run_dir = self.gkfs_mntdir #? don't enable this flag, as the executing node doesn't have this folder
@@ -484,10 +497,11 @@ class JitSettings:
                     f"{workload} "
                     # f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True "
                     f"++workload.workflow.generate_data=False ++workload.workflow.train=True ++workload.workflow.checkpoint=True "
-                    f"++workload.dataset.data_folder={self.gkfs_mntdir}/data ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints "
-                    f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log "
+                    f"++workload.dataset.data_folder={self.run_dir}/data ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints "
+                    f"++workload.output.output_folder={self.run_dir}/hydra_log "
                 )
-                self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.dataset.data_folderf={self.home}/stage-in/data"
+                # self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.dataset.data_folderf={self.home}/stage-in/data"
+                self.pre_app_call = f"mpirun -np $APP_PROCS dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.dataset.data_folderf={self.home}/stage-in/data"
                 self.post_app_call = ""
         # ├─ Nek5000
         elif "nek" in self.app:
@@ -552,32 +566,32 @@ class JitSettings:
         # ├─ Nek5000
         if "nek" in self.app:
             self.stage_in_path = f"{self.run_dir}/input"
-            self.stage_out_path = f"{self.home}/stage-out"
+            self.stage_out_path = f"{self.tmp_dir}/stage-out"
         # ├─ Wacom++
         elif "wacom" in self.app:
             self.stage_in_path = f"{self.run_dir}/stage-in"
-            self.stage_out_path = f"{self.home}/stage-out"
+            self.stage_out_path = f"{self.tmp_dir}/stage-out"
         # ├─ DLIO
         elif "dlio" in self.app:
-            self.stage_in_path = f"{self.home}/stage-in"
-            self.stage_out_path = f"{self.home}/stage-out"
+            self.stage_in_path = f"{self.tmp_dir}/stage-in"
+            self.stage_out_path = f"{self.tmp_dir}/stage-out"
         # ├─ LAMMPS
         elif "lammps" in self.app:
             self.stage_in_path = "/lustre/project/nhr-gekko/shared/mylammps/examples/HEAT"
-            self.stage_out_path = f"{self.home}/stage-out"
+            self.stage_out_path = f"{self.tmp_dir}/stage-out"
         # ├─ WRF
         elif "wrf" in self.app:
-            self.stage_in_path = f"{self.home}/WRF/test/em_real_stagein"
-            # self.stage_in_path = ff"{self.home}/WRF/test/em_real"
-            self.stage_out_path = f"{self.home}/stage-out"
+            self.stage_in_path = f"{self.tmp_dir}/WRF/test/em_real_stagein"
+            # self.stage_in_path = ff"{self.tmp_dir}/WRF/test/em_real"
+            self.stage_out_path = f"{self.tmp_dir}/stage-out"
         # └─ Other
         else:
-            self.stage_in_path = f"{self.home}/stage-in"
-            self.stage_out_path = f"{self.home}/stage-out"
+            self.stage_in_path = f"{self.tmp_dir}/stage-in"
+            self.stage_out_path = f"{self.tmp_dir}/stage-out"
 
         # ? Regex relevant files (move matches out and in)
         # ?##########################
-        self.regex_file = f"{self.home}/nek_regex4cargo.txt"
+        self.regex_file = f"{self.tmp_dir}/nek_regex4cargo.txt"
         # ├─ Nek5000
         if "nek" in self.app_call:
             self.regex_flush_match = ".*/[a-zA-Z0-9]*turbPipe0\\.f\\d+"

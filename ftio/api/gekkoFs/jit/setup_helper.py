@@ -1044,6 +1044,9 @@ def get_pid(settings: JitSettings, name: str, pid: int) -> None:
     elif name.lower() in "gkfs_daemon":
         settings.gkfs_daemon_pid = pid
         jit_print(f" Gekko daemon startup successful. PID is {pid}")
+    elif name.lower() in "gkfs_fuse":
+        settings.gkfs_fuse_pid = pid
+        jit_print(f" Gekko fuse startup successful. PID is {pid}")
     elif name.lower() in "gkfs_proxy":
         settings.gkfs_proxy_pid = pid
         jit_print(f" Gekko proxy startup successful. PID is {pid}")
@@ -1108,6 +1111,13 @@ def soft_kill(settings: JitSettings) -> None:
         except:
             jit_print("[bold  cyan]Unable to soft kill GEKKO DEMON [/]")
 
+    if settings.fuse:
+        try:
+            shut_down(settings, "GEKKO", settings.gkfs_fuse_pid)
+            jit_print("[bold  cyan]killed GEKKO FUSE [/]")
+        except:
+            jit_print("[bold  cyan]Unable to soft kill GEKKO FUSE [/]")
+        
     if not settings.exclude_proxy:
         try:
             shut_down(settings, "GEKKO", settings.gkfs_proxy_pid)
@@ -1621,14 +1631,14 @@ def create_hostfile(settings: JitSettings) -> None:
     Args:
         settings (JitSettings): The JIT settings object.
     """
-    jit_print(f"[cyan] Cleaning Hostfile: {settings.gkfs_hostfile}")
+    jit_print(f"[cyan]Cleaning Hostfile: {settings.gkfs_hostfile}")
 
     try:
         if os.path.exists(settings.gkfs_hostfile):
             os.remove(settings.gkfs_hostfile)
-            jit_print("[yellow] Hostfile removed[/]")
+            jit_print("[yellow]Hostfile removed[/]")
         else:
-            jit_print("[green] No hostfile found to remove[/]")
+            jit_print("[green]No hostfile found to remove[/]")
 
     except Exception as e:
         jit_print(f"[bold red]Error removing hostfile:[/bold red]{e}", True)
@@ -2042,7 +2052,6 @@ def mpiexec_call(
     )
     return call
 
-
 def srun_call(
     settings: JitSettings,
     command: str,
@@ -2060,7 +2069,7 @@ def srun_call(
         nodes (int, optional): Number of nodes. Defaults to 1.
         procs (int, optional): Number of processes. Defaults to 1.
         additional_arguments (str, optional): Additional arguments for the command. Defaults to "".
-        nodelist (str, optional): List of nodes. Defaults to "".
+        node_list (str, optional): List of nodes. Defaults to "".
 
     Returns:
         str: srun command.
@@ -2073,9 +2082,18 @@ def srun_call(
         if "--nodelist" not in node_list:
             node_list = f"--nodelist={node_list}"
 
+    # MPI handling
+    if "mpirun" in command or "mpiexec" in command:
+        nprocs = None
+        command, nprocs = clean_mpi_command(command)
+        if nprocs is not None:
+            procs = int(nprocs)
+            if nodes == 1:
+                nodes = settings.app_nodes
+                procs = int(nprocs/(nodes*nodes))
+
     call = (
         f"srun "
-        # f"--export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
         f"--export=ALL,{additional_arguments} "
         f"--jobid={settings.job_id} {node_list} --disable-status "
         f"-N {nodes} --ntasks={nodes * procs} "
@@ -2083,6 +2101,7 @@ def srun_call(
         f"--overcommit --overlap --oversubscribe --mem=0 "
         f"{settings.task_set_0} {command}"
     )
+
     return call
 
 
@@ -2109,6 +2128,39 @@ def clean_call(call: str, procs: int) -> tuple:
 
     return call, procs
 
+def clean_mpi_command(command: str):
+    """
+    Convert an MPI command (mpirun/mpiexec) into a clean command
+    and extract the number of processes (-np) if present.
+
+    Args:
+        command (str): MPI command string.
+
+    Returns:
+        tuple:
+            - cleaned_command (str)
+            - nprocs (int | None)
+    """
+
+    nprocs = None
+    parts = command.split()
+    cleaned = []
+
+    i = 0
+    while i < len(parts):
+        if parts[i] in ("mpirun", "mpiexec"):
+            i += 1
+            continue
+
+        if parts[i] == "-np" and i + 1 < len(parts):
+            nprocs = int(parts[i + 1])
+            i += 2
+            continue
+
+        cleaned.append(parts[i])
+        i += 1
+
+    return " ".join(cleaned), nprocs
 
 def get_executable_realpath(executable_name: str, search_location: str = None) -> str:
     """

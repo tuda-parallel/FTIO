@@ -75,12 +75,12 @@ def start_gekko_daemon(settings: JitSettings) -> None:
 
         if settings.use_mpirun:
             debug_flag = f"-x GKFS_DAEMON_LOG_LEVEL=off -x GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern"
-            if settings.debug_lvl > 0:
+            if settings.debug_lvl > 1:
                 # debug_flag = debug_flag.replace("=err", "=trace")
                 debug_flag = debug_flag.replace("=none", "=err")
         else:
             debug_flag = f"--export=ALL,GKFS_DAEMON_LOG_LEVEL=err,GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern"
-            if settings.debug_lvl > 0:
+            if settings.debug_lvl > 1:
                 debug_flag = debug_flag.replace("=err", "=trace")
 
         if settings.cluster:
@@ -109,7 +109,7 @@ def start_gekko_daemon(settings: JitSettings) -> None:
                 # Demon call with proxy
                 call += " -p ofi+verbs -L ib0"
         else:  # no cluster mode
-            if settings.debug_lvl > 0:
+            if settings.debug_lvl > 1:
                 debug_flag = "GKFS_DAEMON_LOG_LEVEL=trace"
             else:
                 # debug_flag = "GKFS_DAEMON_LOG_LEVEL=debug"
@@ -167,33 +167,27 @@ def start_fuse(settings: JitSettings) -> None:
             if settings.use_mpirun:
                 # mpiexec
                 call = (
-                    f"{settings.gkfs_fuse} -o max_idle_threads=32 "
+                    f"{settings.gkfs_fuse} -o max_idle_threads=4 "
                     f"-o direct_io -f -o fifo -o auto_unmount {settings.gkfs_mntdir}"
                 )
                 call = mpiexec_call(
                     settings,
-                    call,
+                    f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} {call}",
                     settings.app_nodes,
                 )
             else:
                 call = (
                     f"srun  --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     #   f"--ntasks={settings.app_nodes*settings.procs_daemon} --cpus-per-task={settings.procs_daemon} --ntasks-per-node={settings.procs_daemon} --overcommit --overlap "
+                    f"--export=ALL,LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.task_set_0} "
-                    f"{settings.gkfs_fuse} -o max_idle_threads=32 "
+                    f"{settings.gkfs_fuse} -o max_idle_threads=4 "
                     f"-o direct_io -f -o fifo -o auto_unmount {settings.gkfs_mntdir}"
                 )
         else:
-            call = (
-                f" LIBGKFS_LOG=all  GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l lo -P {settings.gkfs_daemon_protocol}"
-            )
-            if not settings.exclude_proxy:
-                # Demon call with proxy
-                call += (
-                    " --proxy-listen lo --proxy-protocol {settings.gkfs_daemon_protocol}"
-                )
+            raise RuntimeError("Not implemented fuse")
+            
 
         jit_print("[cyan]Starting FUSE Demons[/]", True)
         _ = execute_background_and_log(
@@ -206,11 +200,15 @@ def start_fuse(settings: JitSettings) -> None:
         if settings.verbose_error:
             _ = monitor_log_file(settings.gkfs_daemon_err, "Error Fuse")
 
-        # turn of intercep:
+        # turn of intercept:
         settings.gkfs_intercept = ""
+
+        # wait for clients to start
+        _ = wait_for_line(settings.gkfs_fuse_log, "root node allocated",occurrences=settings.app_nodes)
 
     if not settings.exclude_daemon:
         jit_print("[green]############## Gkfs FUSE init finished ##############\n\n\n\n ")
+
 
 
 #! Start Proxy
@@ -299,7 +297,7 @@ def start_cargo(settings: JitSettings) -> None:
             )
 
         else:
-            # if settings.debug_lvl > 0:
+            # if settings.debug_lvl > 2:
             #     debug_flag = "CARGO_LOG_LEVEL=trace"
             # else:
             #     debug_flag = "CARGO_LOG_LEVEL=debug"
@@ -685,7 +683,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
                 )
             if not settings.exclude_daemon:
-                if settings.debug_lvl > 0:
+                if settings.debug_lvl > 1:
                     log_modules = "all"
                 else:
                     # log_modules = "info,warnings,errors"

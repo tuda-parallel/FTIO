@@ -864,6 +864,7 @@ def wait_for_line(
     msg: str = "",
     timeout: int = 60,
     dry_run=False,
+    occurrences: int = 1,  
 ) -> bool:
     """Waits for a specific line to appear in a log file.
 
@@ -873,6 +874,7 @@ def wait_for_line(
         msg (str): message to print
         timeout (int): maximal timeout
         dry_run (bool): if True, only print the call without executing
+        occurrences (int): number of times the target line must appear
 
     Returns:
         bool: True if the line appeared, False if timeout reached
@@ -898,6 +900,8 @@ def wait_for_line(
         except:
             file.seek(0, 0)  # Go to the end of the file and look at the last 10 entris
 
+        count = 0  # NEW: occurrence counter
+
         with Status(f"[cyan]{msg}", console=console) as status:
             while True:
                 line = file.readline()
@@ -914,10 +918,16 @@ def wait_for_line(
                     continue
 
                 if target_line in line:
-                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    status.update(f"Found target line: '{target_line}'")
-                    jit_print(f"[cyan]Stopped waiting at [{timestamp}]")
-                    break
+                    count += 1
+
+                    if count >= occurrences:
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                        status.update(f"Found target line {count}/{occurrences}: '{target_line}'")
+                        jit_print(f"[cyan]Stopped waiting at [{timestamp}]")
+                        break
+                    else:
+                        status.update(f"Found {count}/{occurrences} occurrences of '{target_line}'")
+
         return success
 
 
