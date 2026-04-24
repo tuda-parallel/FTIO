@@ -207,8 +207,7 @@ def start_fuse(settings: JitSettings) -> None:
             _ = monitor_log_file(settings.gkfs_daemon_err, "Error Fuse")
 
         # turn of intercep:
-        settings.gkfs_intercept =""
-
+        settings.gkfs_intercept = ""
 
     if not settings.exclude_daemon:
         jit_print("[green]############## Gkfs FUSE init finished ##############\n\n\n\n ")
@@ -494,14 +493,14 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
 
         # remove locks
         jit_print("[cyan]Cleaning locks")
-        # make sure the path exists 
+        # make sure the path exists
         os.makedirs(settings.stage_in_path, exist_ok=True)
         os.makedirs(settings.stage_out_path, exist_ok=True)
         # Create an empty file named "test"
         test_file = os.path.join(settings.stage_in_path, "test")
         with open(test_file, "w"):
             pass
-        
+
         if settings.stage_in_path:
             execute_block(
                 f"cd {settings.stage_in_path} && rm -f  $(find .  | grep .lock)"

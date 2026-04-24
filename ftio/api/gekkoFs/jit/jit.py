@@ -28,8 +28,8 @@ from ftio.api.gekkoFs.jit.setup_core import (
     start_application,
     start_cargo,
     start_ftio,
-    start_gekko_daemon,
     start_fuse,
+    start_gekko_daemon,
     start_gekko_proxy,
 )
 from ftio.api.gekkoFs.jit.setup_helper import (  # set_env,

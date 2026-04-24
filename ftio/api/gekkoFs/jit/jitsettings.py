@@ -162,9 +162,9 @@ class JitSettings:
 
         if "gp" in hostname:
             self.fuse = True
-            self.procs = os.cpu_count()/2
+            self.procs = os.cpu_count() / 2
             console.print("[bold green]FUSE MODE: ON[/]")
-            self.port_ftio = "5558"  
+            self.port_ftio = "5558"
 
     def update(self) -> None:
         """updates the flags and pass variables after the passed options are read.
@@ -375,7 +375,7 @@ class JitSettings:
 
         # ****** gkfs variables ******
         # self.gkfs_dir = f"{self.home}/deps/gekkofs_zmq_install"  # mogon
-        self.gkfs_dir = f"/apps/GPP/GEKKOFS/gkfs-master"  # bsc
+        self.gkfs_dir = "/apps/GPP/GEKKOFS/gkfs-master"  # bsc
         if self.parsed_gkfs_daemon:
             self.gkfs_daemon = self.parsed_gkfs_daemon
         else:
@@ -436,9 +436,9 @@ class JitSettings:
             # workload = " workload=bert "
             # workload = " workload=bert_small "
             # workload = " workload=bert_v100_pytorch " #paper
-            # workload = " workload=bert_v100_pytorch_2 " # good 
+            # workload = " workload=bert_v100_pytorch_2 " # good
             # workload = " workload=resnet50_v100 "# work with fues on bsc
-            workload = " resnet50_a100_new " #bsc
+            workload = " resnet50_a100_new "  # bsc
             # workload = " workload=bert_v100_pytorch_allranks.yaml "
             # workload = " workload=unet3d_my_a100 "
             # workload = " workload=resnet50_my_a100 "

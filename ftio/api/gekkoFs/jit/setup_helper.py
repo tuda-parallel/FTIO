@@ -18,10 +18,10 @@ import os
 import re
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import time
-import socket
 from datetime import datetime
 
 from rich.console import Console
@@ -1308,7 +1308,7 @@ def set_dir_gekko(settings: JitSettings) -> None:
         hostname = socket.gethostname()
         if "gs" in hostname or "bsc" in os.path.expanduser("~"):
             nodelocal = "/scratch/tmp"
-        elif "cpu" in hostname: 
+        elif "cpu" in hostname:
             nodelocal = "/localscratch"
         else:
             raise RuntimeError("Unsupported location to Nodelocal. Add it here.")
@@ -1475,7 +1475,7 @@ def print_settings(settings: JitSettings) -> None:
         gkfs_fuse_status = "[bold yellow]off[/]"
         task_daemon = "[bold yellow]-[/]"
         cpu_daemon = "[bold yellow]-[/]"
-    
+
     if not settings.fuse:
         gkfs_fuse_status = "[bold yellow]off[/]"
 
@@ -1515,6 +1515,7 @@ def print_settings(settings: JitSettings) -> None:
 ├─ ftio           : {ftio_status}
 ├─ gkfs daemon    : {gkfs_daemon_status}
 ├─ gkfs proxy     : {gkfs_proxy_status}
+├─ gkfs proxy     : {gkfs_fuse_status}
 ├─ cargo          : {cargo_status}
 ├─ cluster        : {settings.cluster}
 ├─ total nodes    : {settings.nodes}
