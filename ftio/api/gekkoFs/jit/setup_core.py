@@ -13,7 +13,9 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
+import math
 import os
+import re
 
 # import multiprocessing
 import subprocess
@@ -293,7 +295,7 @@ def start_cargo(settings: JitSettings) -> None:
                 call,
                 settings.app_nodes,
                 settings.procs_cargo,
-                exclude=["ftio", "demon_log", "preload", "proxy"],
+                exclude=["ftio", "demon", "preload", "proxy"],
             )
 
         else:
@@ -310,7 +312,7 @@ def start_cargo(settings: JitSettings) -> None:
                 call,
                 1,
                 settings.procs_cargo,
-                exclude=["ftio", "demon_log", "preload", "proxy"],
+                exclude=["ftio", "demon", "preload", "proxy"],
             )
 
         jit_print("[cyan]Starting Cargo[/]")
@@ -831,7 +833,27 @@ def pre_call(settings: JitSettings) -> None:
         if isinstance(settings.pre_app_call, str):
             call = settings.pre_app_call
             if any(x in call for x in ["mpiex", "mpirun"]):
-                call = flaged_call(settings, call, exclude=["ftio"])
+                # call = flaged_call(settings, call, exclude=["ftio"])
+                all_procs = re.search(r"-np\s+(\d+)", call)
+                all_procs = int(all_procs.group(1))
+
+                # use a single node if everything fits on one node
+                if all_procs <= settings.procs_app:
+                    app_nodes = 1
+                    procs_per_node = all_procs
+                else:
+                    # spread processes across available nodes
+                    app_nodes = math.ceil(all_procs / settings.procs_app)
+                    procs_per_node = math.ceil(all_procs / app_nodes)
+
+                call = flaged_call(
+                    settings,
+                    call,
+                    app_nodes,
+                    procs_per_node,
+                    exclude=["ftio"],
+                )
+
             execute_block_and_monitor(
                 settings.verbose,
                 call,

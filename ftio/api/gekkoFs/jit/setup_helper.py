@@ -2089,9 +2089,9 @@ def srun_call(
         command, nprocs = clean_mpi_command(command)
         if nprocs is not None:
             procs = int(nprocs)
-            if nodes == 1:
-                nodes = settings.app_nodes
-                procs = int(nprocs / (nodes * nodes))
+            # if nodes == 1:
+            nodes = settings.app_nodes
+            procs = int(nprocs / (nodes * nodes))
 
     call = (
         f"srun "

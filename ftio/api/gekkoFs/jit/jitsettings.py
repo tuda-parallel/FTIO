@@ -20,6 +20,7 @@ from rich.console import Console
 
 console = Console()
 
+
 class JitSettings:
     def __init__(self) -> None:
         """sets the internal variables, don't modify this part (except flags if needed).
@@ -41,7 +42,7 @@ class JitSettings:
         ##############
         self.set_tasks_affinity = False  # required for ls and cp
         self.cargo_mode = "posix"  # "parallel" or "posix"
-        self.debug_lvl = 1 # >0 FTIO, >1 GKFS & FTIO, >2 GKFS & FTIO & CARGO
+        self.debug_lvl = 1  # >0 FTIO, >1 GKFS & FTIO, >2 GKFS & FTIO & CARGO
         self.verbose = True
         self.verbose_error = True
         self.node_local = True  # execute in node local space or memory
@@ -162,7 +163,7 @@ class JitSettings:
 
         if "gp" in hostname:
             self.fuse = True
-            self.gkfs_use_syscall = True 
+            self.gkfs_use_syscall = True
             # self.procs = os.cpu_count() / 2
             console.print("[bold green]FUSE MODE: ON[/]")
             self.port_ftio = "5558"
@@ -195,9 +196,9 @@ class JitSettings:
 
     def update_app_nodes(self):
         if self.pre_app_call:
-            if "$APP_PROCS" in self.pre_app_call:
+            if "$APP_PROCS_X_NODES" in self.pre_app_call:
                 self.pre_app_call = self.pre_app_call.replace(
-                    "$APP_PROCS", str(self.procs_app * self.app_nodes)
+                    "$APP_PROCS_X_NODES", str(self.procs_app * self.app_nodes)
                 )
             elif "$APP_NODES" in self.pre_app_call:
                 self.pre_app_call = self.pre_app_call.replace(
@@ -372,12 +373,12 @@ class JitSettings:
         # self.tmp_dir = self.home # dir tro store stage in and out files
         self.home = str(os.path.expanduser("~"))  # bsc
         self.tmp_dir = os.getenv("STAGE_DIR")
-        
+
         if self.tmp_dir is None:
             raise RuntimeError(
                 "STAGE_DIR is not set. "
                 "Either define it in the environment or specify it in this file (jitsettings)."
-                )
+            )
 
         # ****** ftio variables ******
         self.ftio_bin_location = f"{self.home}/FTIO/.venv/bin"
@@ -489,7 +490,7 @@ class JitSettings:
                 )
                 # self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                 # self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
-                self.pre_app_call = f"mpirun -np $APP_PROCS dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                self.pre_app_call = f"mpirun -np $APP_PROCS_X_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                 self.post_app_call = ""
             else:
                 # self.run_dir = self.gkfs_mntdir #? don't enable this flag, as the executing node doesn't have this folder
@@ -501,7 +502,7 @@ class JitSettings:
                     f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log "
                 )
                 # self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.dataset.data_folder={self.home}/stage-in/data"
-                self.pre_app_call = f"mpirun -np $APP_PROCS dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.dataset.data_folder={self.tmp_dir}/stage-in/data"
+                self.pre_app_call = f"mpirun -np $APP_PROCS_X_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.dataset.data_folder={self.tmp_dir}/stage-in/data"
                 self.post_app_call = ""
         # ├─ Nek5000
         elif "nek" in self.app:
@@ -699,7 +700,7 @@ class JitSettings:
                         f"++workload.output.output_folder={self.run_dir}/hydra_log/ "
                     )
                     self.pre_app_call = (
-                        f"mpirun -np  $APP_PROCS dlio_benchmark "
+                        f"mpirun -np  $APP_PROCS_X_NODES dlio_benchmark "
                         f"{workload} "
                         f"++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.workflow.checkpoint=True "  # ++workload.workflow.evaluation=True "
                         f"++workload.dataset.data_folder={self.run_dir}/data/ ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/ "
