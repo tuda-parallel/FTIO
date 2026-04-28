@@ -446,7 +446,7 @@ class JitSettings:
             # self.run_dir = "."
             self.run_dir = self.tmp_dir
             workload = os.getenv("WORKLOAD")
-            # if not set, take a fixed one 
+            # if not set, take a fixed one
             if workload is None:
                 # workload = "cosmoflow_a100"
                 # workload = "bert"
@@ -508,7 +508,7 @@ class JitSettings:
                     f"++workload.dataset.data_folder={self.run_dir}/data "
                     f"++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints "
                     f"++workload.output.output_folder={self.run_dir}/hydra_log "
-                    )
+                )
                 self.post_app_call = ""
             else:
                 # self.run_dir = self.gkfs_mntdir #? don't enable this flag, as the executing node doesn't have this folder
@@ -523,7 +523,9 @@ class JitSettings:
                     f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log "
                 )
                 # dlio_dir = f"{self.gkfs_mntdir}" # no stag-in requiored, directly write to gkfs
-                dlio_dir = f"{self.tmp_dir}/stage-in" #write to stag-in, than stage-in data
+                dlio_dir = (
+                    f"{self.tmp_dir}/stage-in"  # write to stag-in, than stage-in data
+                )
                 self.pre_app_call = (
                     f"mpirun -np $APP_PROCS_X_NODES dlio_benchmark "
                     f"{workload} "

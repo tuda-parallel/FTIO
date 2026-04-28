@@ -16,6 +16,7 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 import signal
 import sys
 import traceback
+
 from rich.console import Console
 
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
@@ -120,13 +121,9 @@ def main() -> None:
         hard_kill(settings)
 
     if error == 0:
-        console.print(
-            "[bold green]############### JIT completed ###############[/]"
-        )
+        console.print("[bold green]############### JIT completed ###############[/]")
     else:
-        console.print(
-            "[bold red]################# JIT failed #################[/]"
-        )
+        console.print("[bold red]################# JIT failed #################[/]")
 
     sys.exit(error)
 

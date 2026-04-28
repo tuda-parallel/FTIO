@@ -524,7 +524,7 @@ def jit_move(settings: JitSettings) -> None:
 
     if settings.debug_lvl > 0:
         args += ["--debug"]
-    
+
     if settings.fuse:
         args += ["--node", f"{str(settings.single_node)}"]
 
@@ -609,7 +609,7 @@ def jit_move(settings: JitSettings) -> None:
         default="cp",
         help="Flushing method: 'cp' to copy files or 'tar' to compress them.",
     )
-    
+
     parser.add_argument(
         "--node",
         type=str,

@@ -760,7 +760,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
             )
         if not settings.exclude_daemon:
             additional_arguments += (
-                f"-x LIBGKFS_LOG=\"info,warnings,errors\" "
+                f'-x LIBGKFS_LOG="info,warnings,errors" '
                 f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
@@ -869,7 +869,7 @@ def pre_call(settings: JitSettings) -> None:
                 settings.app_log,
                 settings.app_err,
                 settings.dry_run,
-                src=name
+                src=name,
             )
         elif isinstance(settings.pre_app_call, list):
             for call in settings.pre_app_call:

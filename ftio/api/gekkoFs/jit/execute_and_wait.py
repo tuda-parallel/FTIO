@@ -137,7 +137,7 @@ def execute_block_and_monitor(
     log_file: str = "",
     log_err_file: str = "",
     dry_run=False,
-    src=""
+    src="",
 ):
     """Executes a call, monitors its log file, and waits for completion.
 

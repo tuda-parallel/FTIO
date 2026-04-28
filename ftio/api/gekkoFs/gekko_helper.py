@@ -40,13 +40,13 @@ def preloaded_call(args: argparse.Namespace, call: str) -> str:
         str: Output of the shell command.
     """
     hostfile = f"LIBGKFS_HOSTS_FILE={args.host_file}"
-    if args.node: #fuse requires srun, no need for preload 
+    if args.node:  # fuse requires srun, no need for preload
         call = (
-                f"srun --nodelist={args.node} --export=ALL,{hostfile} "
-                f"-N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
-                f"--overcommit --overlap --oversubscribe --mem=0 "
-                f"{call}"
-            )
+            f"srun --nodelist={args.node} --export=ALL,{hostfile} "
+            f"-N 1 --ntasks=1 --cpus-per-task=1 --ntasks-per-node=1 "
+            f"--overcommit --overlap --oversubscribe --mem=0 "
+            f"{call}"
+        )
     else:
-        call =f"{hostfile} LD_PRELOAD={args.ld_preload} {call}"
+        call = f"{hostfile} LD_PRELOAD={args.ld_preload} {call}"
     return subprocess.check_output(call, shell=True, text=True)
