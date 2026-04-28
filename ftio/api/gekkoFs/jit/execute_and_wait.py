@@ -137,6 +137,7 @@ def execute_block_and_monitor(
     log_file: str = "",
     log_err_file: str = "",
     dry_run=False,
+    src=""
 ):
     """Executes a call, monitors its log file, and waits for completion.
 
@@ -152,9 +153,9 @@ def execute_block_and_monitor(
 
     process = execute_background(call, log_file, log_err_file, dry_run)
     if verbose:
-        out = monitor_log_file(log_file, "")
+        out = monitor_log_file(log_file, src)
         if log_err_file != log_file:
-            err = monitor_log_file(log_err_file, "")
+            err = monitor_log_file(log_err_file, src)
 
     _ = process.communicate()
     if verbose:

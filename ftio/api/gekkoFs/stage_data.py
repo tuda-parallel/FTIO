@@ -435,6 +435,13 @@ def parse_args_data_stager(
         help="Flushing method: 'cp' to copy files or 'tar' to compress them.",
     )
 
+    parser.add_argument(
+        "--node",
+        type=str,
+        default=None,
+        help="single node to flush with srun if fuse is set",
+    )
+    
     # Parse the arguments
     tmp_args = parse_args(ftio_args, "ftio JIT")
 

@@ -423,6 +423,8 @@ def start_ftio(settings: JitSettings) -> None:
 
             if settings.flush_call:
                 ftio_data_staget_args += f"--flush_call '{settings.flush_call}' "
+            if settings.fuse:
+                ftio_data_staget_args += f"--node '{str(settings.single_node)}'"
 
         else:
             ftio_data_staget_args += (
@@ -725,8 +727,9 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     f"LIBGKFS_LOG=all,"
                     f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
                     f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
-                    f"LD_PRELOAD={settings.gkfs_intercept},"
                 )
+                if not settings.fuse:
+                    additional_arguments += f"LD_PRELOAD={settings.gkfs_intercept},"
                 if (
                     not settings.exclude_cargo and settings.lock_generator
                 ):  # if gekko and cargo active
@@ -757,7 +760,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
             )
         if not settings.exclude_daemon:
             additional_arguments += (
-                f"-x LIBGKFS_LOG=info,warnings,errors "
+                f"-x LIBGKFS_LOG=\"info,warnings,errors\" "
                 f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
@@ -826,6 +829,12 @@ def pre_call(settings: JitSettings) -> None:
     Args:
         settings (JitSettings): jit settings
     """
+    name = (
+        settings.app_call.split("/", 1)[1]
+        if "/" in settings.app_call
+        else settings.app_call
+    )
+
     if settings.pre_app_call:
         jit_print(
             f"[green bold]############## Pre-application Call [/][black][{get_time()}][/]"
@@ -860,6 +869,7 @@ def pre_call(settings: JitSettings) -> None:
                 settings.app_log,
                 settings.app_err,
                 settings.dry_run,
+                src=name
             )
         elif isinstance(settings.pre_app_call, list):
             for call in settings.pre_app_call:

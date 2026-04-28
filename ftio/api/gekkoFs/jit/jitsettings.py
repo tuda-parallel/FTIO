@@ -42,7 +42,7 @@ class JitSettings:
         ##############
         self.set_tasks_affinity = False  # required for ls and cp
         self.cargo_mode = "posix"  # "parallel" or "posix"
-        self.debug_lvl = 1  # >0 FTIO, >1 GKFS & FTIO, >2 GKFS & FTIO & CARGO
+        self.debug_lvl = 2  # >0 FTIO, >1 GKFS & FTIO, >2 GKFS & FTIO & CARGO
         self.verbose = True
         self.verbose_error = True
         self.node_local = True  # execute in node local space or memory
@@ -445,18 +445,24 @@ class JitSettings:
             self.app_call = "dlio_benchmark"
             # self.run_dir = "."
             self.run_dir = self.tmp_dir
-            # workload = " workload=cosmoflow_a100 "
-            # workload = " workload=bert "
-            # workload = " workload=bert_small "
-            # workload = " workload=bert_v100_pytorch " #paper
-            # workload = " workload=bert_v100_pytorch_2 " # good
-            # workload = " workload=resnet50_v100 "# work with fues on bsc
-            workload = " workload=resnet50_v100_new "  # bsc
-            # workload = " workload=bert_v100_pytorch_allranks.yaml "
-            # workload = " workload=unet3d_my_a100 "
-            # workload = " workload=resnet50_my_a100 "
-            # workload = " workload=llama_my_7b_zero3 "
-            # workload = " workload=resnet50_my_a100_pytorch "
+            workload = os.getenv("WORKLOAD")
+            # if not set, take a fixed one 
+            if workload is None:
+                # workload = "cosmoflow_a100"
+                # workload = "bert"
+                # workload = "bert_small"
+                # workload = "bert_v100_pytorch" #paper
+                # workload = "bert_v100_pytorch_2" # good
+                # workload = "resnet50_v100"# work with fues on bsc
+                # workload = "resnet50_v100_new"  # bsc best for real test
+                workload = "resnet50_v100_new_small"  # bsc
+                # workload = "bert_v100_pytorch_allranksyaml "
+                # workload = "unet3d_my_a100"
+                # workload = "resnet50_my_a100"
+                # workload = "llama_my_7b_zero3"
+                # workload = "resnet50_my_a100_pytorch"
+            # ensure surrounding spaces
+            workload = f" workload={workload} "
         #  ├─ S3D-IO
         elif "s3d" in self.app:
             self.app_call = "/lustre/project/nhr-gekko/shared/S3D-IO/s3d_io.x"
@@ -484,25 +490,50 @@ class JitSettings:
             if self.exclude_daemon:
                 self.app_flags = (
                     f"{workload} "
-                    f"++workload.workflow.generate_data=False ++workload.workflow.train=True ++workload.workflow.checkpoint=True "
-                    f"++workload.dataset.data_folder={self.run_dir}/data ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints "
+                    f"++workload.workflow.generate_data=False "
+                    f"++workload.workflow.train=True "
+                    f"++workload.workflow.checkpoint=True "
+                    f"++workload.dataset.data_folder={self.run_dir}/data "
+                    f"++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints "
                     f"++workload.output.output_folder={self.run_dir}/hydra_log "
                 )
                 # self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
                 # self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
-                self.pre_app_call = f"mpirun -np $APP_PROCS_X_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                self.pre_app_call = (
+                    f"mpirun -np $APP_PROCS_X_NODES dlio_benchmark "
+                    f"{workload} "
+                    f"++workload.workflow.generate_data=True "
+                    f"++workload.workflow.train=False "
+                    f"++workload.workflow.checkpoint=False "
+                    f"++workload.dataset.data_folder={self.run_dir}/data "
+                    f"++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints "
+                    f"++workload.output.output_folder={self.run_dir}/hydra_log "
+                    )
                 self.post_app_call = ""
             else:
                 # self.run_dir = self.gkfs_mntdir #? don't enable this flag, as the executing node doesn't have this folder
                 self.app_flags = (
-                    f"{workload} "
                     # f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True "
-                    f"++workload.workflow.generate_data=False ++workload.workflow.train=True ++workload.workflow.checkpoint=True "
-                    f"++workload.dataset.data_folder={self.gkfs_mntdir}/data ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints "
+                    f"{workload} "
+                    f"++workload.workflow.generate_data=False "
+                    f"++workload.workflow.train=True "
+                    f"++workload.workflow.checkpoint=True "
+                    f"++workload.dataset.data_folder={self.gkfs_mntdir}/data "
+                    f"++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints "
                     f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log "
                 )
-                # self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.dataset.data_folder={self.home}/stage-in/data"
-                self.pre_app_call = f"mpirun -np $APP_PROCS_X_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.dataset.data_folder={self.tmp_dir}/stage-in/data"
+                # dlio_dir = f"{self.gkfs_mntdir}" # no stag-in requiored, directly write to gkfs
+                dlio_dir = f"{self.tmp_dir}/stage-in" #write to stag-in, than stage-in data
+                self.pre_app_call = (
+                    f"mpirun -np $APP_PROCS_X_NODES dlio_benchmark "
+                    f"{workload} "
+                    f"++workload.workflow.generate_data=True "
+                    f"++workload.workflow.train=False "
+                    f"++workload.workflow.checkpoint=False "
+                    f"++workload.dataset.data_folder={dlio_dir}/data "
+                    f"++workload.checkpoint.checkpoint_folder={dlio_dir}/checkpoints "
+                    f"++workload.output.output_folder={dlio_dir}/hydra_log "
+                )
                 self.post_app_call = ""
         # ├─ Nek5000
         elif "nek" in self.app:

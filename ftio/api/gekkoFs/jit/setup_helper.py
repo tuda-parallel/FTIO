@@ -1113,10 +1113,28 @@ def soft_kill(settings: JitSettings) -> None:
 
     if settings.fuse:
         try:
-            shut_down(settings, "GEKKO", settings.gkfs_fuse_pid)
-            jit_print("[bold  cyan]killed GEKKO FUSE [/]")
-        except:
-            jit_print("[bold  cyan]Unable to soft kill GEKKO FUSE [/]")
+            shut_down(settings, "FUSE", settings.gkfs_fuse_pid)
+
+            subprocess.run(
+                f"fusermount -u {settings.gkfs_mntdir}",
+                shell=True,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            subprocess.run(
+                f"fusermount -uz {settings.gkfs_mntdir}",
+                shell=True,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            jit_print("[bold cyan]Killed GEKKO FUSE[/]")
+
+        except Exception as e:
+            jit_print(f"[bold yellow]FUSE shutdown warning:[/] {e}")
 
     if not settings.exclude_proxy:
         try:
@@ -1525,7 +1543,7 @@ def print_settings(settings: JitSettings) -> None:
 ├─ ftio           : {ftio_status}
 ├─ gkfs daemon    : {gkfs_daemon_status}
 ├─ gkfs proxy     : {gkfs_proxy_status}
-├─ gkfs proxy     : {gkfs_fuse_status}
+├─ gkfs fuse      : {gkfs_fuse_status}
 ├─ cargo          : {cargo_status}
 ├─ cluster        : {settings.cluster}
 ├─ total nodes    : {settings.nodes}
@@ -1933,7 +1951,7 @@ def load_flags_mpiexec(
             additional_arguments += (
                 f"-x LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']} "
             )
-        if "preload" not in exclude:
+        if "preload" not in exclude and not settings.fuse:
             additional_arguments += f"-x LD_PRELOAD={default['LD_PRELOAD']} "
 
     additional_arguments += get_env(settings, "mpi")
@@ -1978,7 +1996,7 @@ def load_flags_srun(
             )
         if "hostfile" not in exclude:
             additional_arguments += f"LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']},"
-        if "preload" not in exclude:
+        if "preload" not in exclude and not settings.fuse:
             additional_arguments += f"LD_PRELOAD={default['LD_PRELOAD']},"
 
     additional_arguments += get_env(settings, "srun")

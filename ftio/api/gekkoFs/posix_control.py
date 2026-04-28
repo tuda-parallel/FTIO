@@ -524,6 +524,9 @@ def jit_move(settings: JitSettings) -> None:
 
     if settings.debug_lvl > 0:
         args += ["--debug"]
+    
+    if settings.fuse:
+        args += ["--node", f"{str(settings.single_node)}"]
 
     # Define CLI parser
     parser = argparse.ArgumentParser(
@@ -605,6 +608,13 @@ def jit_move(settings: JitSettings) -> None:
         choices=["cp", "tar"],
         default="cp",
         help="Flushing method: 'cp' to copy files or 'tar' to compress them.",
+    )
+    
+    parser.add_argument(
+        "--node",
+        type=str,
+        default=None,
+        help="single node to flush with srun if fuse is set",
     )
 
     # Parse and call mover
