@@ -21,13 +21,25 @@ if COLORLOG_AVAILABLE:
 ANSI_COLORS = {
     "ftio": "\033[36m",  # cyan
     "proxy": "\033[35m",  # purple
-    "daemon": "\033[95m",  # pink
-    "fuse": "\033[30m",  # blue
-    "dlio": "\033[33m",  # yellow"\033[34m"
+    "daemon": "\033[95m",  # bright magenta
+    "fuse": "\033[34m",  # blue
+    "dlio": "\033[33m",  # yellow
     "lammp": "\033[33m",  # yellow
     "jit": "\033[32m",  # green
     "error": "\033[31m",  # red
     "reset": "\033[0m",
+}
+
+# colorlog color names matching each prefix (used for INFO message color)
+_COLORLOG_MSG_COLORS = {
+    "ftio": "cyan",
+    "proxy": "purple",
+    "daemon": "bold_purple",
+    "fuse": "blue",
+    "dlio": "yellow",
+    "lammp": "yellow",
+    "jit": "green",
+    "error": "red",
 }
 
 
@@ -58,17 +70,16 @@ class Logger:
     def _resolve_formatter(self):
         prefix_upper = self.prefix.upper()
         prefix_color = ANSI_COLORS.get(self.prefix, ANSI_COLORS["reset"])
+        msg_colorlog = _COLORLOG_MSG_COLORS.get(self.prefix, "green")
 
         if COLORLOG_AVAILABLE:
-            # ColoredFormatter with level colors for the message
             base_format = f"[%(asctime)s|{prefix_color}{prefix_upper}{ANSI_COLORS['reset']}|%(levelname)-5s]: %(log_color)s%(message)s%(reset)s"
             return ColoredFormatter(
                 fmt=base_format,
                 datefmt="%H:%M:%S",
-                # datefmt="%Y-%m-%d %H:%M:%S",
                 log_colors={
                     "DEBUG": "cyan",
-                    "INFO": "green",
+                    "INFO": msg_colorlog,
                     "WARNING": "yellow",
                     "ERROR": "red",
                     "CRITICAL": "bold_red",
@@ -76,8 +87,12 @@ class Logger:
                 style="%",
             )
         else:
-            # Fallback: ANSI codes in message for prefix only
-            fmt = f"[%(asctime)s| {prefix_color}{prefix_upper}{ANSI_COLORS['reset']} | %(levelname)-8s]: %(message)s"
+            # Fallback: color both prefix and message with ANSI codes
+            reset = ANSI_COLORS["reset"]
+            fmt = (
+                f"[%(asctime)s| {prefix_color}{prefix_upper}{reset} | %(levelname)-8s]: "
+                f"{prefix_color}%(message)s{reset}"
+            )
             return logging.Formatter(fmt=fmt, datefmt="%Y-%m-%d %H:%M:%S")
 
     def get(self):

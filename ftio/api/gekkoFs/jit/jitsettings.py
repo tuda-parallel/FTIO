@@ -79,7 +79,7 @@ class JitSettings:
         self.parsed_gkfs_daemon = ""
         self.parsed_gkfs_intercept = ""
         self.home = ""
-        self.fuse = True
+        self.fuse = False
 
         self.log_dir = ""
         self.gkfs_daemon_log = ""
@@ -163,8 +163,8 @@ class JitSettings:
         console.print(f"[bold  green]CLUSTER MODE: {self.cluster}[/]")
 
         if "gp" in hostname:
-            self.fuse = True
             self.gkfs_use_syscall = True
+            # self.fuse = True
             # self.procs = os.cpu_count() / 2
             console.print("[bold green]FUSE MODE: ON[/]")
             self.port_ftio = "5558"

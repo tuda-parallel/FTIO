@@ -31,6 +31,12 @@ CONSOLE = MyConsole()
 CONSOLE.set(True)
 
 
+def trigger_print(text: str, src: str = "") -> None:
+    """Prints a trigger message with a distinct [FTIO->Trigger] prefix."""
+    label = f"[FTIO->Trigger{(' ' + src) if src else ''}]"
+    CONSOLE.print(f"[bold bright_blue]{label}:[/][blue] {text}[/]")
+
+
 def stage_files(args: argparse.Namespace, latest_prediction: dict) -> None:
     """
     Stages the files based on the provided prediction.
@@ -40,8 +46,8 @@ def stage_files(args: argparse.Namespace, latest_prediction: dict) -> None:
         latest_prediction (dict): Result from FTIO containing prediction details.
     """
     period = 1 / latest_prediction["freq"] if latest_prediction["freq"] > 0 else 0
-    text = f"frequency: {latest_prediction['freq']}\nperiod: {period} \nconfidence: {latest_prediction['conf']}\nprobability: {latest_prediction['probability']}\n"
-    CONSOLE.print(f"[bold green][Trigger][/][green]{text}\n")
+    text = f"frequency: {latest_prediction['freq']}\nperiod: {period} \nconfidence: {latest_prediction['conf']}\nprobability: {latest_prediction['probability']}"
+    trigger_print(text)
     if args.cargo:
         move_files_cargo(args, period=period)
     else:  # standard move
@@ -189,12 +195,12 @@ def strategy_avoid_interference(sync_trigger: Queue, args: argparse.Namespace) -
                             latest_prediction["t_flush"] + t
                         )  # t is the waiting time in this function. t_flush contains the overhead of ftio + when the data was flushed from gekko
                         remaining_time = target_time - gkfs_elapsed_time
-                        CONSOLE.print(
-                            f"[bold green][Trigger {latest_prediction['source']}][/][green]\n"
+                        trigger_print(
                             f"Probability   : {latest_prediction['probability'] * 100:.0f}%\n"
                             f"Elapsed time  : {gkfs_elapsed_time:.3f} s\n"
                             f"Target time   : {target_time:.3f} s\n"
-                            f"--> trigger in {remaining_time:.3f} s[/]\n"
+                            f"--> trigger in {remaining_time:.3f} s",
+                            src=latest_prediction["source"],
                         )
                         if remaining_time > 0:
                             countdown = time.time() + remaining_time
@@ -211,12 +217,12 @@ def strategy_avoid_interference(sync_trigger: Queue, args: argparse.Namespace) -
                                             if skipped >= 2:
                                                 if not condition:
                                                     condition = True  # continue waiting until the time ends
-                                                    CONSOLE.print(
-                                                        f"[bold green][Trigger][/][yellow]Too many skips, staging data out in {time.time() < countdown} s[/]\n"
+                                                    trigger_print(
+                                                        f"[yellow]Too many skips, staging data out in {time.time() < countdown} s[/]"
                                                     )
                                             else:
-                                                CONSOLE.print(
-                                                    f"[bold green][Trigger][/][yellow]Skipping, new latest_prediction is ready (skipped: {skipped})[/]\n"
+                                                trigger_print(
+                                                    f"[yellow]Skipping, new prediction ready (skipped: {skipped})[/]"
                                                 )
                                                 break  # no need to wait
                                     else:
@@ -224,8 +230,8 @@ def strategy_avoid_interference(sync_trigger: Queue, args: argparse.Namespace) -
                                         _ = sync_trigger.get()
                                         # used only for counting
                                         cancel_counter += 1
-                                        CONSOLE.print(
-                                            f"[bold green][Trigger][/][yellow]Canceled incoming latest_prediction {cancel_counter}[/]\n"
+                                        trigger_print(
+                                            f"[yellow]Canceled incoming prediction {cancel_counter}[/]"
                                         )
                                 time.sleep(0.01)
 
@@ -241,15 +247,13 @@ def strategy_avoid_interference(sync_trigger: Queue, args: argparse.Namespace) -
                         else:
                             not_in_time += 1
                             if not_in_time == 3:
-                                CONSOLE.print(
-                                    "[bold green][Trigger][/][yellow]Not in time 3 times, triggering flush[/]\n"
+                                trigger_print(
+                                    "[yellow]Not in time 3 times, triggering flush[/]"
                                 )
                                 stage_files(args, latest_prediction)
                                 not_in_time = 0
                             else:
-                                CONSOLE.print(
-                                    "[bold green][Trigger][/][yellow]Skipping, not in time[/]\n"
-                                )
+                                trigger_print("[yellow]Skipping, not in time[/]")
 
                 time.sleep(0.01)
             except KeyboardInterrupt:
@@ -273,7 +277,7 @@ def move_files_cargo(args: argparse.Namespace, period: float = 0) -> None:
     else:
         call = f"{args.cargo_bin}/cargo_ftio --server {args.cargo_server} --run"
 
-    CONSOLE.print(f"[bold green][Trigger][/][green]{call}")
+    trigger_print(call)
     os.system(call)
 
 
