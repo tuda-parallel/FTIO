@@ -174,14 +174,22 @@ def start_fuse(settings: JitSettings) -> None:
                 )
                 call = mpiexec_call(
                     settings,
-                    f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} {call}",
+                    (
+                        f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                        f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} "
+                        f"-x LIBGKFS_ENABLE_METRICS=on -x"
+                        f"LIBGKFS_METRICS_FLUSH_INTERVAL=5 "
+                        f"{call}"
+                    ),
                     settings.app_nodes,
                 )
             else:
                 call = (
                     f"srun  --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
                     #   f"--ntasks={settings.app_nodes*settings.procs_daemon} --cpus-per-task={settings.procs_daemon} --ntasks-per-node={settings.procs_daemon} --overcommit --overlap "
-                    f"--export=ALL,LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                    f"--export=ALL,LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
+                    f"LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},"
+                    f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_FLUSH_INTERVAL=5 "
                     f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                     f"--oversubscribe --mem=0 {settings.task_set_0} "
                     f"{settings.gkfs_fuse} -o max_idle_threads=4 "

@@ -1991,14 +1991,14 @@ def load_flags_srun(
     if not settings.exclude_daemon and "demon" not in exclude:
         if "demon_log" not in exclude:
             additional_arguments += (
-                f"LIBGKFS_LOG={default['LIBGKFS_LOG']},"
+                f"LIBGKFS_LOG=\"{default['LIBGKFS_LOG']}\","
                 f"LIBGKFS_LOG_OUTPUT={default['LIBGKFS_LOG_OUTPUT']},"
             )
         if "hostfile" not in exclude:
             additional_arguments += f"LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']},"
         if "preload" not in exclude and not settings.fuse:
             additional_arguments += f"LD_PRELOAD={default['LD_PRELOAD']},"
-
+    # env if needed
     additional_arguments += get_env(settings, "srun")
 
     return additional_arguments
