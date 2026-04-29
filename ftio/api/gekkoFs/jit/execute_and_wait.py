@@ -826,16 +826,19 @@ def print_file(file, src=""):
                         logger.info(content)
 
 
-def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
+def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> bool:
     """Waits for a file to be created.
 
     Args:
         filename (str): absolute file path
         timeout (int): timeout in seconds
         dry_run (bool): if True, only print the call without executing
+
+    Returns:
+        bool: True if the file was created, False if timeout was reached
     """
     if dry_run:
-        return
+        return True
 
     start_time = time.time()
     with Status(
@@ -846,7 +849,7 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
             if passed_time >= timeout:
                 status.update("Timeout reached")
                 jit_print("[bold red] Timeout reached[/]")
-                return
+                return False
 
             status.update(
                 f"[cyan]Waiting for {filename} to be created... ({passed_time}/{timeout}) s"
@@ -857,6 +860,7 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
         status.update(f"{filename} has been created.\n")
         print("\n")
         jit_print(f"{filename} has been created.")
+    return True
 
 
 def wait_for_line(
