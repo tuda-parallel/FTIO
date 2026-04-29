@@ -69,6 +69,13 @@ def main() -> None:
         # Setup
         # ------------------------------------------------------------------
         parse_options(settings, sys.argv[1:])
+
+        if not settings.tmp_dir:
+            raise RuntimeError(
+                "STAGE_DIR is not set. "
+                "Either define it in the environment or specify it in this file (jitsettings)."
+            )
+
         signal.signal(signal.SIGINT, lambda signal, frame: handle_sigint(settings))
 
         cancel_jit_jobs(settings)

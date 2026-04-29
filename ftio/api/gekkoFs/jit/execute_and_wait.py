@@ -138,7 +138,7 @@ def execute_block_and_monitor(
     log_err_file: str = "",
     dry_run=False,
     src="",
-):
+) -> int:
     """Executes a call, monitors its log file, and waits for completion.
 
     Args:
@@ -147,6 +147,10 @@ def execute_block_and_monitor(
         log_file (str): log file to monitor
         log_err_file (str): error log file to monitor
         dry_run (bool): if True, only print the call without executing
+        src (str): source label for colored log output
+
+    Returns:
+        int: process return code
     """
     if len(log_err_file) == 0:
         log_err_file = log_file
@@ -157,11 +161,13 @@ def execute_block_and_monitor(
         if log_err_file != log_file:
             err = monitor_log_file(log_err_file, src)
 
-    _ = process.communicate()
+    process.communicate()
     if verbose:
         out.terminate()
         if log_err_file != log_file:
             err.terminate()
+
+    return process.returncode
 
 
 def execute_background(
@@ -826,21 +832,47 @@ def print_file(file, src=""):
                         logger.info(content)
 
 
-def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> bool:
+_FATAL_PATTERNS = (
+    "transport endpoint",
+    "address already in use",
+    "no such file or directory",
+    "permission denied",
+    "terminated",
+)
+
+
+def _has_fatal_error(text: str) -> bool:
+    lower = text.lower()
+    return any(pat in lower for pat in _FATAL_PATTERNS)
+
+
+def wait_for_file(
+    filename: str,
+    timeout: int = 180,
+    dry_run: bool = False,
+    error_file: str | None = None,
+) -> bool:
     """Waits for a file to be created.
 
     Args:
         filename (str): absolute file path
         timeout (int): timeout in seconds
         dry_run (bool): if True, only print the call without executing
+        error_file (str | None): optional stderr/error log to monitor for fatal
+            errors; if new content matching a fatal pattern is detected the
+            function returns False immediately without waiting for the timeout
 
     Returns:
-        bool: True if the file was created, False if timeout was reached
+        bool: True if the file was created, False if timeout or fatal error
     """
     if dry_run:
         return True
 
     start_time = time.time()
+    err_offset = (
+        os.path.getsize(error_file) if error_file and os.path.isfile(error_file) else 0
+    )
+
     with Status(
         f"[cyan]Waiting for {filename} to be created...\n", console=console
     ) as status:
@@ -851,10 +883,23 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> bool:
                 jit_print("[bold red] Timeout reached[/]")
                 return False
 
+            if error_file and os.path.isfile(error_file):
+                current_size = os.path.getsize(error_file)
+                if current_size > err_offset:
+                    with open(error_file) as ef:
+                        ef.seek(err_offset)
+                        new_content = ef.read()
+                    err_offset = current_size
+                    if _has_fatal_error(new_content):
+                        jit_print(
+                            f"[bold red]Fatal error in {error_file}:[/]\n{new_content.strip()}"
+                        )
+                        return False
+
             status.update(
                 f"[cyan]Waiting for {filename} to be created... ({passed_time}/{timeout}) s"
             )
-            time.sleep(0.1)  # Wait for 1 second before checking again
+            time.sleep(0.1)
 
         # When the file is created, update the status
         status.update(f"{filename} has been created.\n")
@@ -868,8 +913,9 @@ def wait_for_line(
     target_line: str,
     msg: str = "",
     timeout: int = 60,
-    dry_run=False,
+    dry_run: bool = False,
     occurrences: int = 1,
+    error_file: str | None = None,
 ) -> bool:
     """Waits for a specific line to appear in a log file.
 
@@ -880,9 +926,12 @@ def wait_for_line(
         timeout (int): maximal timeout
         dry_run (bool): if True, only print the call without executing
         occurrences (int): number of times the target line must appear
+        error_file (str | None): optional stderr/error log to monitor for fatal
+            errors; if new content matching a fatal pattern is detected the
+            function returns False immediately without waiting for the timeout
 
     Returns:
-        bool: True if the line appeared, False if timeout reached
+        bool: True if the line appeared, False if timeout or fatal error reached
     """
     success = True
     if dry_run:
@@ -890,6 +939,10 @@ def wait_for_line(
     start_time = time.time()
     if not msg:
         msg = "Waiting for line to appear..."
+
+    err_offset = (
+        os.path.getsize(error_file) if error_file and os.path.isfile(error_file) else 0
+    )
 
     while not os.path.exists(filename):
         with console.status(
@@ -911,7 +964,7 @@ def wait_for_line(
             while True:
                 line = file.readline()
                 if not line:
-                    # If no line, wait and check againet
+                    # If no line, wait and check again
                     time.sleep(0.01)
                     passed_time = int(time.time() - start_time)
                     if passed_time >= timeout:
@@ -919,6 +972,21 @@ def wait_for_line(
                         jit_print("[bold red] Timeout reached[/]", True)
                         success = False
                         break
+
+                    if error_file and os.path.isfile(error_file):
+                        current_size = os.path.getsize(error_file)
+                        if current_size > err_offset:
+                            with open(error_file) as ef:
+                                ef.seek(err_offset)
+                                new_content = ef.read()
+                            err_offset = current_size
+                            if _has_fatal_error(new_content):
+                                jit_print(
+                                    f"[bold red]Fatal error in {error_file}:[/]\n{new_content.strip()}"
+                                )
+                                success = False
+                                break
+
                     status.update(f"[cyan]{msg} ({passed_time}/{timeout})")
                     continue
 

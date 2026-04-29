@@ -155,11 +155,19 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         type=str,
         help="Install everything in the given directory.",
     )
+
+    def _parse_procs(value: str) -> int:
+        """Accept plain integers or SLURM N(xM) notation, returning N."""
+        m = re.match(r"^(\d+)(?:\(x\d+\))?$", value.strip())
+        if not m:
+            raise argparse.ArgumentTypeError(f"invalid procs value: '{value}'")
+        return int(m.group(1))
+
     parser.add_argument(
         "-c",
         "--total_procs",
-        type=int,
-        help="Default number of procs if --procs_list is omitted.",
+        type=_parse_procs,
+        help="Default number of procs if --procs_list is omitted. Accepts plain integers or SLURM N(xM) notation.",
     )
     parser.add_argument(
         "-o", "--omp_threads", type=int, help="Number of OpenMP threads used."
@@ -1156,6 +1164,13 @@ def soft_kill(settings: JitSettings) -> None:
             jit_print("[bold  cyan]killed App [/]")
         except:
             jit_print("[bold  cyan]Unable to soft kill App [/]")
+
+    if settings.app_start_file:
+        try:
+            os.remove(settings.app_start_file)
+            jit_print("[bold cyan]Removed app_start flag file[/]")
+        except FileNotFoundError:
+            jit_print("[yellow]app_start flag file already absent[/]")
 
     jit_print("Soft kill finished")
 

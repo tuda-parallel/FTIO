@@ -374,13 +374,7 @@ class JitSettings:
         # self.home = "/lustre/project/nhr-gekko/tarraf"  # mogon
         # self.tmp_dir = self.home # dir tro store stage in and out files
         self.home = str(os.path.expanduser("~"))  # bsc
-        self.tmp_dir = os.getenv("STAGE_DIR")
-
-        if self.tmp_dir is None:
-            raise RuntimeError(
-                "STAGE_DIR is not set. "
-                "Either define it in the environment or specify it in this file (jitsettings)."
-            )
+        self.tmp_dir = os.getenv("STAGE_DIR", "")
 
         # ****** ftio variables ******
         self.ftio_bin_location = f"{self.home}/FTIO/.venv/bin"

@@ -171,7 +171,11 @@ def start_gekko_daemon(settings: JitSettings) -> None:
             if settings.verbose_error:
                 _ = monitor_log_file(settings.gkfs_daemon_err, "Error Demon")
 
-            if wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run):
+            if wait_for_file(
+                settings.gkfs_hostfile,
+                dry_run=settings.dry_run,
+                error_file=settings.gkfs_daemon_err,
+            ):
                 break
 
             jit_print(
@@ -210,48 +214,41 @@ def start_fuse(settings: JitSettings) -> None:
             f"[bold yellow]############## Skipping FUSE [/][black][{get_time()}][/]"
         )
         return
-    else:
-        jit_print(f"[bold green]############## Starting FUSE [/][black][{get_time()}][/]")
-        wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run)
-        if settings.cluster:
-            if settings.use_mpirun:
-                # mpiexec
-                call = (
-                    f"{settings.gkfs_fuse} -o max_idle_threads=4 "
-                    f"-o direct_io -f -o fifo -o auto_unmount {settings.gkfs_mntdir}"
-                )
-                call = mpiexec_call(
-                    settings,
-                    (
-                        f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                        f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} "
-                        f"-x LIBGKFS_ENABLE_METRICS=on -x"
-                        f"LIBGKFS_METRICS_FLUSH_INTERVAL=5 "
-                        f"{call}"
-                    ),
-                    settings.app_nodes,
-                )
-            else:
-                call = (
-                    f"srun  --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                    #   f"--ntasks={settings.app_nodes*settings.procs_daemon} --cpus-per-task={settings.procs_daemon} --ntasks-per-node={settings.procs_daemon} --overcommit --overlap "
-                    f"--export=ALL,LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
-                    f"LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},"
-                    f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_FLUSH_INTERVAL=5 "
-                    f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
-                    f"--oversubscribe --mem=0 {settings.task_set_0} "
-                    f"{settings.gkfs_fuse} -o max_idle_threads=4 "
-                    f"-o direct_io -f -o fifo -o auto_unmount {settings.gkfs_mntdir}"
-                )
+
+    jit_print(f"[bold green]############## Starting FUSE [/][black][{get_time()}][/]")
+    wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run)
+    if settings.cluster:
+        if settings.use_mpirun:
+            # mpiexec
+            call = (
+                f"{settings.gkfs_fuse} -o max_idle_threads=4 "
+                f"-o direct_io -f -o fifo -o auto_unmount {settings.gkfs_mntdir}"
+            )
+            call = mpiexec_call(
+                settings,
+                (
+                    f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                    f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} "
+                    f"-x LIBGKFS_ENABLE_METRICS=on -x"
+                    f"LIBGKFS_METRICS_FLUSH_INTERVAL=5 "
+                    f"{call}"
+                ),
+                settings.app_nodes,
+            )
         else:
             call = (
                 f"srun  --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                f"--export=ALL,LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                #   f"--ntasks={settings.app_nodes*settings.procs_daemon} --cpus-per-task={settings.procs_daemon} --ntasks-per-node={settings.procs_daemon} --overcommit --overlap "
+                f"--export=ALL,LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
+                f"LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},"
+                f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_FLUSH_INTERVAL=5 "
                 f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                 f"--oversubscribe --mem=0 {settings.task_set_0} "
                 f"{settings.gkfs_fuse} -o max_idle_threads=4 "
                 f"-o direct_io -f -o fifo -o auto_unmount {settings.gkfs_mntdir}"
             )
+    else:
+        raise RuntimeError("Not implemented fuse")
 
     # Disable intercept once — FUSE mode does not use LD_PRELOAD
     settings.gkfs_intercept = ""
@@ -288,7 +285,10 @@ def start_fuse(settings: JitSettings) -> None:
             _ = monitor_log_file(settings.gkfs_daemon_err, "Error Fuse")
 
         if wait_for_line(
-            settings.gkfs_fuse_log, "root node allocated", occurrences=settings.app_nodes
+            settings.gkfs_fuse_log,
+            "root node allocated",
+            occurrences=settings.app_nodes,
+            error_file=settings.gkfs_fuse_err,
         ):
             break
 
@@ -521,6 +521,11 @@ def start_ftio(settings: JitSettings) -> None:
             )
 
         if settings.app_start_file:
+            # Remove any stale flag from a previous run before starting predictor_jit
+            try:
+                os.remove(settings.app_start_file)
+            except FileNotFoundError:
+                jit_print("[yellow]app_start flag file not found, nothing to remove[/]")
             ftio_data_staget_args += f" --app_start_file {settings.app_start_file}"
 
         if settings.cluster:
@@ -868,39 +873,62 @@ def start_application(settings: JitSettings, runtime: JitTime):
 
     # elapsed = execute_block_and_log(call, settings.app_log_dir)
     check(settings)
-    start = time.time()
-    # p_app = multiprocessing.Process(target=execute_background_and_log_in_process, args=(call, settings.app_log,"", settings.app_err, settings.dry_run))
-    # p_app.start()
-    # p_app.join()
+    for attempt in range(_MAX_RETRIES):
+        if attempt > 0:
+            jit_print(
+                f"[bold yellow]Retrying application (attempt {attempt + 1}/{_MAX_RETRIES})...[/]"
+            )
+            time.sleep(5)
 
-    process = execute_background(
-        call, settings.app_log, settings.app_err, settings.dry_run
-    )
-    # monitor log
-    if settings.verbose:
-        _ = monitor_log_file(settings.app_log, "")
+        start = time.time()
+        process = execute_background(
+            call, settings.app_log, settings.app_err, settings.dry_run
+        )
+        # monitor log
+        if settings.verbose:
+            _ = monitor_log_file(settings.app_log, "")
+        # monitor error
+        if settings.verbose_error:
+            _ = monitor_log_file(settings.app_err, f"{name} error")
 
-    # monitor error
-    if settings.verbose_error:
-        _ = monitor_log_file(settings.app_err, f"{name} error")
+        app_timeout = settings.max_time * 60 if settings.max_time else None
+        timed_out = False
+        try:
+            _, stderr = process.communicate(timeout=app_timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.communicate()
+            timed_out = True
+            jit_print(
+                f"[bold yellow]Application timed out after {settings.max_time} min"
+                f" (attempt {attempt + 1}/{_MAX_RETRIES}) — stopping and retrying...[/]"
+            )
 
-    _, stderr = process.communicate()
+        # The timing result will be in stderr because 'time' outputs to stderr by default
+        real_time = time.time() - start
+        real_time = extract_accurate_time(settings, real_time)
 
-    # get the real time
-    # The timing result will be in stderr because 'time' outputs to stderr by default
+        if not timed_out and process.returncode == 0:
+            elapsed_time(settings, runtime, "App", real_time)
+            break
 
-    # Extract the 'real' time from the output
-    real_time = time.time() - start
-    real_time = extract_accurate_time(settings, real_time)
+        if not timed_out:
+            err_content = ""
+            if os.path.isfile(settings.app_err):
+                with open(settings.app_err) as f:
+                    err_content = f.read().strip()
 
-    elapsed_time(settings, runtime, "App", real_time)
+            jit_print(
+                f"[bold yellow]Application failed (attempt {attempt + 1}/{_MAX_RETRIES},"
+                f" returncode={process.returncode})[/]"
+            )
+            jit_print(f"[red]Error executing command: {call}[/]")
+            if err_content:
+                jit_print(f"[red]Error output:\n{err_content}[/]")
 
-    if process.returncode != 0:
-        jit_print(f"[red]Error executing command:{call}")
-        jit_print(f"[red]Error was:\n{stderr}")
-        exit_routine(settings)
-    else:
-        pass
+        if attempt == _MAX_RETRIES - 1:
+            elapsed_time(settings, runtime, "App", real_time)
+            exit_routine(settings)
 
     if not settings.exclude_ftio and settings.exclude_cargo:
         jit_print("[cyan]Shuting down FTIO as application finished")
@@ -930,49 +958,79 @@ def pre_call(settings: JitSettings) -> None:
         jit_print(
             f"[green bold]############## Pre-application Call [/][black][{get_time()}][/]"
         )
-        if isinstance(settings.pre_app_call, str):
-            call = settings.pre_app_call
-            if any(x in call for x in ["mpiex", "mpirun"]):
-                # call = flaged_call(settings, call, exclude=["ftio"])
-                all_procs = re.search(r"-np\s+(\d+)", call)
-                all_procs = int(all_procs.group(1))
-
-                # use a single node if everything fits on one node
-                if all_procs <= settings.procs_app:
-                    app_nodes = 1
-                    procs_per_node = all_procs
-                else:
-                    # spread processes across available nodes
-                    app_nodes = math.ceil(all_procs / settings.procs_app)
-                    procs_per_node = math.ceil(all_procs / app_nodes)
-
-                call = flaged_call(
-                    settings,
-                    call,
-                    app_nodes,
-                    procs_per_node,
-                    exclude=["ftio"],
+        for attempt in range(_MAX_RETRIES):
+            if attempt > 0:
+                jit_print(
+                    f"[bold yellow]Retrying pre-application call"
+                    f" (attempt {attempt + 1}/{_MAX_RETRIES})...[/]"
                 )
+                time.sleep(5)
 
-            execute_block_and_monitor(
-                settings.verbose,
-                call,
-                settings.app_log,
-                settings.app_err,
-                settings.dry_run,
-                src=name,
-            )
-        elif isinstance(settings.pre_app_call, list):
-            for call in settings.pre_app_call:
+            returncode = 0
+            if isinstance(settings.pre_app_call, str):
+                call = settings.pre_app_call
                 if any(x in call for x in ["mpiex", "mpirun"]):
-                    call = flaged_call(settings, call, exclude=["ftio"])
-                execute_block_and_monitor(
+                    # call = flaged_call(settings, call, exclude=["ftio"])
+                    all_procs = re.search(r"-np\s+(\d+)", call)
+                    all_procs = int(all_procs.group(1))
+
+                    # use a single node if everything fits on one node
+                    if all_procs <= settings.procs_app:
+                        app_nodes = 1
+                        procs_per_node = all_procs
+                    else:
+                        # spread processes across available nodes
+                        app_nodes = math.ceil(all_procs / settings.procs_app)
+                        procs_per_node = math.ceil(all_procs / app_nodes)
+
+                    call = flaged_call(
+                        settings,
+                        call,
+                        app_nodes,
+                        procs_per_node,
+                        exclude=["ftio"],
+                    )
+
+                returncode = execute_block_and_monitor(
                     settings.verbose,
                     call,
                     settings.app_log,
                     settings.app_err,
                     settings.dry_run,
+                    src=name,
                 )
+            elif isinstance(settings.pre_app_call, list):
+                for call in settings.pre_app_call:
+                    if any(x in call for x in ["mpiex", "mpirun"]):
+                        call = flaged_call(settings, call, exclude=["ftio"])
+                    returncode = execute_block_and_monitor(
+                        settings.verbose,
+                        call,
+                        settings.app_log,
+                        settings.app_err,
+                        settings.dry_run,
+                    )
+                    if returncode != 0:
+                        break
+
+            if returncode == 0:
+                break
+
+            err_content = ""
+            if os.path.isfile(settings.app_err):
+                with open(settings.app_err) as f:
+                    err_content = f.read().strip()
+
+            jit_print(
+                f"[bold yellow]Pre-application call failed"
+                f" (attempt {attempt + 1}/{_MAX_RETRIES}, returncode={returncode})[/]"
+            )
+            if err_content:
+                jit_print(f"[red]Error output:\n{err_content}[/]")
+
+            if attempt == _MAX_RETRIES - 1:
+                exit_routine(settings)
+
         # _ = execute_block_and_log(
         #     settings.pre_app_call, settings.app_log
         # )
