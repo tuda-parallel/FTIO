@@ -13,6 +13,7 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
+import os
 import sys
 import time
 
@@ -96,6 +97,17 @@ def main(args: list[str] = sys.argv[1:]) -> None:
                     # CONSOLE.print('[red]No messages[/]')
                     status.update("[cyan]Waiting for messages\n", spinner="dots")
                     continue
+
+                # Hold predictions until the application has started
+                if data_stager_args.app_start_file and not os.path.isfile(
+                    data_stager_args.app_start_file
+                ):
+                    status.update(
+                        "[yellow]Holding predictions — waiting for application to start...\n",
+                        spinner="dots",
+                    )
+                    continue
+
                 CONSOLE.print(f"[cyan]Got message from {ranks}:[/]")
                 status.update("")
 

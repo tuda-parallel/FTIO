@@ -93,6 +93,7 @@ class JitSettings:
         self.ftio_err = ""
         self.app_log = ""
         self.app_err = ""
+        self.app_start_file = ""
 
         # exclude flags
         ################
@@ -301,6 +302,7 @@ class JitSettings:
         self.ftio_err = os.path.join(self.log_dir, "ftio.err")
         self.app_log = os.path.join(self.log_dir, "app.log")
         self.app_err = os.path.join(self.log_dir, "app.err")
+        self.app_start_file = os.path.join(self.log_dir, "app_start.flag")
 
     def to_dict(self):  # -> dict[str, Any]:
         # Define a list of attribute names to be promoted to top-level keys

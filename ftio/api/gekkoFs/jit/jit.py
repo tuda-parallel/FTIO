@@ -97,6 +97,12 @@ def main() -> None:
         # ------------------------------------------------------------------
         pre_call(settings)
         stage_in(settings, runtime)
+
+        # Signal predictor_jit to start processing predictions now that the
+        # application is about to launch (pre-application I/O is excluded).
+        if not settings.exclude_ftio and settings.app_start_file:
+            open(settings.app_start_file, "w").close()
+
         start_application(settings, runtime)
         stage_out(settings, runtime)
         post_call(settings)

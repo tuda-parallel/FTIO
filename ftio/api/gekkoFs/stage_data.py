@@ -441,6 +441,15 @@ def parse_args_data_stager(
         default=None,
         help="single node to flush with srun if fuse is set",
     )
+    parser.add_argument(
+        "--app_start_file",
+        dest="app_start_file",
+        type=str,
+        default=None,
+        help="Path to a flag file that must exist before predictions are processed. "
+        "JIT creates this file just before launching the application so that "
+        "I/O from pre-application calls does not trigger early predictions.",
+    )
 
     # Parse the arguments
     tmp_args = parse_args(ftio_args, "ftio JIT")
