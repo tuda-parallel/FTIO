@@ -120,7 +120,7 @@ class JitSettings:
         self.port_cargo = "62000"  # port between cargo and ftio
 
         self.nodes = 1
-        self.max_time = 30
+        self.max_time = None
         self.ftio_args = "-m write -v --freq 10 "  # -v  # 10 -w data -v "
         self.gkfs_daemon_protocol = (
             "ofi+verbs"  # "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
@@ -164,7 +164,7 @@ class JitSettings:
 
         if "gp" in hostname:
             self.gkfs_use_syscall = True
-            # self.fuse = True
+            self.fuse = True
             # self.procs = os.cpu_count() / 2
             console.print("[bold green]FUSE MODE: ON[/]")
             self.port_ftio = "5558"
@@ -518,10 +518,12 @@ class JitSettings:
                     f"++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints "
                     f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log "
                 )
-                # dlio_dir = f"{self.gkfs_mntdir}" # no stag-in requiored, directly write to gkfs
                 dlio_dir = (
-                    f"{self.tmp_dir}/stage-in"  # write to stag-in, than stage-in data
+                    f"{self.gkfs_mntdir}"  # no stag-in requiored, directly write to gkfs
                 )
+                # dlio_dir = (
+                # f"{self.tmp_dir}/stage-in"  # write to stag-in, than stage-in data
+                # )
                 self.pre_app_call = (
                     f"mpirun -np $APP_PROCS_X_NODES dlio_benchmark "
                     f"{workload} "
