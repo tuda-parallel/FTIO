@@ -42,7 +42,7 @@ class JitSettings:
         ##############
         self.set_tasks_affinity = False  # required for ls and cp
         self.cargo_mode = "posix"  # "parallel" or "posix"
-        self.debug_lvl = 2  # >0 FTIO, >1 GKFS & FTIO, >2 GKFS & FTIO & CARGO
+        self.debug_lvl = 0  # >0 FTIO, >1 GKFS & FTIO, >2 GKFS & FTIO & CARGO
         self.verbose = True
         self.verbose_error = True
         self.node_local = True  # execute in node local space or memory
