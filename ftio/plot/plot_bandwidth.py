@@ -19,6 +19,7 @@ from datetime import datetime
 import numpy as np
 import plotly.graph_objs as go
 import plotly.io as pio
+from plotly.subplots import make_subplots
 from rich.console import Console
 from rich.panel import Panel
 
@@ -139,18 +140,22 @@ def parse_flush_log(path: str) -> tuple[list[dict], list[dict]]:
                             "delete_time": delete_time,
                         }
                     )
-    except (FileNotFoundError, OSError):
-        pass
+    except FileNotFoundError:
+        print(f"flush log not found: {path}")
+        print("Hint: flush logs are written into the job log directory, e.g.")
+        print("  logs_nodes5_Jobid12345_DF/flush.log")
+    except OSError as e:
+        print(f"Could not read {path}: {e}")
     return entries, events
 
 
 def plot_flush_log(flush_log_path: str, show: bool = True) -> go.Figure:
     """Gantt-style timeline of flush log entries.
 
-    Each flushed file is shown as a horizontal bar whose width equals the
-    total stage-out time (copy + delete).  Bars are coloured by trigger
-    source (FTIO-trigger vs post-app).  APP-START / APP-END events appear
-    as vertical dashed lines.
+    Each flushed file is shown as two stacked horizontal segments: copy
+    time (solid) and delete time (semi-transparent), coloured by trigger
+    source (FTIO-trigger = blue, post-app = orange).  APP-START / APP-END
+    appear as vertical dashed lines.
 
     Args:
         flush_log_path: path to the flush.log file written by the JIT layer.
@@ -161,44 +166,73 @@ def plot_flush_log(flush_log_path: str, show: bool = True) -> go.Figure:
     """
     entries, events = parse_flush_log(flush_log_path)
     if not entries and not events:
-        print(f"No flush data found in {flush_log_path}")
+        if os.path.isfile(flush_log_path):
+            print(f"No parseable flush data in {flush_log_path}")
         return go.Figure()
 
-    all_ts = [e["ts"] for e in entries] + [ev["ts"] for ev in events]
-    t0 = min(all_ts)
+    app_start_events = [ev for ev in events if "START" in ev["event"]]
+    if app_start_events:
+        t0 = app_start_events[0]["ts"]
+    else:
+        all_ts = [e["ts"] for e in entries] + [ev["ts"] for ev in events]
+        t0 = min(all_ts)
 
     def to_sec(ts: datetime) -> float:
         return (ts - t0).total_seconds()
 
     fig = go.Figure()
 
+    # Two segment colours per group: copy (solid), delete (lighter)
     group_cfg = [
-        ("FTIO-trigger", "#1f77b4"),
-        ("post-app", "#ff7f0e"),
+        ("FTIO-trigger", "#1f77b4", "rgba(31,119,180,0.35)"),
+        ("post-app", "#e07b00", "rgba(224,123,0,0.35)"),
     ]
-    for label, color in group_cfg:
+    first_in_legend: set[str] = set()
+
+    for label, copy_color, del_color in group_cfg:
         group = [e for e in entries if label in e["label"]]
         if not group:
             continue
         names = [os.path.basename(e["src"]) for e in group]
-        starts = [to_sec(e["ts"]) for e in group]
-        durations = [e["copy_time"] + e["delete_time"] for e in group]
-        hovers = [
-            f"File: {e['src']}<br>"
-            f"Copy: {e['copy_time']:.3f} s | Delete: {e['delete_time']:.3f} s"
-            for e in group
-        ]
+
+        # copy segment
         fig.add_trace(
             go.Bar(
-                x=durations,
+                x=[e["copy_time"] for e in group],
                 y=names,
                 orientation="h",
-                base=starts,
+                base=[to_sec(e["ts"]) for e in group],
                 name=label,
-                marker_color=color,
-                hovertext=hovers,
-                hoverinfo="text+y",
-                opacity=0.8,
+                legendgroup=label,
+                showlegend=label not in first_in_legend,
+                marker_color=copy_color,
+                marker_line_width=0,
+                hovertemplate=(
+                    "<b>%{y}</b><br>"
+                    f"Trigger: {label}<br>"
+                    "Copy: %{x:.3f} s<extra></extra>"
+                ),
+            )
+        )
+        first_in_legend.add(label)
+
+        # delete segment (stacked on top of copy)
+        fig.add_trace(
+            go.Bar(
+                x=[e["delete_time"] for e in group],
+                y=names,
+                orientation="h",
+                base=[to_sec(e["ts"]) + e["copy_time"] for e in group],
+                name=f"{label} (delete)",
+                legendgroup=label,
+                showlegend=False,
+                marker_color=del_color,
+                marker_line_width=0,
+                hovertemplate=(
+                    "<b>%{y}</b><br>"
+                    f"Trigger: {label}<br>"
+                    "Delete: %{x:.3f} s<extra></extra>"
+                ),
             )
         )
 
@@ -208,16 +242,29 @@ def plot_flush_log(flush_log_path: str, show: bool = True) -> go.Figure:
         fig.add_vline(
             x=t,
             line_dash="dash",
+            line_width=1.5,
             line_color="green" if is_start else "red",
             annotation_text=ev["event"],
+            annotation_font_size=12,
             annotation_position="top right" if is_start else "top left",
         )
 
+    # Height: ~35 px per unique file row, min 200 px
+    n_rows = max(len({os.path.basename(e["src"]) for e in entries}), 1)
+    height = max(200, 35 * n_rows + 120)  # +120 for title + legend + x-axis
+
     fig.update_layout(
-        title=f"Flush Timeline — {os.path.basename(flush_log_path)}",
-        xaxis_title="Time from first event (s)",
-        yaxis_title="File",
+        title={
+            "text": f"Flush Timeline — {os.path.basename(flush_log_path)}",
+            "font": {"size": 16},
+            "x": 0.5,
+            "xanchor": "center",
+        },
+        xaxis_title="Time from APP-START (s)",
+        yaxis_title=None,
         barmode="overlay",
+        bargap=0.5,
+        height=height,
         showlegend=True,
         legend={
             "orientation": "h",
@@ -225,9 +272,13 @@ def plot_flush_log(flush_log_path: str, show: bool = True) -> go.Figure:
             "y": 1.02,
             "xanchor": "right",
             "x": 1,
+            "bgcolor": "rgba(255,255,255,0.9)",
+            "bordercolor": "black",
+            "borderwidth": 1,
         },
+        margin={"l": 10, "r": 20, "t": 60, "b": 40},
     )
-    fig = format_plot_and_ticks(fig, font_size=18, n_ticks=10)
+    fig = format_plot_and_ticks(fig, font_size=13, n_ticks=5, y_minor=False)
 
     if show:
         pio.show(fig)
@@ -367,6 +418,193 @@ def plot_bar_with_rich(
             console.print(f"[dim]{summary}[/]")
 
 
+def _load_bandwidth_json(filename: str) -> tuple[np.ndarray, np.ndarray]:
+    """Load (t, b) arrays from a bandwidth JSON file."""
+    with open(filename) as f:
+        data = json.load(f)
+    b = np.array(data.get("b", []))
+    t = np.array(data.get("t", []))
+    if b.size == 0 and t.size == 0:
+        for sync_data in data.values():
+            if isinstance(sync_data, dict) and "bandwidth" in sync_data:
+                b = np.array(sync_data["bandwidth"].get("b_overlap_avr", []))
+                t = np.array(sync_data["bandwidth"].get("t_overlap", []))
+                break
+    return t, b
+
+
+def plot_flush_and_bandwidth(
+    flush_log_path: str,
+    t: np.ndarray,
+    b: np.ndarray,
+    show: bool = True,
+    t_offset: float = 0.0,
+) -> go.Figure:
+    """Combined figure: Gantt flush timeline (top) + bandwidth (bottom), shared x-axis.
+
+    Both axes use seconds from APP-START as the common reference.  If the
+    bandwidth ``t`` array appears shifted relative to the flush events, pass
+    ``t_offset`` (in seconds) to translate it: the plotted x will be
+    ``t + t_offset``.
+
+    Args:
+        flush_log_path: path to the JIT flush.log file.
+        t: time array from the bandwidth JSON (seconds from app start).
+        b: bandwidth array (bytes/s) from the bandwidth JSON.
+        show: open in browser when True.
+        t_offset: seconds to add to ``t`` so it aligns with the flush log
+            timeline (positive = shift bandwidth right).
+
+    Returns:
+        The combined Plotly Figure.
+    """
+    entries, events = parse_flush_log(flush_log_path)
+    if not entries and not events:
+        if os.path.isfile(flush_log_path):
+            print(f"No parseable flush data in {flush_log_path}")
+        return go.Figure()
+
+    # Anchor t0 to APP-START so both axes share the same zero.
+    app_start_events = [ev for ev in events if "START" in ev["event"]]
+    if app_start_events:
+        t0 = app_start_events[0]["ts"]
+    else:
+        all_ts = [e["ts"] for e in entries] + [ev["ts"] for ev in events]
+        t0 = min(all_ts)
+
+    def to_sec(ts: datetime) -> float:
+        return (ts - t0).total_seconds()
+
+    n_gantt_rows = max(len({os.path.basename(e["src"]) for e in entries}), 1)
+    gantt_h = max(80, 35 * n_gantt_rows + 50)
+    bw_h = 220
+    total_h = gantt_h + bw_h + 110  # title + legend + spacing
+
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        row_heights=[gantt_h / (gantt_h + bw_h), bw_h / (gantt_h + bw_h)],
+        vertical_spacing=0.06,
+    )
+
+    # ── Gantt traces (row 1) ──────────────────────────────────────────────
+    group_cfg = [
+        ("FTIO-trigger", "#1f77b4", "rgba(31,119,180,0.35)"),
+        ("post-app", "#e07b00", "rgba(224,123,0,0.35)"),
+    ]
+    first_in_legend: set[str] = set()
+    for label, copy_color, del_color in group_cfg:
+        group = [e for e in entries if label in e["label"]]
+        if not group:
+            continue
+        names = [os.path.basename(e["src"]) for e in group]
+        fig.add_trace(
+            go.Bar(
+                x=[e["copy_time"] for e in group],
+                y=names,
+                orientation="h",
+                base=[to_sec(e["ts"]) for e in group],
+                name=label,
+                legendgroup=label,
+                showlegend=label not in first_in_legend,
+                marker_color=copy_color,
+                marker_line_width=0,
+                hovertemplate=(
+                    "<b>%{y}</b><br>"
+                    f"Trigger: {label}<br>"
+                    "Copy: %{x:.3f} s<extra></extra>"
+                ),
+            ),
+            row=1,
+            col=1,
+        )
+        first_in_legend.add(label)
+        fig.add_trace(
+            go.Bar(
+                x=[e["delete_time"] for e in group],
+                y=names,
+                orientation="h",
+                base=[to_sec(e["ts"]) + e["copy_time"] for e in group],
+                name=f"{label} (delete)",
+                legendgroup=label,
+                showlegend=False,
+                marker_color=del_color,
+                marker_line_width=0,
+                hovertemplate=(
+                    "<b>%{y}</b><br>"
+                    f"Trigger: {label}<br>"
+                    "Delete: %{x:.3f} s<extra></extra>"
+                ),
+            ),
+            row=1,
+            col=1,
+        )
+
+    # ── Bandwidth trace (row 2) ───────────────────────────────────────────
+    y_unit, y_scale = set_unit(b)
+    fig.add_trace(
+        go.Scatter(
+            x=np.array(t) + t_offset,
+            y=np.array(b) * y_scale,
+            mode="lines",
+            line={"shape": "hv", "color": "#2ca02c", "width": 2},
+            fill="tozeroy",
+            fillcolor="rgba(44,160,44,0.15)",
+            name="Bandwidth",
+        ),
+        row=2,
+        col=1,
+    )
+
+    # ── APP-START / APP-END lines across both subplots ────────────────────
+    for ev in events:
+        t_ev = to_sec(ev["ts"])
+        is_start = "START" in ev["event"]
+        fig.add_vline(
+            x=t_ev,
+            line_dash="dash",
+            line_width=1.5,
+            line_color="green" if is_start else "red",
+            annotation_text=ev["event"],
+            annotation_font_size=11,
+            annotation_position="top right" if is_start else "top left",
+        )
+
+    fig.update_xaxes(title_text="Time from APP-START (s)", row=2, col=1)
+    fig.update_yaxes(title_text=None, row=1, col=1)
+    fig.update_yaxes(title_text=f"Bandwidth ({y_unit}/s)", row=2, col=1)
+
+    fig.update_layout(
+        title={
+            "text": (f"Flush Timeline + Bandwidth — {os.path.basename(flush_log_path)}"),
+            "font": {"size": 15},
+            "x": 0.5,
+            "xanchor": "center",
+        },
+        barmode="overlay",
+        bargap=0.5,
+        height=total_h,
+        showlegend=True,
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "right",
+            "x": 1,
+            "bgcolor": "rgba(255,255,255,0.9)",
+            "bordercolor": "black",
+            "borderwidth": 1,
+        },
+        margin={"l": 10, "r": 20, "t": 70, "b": 40},
+    )
+    fig = format_plot_and_ticks(fig, font_size=13, n_ticks=5, y_minor=False)
+
+    if show:
+        pio.show(fig)
+    return fig
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Load JSON data from multiple files and plot bandwidth vs. time."
@@ -375,23 +613,67 @@ def main():
         "filenames",
         type=str,
         nargs="+",
-        # nargs='?',
         default=["bandwidth.json"],
         help="The paths to the JSON files to plot. Multiple files can be provided.",
     )
+    parser.add_argument(
+        "-f",
+        "--flush_log",
+        type=str,
+        default=None,
+        metavar="FILE",
+        help="Optional path to a JIT flush.log file. "
+        "When provided, a Gantt-style flush timeline is shown alongside the bandwidth plot.",
+    )
+    parser.add_argument(
+        "-s",
+        "--same_figure",
+        action="store_true",
+        default=False,
+        help="Combine the flush timeline and bandwidth into a single figure with a "
+        "shared x-axis (requires -f). Without -s the two plots open separately.",
+    )
+    parser.add_argument(
+        "-o",
+        "--t_offset",
+        type=float,
+        default=0.0,
+        metavar="SECONDS",
+        help="Shift the bandwidth time axis by SECONDS to align it with the flush log "
+        "(positive = shift right). Only used with -s/--same_figure.",
+    )
+    parser.add_argument(
+        "--save",
+        type=str,
+        default=None,
+        metavar="FILE",
+        help="Save the figure to FILE (e.g. timeline.html) instead of opening a browser.",
+    )
     args = parser.parse_args()
-    load_json_and_plot(args.filenames)
+
+    if args.same_figure and args.flush_log:
+        t, b = _load_bandwidth_json(args.filenames[0])
+        fig = plot_flush_and_bandwidth(
+            args.flush_log, t, b, show=args.save is None, t_offset=args.t_offset
+        )
+        if args.save and fig is not None:
+            pio.write_html(fig, args.save)
+            print(f"Saved combined figure to {args.save}")
+    else:
+        if args.same_figure and not args.flush_log:
+            print("Warning: -s/--same_figure requires -f/--flush_log; ignored.")
+        load_json_and_plot(args.filenames)
+        if args.flush_log:
+            fig = plot_flush_log(args.flush_log, show=args.save is None)
+            if args.save and fig is not None:
+                pio.write_html(fig, args.save)
+                print(f"Saved flush timeline to {args.save}")
 
 
 def flush_main():
+    """Standalone entry point: plot_flush_log <path> [--save FILE]."""
     parser = argparse.ArgumentParser(
-        description="Plot a JIT flush.log as a Gantt-style timeline.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
-            "Example:\n"
-            "  plot_flush_log /path/to/logs/flush.log\n"
-            "  plot_flush_log flush.log --save flush_timeline.html"
-        ),
+        description="Plot a JIT flush.log as a Gantt-style timeline."
     )
     parser.add_argument(
         "flush_log",
@@ -403,7 +685,7 @@ def flush_main():
         type=str,
         default=None,
         metavar="FILE",
-        help="Save the figure to FILE (e.g. timeline.html) instead of opening a browser.",
+        help="Save the figure to FILE instead of opening a browser.",
     )
     args = parser.parse_args()
     fig = plot_flush_log(args.flush_log, show=args.save is None)
