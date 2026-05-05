@@ -312,16 +312,18 @@ def start_fuse(settings: JitSettings) -> None:
         if settings.verbose_error:
             _ = monitor_log_file(settings.gkfs_daemon_err, "Error Fuse")
 
+        timeout = int(20 * settings.app_nodes)
         if wait_for_line(
             settings.gkfs_fuse_log,
             "root node allocated",
+            timeout=timeout,
             occurrences=settings.app_nodes,
             error_file=settings.gkfs_fuse_err,
         ):
             break
 
         jit_print(
-            f"[bold yellow]FUSE did not start in time (attempt {attempt + 1}/{_MAX_RETRIES})[/]"
+            f"[bold yellow]FUSE did not start in time -- {timeout} (attempt {attempt + 1}/{_MAX_RETRIES})[/]"
         )
         if attempt == _MAX_RETRIES - 1:
             raise RuntimeError(f"FUSE failed to start after {_MAX_RETRIES} attempts")
