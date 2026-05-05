@@ -20,6 +20,7 @@ import math
 import mmap
 import os
 import re
+import sys
 import time
 from concurrent.futures import (
     ProcessPoolExecutor,
@@ -32,7 +33,7 @@ from ftio.api.gekkoFs.gekko_helper import get_modification_time, preloaded_call
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
 from ftio.api.gekkoFs.jit.logger import Logger
 
-TRIGGER_LOGGER = Logger(prefix="trigger").get()
+TRIGGER_LOGGER = Logger(prefix="trigger", stream=sys.stdout).get()
 
 files_in_progress = FileQueue()
 

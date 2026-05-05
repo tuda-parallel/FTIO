@@ -30,12 +30,13 @@ from ftio.parse.args import parse_args
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
-TRIGGER_LOGGER = Logger(prefix="trigger").get()
+TRIGGER_LOGGER = Logger(prefix="trigger", stream=sys.stdout).get()
 
 
 def trigger_print(text: str, src: str = "") -> None:
     prefix = f"[{src}] " if src else ""
-    TRIGGER_LOGGER.info(f"{prefix}{text}")
+    for line in text.splitlines():
+        TRIGGER_LOGGER.info(f"{prefix}{line}")
 
 
 def _stage_files_safe(args: argparse.Namespace, latest_prediction: dict) -> None:

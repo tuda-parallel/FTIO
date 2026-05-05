@@ -14,6 +14,7 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 import argparse
 import json
 import os
+from datetime import datetime
 
 import numpy as np
 import plotly.graph_objs as go
@@ -95,6 +96,144 @@ def load_json_and_plot(filenames):
     pio.show(fig)
 
 
+def parse_flush_log(path: str) -> tuple[list[dict], list[dict]]:
+    """Parse a flush.log file produced by the JIT staging layer.
+
+    Returns:
+        entries: dicts with ts, label, src, dst, copy_time, delete_time
+        events:  dicts with ts, event (APP-START / APP-END strings)
+    """
+    entries: list[dict] = []
+    events: list[dict] = []
+    try:
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split(" | ", maxsplit=4)
+                try:
+                    ts = datetime.strptime(parts[0], "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    continue
+                second = parts[1].strip() if len(parts) > 1 else ""
+                if second.startswith("APP-"):
+                    events.append({"ts": ts, "event": second})
+                elif len(parts) >= 5:
+                    src_dst = parts[2].strip()
+                    src = src_dst.split(" -> ")[0].strip()
+                    dst = src_dst.split(" -> ")[1].strip() if " -> " in src_dst else ""
+                    copy_time = float(
+                        parts[3].replace("copy:", "").replace("s", "").strip()
+                    )
+                    delete_time = float(
+                        parts[4].replace("delete:", "").replace("s", "").strip()
+                    )
+                    entries.append(
+                        {
+                            "ts": ts,
+                            "label": second,
+                            "src": src,
+                            "dst": dst,
+                            "copy_time": copy_time,
+                            "delete_time": delete_time,
+                        }
+                    )
+    except (FileNotFoundError, OSError):
+        pass
+    return entries, events
+
+
+def plot_flush_log(flush_log_path: str, show: bool = True) -> go.Figure:
+    """Gantt-style timeline of flush log entries.
+
+    Each flushed file is shown as a horizontal bar whose width equals the
+    total stage-out time (copy + delete).  Bars are coloured by trigger
+    source (FTIO-trigger vs post-app).  APP-START / APP-END events appear
+    as vertical dashed lines.
+
+    Args:
+        flush_log_path: path to the flush.log file written by the JIT layer.
+        show: when True the figure is displayed in the browser.
+
+    Returns:
+        The Plotly Figure object (useful for embedding or saving).
+    """
+    entries, events = parse_flush_log(flush_log_path)
+    if not entries and not events:
+        print(f"No flush data found in {flush_log_path}")
+        return go.Figure()
+
+    all_ts = [e["ts"] for e in entries] + [ev["ts"] for ev in events]
+    t0 = min(all_ts)
+
+    def to_sec(ts: datetime) -> float:
+        return (ts - t0).total_seconds()
+
+    fig = go.Figure()
+
+    group_cfg = [
+        ("FTIO-trigger", "#1f77b4"),
+        ("post-app", "#ff7f0e"),
+    ]
+    for label, color in group_cfg:
+        group = [e for e in entries if label in e["label"]]
+        if not group:
+            continue
+        names = [os.path.basename(e["src"]) for e in group]
+        starts = [to_sec(e["ts"]) for e in group]
+        durations = [e["copy_time"] + e["delete_time"] for e in group]
+        hovers = [
+            f"File: {e['src']}<br>"
+            f"Copy: {e['copy_time']:.3f} s | Delete: {e['delete_time']:.3f} s"
+            for e in group
+        ]
+        fig.add_trace(
+            go.Bar(
+                x=durations,
+                y=names,
+                orientation="h",
+                base=starts,
+                name=label,
+                marker_color=color,
+                hovertext=hovers,
+                hoverinfo="text+y",
+                opacity=0.8,
+            )
+        )
+
+    for ev in events:
+        t = to_sec(ev["ts"])
+        is_start = "START" in ev["event"]
+        fig.add_vline(
+            x=t,
+            line_dash="dash",
+            line_color="green" if is_start else "red",
+            annotation_text=ev["event"],
+            annotation_position="top right" if is_start else "top left",
+        )
+
+    fig.update_layout(
+        title=f"Flush Timeline — {os.path.basename(flush_log_path)}",
+        xaxis_title="Time from first event (s)",
+        yaxis_title="File",
+        barmode="overlay",
+        showlegend=True,
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "right",
+            "x": 1,
+        },
+    )
+    fig = format_plot_and_ticks(fig, font_size=18, n_ticks=10)
+
+    if show:
+        pio.show(fig)
+    return fig
+
+
 def non_zero_mean(arr: np.ndarray):
     return np.mean(arr[np.nonzero(arr)]) if len(arr[np.nonzero(arr)]) > 0 else 0
 
@@ -106,6 +245,7 @@ def plot_bar_with_rich(
     terminal_width=None,
     width_percentage=0.95,
     func=non_zero_mean,
+    flush_log=None,
 ):
     """
     Plots a bar chart using Rich library with dynamic width and properly scaled axis labels.
@@ -204,6 +344,27 @@ def plot_bar_with_rich(
 
     # Display the plot
     console.print(panel)
+
+    if flush_log and os.path.isfile(flush_log):
+        entries, _ = parse_flush_log(flush_log)
+        if entries:
+            n_ftio = sum(1 for e in entries if "ftio" in e["label"].lower())
+            n_post = len(entries) - n_ftio
+            t_ftio = sum(
+                e["copy_time"] + e["delete_time"]
+                for e in entries
+                if "ftio" in e["label"].lower()
+            )
+            t_post = sum(
+                e["copy_time"] + e["delete_time"]
+                for e in entries
+                if "ftio" not in e["label"].lower()
+            )
+            summary = (
+                f"Flushes: {n_ftio} FTIO-triggered ({t_ftio:.1f} s total), "
+                f"{n_post} post-app ({t_post:.1f} s total)"
+            )
+            console.print(f"[dim]{summary}[/]")
 
 
 def main():

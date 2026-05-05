@@ -12,6 +12,7 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 import importlib.util
 import logging
 import os
+import sys
 
 COLORLOG_AVAILABLE = importlib.util.find_spec("colorlog") is not None
 if COLORLOG_AVAILABLE:
@@ -52,14 +53,15 @@ class FlushStreamHandler(logging.StreamHandler):
 
 
 class Logger:
-    def __init__(self, level=None, prefix=""):
+    def __init__(self, level=None, prefix="", stream=None):
         self.prefix = (prefix or "GENERAL").lower()  # normalize prefix
+        self._stream = stream or sys.stderr
         self.logger = logging.getLogger(prefix)
         self.logger.setLevel(self._resolve_level(level))
 
         # Only add a handler if the logger has no handlers yet
         if not self.logger.handlers:
-            handler = FlushStreamHandler()  # subclassed to flush automatically
+            handler = FlushStreamHandler(self._stream)
             handler.setFormatter(self._resolve_formatter())
             self.logger.addHandler(handler)
             self.logger.propagate = False
@@ -70,12 +72,16 @@ class Logger:
         return getattr(logging, level_name.upper(), logging.INFO)
 
     def _resolve_formatter(self):
+        is_tty = hasattr(self._stream, "isatty") and self._stream.isatty()
         prefix_upper = self.prefix.upper()
         prefix_color = ANSI_COLORS.get(self.prefix, ANSI_COLORS["reset"])
         msg_colorlog = _COLORLOG_MSG_COLORS.get(self.prefix, "green")
 
-        if COLORLOG_AVAILABLE:
-            base_format = f"[%(asctime)s|{prefix_color}{prefix_upper}{ANSI_COLORS['reset']}|%(levelname)-5s]: %(log_color)s%(message)s%(reset)s"
+        if is_tty and COLORLOG_AVAILABLE:
+            base_format = (
+                f"[%(asctime)s|{prefix_color}{prefix_upper}{ANSI_COLORS['reset']}"
+                f"|%(levelname)-5s]: %(log_color)s%(message)s%(reset)s"
+            )
             return ColoredFormatter(
                 fmt=base_format,
                 datefmt="%H:%M:%S",
@@ -88,14 +94,18 @@ class Logger:
                 },
                 style="%",
             )
-        else:
-            # Fallback: color both prefix and message with ANSI codes
+        elif is_tty:
+            # ANSI fallback when colorlog is unavailable
             reset = ANSI_COLORS["reset"]
             fmt = (
                 f"[%(asctime)s| {prefix_color}{prefix_upper}{reset} | %(levelname)-8s]: "
                 f"{prefix_color}%(message)s{reset}"
             )
             return logging.Formatter(fmt=fmt, datefmt="%Y-%m-%d %H:%M:%S")
+        else:
+            # Plain text for non-TTY output (piped to files, log aggregators)
+            fmt = "[%(asctime)s|%(name)s|%(levelname)-5s]: %(message)s"
+            return logging.Formatter(fmt=fmt, datefmt="%H:%M:%S")
 
     def get(self):
         return self.logger
