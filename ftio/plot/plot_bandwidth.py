@@ -383,5 +383,34 @@ def main():
     load_json_and_plot(args.filenames)
 
 
+def flush_main():
+    parser = argparse.ArgumentParser(
+        description="Plot a JIT flush.log as a Gantt-style timeline.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Example:\n"
+            "  plot_flush_log /path/to/logs/flush.log\n"
+            "  plot_flush_log flush.log --save flush_timeline.html"
+        ),
+    )
+    parser.add_argument(
+        "flush_log",
+        type=str,
+        help="Path to the flush.log file produced by the JIT staging layer.",
+    )
+    parser.add_argument(
+        "--save",
+        type=str,
+        default=None,
+        metavar="FILE",
+        help="Save the figure to FILE (e.g. timeline.html) instead of opening a browser.",
+    )
+    args = parser.parse_args()
+    fig = plot_flush_log(args.flush_log, show=args.save is None)
+    if args.save and fig is not None:
+        pio.write_html(fig, args.save)
+        print(f"Saved to {args.save}")
+
+
 if __name__ == "__main__":
     main()

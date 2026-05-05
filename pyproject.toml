@@ -86,6 +86,7 @@ ftio_gui = "ftio.gui.dashboard:main"
 
 # Debug-Specific Scripts
 plot_bandwdith = "ftio.plot.plot_bandwidth:main"
+plot_flush_log = "ftio.plot.plot_bandwidth:flush_main"
 convert_trace = "ftio.util.convert_old_trace:main"
 trace_ftio = "ftio.api.trace_analysis.trace_ftio_v2:main"
 trace_analysis = "ftio.api.trace_analysis.trace_analysis:main"
