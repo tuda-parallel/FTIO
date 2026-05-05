@@ -1035,6 +1035,13 @@ def pre_call(settings: JitSettings) -> None:
                         app_nodes = math.ceil(all_procs / settings.procs_app)
                         procs_per_node = math.ceil(all_procs / app_nodes)
 
+                    if procs_per_node == 0:
+                        jit_print("[red bold] Procs per node is 0, Adjusting to 4[/]")
+                        print(
+                            f"all_procs:{all_procs} | procs_per_node:{procs_per_node} | app_nodes:{app_nodes}"
+                        )
+                        procs_per_node = 4
+
                     call = flaged_call(
                         settings,
                         call,
