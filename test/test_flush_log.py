@@ -13,19 +13,13 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 
 import argparse
 import os
-import tempfile
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from ftio.api.gekkoFs.posix_control import (
     _write_flush_log,
     copy_file_and_unlink,
-    flush_using_cp,
-    flush_using_tar,
     move_files_os,
 )
-
 
 # ---------------------------------------------------------------------------
 # _write_flush_log
@@ -151,9 +145,11 @@ def test_move_files_os_passes_triggered_by(tmp_path):
     args = _make_args(tmp_path)
     args.flush_call = "cp"
 
-    with patch("ftio.api.gekkoFs.posix_control.get_files", return_value=[]), patch(
-        "ftio.api.gekkoFs.posix_control.get_items_to_submit", return_value=[]
-    ), patch("ftio.api.gekkoFs.posix_control.flush_using_cp") as mock_cp:
+    with (
+        patch("ftio.api.gekkoFs.posix_control.get_files", return_value=[]),
+        patch("ftio.api.gekkoFs.posix_control.get_items_to_submit", return_value=[]),
+        patch("ftio.api.gekkoFs.posix_control.flush_using_cp") as mock_cp,
+    ):
         move_files_os(args, triggered_by="post_app")
         mock_cp.assert_called_once()
         _, _, _, tb = mock_cp.call_args[0]
@@ -164,9 +160,11 @@ def test_move_files_os_tar_passes_triggered_by(tmp_path):
     args = _make_args(tmp_path)
     args.flush_call = "tar"
 
-    with patch("ftio.api.gekkoFs.posix_control.get_files", return_value=[]), patch(
-        "ftio.api.gekkoFs.posix_control.get_items_to_submit", return_value=[]
-    ), patch("ftio.api.gekkoFs.posix_control.flush_using_tar") as mock_tar:
+    with (
+        patch("ftio.api.gekkoFs.posix_control.get_files", return_value=[]),
+        patch("ftio.api.gekkoFs.posix_control.get_items_to_submit", return_value=[]),
+        patch("ftio.api.gekkoFs.posix_control.flush_using_tar") as mock_tar,
+    ):
         move_files_os(args, triggered_by="ftio")
         mock_tar.assert_called_once()
         _, _, tb = mock_tar.call_args[0]
