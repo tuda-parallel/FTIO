@@ -23,18 +23,27 @@ from multiprocessing import Queue
 import numpy as np
 
 from ftio.api.gekkoFs.gekko_helper import preloaded_call
+from ftio.api.gekkoFs.jit.logger import Logger
 from ftio.api.gekkoFs.posix_control import move_files_os
 from ftio.freq.helper import MyConsole
 from ftio.parse.args import parse_args
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
+TRIGGER_LOGGER = Logger(prefix="trigger").get()
 
 
 def trigger_print(text: str, src: str = "") -> None:
-    """Prints a trigger message with a distinct [FTIO->Trigger] prefix."""
-    label = f"[FTIO->Trigger{(' ' + src) if src else ''}]"
-    CONSOLE.print(f"[bold bright_blue]{label}:[/][blue] {text}[/]")
+    prefix = f"[{src}] " if src else ""
+    TRIGGER_LOGGER.info(f"{prefix}{text}")
+
+
+def _stage_files_safe(args: argparse.Namespace, latest_prediction: dict) -> None:
+    """Wrapper that logs exceptions so they are not silently swallowed by the executor."""
+    try:
+        stage_files(args, latest_prediction)
+    except Exception as e:
+        TRIGGER_LOGGER.error(f"stage_files failed: {e}")
 
 
 def stage_files(args: argparse.Namespace, latest_prediction: dict) -> None:
@@ -124,7 +133,9 @@ def strategy_job_end(sync_trigger: Queue, args: argparse.Namespace) -> None:
                             remaining_time <= 0
                             or gkfs_elapsed_time + avr_time_per_phase > deadline
                         ):
-                            _ = executor.submit(stage_files, args, latest_prediction)
+                            _ = executor.submit(
+                                _stage_files_safe, args, latest_prediction
+                            )
                 time.sleep(0.01)
             except KeyboardInterrupt:
                 exit()
@@ -148,7 +159,9 @@ def strategy_buffer_size(sync_trigger: Queue, args: argparse.Namespace) -> None:
                         n_phases = (t_e - t_s) * latest_prediction["freq"]
                         avr_bytes = int(total_size / float(n_phases))
                         if avr_bytes + buffer_occupation > args.buffer_size:
-                            _ = executor.submit(stage_files, args, latest_prediction)
+                            _ = executor.submit(
+                                _stage_files_safe, args, latest_prediction
+                            )
                 time.sleep(0.01)
             except KeyboardInterrupt:
                 exit()
@@ -217,12 +230,12 @@ def strategy_avoid_interference(sync_trigger: Queue, args: argparse.Namespace) -
                                             if skipped >= 2:
                                                 if not condition:
                                                     condition = True  # continue waiting until the time ends
-                                                    trigger_print(
-                                                        f"[yellow]Too many skips, staging data out in {time.time() < countdown} s[/]"
+                                                    TRIGGER_LOGGER.warning(
+                                                        f"Too many skips, staging data out in {time.time() < countdown} s"
                                                     )
                                             else:
-                                                trigger_print(
-                                                    f"[yellow]Skipping, new prediction ready (skipped: {skipped})[/]"
+                                                TRIGGER_LOGGER.warning(
+                                                    f"Skipping, new prediction ready (skipped: {skipped})"
                                                 )
                                                 break  # no need to wait
                                     else:
@@ -230,13 +243,15 @@ def strategy_avoid_interference(sync_trigger: Queue, args: argparse.Namespace) -
                                         _ = sync_trigger.get()
                                         # used only for counting
                                         cancel_counter += 1
-                                        trigger_print(
-                                            f"[yellow]Canceled incoming prediction {cancel_counter}[/]"
+                                        TRIGGER_LOGGER.warning(
+                                            f"Canceled incoming prediction {cancel_counter}"
                                         )
                                 time.sleep(0.01)
 
                             if condition and latest_prediction["probability"] > 0.5:
-                                _ = executor.submit(stage_files, args, latest_prediction)
+                                _ = executor.submit(
+                                    _stage_files_safe, args, latest_prediction
+                                )
                                 # stage_files(args, latest_prediction)
                                 skipped = 0
                                 cancel_counter = 0
@@ -247,13 +262,13 @@ def strategy_avoid_interference(sync_trigger: Queue, args: argparse.Namespace) -
                         else:
                             not_in_time += 1
                             if not_in_time == 3:
-                                trigger_print(
-                                    "[yellow]Not in time 3 times, triggering flush[/]"
+                                TRIGGER_LOGGER.warning(
+                                    "Not in time 3 times, triggering flush"
                                 )
-                                stage_files(args, latest_prediction)
+                                _stage_files_safe(args, latest_prediction)
                                 not_in_time = 0
                             else:
-                                trigger_print("[yellow]Skipping, not in time[/]")
+                                TRIGGER_LOGGER.warning("Skipping, not in time")
 
                 time.sleep(0.01)
             except KeyboardInterrupt:

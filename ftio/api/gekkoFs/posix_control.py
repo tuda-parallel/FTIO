@@ -30,10 +30,9 @@ from concurrent.futures import (
 from ftio.api.gekkoFs.file_queue import FileQueue
 from ftio.api.gekkoFs.gekko_helper import get_modification_time, preloaded_call
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
-from ftio.freq.helper import MyConsole
+from ftio.api.gekkoFs.jit.logger import Logger
 
-CONSOLE = MyConsole()
-CONSOLE.set(True)
+TRIGGER_LOGGER = Logger(prefix="trigger").get()
 
 files_in_progress = FileQueue()
 
@@ -77,21 +76,22 @@ def move_files_os(
         period (float, optional): Time period for file modification checks. Defaults to 0.
         triggered_by (str): Who initiated the flush — "ftio" (predictor) or "post_app".
     """
-    CONSOLE.print("[bold green][Trigger][/] Moving files\n")
-    args.ld_preload = args.ld_preload.replace("libc_", "")
+    TRIGGER_LOGGER.info("Moving files")
+    args.ld_preload = (args.ld_preload or "").replace("libc_", "")
     if not os.path.exists(args.stage_out_path):
         os.makedirs(args.stage_out_path)
 
     # Iterate over all items in the source directory
     files = get_files(args)
     if args.parallel_move_threads > 0:
-        text = f"[bold green][Trigger][/] {len(files)} files flagged to move in parallel with {args.parallel_move_threads} threads\n"
+        TRIGGER_LOGGER.info(
+            f"{len(files)} files flagged to move in parallel with {args.parallel_move_threads} threads"
+        )
     else:
-        text = f"[bold green][Trigger][/] {len(files)} files flagged to move\n"
-    CONSOLE.print(text)
+        TRIGGER_LOGGER.info(f"{len(files)} files flagged to move")
 
     if args.debug:
-        CONSOLE.print(f"[bold green][Trigger][/] Files are:\n {files}\n")
+        TRIGGER_LOGGER.debug(f"Files are:\n{files}")
 
     # Ensure the target directory exists
     os.makedirs(args.stage_out_path, exist_ok=True)
@@ -115,21 +115,18 @@ def flush_using_tar(
     flush_log = getattr(args, "flush_log", "")
     tar_dst = f"{args.stage_out_path}/data.tar"
     tar_cmd = f"tar -rf {tar_dst} {' '.join(items_to_submit)}"
-    CONSOLE.print(
-        f"[bold green][Trigger][/] taring {len(items_to_submit)} items to {args.stage_out_path})\n"
-    )
+    TRIGGER_LOGGER.info(f"Taring {len(items_to_submit)} items to {args.stage_out_path}")
     start = time.time()
     preloaded_call(args, tar_cmd)
     tar_time = time.time() - start
-    CONSOLE.print(
-        f"[bold green][Trigger][/] Finished taring {len(items_to_submit)} items to {args.stage_out_path})\n"
+    TRIGGER_LOGGER.info(
+        f"Finished taring {len(items_to_submit)} items to {args.stage_out_path}"
     )
     start_del = time.time()
     delete_items(args, items_to_submit)
     delete_time = time.time() - start_del
-    CONSOLE.print(
-        f"[bold green][Trigger][/][green]: Tar time for {len(items_to_submit)}: tarred in {tar_time} s, "
-        f"deleted in {delete_time} s[/]\n"
+    TRIGGER_LOGGER.info(
+        f"Tar {len(items_to_submit)} items: tarred in {tar_time:.3f} s, deleted in {delete_time:.3f} s"
     )
     summary = f"TAR {len(items_to_submit)} items"
     _write_flush_log(flush_log, summary, tar_dst, triggered_by, tar_time, delete_time)
@@ -167,19 +164,16 @@ def flush_using_cp(
                     idx
                 )
                 if args.debug:
-                    CONSOLE.print(f"[bold green][Trigger][/]: moving {item}")
+                    TRIGGER_LOGGER.debug(f"Moving {item}")
             else:
                 if args.debug:
-                    CONSOLE.print(f"[bold yellow][Trigger][/]: already moving {item}")
+                    TRIGGER_LOGGER.debug(f"Already moving {item}")
 
-        CONSOLE.print(
-            f"[bold green][Trigger][/]: Finished submitting {len(futures)} futures. "
-            f"Using {num_workers} workers for processing"
+        TRIGGER_LOGGER.info(
+            f"Submitted {len(futures)} futures using {num_workers} workers"
         )
         if args.debug:
-            CONSOLE.print(
-                f"[bold green][Trigger][/]: files in process are: {files_in_progress}"
-            )
+            TRIGGER_LOGGER.debug(f"Files in progress: {files_in_progress}")
 
         for future in as_completed(futures):
             try:
@@ -187,7 +181,7 @@ def flush_using_cp(
                 files_in_progress.mark_done(items_to_submit[futures[future]])
             except Exception as e:
                 index = futures[future]
-                CONSOLE.print(f"[red bold] {items_to_submit[index]} had an error: {e}[/]")
+                TRIGGER_LOGGER.error(f"{items_to_submit[index]} had an error: {e}")
                 files_in_progress.mark_done(items_to_submit[index])
 
 
@@ -218,7 +212,7 @@ def get_items_to_submit(files: list, args: argparse.Namespace, mode: str = "file
     regex = None
     # Compile the regex pattern if provided
     if args.regex:
-        CONSOLE.print(f"[bold green][Trigger][/] Using pattern: {args.regex}\n")
+        TRIGGER_LOGGER.info(f"Using pattern: {args.regex}")
         regex = re.compile(args.regex)
 
     if "folder" in mode:
@@ -231,7 +225,7 @@ def get_items_to_submit(files: list, args: argparse.Namespace, mode: str = "file
             folder_to_all_files.setdefault(folder, []).append(file_path)
 
         # CONSOLE.print(f"Final folder mapping: {folder_to_all_files}")
-        CONSOLE.print(f"[bold green][Trigger][/] Using regex: {regex}")
+        TRIGGER_LOGGER.info(f"Using regex: {regex}")
 
         # Step 1: Filter files by regex (only candidates to move)
         matching_files: list[str] = [f for f in files if regex and regex.match(f)]
@@ -248,15 +242,12 @@ def get_items_to_submit(files: list, args: argparse.Namespace, mode: str = "file
                 if set(all_files_in_folder) == set(matching_files_in_folder):
                     items_to_submit.append(folder)
                     if args.debug:
-                        CONSOLE.print(
-                            f"[bold green][Trigger][/] Will move folder: {folder}\n"
-                        )
+                        TRIGGER_LOGGER.debug(f"Will move folder: {folder}")
                 else:
                     items_to_submit.extend(matching_files_in_folder)
                     if args.debug:
-                        CONSOLE.print(
-                            f"[bold green][Trigger][/] Will move "
-                            f"{len(matching_files_in_folder)} from {folder}\n"
+                        TRIGGER_LOGGER.debug(
+                            f"Will move {len(matching_files_in_folder)} files from {folder}"
                         )
     else:
         items_to_submit = files
@@ -287,10 +278,9 @@ def move_item(
 
     item_time = get_modification_time(args, item)
     modification_time = time.time() - item_time
-    # CONSOLE.print(f"File modified {modification_time:.2} seconds ago")
     if args.ignore_mtime or modification_time >= threshold:
-        CONSOLE.print(
-            f"[bold green][Trigger][/][bold yellow]: Moving (copy & unlink) item {item} (last modified {modification_time:.3} > threshold {threshold})[/]\n"
+        TRIGGER_LOGGER.info(
+            f"Moving {item} (last modified {modification_time:.3f} s ago > threshold {threshold} s)"
         )
         os.makedirs(
             os.path.dirname(item.replace(args.gkfs_mntdir, args.stage_out_path)),
@@ -302,12 +292,10 @@ def move_item(
         else:
             copy_file_and_unlink(args, item, triggered_by)
 
-        CONSOLE.print(
-            f"[bold green][Trigger][/][yellow]: {len(files_in_progress)} files still in the queue."
-        )
+        TRIGGER_LOGGER.info(f"{len(files_in_progress)} files still in the queue")
     else:
-        CONSOLE.print(
-            f"[bold green][Trigger][/][yellow]: Skipping item {item} is too new (last modified {modification_time:.3} < threshold {threshold})[/]\n"
+        TRIGGER_LOGGER.warning(
+            f"Skipping {item}: too new (last modified {modification_time:.3f} s ago < threshold {threshold} s)"
         )
         files_in_progress.mark_failed(item)
 
@@ -332,37 +320,30 @@ def copy_file_and_unlink(
         # remove_cmd = f"rm -rf {item}"
         remove_cmd = f"find {item} -type f -exec unlink {{}} \\;"
 
-    CONSOLE.print(f"[bold green][Trigger][/] Copying {item} to {args.stage_out_path})\n")
+    TRIGGER_LOGGER.info(f"Copying {item} to {args.stage_out_path}")
     start = time.time()
     preloaded_call(args, cp_cmd)
     copy_time = time.time() - start
-    CONSOLE.print(
-        f"[bold green][Trigger][/] Finished moving {item} to {args.stage_out_path})\n"
-    )
+    TRIGGER_LOGGER.info(f"Finished copying {item} ({copy_time:.3f} s)")
 
     start = time.time()
-    CONSOLE.print(f"[bold green][Trigger][/] Removing {item} from source\n")
+    TRIGGER_LOGGER.info(f"Removing {item} from source")
     try:
         preloaded_call(args, remove_cmd)
     except Exception as e:
-        CONSOLE.print(
-            f"[bold red][Trigger][/]Exception encounter during {remove_cmd}: {e}"
-        )
+        TRIGGER_LOGGER.error(f"Exception during {remove_cmd}: {e}")
         if "-r" in remove_cmd:
             try:
                 remove_cmd = f"find {item} -type f -exec unlink {{}} \\;"
                 preloaded_call(args, remove_cmd)
             except Exception as e:
-                CONSOLE.print(
-                    f"[bold red][Trigger][/]Exception encounter during {remove_cmd}: {e}"
-                )
+                TRIGGER_LOGGER.error(f"Fallback also failed for {remove_cmd}: {e}")
         files_in_progress.put_ignore(args, item)
-        CONSOLE.print(f"[bold yellow][Trigger][/]Added {item} to ignore queue ")
+        TRIGGER_LOGGER.warning(f"Added {item} to ignore queue")
 
     delete_time = time.time() - start
-    CONSOLE.print(
-        f"[bold green][Trigger][/][green]: Times  for {item}: copied in {copy_time} s, "
-        f"deleted in {delete_time} s[/]\n"
+    TRIGGER_LOGGER.info(
+        f"Done {item}: copy {copy_time:.3f} s, delete {delete_time:.3f} s"
     )
     _write_flush_log(
         flush_log, item, args.stage_out_path, triggered_by, copy_time, delete_time
@@ -379,7 +360,7 @@ def delete_items(args: argparse.Namespace, items: list[str]) -> None:
     """
     for item in items:
         start = time.time()
-        CONSOLE.print(f"[bold green][Trigger][/] Removing {item} from source\n")
+        TRIGGER_LOGGER.info(f"Removing {item}")
 
         # Choose deletion command based on type
         if "." in item.split("/")[-1]:  # assume file
@@ -390,24 +371,18 @@ def delete_items(args: argparse.Namespace, items: list[str]) -> None:
         try:
             preloaded_call(args, remove_cmd)
             elapsed = time.time() - start
-            CONSOLE.print(
-                f"[bold green][Trigger][/] Successfully removed {item} in {elapsed:.2f}s\n"
-            )
+            TRIGGER_LOGGER.info(f"Removed {item} in {elapsed:.2f} s")
 
         except Exception as e:
-            CONSOLE.print(
-                f"[bold red][Trigger][/] Exception during deletion of {item}: {e}\n"
-            )
+            TRIGGER_LOGGER.error(f"Exception during deletion of {item}: {e}")
             try:
                 # fallback: try file-only unlink for directories
                 remove_cmd = f"find {item} -type f -exec unlink {{}} \\;"
                 preloaded_call(args, remove_cmd)
             except Exception as e2:
-                CONSOLE.print(
-                    f"[bold red][Trigger][/] Fallback deletion also failed for {item}: {e2}\n"
-                )
+                TRIGGER_LOGGER.error(f"Fallback deletion also failed for {item}: {e2}")
                 files_in_progress.put_ignore(args, item)
-                CONSOLE.print(f"[bold yellow][Trigger][/] Added {item} to ignore queue\n")
+                TRIGGER_LOGGER.warning(f"Added {item} to ignore queue")
 
 
 def get_files(args: argparse.Namespace) -> list[str]:
@@ -425,18 +400,14 @@ def get_files(args: argparse.Namespace) -> list[str]:
         if isinstance(files, str):
             files = files.strip().splitlines()
         if args.debug:
-            CONSOLE.print(
-                f"[bold green][Trigger][/][green]: Finished moving  {files}[/]\n"
-            )
+            TRIGGER_LOGGER.debug(f"Found files (pre-filter): {files}")
         files = [f"{item}" for item in files if "." in item]
         if args.debug:
-            CONSOLE.print(
-                f"[bold green][Trigger][/][green]: Finished moving  {files}[/]\n"
-            )
+            TRIGGER_LOGGER.debug(f"Found files (post-filter): {files}")
 
     except Exception as e:
         if args.debug:
-            CONSOLE.print(f"[bold green][Trigger][/][green]: Error encountered  {e}[/]\n")
+            TRIGGER_LOGGER.error(f"Error listing files: {e}")
 
         files = preloaded_call(args, f"ls -R {args.gkfs_mntdir}")
 

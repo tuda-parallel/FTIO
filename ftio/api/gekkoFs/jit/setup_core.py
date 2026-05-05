@@ -57,6 +57,21 @@ from ftio.api.gekkoFs.posix_control import jit_move
 
 _MAX_RETRIES = 3
 
+
+def _flush_log_event(log_file: str, event: str, label: str = "") -> None:
+    """Write a single-line event marker to the flush log (APP-START / APP-END)."""
+    if not log_file:
+        return
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
+    suffix = f" ({label})" if label else ""
+    line = f"{ts} | {event}{suffix}\n"
+    try:
+        with open(log_file, "a") as f:
+            f.write(line)
+    except Exception:
+        pass
+
+
 _GEKKO_CONN_PATTERNS = (
     "software caused connection abort",
     "connection abort",
@@ -889,6 +904,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
 
     # elapsed = execute_block_and_log(call, settings.app_log_dir)
     check(settings)
+    _flush_log_event(settings.flush_log, "APP-START", name)
     for attempt in range(_MAX_RETRIES):
         if attempt > 0:
             jit_print(
@@ -926,6 +942,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
 
         if not timed_out and process.returncode == 0:
             elapsed_time(settings, runtime, "App", real_time)
+            _flush_log_event(settings.flush_log, "APP-END", name)
             break
 
         if not timed_out:

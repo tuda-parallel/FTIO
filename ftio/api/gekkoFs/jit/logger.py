@@ -26,6 +26,7 @@ ANSI_COLORS = {
     "dlio": "\033[33m",  # yellow
     "lammp": "\033[33m",  # yellow
     "jit": "\033[32m",  # green
+    "trigger": "\033[97m",  # bright white
     "error": "\033[31m",  # red
     "reset": "\033[0m",
 }
@@ -39,6 +40,7 @@ _COLORLOG_MSG_COLORS = {
     "dlio": "yellow",
     "lammp": "yellow",
     "jit": "green",
+    "trigger": "bold_white",
     "error": "red",
 }
 
