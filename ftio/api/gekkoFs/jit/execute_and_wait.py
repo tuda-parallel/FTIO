@@ -838,6 +838,7 @@ _FATAL_PATTERNS = (
     "no such file or directory",
     "permission denied",
     "terminated",
+    "software caused connection abort",
 )
 
 

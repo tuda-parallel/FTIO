@@ -94,6 +94,7 @@ class JitSettings:
         self.app_log = ""
         self.app_err = ""
         self.app_start_file = ""
+        self.flush_log = ""
 
         # exclude flags
         ################
@@ -303,6 +304,7 @@ class JitSettings:
         self.app_log = os.path.join(self.log_dir, "app.log")
         self.app_err = os.path.join(self.log_dir, "app.err")
         self.app_start_file = os.path.join(self.log_dir, "app_start.flag")
+        self.flush_log = os.path.join(self.log_dir, "flush.log")
 
     def to_dict(self):  # -> dict[str, Any]:
         # Define a list of attribute names to be promoted to top-level keys

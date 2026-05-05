@@ -57,6 +57,19 @@ from ftio.api.gekkoFs.posix_control import jit_move
 
 _MAX_RETRIES = 3
 
+_GEKKO_CONN_PATTERNS = (
+    "software caused connection abort",
+    "connection abort",
+    "errno 103",
+    "transport endpoint is not connected",
+    "stale file handle",
+)
+
+
+def _has_gekko_connection_error(text: str) -> bool:
+    lower = text.lower()
+    return any(pat in lower for pat in _GEKKO_CONN_PATTERNS)
+
 
 def _cleanup_stale_gekko(settings: JitSettings) -> None:
     """Soft-kills Gekko daemon and FUSE and unmounts stale GekkoFS mount points before a retry."""
@@ -528,6 +541,9 @@ def start_ftio(settings: JitSettings) -> None:
                 jit_print("[yellow]app_start flag file not found, nothing to remove[/]")
             ftio_data_staget_args += f" --app_start_file {settings.app_start_file}"
 
+        if settings.flush_log:
+            ftio_data_staget_args += f" --flush_log {settings.flush_log}"
+
         if settings.cluster:
             jit_print(
                 f"[cyan]FTIO started on node {settings.ftio_node}, remaining nodes for the application: {settings.app_nodes} each with {settings.procs_ftio} processes [/]"
@@ -925,6 +941,23 @@ def start_application(settings: JitSettings, runtime: JitTime):
             jit_print(f"[red]Error executing command: {call}[/]")
             if err_content:
                 jit_print(f"[red]Error output:\n{err_content}[/]")
+
+            # GekkoFS daemon died mid-run: restart the whole infrastructure before retrying
+            if (
+                not settings.exclude_daemon
+                and err_content
+                and _has_gekko_connection_error(err_content)
+                and attempt < _MAX_RETRIES - 1
+            ):
+                jit_print(
+                    "[bold yellow]GekkoFS connection lost (Errno 103) — "
+                    "restarting daemon, FUSE, and re-staging data before retry...[/]"
+                )
+                _cleanup_stale_gekko(settings)
+                start_gekko_daemon(settings)
+                if settings.fuse:
+                    start_fuse(settings)
+                stage_in(settings, runtime)
 
         if attempt == _MAX_RETRIES - 1:
             elapsed_time(settings, runtime, "App", real_time)

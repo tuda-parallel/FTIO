@@ -51,7 +51,7 @@ def stage_files(args: argparse.Namespace, latest_prediction: dict) -> None:
     if args.cargo:
         move_files_cargo(args, period=period)
     else:  # standard move
-        move_files_os(args, period=period)
+        move_files_os(args, period=period, triggered_by="ftio")
 
 
 def setup_cargo(args: argparse.Namespace) -> None:
@@ -453,6 +453,13 @@ def parse_args_data_stager(
         help="Path to a flag file that must exist before predictions are processed. "
         "JIT creates this file just before launching the application so that "
         "I/O from pre-application calls does not trigger early predictions.",
+    )
+    parser.add_argument(
+        "--flush_log",
+        dest="flush_log",
+        type=str,
+        default="",
+        help="Path to the flush log file. Records each flushed file with timestamp and trigger source.",
     )
 
     # Parse the arguments
