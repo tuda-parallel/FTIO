@@ -141,6 +141,7 @@ class JitSettings:
         self.procs_cargo = 0
         self.procs_app = 0
         self.procs_ftio = 0
+        self.fuse_idle_threads = 4  # finalized in parse_options after procs_app is set
         self.cmd_call = ""
 
         self.set_cluster_mode()

@@ -247,14 +247,11 @@ def start_fuse(settings: JitSettings) -> None:
 
     jit_print(f"[bold green]############## Starting FUSE [/][black][{get_time()}][/]")
     wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run)
-    # Scale FUSE idle threads to the number of MPI ranks sharing the client on each node
-    # so the FUSE request queue doesn't saturate under concurrent I/O bursts.
-    fuse_idle_threads = max(4, settings.procs_app)
     if settings.cluster:
         if settings.use_mpirun:
             # mpiexec
             call = (
-                f"{settings.gkfs_fuse} -o max_idle_threads={fuse_idle_threads} "
+                f"{settings.gkfs_fuse} -o max_idle_threads={settings.fuse_idle_threads} "
                 f"-o direct_io -f -o fifo -o auto_unmount {settings.gkfs_mntdir}"
             )
             call = mpiexec_call(
@@ -277,7 +274,7 @@ def start_fuse(settings: JitSettings) -> None:
                 f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_FLUSH_INTERVAL=5 "
                 f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
                 f"--oversubscribe --mem=0 {settings.task_set_0} "
-                f"{settings.gkfs_fuse} -o max_idle_threads={fuse_idle_threads} "
+                f"{settings.gkfs_fuse} -o max_idle_threads={settings.fuse_idle_threads} "
                 f"-o direct_io -f -o fifo -o auto_unmount {settings.gkfs_mntdir}"
             )
     else:

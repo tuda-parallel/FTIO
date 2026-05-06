@@ -1274,6 +1274,8 @@ def log_dir(settings: JitSettings) -> None:
     os.makedirs(settings.log_dir, exist_ok=True)
 
     settings.set_log_dirs()
+    # Derived after all procs_app overrides are applied.
+    settings.fuse_idle_threads = max(4, settings.procs_app * 2)
 
 
 def get_address_ftio(settings: JitSettings) -> None:
@@ -1570,7 +1572,7 @@ def print_settings(settings: JitSettings) -> None:
 |   ├─ proxy      : {task_proxy}
 |   ├─ cargo      : {task_cargo}
 |   ├─ ftio       : {task_ftio}
-|   └─ fuse threads: {max(4, settings.procs_app)}
+|   └─ fuse threads: {settings.fuse_idle_threads}
 ├─ cpus per task  : {settings.procs}
 |   ├─ app        : 1
 |   ├─ daemon     : {cpu_daemon}
