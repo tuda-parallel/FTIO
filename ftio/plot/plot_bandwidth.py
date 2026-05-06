@@ -82,6 +82,8 @@ def load_json_and_plot(filenames):
         if filenames.index(filename) == 0:
             unit, order = set_unit(b)
 
+        if t.size == 0:
+            print(f"[warn] {filename}: time array is empty, skipping terminal plot.")
         plot_bar_with_rich(t, b)
 
         # Create a scatter plot trace of b against t
@@ -337,6 +339,9 @@ def plot_bar_with_rich(
 
     x = np.array(x[:])
     y = np.array(y[:])
+
+    if x.size == 0 or y.size == 0:
+        return
 
     # Normalize y to fit within the height of the plot and determine y-axis units
     y_unit, y_scale = set_unit(y)
