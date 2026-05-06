@@ -1569,7 +1569,8 @@ def print_settings(settings: JitSettings) -> None:
 |   ├─ daemon     : {task_daemon}
 |   ├─ proxy      : {task_proxy}
 |   ├─ cargo      : {task_cargo}
-|   └─ ftio       : {task_ftio}
+|   ├─ ftio       : {task_ftio}
+|   └─ fuse threads: {max(4, settings.procs_app)}
 ├─ cpus per task  : {settings.procs}
 |   ├─ app        : 1
 |   ├─ daemon     : {cpu_daemon}
