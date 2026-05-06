@@ -76,6 +76,7 @@ _GEKKO_CONN_PATTERNS = (
     "software caused connection abort",
     "connection abort",
     "errno 103",
+    "errno 107",
     "transport endpoint is not connected",
     "stale file handle",
 )
