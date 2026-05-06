@@ -43,6 +43,17 @@ def init_gekko(settings: JitSettings) -> None:
         # else:
         #     calls.append(f"mkdir -p {settings.gkfs_mntdir}")
         #     calls.append(f"mkdir -p {settings.gkfs_rootdir}")
+        # Proactively unmount any stale FUSE mount before creating dirs.
+        # Needed when a previous JIT run was hard-killed and left the mount
+        # point in a zombie state (daemon dead but kernel mount still registered).
+        unmount_call = flaged_call(
+            settings,
+            f"fusermount -uz {settings.gkfs_mntdir} 2>/dev/null || umount -l {settings.gkfs_mntdir} 2>/dev/null || true",
+            nodes=settings.app_nodes,
+            procs_per_node=1,
+            exclude=["ftio", "demon", "proxy", "cargo"],
+        )
+        execute_block(unmount_call, raise_exception=False, dry_run=settings.dry_run)
         calls.append(f"mkdir -p {settings.gkfs_mntdir}")
         calls.append(f"mkdir -p {settings.gkfs_rootdir}")
         jit_print("[cyan]Creating directories[/]")

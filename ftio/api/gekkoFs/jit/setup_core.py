@@ -101,10 +101,12 @@ def _cleanup_stale_gekko(settings: JitSettings) -> None:
             settings.gkfs_fuse_pid = 0
         except Exception as e:
             jit_print(f"[yellow]Unable to shut down FUSE: {e}[/]")
-    # Unmount stale GekkoFS FUSE mount on all nodes (daemon always FUSE-mounts gkfs_mntdir)
+    # Unmount stale GekkoFS FUSE mount on all nodes.
+    # fusermount -uz handles live mounts; umount -l handles zombie mounts
+    # where the FUSE daemon is already dead.
     unmount_call = flaged_call(
         settings,
-        f"fusermount -uz {settings.gkfs_mntdir} || true",
+        f"fusermount -uz {settings.gkfs_mntdir} 2>/dev/null || umount -l {settings.gkfs_mntdir} 2>/dev/null || true",
         nodes=settings.app_nodes,
         procs_per_node=1,
         exclude=["ftio", "demon", "proxy", "cargo"],
