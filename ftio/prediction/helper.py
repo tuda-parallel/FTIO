@@ -13,8 +13,10 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
+import tempfile
 
 import numpy as np
 
@@ -137,10 +139,16 @@ def format_jsonl(data: list[dict]) -> tuple[str, str]:
 
 
 def dump_json(b: np.ndarray, t: np.ndarray, filename: str = "bandwidth.json") -> None:
-
     data = {"b": b.tolist(), "t": t.tolist()}
     json_file_path = os.path.join(os.getcwd(), filename)
-
-    # Dump the dictionary to a JSON file in the current directory
-    with open(json_file_path, "w") as json_file:
-        json.dump(data, json_file)
+    # Atomic write: write to a temp file first so a mid-write kill leaves
+    # the previous complete bandwidth.json intact rather than a truncated one.
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=os.getcwd(), suffix=".json.tmp")
+    try:
+        with os.fdopen(tmp_fd, "w") as f:
+            json.dump(data, f)
+        os.replace(tmp_path, json_file_path)
+    except Exception:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp_path)
+        raise

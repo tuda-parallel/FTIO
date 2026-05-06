@@ -45,9 +45,25 @@ def load_json_and_plot(filenames):
         # Define the path to the JSON file
         json_file_path = os.path.join(current_directory, filename)
 
-        # Load the JSON file
+        # Load the JSON file, recovering partial data if the file was truncated
         with open(json_file_path) as json_file:
-            data = json.load(json_file)
+            try:
+                data = json.load(json_file)
+            except json.JSONDecodeError as exc:
+                print(
+                    f"[warn] {filename} is truncated at offset {exc.pos} "
+                    "(FTIO killed mid-write?), recovering partial data..."
+                )
+                json_file.seek(0)
+                raw = json_file.read()[: exc.pos]
+                raw = raw.rstrip().rstrip(",")
+                open_brackets = raw.count("[") - raw.count("]")
+                raw += "]" * open_brackets + "}"
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    print(f"[error] Could not recover {filename}, skipping.")
+                    continue
 
         # Extract arrays from the JSON data
         b = np.array(data.get("b", []))
