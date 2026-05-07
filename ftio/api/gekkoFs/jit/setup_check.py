@@ -108,9 +108,7 @@ def check_setup(settings: JitSettings):
                         f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
                     )
                     if settings.preload_via_export:
-                        additional_arguments += (
-                            f"LD_PRELOAD={settings.gkfs_intercept},"
-                        )
+                        additional_arguments += f"LD_PRELOAD={settings.gkfs_intercept},"
 
                 test_invocation = file
                 if (

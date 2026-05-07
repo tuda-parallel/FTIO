@@ -314,10 +314,19 @@ def demo_real_files():
     candidates = [
         (_REPO_ROOT / "examples/tmio/JSONL/8.jsonl", "JSONL 8-rank"),
         (_REPO_ROOT / "examples/tmio/ior/parallel/384.msgpack", "IOR parallel 384-rank"),
-        (_REPO_ROOT / "examples/tmio/ior/collective/1536_old.json", "IOR coll. 1536-rank (old run)"),
-        (_REPO_ROOT / "examples/tmio/ior/collective/1536_new.json", "IOR coll. 1536-rank (new run)"),
+        (
+            _REPO_ROOT / "examples/tmio/ior/collective/1536_old.json",
+            "IOR coll. 1536-rank (old run)",
+        ),
+        (
+            _REPO_ROOT / "examples/tmio/ior/collective/1536_new.json",
+            "IOR coll. 1536-rank (new run)",
+        ),
         (_REPO_ROOT / "examples/tmio/HACC-IO/9216.json", "HACC-IO 9216-rank"),
-        (_REPO_ROOT / "examples/tmio/HACC-IO/9216_new.json", "HACC-IO 9216-rank (new run)"),
+        (
+            _REPO_ROOT / "examples/tmio/HACC-IO/9216_new.json",
+            "HACC-IO 9216-rank (new run)",
+        ),
     ]
 
     from ftio.cli.ftio_core import main as ftio_main

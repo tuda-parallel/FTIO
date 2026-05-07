@@ -128,7 +128,9 @@ class JitSettings:
         )
         self.skip_confirm = False
         self.use_mpirun = False
-        self.preload_via_export = False  # if True, use legacy --export/mpiexec -x; default wraps in bash -c
+        self.preload_via_export = (
+            False  # if True, use legacy --export/mpiexec -x; default wraps in bash -c
+        )
         self.gkfs_use_syscall = False
         self.trap_exit = True
         self.soft_kill = True
