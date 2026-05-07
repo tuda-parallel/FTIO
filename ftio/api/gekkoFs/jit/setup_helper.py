@@ -794,6 +794,9 @@ def relevant_files(settings: JitSettings) -> None:
     if settings.verbose:  # Mimicking checking for the number of arguments
         jit_print("[cyan]Setting up ignored files[/]")
 
+    # Ensure the directory containing the regex file exists
+    os.makedirs(os.path.dirname(settings.regex_file), exist_ok=True)
+
     # Create or update the regex file with the settings.regex_match
     with open(settings.regex_file, "w") as file:
         file.write(f"{settings.regex_match}\n")
@@ -829,6 +832,7 @@ def adjust_regex(settings: JitSettings, mode: str = "stage_out") -> None:
         raise ValueError(f"Unsupported mode for regex: {mode} passed")
 
     jit_print(f"[cyan]Resetting regex for {mode} to {settings.regex_match}[/]")
+    os.makedirs(os.path.dirname(settings.regex_file), exist_ok=True)
     with open(settings.regex_file, "w") as file:
         file.write(f"{settings.regex_match}\n")
 
