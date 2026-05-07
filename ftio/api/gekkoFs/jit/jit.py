@@ -61,6 +61,11 @@ def main() -> None:
     """
     console.print("\n\n[bold green]################ JIT ################[/]\n")
     settings = JitSettings()
+
+    # Handle --help before the try/finally so the kill sequence never runs.
+    if "-h" in sys.argv[1:] or "--help" in sys.argv[1:]:
+        parse_options(settings, sys.argv[1:])  # argparse prints help and exits here
+
     runtime = JitTime()
     error = 0
 
