@@ -828,14 +828,24 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     f"-x LIBGKFS_LOG={log_modules} "
                     f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
                     f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                    f"-x LD_PRELOAD={settings.gkfs_intercept} "
                 )
+                if settings.preload_via_export:
+                    additional_arguments += f"-x LD_PRELOAD={settings.gkfs_intercept} "
 
             if (settings.lock_generator and not settings.exclude_daemon) or (
                 settings.lock_consumer and not settings.exclude_cargo
             ):
                 additional_arguments += get_env(settings, "mpi")
 
+            app_inner = f"{settings.app_call} {settings.app_flags}"
+            if (
+                not settings.preload_via_export
+                and not settings.exclude_daemon
+                and settings.gkfs_intercept
+            ):
+                app_inner = (
+                    f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; {app_inner}"'
+                )
             call = (
                 # f" cd {settings.run_dir} && "
                 # f"strace -f -e trace=read,write,open,close,stat,fstat,lseek,access -o /gpfs/fs1/home/tarrafah/strace_n{settings.app_nodes}_p{settings.procs_app}.txt mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
@@ -844,7 +854,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f" cd {settings.run_dir} && time -p  mpiexec -np {settings.app_nodes * settings.procs_app} --oversubscribe "
                 f"--hostfile {settings.mpi_hostfile} --map-by node "
                 f"{additional_arguments} "
-                f"{settings.task_set_1} {settings.app_call} {settings.app_flags}"
+                f"{settings.task_set_1} {app_inner}"
             )
         else:
             if not settings.exclude_ftio:
@@ -860,7 +870,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
                     f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
                 )
-                if not settings.fuse:
+                if not settings.fuse and settings.preload_via_export:
                     additional_arguments += f"LD_PRELOAD={settings.gkfs_intercept},"
                 if (
                     not settings.exclude_cargo and settings.lock_generator
@@ -868,6 +878,18 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     additional_arguments += get_env(settings, "srun")
 
             app_call = get_executable_realpath(settings.app_call, settings.run_dir)
+            if (
+                not settings.preload_via_export
+                and not settings.fuse
+                and not settings.exclude_daemon
+                and settings.gkfs_intercept
+            ):
+                app_invocation = (
+                    f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; '
+                    f'{app_call} {settings.app_flags}"'
+                )
+            else:
+                app_invocation = f"{app_call} {settings.app_flags}"
             call = (
                 f" cd {settings.run_dir} && time -p srun "
                 f"--export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
@@ -875,7 +897,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f"-N {settings.app_nodes} --ntasks={settings.app_nodes * settings.procs_app} "
                 f"--cpus-per-task={settings.procs_app} --ntasks-per-node={settings.procs_app} "
                 f"--overcommit --overlap --oversubscribe --mem=0 "
-                f"{settings.task_set_1} {app_call} {settings.app_flags}"
+                f"{settings.task_set_1} {app_invocation}"
             )
     else:
         # Define the call for non-cluster environment
@@ -895,16 +917,26 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f'-x LIBGKFS_LOG="info,warnings,errors" '
                 f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                f"-x LD_PRELOAD={settings.gkfs_intercept} "
             )
+            if settings.preload_via_export:
+                additional_arguments += f"-x LD_PRELOAD={settings.gkfs_intercept} "
             if (
                 not settings.exclude_cargo and settings.lock_generator
             ):  # if gekko and cargo active
                 additional_arguments += get_env(settings, "mpi")
 
+        app_inner = f"{settings.app_call} {settings.app_flags}"
+        if (
+            not settings.preload_via_export
+            and not settings.exclude_daemon
+            and settings.gkfs_intercept
+        ):
+            app_inner = (
+                f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; {app_inner}"'
+            )
         call = (
             f" time  mpiexec -np {int(settings.procs_app)} --oversubscribe "
-            f"{additional_arguments} {settings.app_call} {settings.app_flags}"
+            f"{additional_arguments} {app_inner}"
         )
 
     # elapsed = execute_block_and_log(call, settings.app_log_dir)

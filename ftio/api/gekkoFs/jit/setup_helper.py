@@ -287,6 +287,16 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         action="store_true",
         help="If set, FUSE is used.",
     )
+    parser.add_argument(
+        "--preload-export",
+        dest="preload_via_export",
+        action="store_true",
+        help=(
+            "If set, LD_PRELOAD is passed via --export/mpiexec -x (legacy cluster behaviour). "
+            "By default the intercept library is injected inside a 'bash -c' wrapper so that "
+            "SLURM does not propagate LD_PRELOAD to unrelated processes."
+        ),
+    )
 
     parsed_args = parser.parse_args(args)
 
@@ -407,6 +417,8 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         settings.lock_consumer = True
     if parsed_args.fuse:
         settings.fuse = True
+    if parsed_args.preload_via_export:
+        settings.preload_via_export = True
 
     # Save the original call as a string
     settings.cmd_call = "jit " + " ".join(args)
@@ -1883,6 +1895,16 @@ def flaged_mpiexec_call(
         settings, exclude=exclude, special_flags=special_flags
     )
     call, procs = clean_call(call, procs)
+    # In new mode wrap the command so LD_PRELOAD is exported inside bash,
+    # not via mpiexec -x (avoids SLURM/MPI environment propagation issues).
+    if (
+        not settings.preload_via_export
+        and not settings.fuse
+        and not settings.exclude_daemon
+        and "preload" not in exclude
+        and settings.gkfs_intercept
+    ):
+        call = f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; {call}"'
     if settings.cluster:
         call = mpiexec_call(settings, call, procs, additional_arguments)
     else:
@@ -1925,6 +1947,16 @@ def flaged_srun_call(
         additional_arguments = load_flags_srun(
             settings, exclude=exclude, special_flags=special_flags
         )
+        # In new mode wrap the command so LD_PRELOAD is exported inside bash,
+        # not via srun --export (avoids SLURM environment propagation issues).
+        if (
+            not settings.preload_via_export
+            and not settings.fuse
+            and not settings.exclude_daemon
+            and "preload" not in exclude
+            and settings.gkfs_intercept
+        ):
+            call = f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; {call}"'
         call = srun_call(settings, call, nodes, procs, additional_arguments)
     else:
         call = flaged_mpiexec_call(
@@ -1973,7 +2005,7 @@ def load_flags_mpiexec(
             additional_arguments += (
                 f"-x LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']} "
             )
-        if "preload" not in exclude and not settings.fuse:
+        if "preload" not in exclude and not settings.fuse and settings.preload_via_export:
             additional_arguments += f"-x LD_PRELOAD={default['LD_PRELOAD']} "
 
     additional_arguments += get_env(settings, "mpi")
@@ -2018,7 +2050,7 @@ def load_flags_srun(
             )
         if "hostfile" not in exclude:
             additional_arguments += f"LIBGKFS_HOSTS_FILE={default['LIBGKFS_HOSTS_FILE']},"
-        if "preload" not in exclude and not settings.fuse:
+        if "preload" not in exclude and not settings.fuse and settings.preload_via_export:
             additional_arguments += f"LD_PRELOAD={default['LD_PRELOAD']},"
     # env if needed
     additional_arguments += get_env(settings, "srun")

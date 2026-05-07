@@ -73,14 +73,26 @@ def check_setup(settings: JitSettings):
                         f'-x LIBGKFS_LOG="info,warnings,errors" '
                         f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
                         f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
-                        f"-x LD_PRELOAD={settings.gkfs_intercept} "
                     )
+                    if settings.preload_via_export:
+                        additional_arguments += (
+                            f"-x LD_PRELOAD={settings.gkfs_intercept} "
+                        )
 
+                test_invocation = file
+                if (
+                    not settings.preload_via_export
+                    and not settings.exclude_daemon
+                    and settings.gkfs_intercept
+                ):
+                    test_invocation = (
+                        f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; {file}"'
+                    )
                 call = (
                     f" mpiexec -np {settings.app_nodes} --oversubscribe "
                     f"--hostfile {settings.mpi_hostfile} --map-by node "
                     f"{additional_arguments} "
-                    f"{file}"
+                    f"{test_invocation}"
                 )
             else:
                 # if not settings.exclude_ftio:
@@ -94,7 +106,20 @@ def check_setup(settings: JitSettings):
                         f'LIBGKFS_LOG="info,warnings,errors",'
                         f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
                         f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
-                        f"LD_PRELOAD={settings.gkfs_intercept},"
+                    )
+                    if settings.preload_via_export:
+                        additional_arguments += (
+                            f"LD_PRELOAD={settings.gkfs_intercept},"
+                        )
+
+                test_invocation = file
+                if (
+                    not settings.preload_via_export
+                    and not settings.exclude_daemon
+                    and settings.gkfs_intercept
+                ):
+                    test_invocation = (
+                        f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; {file}"'
                     )
                 call = (
                     f" srun --export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
@@ -102,7 +127,7 @@ def check_setup(settings: JitSettings):
                     f"-N {settings.app_nodes} --ntasks={settings.app_nodes} "
                     f"--cpus-per-task=1 --ntasks-per-node=1 "
                     f"--overcommit --overlap --oversubscribe --mem=0 "
-                    f"{file} "
+                    f"{test_invocation} "
                 )
             # test script
             jit_print("[cyan]Checking test file")
