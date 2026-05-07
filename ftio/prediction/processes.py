@@ -46,7 +46,20 @@ def predictor_with_processes(shared_resources, args):
     except KeyboardInterrupt:
         print_data(shared_resources.data)
         export_extrap(shared_resources.data)
+        _export_phase_automaton(shared_resources)
         print("-- done -- ")
+
+
+def _export_phase_automaton(shared_resources) -> None:
+    """Export the phase automaton to JSON if it was built during this run."""
+    aut = shared_resources.online_detection.get("pa_automaton", None)
+    if aut is None:
+        return
+    path = shared_resources.online_detection.get("pa_export", "./phase_automaton.json")
+    try:
+        aut.save_json(path)
+    except Exception as exc:
+        print(f"[PhaseAutomaton] Could not export to {path}: {exc}")
 
 
 def prediction_process(shared_resources, args: list[str], msgs=None) -> None:

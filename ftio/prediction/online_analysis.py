@@ -40,6 +40,70 @@ from ftio.prediction.helper import get_dominant
 from ftio.prediction.shared_resources import SharedResources
 
 
+def _automaton_step(
+    prediction,
+    args: Namespace,
+    shared_resources: SharedResources,
+) -> str:
+    """Step the phase automaton with one new Prediction.
+
+    Retrieves (or creates) the automaton from ``shared_resources``, feeds
+    the prediction, and stores the updated automaton back.  Returns a
+    Rich-formatted status string for the predictor log.
+
+    The automaton survives across processes because it is stored in the
+    multiprocessing Manager dict ``shared_resources.online_detection``.
+    """
+    from ftio.prediction.phase_automaton import PhaseAutomaton
+
+    det = shared_resources.online_detection
+    aut = det.get("pa_automaton", None)
+
+    if aut is None:
+        method = getattr(args, "pa_method", "ksigma")
+        if method == "none":
+            method = None
+        aut = PhaseAutomaton(
+            method=method,
+            rank_changes_trigger=getattr(args, "pa_rank_trigger", True),
+            period_ratio_threshold=getattr(args, "pa_period_ratio", None),
+        )
+        # Store config and export path once (for later retrieval at exit)
+        det["pa_export"] = getattr(args, "pa_export", "./phase_automaton.json")
+
+    transitioned = aut.step(prediction)
+
+    # Write back — required because Manager proxies don't track in-place mutations
+    det["pa_automaton"] = aut
+
+    state = aut._current_state
+    if state is None:
+        return ""
+
+    pred_count = shared_resources.count.value
+    text = (
+        f"[purple][PREDICTOR] (#{pred_count}):[/] "
+        f"[cyan]Phase automaton:[/] "
+        f"State {state.state_id} — "
+        f"freq={state.dominant_freq:.4f} Hz, period={state.period:.2f} s, "
+        f"ranks={state.ranks}, n_preds={state.n_phases}"
+    )
+    if transitioned:
+        tr = aut.transitions[-1]
+        text += (
+            f"\n[purple][PREDICTOR] (#{pred_count}):[/] "
+            f"[bold yellow]  → TRANSITION: "
+            f"State {tr.from_state} → {tr.to_state}  "
+            f"({tr.old_freq:.4f} → {tr.new_freq:.4f} Hz, cause={tr.cause!r})[/]"
+        )
+    text += (
+        f"\n[purple][PREDICTOR] (#{pred_count}):[/] "
+        f"[cyan]  Automaton summary: "
+        f"{len(aut.states)} state(s), {len(aut.transitions)} transition(s)[/]"
+    )
+    return text
+
+
 def ftio_process(shared_resources: SharedResources, args: Namespace, msgs=None) -> None:
     """Perform a single prediction with FTIO
 
@@ -81,8 +145,15 @@ def ftio_process(shared_resources: SharedResources, args: Namespace, msgs=None) 
     # save prediction results
     save_data(prediction, shared_resources)
 
+    # Phase automaton: step if enabled (stored in shared_resources across processes)
+    automaton_text = ""
+    if getattr(parsed_args, "phase_automaton", False):
+        automaton_text = _automaton_step(prediction, parsed_args, shared_resources)
+
     # display results
     text = display_result(freq, prediction, shared_resources)
+    if automaton_text:
+        text += "\n" + automaton_text
 
     # data analysis to decrease window by changing start_time
     adaptation_text, change_detected, change_point_info = window_adaptation(

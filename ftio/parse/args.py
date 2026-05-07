@@ -361,6 +361,72 @@ Full documentation:
             help="Window length for STFT analysis in samples or time (e.g., '20s'). If 0, it is automatically calculated based on the dominant frequency.",
         )
 
+        # Phase automaton
+        parser.add_argument(
+            "--phase-automaton",
+            dest="phase_automaton",
+            action="store_true",
+            help=(
+                "Enable the phase automaton: models I/O behaviour as a state machine "
+                "where each state is a stable frequency regime. Transitions are "
+                "detected by rank changes, period-ratio threshold, and/or a "
+                "statistical detector (see --pa-method)."
+            ),
+        )
+        parser.set_defaults(phase_automaton=False)
+        parser.add_argument(
+            "--pa-method",
+            dest="pa_method",
+            choices=["cusum", "ph", "adwin", "ksigma", "none"],
+            default="ksigma",
+            help=(
+                "Statistical change-point detector used by the phase automaton "
+                "(default: ksigma). "
+                "'ksigma' — state-adaptive k-sigma (recommended; robust to "
+                "within-phase noise); "
+                "'cusum' — adaptive-variance CUSUM; "
+                "'ph'    — Page-Hinkley; "
+                "'adwin' — ADWIN (needs many samples or large freq ratios); "
+                "'none'  — disable statistical detection (use only rank and/or "
+                "period-ratio triggers)."
+            ),
+        )
+        parser.add_argument(
+            "--pa-period-ratio",
+            dest="pa_period_ratio",
+            type=float,
+            default=None,
+            metavar="RATIO",
+            help=(
+                "Fire a phase transition when max(T_new/T_cur, T_cur/T_new) > RATIO. "
+                "Recommended value: 1.5 (50%% period change). No warm-up needed. "
+                "Can be combined with --pa-method."
+            ),
+        )
+        parser.add_argument(
+            "--pa-no-rank-trigger",
+            dest="pa_rank_trigger",
+            action="store_false",
+            help=(
+                "Disable the rank-change trigger in the phase automaton. "
+                "By default a prediction with a different rank count immediately "
+                "opens a new state."
+            ),
+        )
+        parser.set_defaults(pa_rank_trigger=True)
+        parser.add_argument(
+            "--pa-export",
+            dest="pa_export",
+            type=str,
+            default="./phase_automaton.json",
+            metavar="PATH",
+            help=(
+                "Path of the JSON file written when the predictor exits "
+                "(default: ./phase_automaton.json). Contains all states, "
+                "transitions, and automaton configuration."
+            ),
+        )
+
     #! IOPLOT Settings
     if "plot" in name.lower():
         parser.set_defaults(mode="")
