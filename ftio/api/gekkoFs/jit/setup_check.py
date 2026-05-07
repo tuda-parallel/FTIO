@@ -86,7 +86,7 @@ def check_setup(settings: JitSettings):
                     and settings.gkfs_intercept
                 ):
                     test_invocation = (
-                        f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; {file}"'
+                        f'bash -c "LD_PRELOAD={settings.gkfs_intercept} {file}"'
                     )
                 call = (
                     f" mpiexec -np {settings.app_nodes} --oversubscribe "
@@ -117,7 +117,7 @@ def check_setup(settings: JitSettings):
                     and settings.gkfs_intercept
                 ):
                     test_invocation = (
-                        f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; {file}"'
+                        f'bash -c "LD_PRELOAD={settings.gkfs_intercept} {file}"'
                     )
                 call = (
                     f" srun --export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "

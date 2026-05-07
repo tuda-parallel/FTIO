@@ -1895,16 +1895,22 @@ def flaged_mpiexec_call(
         settings, exclude=exclude, special_flags=special_flags
     )
     call, procs = clean_call(call, procs)
-    # In new mode wrap the command so LD_PRELOAD is exported inside bash,
+    # In new mode wrap the command so LD_PRELOAD is set inside bash,
     # not via mpiexec -x (avoids SLURM/MPI environment propagation issues).
+    # Mirror the original condition: only when daemon flags are not excluded.
     if (
         not settings.preload_via_export
         and not settings.fuse
         and not settings.exclude_daemon
+        and "demon" not in exclude
         and "preload" not in exclude
         and settings.gkfs_intercept
     ):
-        call = f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; {call}"'
+        call = (
+            f'bash -c "LD_PRELOAD={settings.gkfs_intercept}'
+            f" LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile}"
+            f' {call}"'
+        )
     if settings.cluster:
         call = mpiexec_call(settings, call, procs, additional_arguments)
     else:
@@ -1947,16 +1953,22 @@ def flaged_srun_call(
         additional_arguments = load_flags_srun(
             settings, exclude=exclude, special_flags=special_flags
         )
-        # In new mode wrap the command so LD_PRELOAD is exported inside bash,
+        # In new mode wrap the command so LD_PRELOAD is set inside bash,
         # not via srun --export (avoids SLURM environment propagation issues).
+        # Mirror the original condition: only when daemon flags are not excluded.
         if (
             not settings.preload_via_export
             and not settings.fuse
             and not settings.exclude_daemon
+            and "demon" not in exclude
             and "preload" not in exclude
             and settings.gkfs_intercept
         ):
-            call = f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; {call}"'
+            call = (
+                f'bash -c "LD_PRELOAD={settings.gkfs_intercept}'
+                f" LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile}"
+                f' {call}"'
+            )
         call = srun_call(settings, call, nodes, procs, additional_arguments)
     else:
         call = flaged_mpiexec_call(

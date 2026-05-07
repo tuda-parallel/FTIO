@@ -844,7 +844,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 and settings.gkfs_intercept
             ):
                 app_inner = (
-                    f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; {app_inner}"'
+                    f'bash -c "LD_PRELOAD={settings.gkfs_intercept} {app_inner}"'
                 )
             call = (
                 # f" cd {settings.run_dir} && "
@@ -885,8 +885,8 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 and settings.gkfs_intercept
             ):
                 app_invocation = (
-                    f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; '
-                    f'{app_call} {settings.app_flags}"'
+                    f'bash -c "LD_PRELOAD={settings.gkfs_intercept}'
+                    f' {app_call} {settings.app_flags}"'
                 )
             else:
                 app_invocation = f"{app_call} {settings.app_flags}"
@@ -932,7 +932,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
             and settings.gkfs_intercept
         ):
             app_inner = (
-                f'bash -c "export LD_PRELOAD={settings.gkfs_intercept}; {app_inner}"'
+                f'bash -c "LD_PRELOAD={settings.gkfs_intercept} {app_inner}"'
             )
         call = (
             f" time  mpiexec -np {int(settings.procs_app)} --oversubscribe "
