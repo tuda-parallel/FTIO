@@ -843,9 +843,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 and not settings.exclude_daemon
                 and settings.gkfs_intercept
             ):
-                app_inner = (
-                    f'bash -c "LD_PRELOAD={settings.gkfs_intercept} {app_inner}"'
-                )
+                app_inner = f'bash -c "LD_PRELOAD={settings.gkfs_intercept} {app_inner}"'
             call = (
                 # f" cd {settings.run_dir} && "
                 # f"strace -f -e trace=read,write,open,close,stat,fstat,lseek,access -o /gpfs/fs1/home/tarrafah/strace_n{settings.app_nodes}_p{settings.procs_app}.txt mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
@@ -931,9 +929,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
             and not settings.exclude_daemon
             and settings.gkfs_intercept
         ):
-            app_inner = (
-                f'bash -c "LD_PRELOAD={settings.gkfs_intercept} {app_inner}"'
-            )
+            app_inner = f'bash -c "LD_PRELOAD={settings.gkfs_intercept} {app_inner}"'
         call = (
             f" time  mpiexec -np {int(settings.procs_app)} --oversubscribe "
             f"{additional_arguments} {app_inner}"
