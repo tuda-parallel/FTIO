@@ -250,7 +250,9 @@ def start_fuse(settings: JitSettings) -> None:
     jit_print(f"[bold green]############## Starting FUSE [/][black][{get_time()}][/]")
     wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run)
     _max_threads_flag = (
-        f" --max-threads {settings.fuse_max_threads}" if settings.fuse_max_threads > 0 else ""
+        f" -o max_threads={settings.fuse_max_threads}"
+        if settings.fuse_max_threads > 0
+        else ""
     )
     if settings.cluster:
         if settings.use_mpirun:

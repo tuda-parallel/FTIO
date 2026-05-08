@@ -293,7 +293,7 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         type=int,
         default=0,
         help=(
-            "Cap the FUSE thread pool (--max-threads N passed to fuse_client). "
+            "Cap the FUSE thread pool (-o max_threads=N passed to fuse_client). "
             "Limits concurrent Mercury RPCs to avoid IB QP depth exhaustion. "
             "0 = libfuse default (~10 threads). Try 4–8 when hitting ECONNABORTED/EBUSY."
         ),
