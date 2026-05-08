@@ -888,7 +888,9 @@ def start_application(settings: JitSettings, runtime: JitTime):
                         f"LIBGKFS_METRICS_FLUSH_INTERVAL=5 "
                     )
                 if not settings.exclude_daemon:
-                    log_modules = "all" if settings.debug_lvl > 1 else "info,warnings,errors"
+                    log_modules = (
+                        "all" if settings.debug_lvl > 1 else "info,warnings,errors"
+                    )
                     gkfs_env += (
                         f"LIBGKFS_LOG={log_modules} "
                         f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
@@ -902,7 +904,9 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 if not settings.exclude_ftio:
                     additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},LIBGKFS_METRICS_FLUSH_INTERVAL=5,"
                 if not settings.exclude_daemon:
-                    log_modules = "all" if settings.debug_lvl > 1 else "info,warnings,errors"
+                    log_modules = (
+                        "all" if settings.debug_lvl > 1 else "info,warnings,errors"
+                    )
                     additional_arguments += (
                         f'LIBGKFS_LOG="{log_modules}",'
                         f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
@@ -1006,6 +1010,10 @@ def start_application(settings: JitSettings, runtime: JitTime):
             if os.path.isfile(settings.app_err):
                 with open(settings.app_err) as f:
                     err_content = f.read().strip()
+            log_content = ""
+            if os.path.isfile(settings.app_log):
+                with open(settings.app_log) as f:
+                    log_content = f.read().strip()
 
             jit_print(
                 f"[bold yellow]Application failed (attempt {attempt + 1}/{_MAX_RETRIES},"
@@ -1015,11 +1023,11 @@ def start_application(settings: JitSettings, runtime: JitTime):
             if err_content:
                 jit_print(f"[red]Error output:\n{err_content}[/]")
 
+            combined = err_content + "\n" + log_content
             # GekkoFS daemon died mid-run: restart the whole infrastructure before retrying
             if (
                 not settings.exclude_daemon
-                and err_content
-                and _has_gekko_connection_error(err_content)
+                and _has_gekko_connection_error(combined)
                 and attempt < _MAX_RETRIES - 1
             ):
                 jit_print(
