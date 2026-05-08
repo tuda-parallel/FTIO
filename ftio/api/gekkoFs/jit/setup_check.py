@@ -57,7 +57,7 @@ def check_setup(settings: JitSettings):
         # files = subprocess.check_output(ls_command, shell=True).decode()
         # console.print(f"[cyan]geko_ls {gkfs_mntdir}: \n{files}[/]")
 
-        if settings.cluster and settings.debug_lvl > 0 and not settings.exclude_daemon:
+        if settings.cluster and not settings.exclude_daemon:
             additional_arguments = ""
             timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
             file = create_test_file("test.sh" + timestamp, settings)
@@ -137,8 +137,6 @@ def check_setup(settings: JitSettings):
                     os.remove(file)
             except Exception as e:
                 jit_print(f"[red] Error running test script:\n{e}")
-        else:
-            jit_print("[cyan]Skipping setup check")
     time.sleep(1)
 
 
