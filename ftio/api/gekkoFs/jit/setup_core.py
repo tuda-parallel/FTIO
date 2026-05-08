@@ -865,7 +865,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
             if not settings.exclude_daemon:
                 log_modules = "all" if settings.debug_lvl > 1 else "info,warnings,errors"
                 additional_arguments += (
-                    f"LIBGKFS_LOG={log_modules},"
+                    f'LIBGKFS_LOG="{log_modules}",'
                     f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
                     f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
                 )
