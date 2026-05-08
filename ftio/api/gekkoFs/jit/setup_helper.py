@@ -288,6 +288,17 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         help="If set, FUSE is used.",
     )
     parser.add_argument(
+        "--fuse-idle-threads",
+        dest="fuse_idle_threads",
+        type=int,
+        default=0,
+        help=(
+            "Override -o max_idle_threads=N passed to fuse_client. "
+            "0 = auto (max(4, procs_app)). Lower values reduce concurrent "
+            "Mercury RPCs and help avoid IB QP depth exhaustion."
+        ),
+    )
+    parser.add_argument(
         "--preload-export",
         dest="preload_via_export",
         action="store_true",
@@ -417,6 +428,8 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         settings.lock_consumer = True
     if parsed_args.fuse:
         settings.fuse = True
+    if parsed_args.fuse_idle_threads:
+        settings.fuse_idle_threads = parsed_args.fuse_idle_threads
     if parsed_args.preload_via_export:
         settings.preload_via_export = True
 
@@ -1290,8 +1303,9 @@ def log_dir(settings: JitSettings) -> None:
     os.makedirs(settings.log_dir, exist_ok=True)
 
     settings.set_log_dirs()
-    # Cap idle threads at procs_app to limit concurrent Mercury RPCs (IB QP depth exhaustion).
-    settings.fuse_idle_threads = max(4, settings.procs_app)
+    # Auto-compute unless overridden via --fuse-idle-threads.
+    if settings.fuse_idle_threads == 0:
+        settings.fuse_idle_threads = max(4, settings.procs_app)
 
 
 def get_address_ftio(settings: JitSettings) -> None:
