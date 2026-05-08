@@ -79,6 +79,7 @@ _GEKKO_CONN_PATTERNS = (
     "errno 107",
     "transport endpoint is not connected",
     "stale file handle",
+    "device or resource busy",  # EBUSY (errno 16) — GekkoFS mount unresponsive
 )
 
 
@@ -1000,7 +1001,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 and attempt < _MAX_RETRIES - 1
             ):
                 jit_print(
-                    "[bold yellow]GekkoFS connection lost (Errno 103) — "
+                    "[bold yellow]GekkoFS I/O error detected — "
                     "restarting daemon, FUSE, re-staging and re-generating data before retry...[/]"
                 )
                 _cleanup_stale_gekko(settings)
