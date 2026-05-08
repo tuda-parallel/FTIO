@@ -876,7 +876,17 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 ):  # if gekko and cargo active
                     additional_arguments += get_env(settings, "srun")
 
-            app_call = get_executable_realpath(settings.app_call, settings.run_dir)
+            # Only resolve to absolute path when app_call already looks like a
+            # path (starts with / or ./).  Bare command names (e.g. "dlio_benchmark")
+            # are intentionally left as-is so bash on the compute node resolves
+            # them from PATH at runtime — consistent with how flaged_srun_call
+            # handles pre_call.  Resolving via shutil.which on the launcher can
+            # accidentally pick up executables from the FTIO venv instead of the
+            # user's intended installation.
+            if os.path.sep in settings.app_call or settings.app_call.startswith("."):
+                app_call = get_executable_realpath(settings.app_call, settings.run_dir)
+            else:
+                app_call = settings.app_call
             if (
                 not settings.preload_via_export
                 and not settings.fuse
