@@ -293,9 +293,9 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         type=int,
         default=0,
         help=(
-            "Cap the FUSE thread pool (-o max_threads=N passed to fuse_client). "
-            "Limits concurrent Mercury RPCs to avoid IB QP depth exhaustion. "
-            "0 = libfuse default (~10 threads). Try 4–8 when hitting ECONNABORTED/EBUSY."
+            "Override the auto-computed -o max_idle_threads=N value passed to fuse_client "
+            "(libfuse 3.x: max_idle_threads caps concurrent Mercury RPCs). "
+            "0 = auto (procs_app). Try 8 when hitting ECONNABORTED/EBUSY on IB clusters."
         ),
     )
     parser.add_argument(
@@ -1304,7 +1304,12 @@ def log_dir(settings: JitSettings) -> None:
 
     settings.set_log_dirs()
     # Derived after all procs_app overrides are applied.
-    settings.fuse_idle_threads = max(4, settings.procs_app * 2)
+    # --fuse-max-threads overrides the auto-computed value; otherwise cap at procs_app
+    # to avoid too many concurrent Mercury RPCs (IB QP depth exhaustion).
+    if settings.fuse_max_threads > 0:
+        settings.fuse_idle_threads = settings.fuse_max_threads
+    else:
+        settings.fuse_idle_threads = max(4, settings.procs_app)
 
 
 def get_address_ftio(settings: JitSettings) -> None:
