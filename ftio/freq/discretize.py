@@ -87,7 +87,12 @@ def sample_data(
         N = int(np.floor((t[-1] - t[0]) * freq))
 
     text += f"Expected samples: {N}\n"
-    # print("    '-> \033[1;Start time: %f s \033[1;0m"%t[0])
+
+    if N <= 0:
+        raise RuntimeError(
+            f"Invalid sample count N={N} (freq={freq:.3e} Hz, duration={t[-1]-t[0]:.3f} s). "
+            "Timestamps may be non-monotonic or the time window is too short."
+        )
 
     #  sample the data with the recommended frequency
     # t_sampled = np.zeros(N) #t[0]+np.arange(N)*1/freq
@@ -194,12 +199,9 @@ def find_lowest_time_change(t: np.ndarray) -> float:
     """
     t_rec = np.inf
     for i in range(0, len(t) - 1):
-        if (
-            t_rec > (t[i + 1] - t[i])
-            and (t[i + 1] - t[i]) != 0
-            # and (t[i + 1] - t[i]) >= 0.001
-        ):
-            t_rec = t[i + 1] - t[i]
+        delta = t[i + 1] - t[i]
+        if 0 < delta < t_rec:
+            t_rec = delta
 
     # no need, as we now limit per memory
     # if t_rec <= 0.001:
