@@ -863,9 +863,9 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
                 )
             if not settings.exclude_daemon:
+                log_modules = "all" if settings.debug_lvl > 1 else "info,warnings,errors"
                 additional_arguments += (
-                    # f"LIBGKFS_LOG=info,warnings,errors,syscalls"
-                    f"LIBGKFS_LOG=all,"
+                    f"LIBGKFS_LOG={log_modules},"
                     f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
                     f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
                 )
@@ -895,6 +895,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
             ):
                 app_invocation = (
                     f'bash -c "LD_PRELOAD={settings.gkfs_intercept}'
+                    f" LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile}"
                     f' {app_call} {settings.app_flags}"'
                 )
             else:
