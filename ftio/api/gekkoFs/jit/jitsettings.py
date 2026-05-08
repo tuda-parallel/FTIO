@@ -145,9 +145,6 @@ class JitSettings:
         self.procs_app = 0
         self.procs_ftio = 0
         self.fuse_idle_threads = 1  # finalized in parse_options after procs_app is set
-        # 0 = auto (set to procs_app in parse_options); >0 overrides -o max_idle_threads=N.
-        # Lowering this reduces concurrent Mercury RPCs and avoids IB QP depth exhaustion.
-        self.fuse_max_threads = 0
         self.cmd_call = ""
 
         self.set_cluster_mode()

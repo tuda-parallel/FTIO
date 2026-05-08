@@ -288,17 +288,6 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         help="If set, FUSE is used.",
     )
     parser.add_argument(
-        "--fuse-max-threads",
-        dest="fuse_max_threads",
-        type=int,
-        default=0,
-        help=(
-            "Override the auto-computed -o max_idle_threads=N value passed to fuse_client "
-            "(libfuse 3.x: max_idle_threads caps concurrent Mercury RPCs). "
-            "0 = auto (procs_app). Try 8 when hitting ECONNABORTED/EBUSY on IB clusters."
-        ),
-    )
-    parser.add_argument(
         "--preload-export",
         dest="preload_via_export",
         action="store_true",
@@ -428,8 +417,6 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         settings.lock_consumer = True
     if parsed_args.fuse:
         settings.fuse = True
-    if parsed_args.fuse_max_threads:
-        settings.fuse_max_threads = parsed_args.fuse_max_threads
     if parsed_args.preload_via_export:
         settings.preload_via_export = True
 
@@ -1303,13 +1290,8 @@ def log_dir(settings: JitSettings) -> None:
     os.makedirs(settings.log_dir, exist_ok=True)
 
     settings.set_log_dirs()
-    # Derived after all procs_app overrides are applied.
-    # --fuse-max-threads overrides the auto-computed value; otherwise cap at procs_app
-    # to avoid too many concurrent Mercury RPCs (IB QP depth exhaustion).
-    if settings.fuse_max_threads > 0:
-        settings.fuse_idle_threads = settings.fuse_max_threads
-    else:
-        settings.fuse_idle_threads = max(4, settings.procs_app)
+    # Cap idle threads at procs_app to limit concurrent Mercury RPCs (IB QP depth exhaustion).
+    settings.fuse_idle_threads = max(4, settings.procs_app)
 
 
 def get_address_ftio(settings: JitSettings) -> None:
@@ -1606,8 +1588,7 @@ def print_settings(settings: JitSettings) -> None:
 |   ├─ proxy      : {task_proxy}
 |   ├─ cargo      : {task_cargo}
 |   ├─ ftio       : {task_ftio}
-|   ├─ fuse idle threads: {settings.fuse_idle_threads}
-|   └─ fuse max threads : {settings.fuse_max_threads if settings.fuse_max_threads > 0 else "[yellow]default[/]"}
+|   └─ fuse idle threads: {settings.fuse_idle_threads}
 ├─ cpus per task  : {settings.procs}
 |   ├─ app        : 1
 |   ├─ daemon     : {cpu_daemon}
