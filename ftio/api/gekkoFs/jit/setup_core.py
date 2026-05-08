@@ -856,25 +856,14 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f"{settings.task_set_1} {app_inner}"
             )
         else:
-            if not settings.exclude_ftio:
-                additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},LIBGKFS_METRICS_FLUSH_INTERVAL=5,"
             if not settings.exclude_proxy:
                 additional_arguments += (
                     f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
                 )
-            if not settings.exclude_daemon:
-                log_modules = "all" if settings.debug_lvl > 1 else "info,warnings,errors"
-                additional_arguments += (
-                    f'LIBGKFS_LOG="{log_modules}",'
-                    f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
-                    f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
-                )
-                if not settings.fuse and settings.preload_via_export:
-                    additional_arguments += f"LD_PRELOAD={settings.gkfs_intercept},"
-                if (
-                    not settings.exclude_cargo and settings.lock_generator
-                ):  # if gekko and cargo active
-                    additional_arguments += get_env(settings, "srun")
+            if not settings.exclude_daemon and (
+                not settings.exclude_cargo and settings.lock_generator
+            ):
+                additional_arguments += get_env(settings, "srun")
 
             # Only resolve to absolute path when app_call already looks like a
             # path (starts with / or ./).  Bare command names (e.g. "dlio_benchmark")
@@ -887,18 +876,40 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 app_call = get_executable_realpath(settings.app_call, settings.run_dir)
             else:
                 app_call = settings.app_call
-            if (
-                not settings.preload_via_export
-                and not settings.fuse
-                and not settings.exclude_daemon
-                and settings.gkfs_intercept
-            ):
-                app_invocation = (
-                    f'bash -c "LD_PRELOAD={settings.gkfs_intercept}'
-                    f" LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile}"
-                    f' {app_call} {settings.app_flags}"'
-                )
+
+            if not settings.preload_via_export and not settings.fuse:
+                # Default: set all GekkoFS/FTIO vars inline in bash -c to avoid
+                # quoting and shell-expansion issues in srun --export.
+                gkfs_env = ""
+                if not settings.exclude_ftio:
+                    gkfs_env += (
+                        f"LIBGKFS_ENABLE_METRICS=on "
+                        f"LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} "
+                        f"LIBGKFS_METRICS_FLUSH_INTERVAL=5 "
+                    )
+                if not settings.exclude_daemon:
+                    log_modules = "all" if settings.debug_lvl > 1 else "info,warnings,errors"
+                    gkfs_env += (
+                        f"LIBGKFS_LOG={log_modules} "
+                        f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
+                        f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                    )
+                    if settings.gkfs_intercept:
+                        gkfs_env = f"LD_PRELOAD={settings.gkfs_intercept} " + gkfs_env
+                app_invocation = f'bash -c "{gkfs_env}{app_call} {settings.app_flags}"'
             else:
+                # Legacy / FUSE mode: pass GekkoFS vars via srun --export
+                if not settings.exclude_ftio:
+                    additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},LIBGKFS_METRICS_FLUSH_INTERVAL=5,"
+                if not settings.exclude_daemon:
+                    log_modules = "all" if settings.debug_lvl > 1 else "info,warnings,errors"
+                    additional_arguments += (
+                        f'LIBGKFS_LOG="{log_modules}",'
+                        f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
+                        f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
+                    )
+                    if settings.preload_via_export and settings.gkfs_intercept:
+                        additional_arguments += f"LD_PRELOAD={settings.gkfs_intercept},"
                 app_invocation = f"{app_call} {settings.app_flags}"
             call = (
                 f" cd {settings.run_dir} && time -p srun "
