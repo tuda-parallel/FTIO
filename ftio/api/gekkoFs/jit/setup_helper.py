@@ -288,6 +288,17 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         help="If set, FUSE is used.",
     )
     parser.add_argument(
+        "--fuse-max-threads",
+        dest="fuse_max_threads",
+        type=int,
+        default=0,
+        help=(
+            "Cap the FUSE thread pool (--max-threads N passed to fuse_client). "
+            "Limits concurrent Mercury RPCs to avoid IB QP depth exhaustion. "
+            "0 = libfuse default (~10 threads). Try 4–8 when hitting ECONNABORTED/EBUSY."
+        ),
+    )
+    parser.add_argument(
         "--preload-export",
         dest="preload_via_export",
         action="store_true",
@@ -417,6 +428,8 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         settings.lock_consumer = True
     if parsed_args.fuse:
         settings.fuse = True
+    if parsed_args.fuse_max_threads:
+        settings.fuse_max_threads = parsed_args.fuse_max_threads
     if parsed_args.preload_via_export:
         settings.preload_via_export = True
 
@@ -1588,7 +1601,8 @@ def print_settings(settings: JitSettings) -> None:
 |   ├─ proxy      : {task_proxy}
 |   ├─ cargo      : {task_cargo}
 |   ├─ ftio       : {task_ftio}
-|   └─ fuse threads: {settings.fuse_idle_threads}
+|   ├─ fuse idle threads: {settings.fuse_idle_threads}
+|   └─ fuse max threads : {settings.fuse_max_threads if settings.fuse_max_threads > 0 else "[yellow]default[/]"}
 ├─ cpus per task  : {settings.procs}
 |   ├─ app        : 1
 |   ├─ daemon     : {cpu_daemon}
