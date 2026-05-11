@@ -38,6 +38,14 @@ TRIGGER_LOGGER = Logger(prefix="trigger", stream=sys.stdout).get()
 files_in_progress = FileQueue()
 
 
+def format_size(n_bytes: int) -> str:
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if n_bytes < 1024.0:
+            return f"{n_bytes:.1f} {unit}"
+        n_bytes /= 1024.0
+    return f"{n_bytes:.1f} PB"
+
+
 def _write_flush_log(
     log_file: str,
     item: str,
@@ -99,6 +107,17 @@ def move_files_os(
     # Check if to submit files or folders
     # items_to_submit = get_items_to_submit(files, args, "files")
     items_to_submit = get_items_to_submit(files, args, "folder")
+
+    try:
+        raw = preloaded_call(args, f"find {args.gkfs_mntdir} -type f -printf '%s\\n'")
+        total_bytes = sum(int(x) for x in raw.splitlines() if x.strip().isdigit())
+        size_str = format_size(total_bytes)
+    except Exception:
+        size_str = "unknown size"
+    TRIGGER_LOGGER.info(
+        f"Staging {len(items_to_submit)} item(s) ({size_str})"
+        f" from {args.gkfs_mntdir} → {args.stage_out_path}"
+    )
 
     if "cp" in args.flush_call:
         flush_using_cp(args, items_to_submit, period, triggered_by)
@@ -280,8 +299,10 @@ def move_item(
     item_time = get_modification_time(args, item)
     modification_time = time.time() - item_time
     if args.ignore_mtime or modification_time >= threshold:
+        dst = item.replace(args.gkfs_mntdir, args.stage_out_path)
         TRIGGER_LOGGER.info(
-            f"Moving {item} (last modified {modification_time:.3f} s ago > threshold {threshold} s)"
+            f"Moving {item} → {dst}"
+            f" (last modified {modification_time:.3f} s ago > threshold {threshold} s)"
         )
         os.makedirs(
             os.path.dirname(item.replace(args.gkfs_mntdir, args.stage_out_path)),

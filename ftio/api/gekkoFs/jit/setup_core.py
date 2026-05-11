@@ -53,7 +53,7 @@ from ftio.api.gekkoFs.jit.setup_helper import (
     shut_down,
 )
 from ftio.api.gekkoFs.jit.setup_init import init_gekko
-from ftio.api.gekkoFs.posix_control import jit_move
+from ftio.api.gekkoFs.posix_control import format_size, jit_move
 
 _MAX_RETRIES = 3
 
@@ -747,13 +747,29 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
                 try:
                     call = flaged_call(
                         settings,
-                        f"ls -R {settings.gkfs_mntdir}",
+                        f"find {settings.gkfs_mntdir} -type f -printf '%s %p\\n'",
                         exclude=["ftio"],
                     )
-                    files = subprocess.check_output(call, shell=True).decode()
-                    jit_print(f"[cyan]gekko_ls {settings.gkfs_mntdir}: \n{files}[/]")
+                    raw = subprocess.check_output(call, shell=True).decode()
+                    lines = [l for l in raw.splitlines() if l.strip()]
+                    parsed = [
+                        (int(l.split()[0]), l.split(None, 1)[1])
+                        for l in lines
+                        if len(l.split(None, 1)) == 2 and l.split()[0].isdigit()
+                    ]
+                    total = sum(sz for sz, _ in parsed)
+                    file_details = "\n".join(
+                        f"  {path} ({format_size(sz)})"
+                        f" → {path.replace(settings.gkfs_mntdir, settings.stage_out_path)}"
+                        for sz, path in parsed
+                    )
+                    jit_print(
+                        f"[cyan]{len(parsed)} file(s) to stage out"
+                        f" ({format_size(total)} total) → {settings.stage_out_path}:[/]",
+                        f"[cyan]{file_details or '  (none)'}[/]",
+                    )
                 except Exception as e:
-                    jit_print(f"[red] Error during test:\n{e}")
+                    jit_print(f"[red] Error listing files:\n{e}")
 
             # Reset relevant files
             if settings.cluster:
