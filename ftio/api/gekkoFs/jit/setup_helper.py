@@ -294,8 +294,9 @@ def parse_options(settings: JitSettings, args: list[str]) -> None:
         default=0,
         help=(
             "Override -o max_idle_threads=N passed to fuse_client. "
-            "0 = auto (max(4, procs_app)). Lower values reduce concurrent "
-            "Mercury RPCs and help avoid IB QP depth exhaustion."
+            "0 = auto (max(16, procs_app * 4)): multiplies tasks-per-node by 4 "
+            "to cover internal reader threads from frameworks like TensorFlow/PyTorch. "
+            "Lower values reduce concurrent Mercury RPCs and help avoid IB QP depth exhaustion."
         ),
     )
     parser.add_argument(
@@ -1304,8 +1305,10 @@ def log_dir(settings: JitSettings) -> None:
 
     settings.set_log_dirs()
     # Auto-compute unless overridden via --fuse-idle-threads.
+    # procs_app is tasks-per-node; multiply by 4 to cover the internal reader
+    # threads that frameworks like TensorFlow/PyTorch spawn per rank.
     if settings.fuse_idle_threads == 0:
-        settings.fuse_idle_threads = max(4, settings.procs_app)
+        settings.fuse_idle_threads = max(16, settings.procs_app * 4)
 
 
 def get_address_ftio(settings: JitSettings) -> None:

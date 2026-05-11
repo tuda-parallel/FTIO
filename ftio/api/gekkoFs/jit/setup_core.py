@@ -326,6 +326,8 @@ def start_fuse(settings: JitSettings) -> None:
             occurrences=settings.app_nodes,
             error_file=settings.gkfs_fuse_err,
         ):
+            # Give the FUSE mount a moment to stabilise after the log confirms startup.
+            time.sleep(5)
             break
 
         jit_print(
