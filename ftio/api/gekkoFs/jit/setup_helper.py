@@ -1563,10 +1563,11 @@ def print_settings(settings: JitSettings) -> None:
         cpu_proxy = "[bold yellow]-[/]"
 
     if settings.exclude_cargo:
-        cargo_text = """
+        cargo_text = f"""
 ├─ cargo bin      : [yellow]none[/]
 ├─ cargo mode     : [yellow]none[/]
-├─ stage in path  : [yellow]none[/]
+├─ stage in path  : {settings.stage_in_path}
+├─ stage out path : {settings.stage_out_path}
 ├─ address cargo  : [yellow]none[/]
 ├─ port cargo     : [yellow]none[/]
 └─ server cargo   : [yellow]none[/]"""
@@ -1587,6 +1588,8 @@ def print_settings(settings: JitSettings) -> None:
 [bold green]setup[/]
 ├─ logs dir       : {settings.log_dir}
 ├─ pwd            : {settings.dir}
+├─ stage in       : {settings.stage_in_path}
+├─ stage out      : {settings.stage_out_path}
 ├─ ftio           : {ftio_status}
 ├─ gkfs daemon    : {gkfs_daemon_status}
 ├─ gkfs proxy     : {gkfs_proxy_status}
