@@ -203,6 +203,9 @@ def flush_using_cp(
                 index = futures[future]
                 TRIGGER_LOGGER.error(f"{items_to_submit[index]} had an error: {e}")
                 files_in_progress.mark_done(items_to_submit[index])
+            remaining = len(files_in_progress)
+            if remaining:
+                TRIGGER_LOGGER.info(f"{remaining} item(s) still in the queue")
 
 
 def get_items_to_submit(files: list, args: argparse.Namespace, mode: str = "files"):
@@ -304,17 +307,12 @@ def move_item(
             f"Moving {item} → {dst}"
             f" (last modified {modification_time:.3f} s ago > threshold {threshold} s)"
         )
-        os.makedirs(
-            os.path.dirname(item.replace(args.gkfs_mntdir, args.stage_out_path)),
-            exist_ok=True,
-        )
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
         if fast:
             # Todo: add mode for folder. However this currenlty not used
             fast_chunk_copy_file(args, item, threads=4)
         else:
             copy_file_and_unlink(args, item, triggered_by)
-
-        TRIGGER_LOGGER.info(f"{len(files_in_progress)} files still in the queue")
     else:
         TRIGGER_LOGGER.warning(
             f"Skipping {item}: too new (last modified {modification_time:.3f} s ago < threshold {threshold} s)"
@@ -334,15 +332,26 @@ def copy_file_and_unlink(
         triggered_by (str): Who initiated the flush — "ftio" or "post_app".
     """
     flush_log = getattr(args, "flush_log", "")
-    if "." in item.split("/")[-1]:  # file
-        cp_cmd = f"cp {item} {args.stage_out_path}"
-        remove_cmd = f"unlink {item}"
-    else:  # folder
-        cp_cmd = f"cp -r {item} {args.stage_out_path}"
-        # remove_cmd = f"rm -rf {item}"
+    # Preserve intermediate directories: copy into the parent of the intended
+    # destination so that e.g. .../checkpoints/epoch10 lands at
+    # stage_out_path/checkpoints/epoch10, not stage_out_path/epoch10.
+    dst = item.replace(args.gkfs_mntdir, args.stage_out_path)
+    dst_parent = os.path.dirname(dst)
+    try:
+        preloaded_call(args, f"test -d {item}")
+        is_dir = True
+    except Exception:
+        is_dir = False
+    if is_dir:
+        # -L: dereference symlinks so the destination holds real data, not
+        # dangling links after the source is unlinked.
+        cp_cmd = f"cp -rL {item} {dst_parent}"
         remove_cmd = f"find {item} -type f -exec unlink {{}} \\;"
+    else:
+        cp_cmd = f"cp -L {item} {dst_parent}"
+        remove_cmd = f"unlink {item}"
 
-    TRIGGER_LOGGER.info(f"Copying {item} to {args.stage_out_path}")
+    TRIGGER_LOGGER.info(f"Copying {item} to {dst}")
     start = time.time()
     preloaded_call(args, cp_cmd)
     copy_time = time.time() - start
@@ -368,7 +377,7 @@ def copy_file_and_unlink(
         f"Done {item}: copy {copy_time:.3f} s, delete {delete_time:.3f} s"
     )
     _write_flush_log(
-        flush_log, item, args.stage_out_path, triggered_by, copy_time, delete_time
+        flush_log, item, dst, triggered_by, copy_time, delete_time
     )
 
 
