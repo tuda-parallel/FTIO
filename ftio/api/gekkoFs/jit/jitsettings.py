@@ -388,7 +388,7 @@ class JitSettings:
         # ****** gkfs variables ******
         # self.gkfs_dir = f"{self.home}/deps/gekkofs_zmq_install"  # mogon
         # self.gkfs_dir = "/apps/GPP/GEKKOFS/gkfs-master"  # bsc
-        self.gkfs_dir = f"{self.home}/deps/install"  # bsc
+        self.gkfs_dir = os.getenv("GKFS_DIR", f"{self.home}/deps/install")  # bsc
 
         if self.parsed_gkfs_daemon:
             self.gkfs_daemon = self.parsed_gkfs_daemon
