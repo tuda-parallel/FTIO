@@ -907,9 +907,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                         f"LIBGKFS_METRICS_FLUSH_INTERVAL=5 "
                     )
                 if not settings.exclude_daemon:
-                    log_modules = (
-                        "all" if settings.debug_lvl > 1 else "errors"
-                    )
+                    log_modules = "all" if settings.debug_lvl > 1 else "errors"
                     gkfs_env += (
                         f"LIBGKFS_LOG={log_modules} "
                         f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
@@ -923,9 +921,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 if not settings.exclude_ftio:
                     additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},LIBGKFS_METRICS_FLUSH_INTERVAL=5,"
                 if not settings.exclude_daemon:
-                    log_modules = (
-                        "all" if settings.debug_lvl > 1 else "errors"
-                    )
+                    log_modules = "all" if settings.debug_lvl > 1 else "errors"
                     additional_arguments += (
                         f'LIBGKFS_LOG="{log_modules}",'
                         f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"

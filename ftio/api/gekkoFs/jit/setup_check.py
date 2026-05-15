@@ -69,8 +69,9 @@ def check_setup(settings: JitSettings):
                         f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
                     )
                 if not settings.exclude_daemon:
+                    log_modules = "all" if settings.debug_lvl > 1 else "errors"
                     additional_arguments += (
-                        f'-x LIBGKFS_LOG="info,warnings,errors" '
+                        f"-x LIBGKFS_LOG={log_modules} "
                         f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
                         f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                     )
@@ -102,8 +103,9 @@ def check_setup(settings: JitSettings):
                         f"LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile},"
                     )
                 if not settings.exclude_daemon:
+                    log_modules = "all" if settings.debug_lvl > 1 else "errors"
                     additional_arguments += (
-                        f'LIBGKFS_LOG="info,warnings,errors",'
+                        f'LIBGKFS_LOG="{log_modules}",'
                         f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
                         f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
                     )

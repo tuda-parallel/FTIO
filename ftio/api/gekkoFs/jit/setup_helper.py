@@ -2107,7 +2107,7 @@ def load_defauts(settings: JitSettings, special_flags: dict = None):
         "LIBGKFS_METRICS_IP_PORT": f"{settings.address_ftio}:{settings.port_ftio}",
         "LIBGKFS_ENABLE_METRICS": "on",
         "LIBGKFS_PROXY_PID_FILE": f"{settings.gkfs_proxyfile}",
-        "LIBGKFS_LOG": "info,warnings,errors",
+        "LIBGKFS_LOG": "errors" if settings.debug_lvl <= 1 else "all",
         "LIBGKFS_LOG_OUTPUT": f"{settings.gkfs_client_log}",
         "LIBGKFS_HOSTS_FILE": f"{settings.gkfs_hostfile}",
         "LD_PRELOAD": f"{settings.gkfs_intercept}",
