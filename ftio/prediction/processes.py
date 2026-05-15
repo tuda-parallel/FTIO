@@ -43,10 +43,8 @@ def predictor_with_processes(shared_resources, args):
         shared_resources (SharedResources): shared resources among processes
         args (list[str]): additional arguments passed to ftio
     """
-    from ftio.parse.args import parse_args as _parse_args
-
     filename = args[1]
-    debounce = getattr(_parse_args(args), "debounce", False)
+    debounce = "--debounce" in args
 
     procs = []
     # Init: capture the initial stamp
@@ -70,9 +68,7 @@ def predictor_with_processes(shared_resources, args):
                 # without waiting for previous ones to finish.
                 stamp, procs = pm.monitor(filename, stamp, procs)
                 procs.append(
-                    handle_in_process(
-                        prediction_process, args=(shared_resources, args)
-                    )
+                    handle_in_process(prediction_process, args=(shared_resources, args))
                 )
     except KeyboardInterrupt:
         print_data(shared_resources.data)

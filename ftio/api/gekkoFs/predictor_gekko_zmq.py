@@ -60,6 +60,7 @@ def main(args: list[str] = sys.argv[1:]) -> None:
     data_stager_args, ftio_args = parse_args_data_stager(args, False)
     ranks = 0
     procs = []
+    debounce = "--debounce" in ftio_args
 
     ftio_args.extend(["-e", "no"])
     if "-zmq" not in ftio_args:
@@ -112,12 +113,23 @@ def main(args: list[str] = sys.argv[1:]) -> None:
                 status.update("")
 
                 # launch prediction_process
-                procs.append(
-                    handle_in_process(
-                        prediction_zmq_process,
-                        args=(shared_resources, ftio_args, msgs),
+                if debounce:
+                    if procs:
+                        procs[-1].join()
+                        procs.pop()
+                    procs.append(
+                        handle_in_process(
+                            prediction_zmq_process,
+                            args=(shared_resources, ftio_args, msgs),
+                        )
                     )
-                )
+                else:
+                    procs.append(
+                        handle_in_process(
+                            prediction_zmq_process,
+                            args=(shared_resources, ftio_args, msgs),
+                        )
+                    )
 
     except KeyboardInterrupt:
         trigger.join()

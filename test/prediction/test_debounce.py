@@ -17,13 +17,11 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 
 from __future__ import annotations
 
-import importlib
 import sys
 from types import ModuleType
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Helpers to break the circular import
@@ -64,12 +62,14 @@ def _import_predictor():
     # Remove any cached version of processes so it re-initialises against stubs
     sys.modules.pop("ftio.prediction.processes", None)
     import ftio.prediction.processes as proc_mod
+
     return proc_mod.predictor_with_processes
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_args(extra: list[str] | None = None) -> list[str]:
     """Build a minimal args list that parse_args can handle."""
@@ -99,14 +99,17 @@ def _monitor_side_effect(n_triggers: int):
 # Tests: argparse flag (no circular-import risk — parse_args is clean)
 # ---------------------------------------------------------------------------
 
+
 class TestArgParsing:
     def test_debounce_default_false(self):
         from ftio.parse.args import parse_args
+
         parsed = parse_args(_make_args())
         assert parsed.debounce is False
 
     def test_debounce_flag_sets_true(self):
         from ftio.parse.args import parse_args
+
         parsed = parse_args(_make_args(["--debounce"]))
         assert parsed.debounce is True
 
@@ -114,6 +117,7 @@ class TestArgParsing:
 # ---------------------------------------------------------------------------
 # Tests: default (parallel) mode
 # ---------------------------------------------------------------------------
+
 
 class TestParallelMode:
     """predictor_with_processes without --debounce keeps the original behaviour."""
@@ -157,6 +161,7 @@ class TestParallelMode:
 # ---------------------------------------------------------------------------
 # Tests: debounce (serial) mode
 # ---------------------------------------------------------------------------
+
 
 class TestDebounceMode:
     """predictor_with_processes --debounce runs predictions serially."""
@@ -209,7 +214,9 @@ class TestDebounceMode:
 
         with (
             patch("ftio.prediction.processes.pm.monitor", side_effect=_recording_monitor),
-            patch("ftio.prediction.processes.handle_in_process", return_value=MagicMock()),
+            patch(
+                "ftio.prediction.processes.handle_in_process", return_value=MagicMock()
+            ),
             patch("ftio.prediction.processes.print_data"),
             patch("ftio.prediction.processes.export_extrap"),
             patch("ftio.prediction.processes._export_phase_automaton"),
@@ -248,9 +255,9 @@ class TestDebounceMode:
             predictor_with_processes(MagicMock(), args)
 
         assert concurrent_counts, "no predictions were triggered"
-        assert max(concurrent_counts) == 1, (
-            f"concurrent predictions detected: {concurrent_counts}"
-        )
+        assert (
+            max(concurrent_counts) == 1
+        ), f"concurrent predictions detected: {concurrent_counts}"
 
 
 if __name__ == "__main__":

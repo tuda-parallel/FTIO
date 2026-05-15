@@ -376,9 +376,7 @@ def copy_file_and_unlink(
     TRIGGER_LOGGER.info(
         f"Done {item}: copy {copy_time:.3f} s, delete {delete_time:.3f} s"
     )
-    _write_flush_log(
-        flush_log, item, dst, triggered_by, copy_time, delete_time
-    )
+    _write_flush_log(flush_log, item, dst, triggered_by, copy_time, delete_time)
 
 
 def delete_items(args: argparse.Namespace, items: list[str]) -> None:
