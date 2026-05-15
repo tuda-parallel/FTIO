@@ -23,26 +23,57 @@ from ftio.prediction.probability_analysis import find_probability
 
 
 def predictor_with_processes(shared_resources, args):
-    """performs prediction in ProcessPoolExecuter. FTIO is a submitted future and probability is calculated as a callback
+    """Monitors a file and runs predictions whenever it changes.
+
+    Two modes are supported, selected by the ``--debounce`` flag in *args*:
+
+    * **Default (parallel)** — the original behaviour: a new prediction
+      process is spawned on every file-change event regardless of whether a
+      previous prediction is still running.  Suitable when predictions are
+      fast relative to the I/O period.
+
+    * **Debounce (serial, --debounce)** — only one prediction runs at a time.
+      After a prediction finishes, the monitor stamp is re-checked; if the
+      file changed again during the prediction the next iteration returns
+      immediately and triggers a follow-up prediction — no event is permanently
+      lost.  This also eliminates concurrent writes to the unprotected Value
+      fields in SharedResources (count, hits, aggregated_bytes).
 
     Args:
         shared_resources (SharedResources): shared resources among processes
         args (list[str]): additional arguments passed to ftio
     """
+    from ftio.parse.args import parse_args as _parse_args
+
     filename = args[1]
+    debounce = getattr(_parse_args(args), "debounce", False)
+
     procs = []
-    # Init: Monitor a file
+    # Init: capture the initial stamp
     stamp, _ = pm.monitor(filename, "")
 
-    # Loop and predict if changes occur
     try:
-        while True:
-            # monitor
-            stamp, procs = pm.monitor(filename, stamp, procs)
-            # launch prediction_process
-            procs.append(
-                handle_in_process(prediction_process, args=(shared_resources, args))
-            )
+        if debounce:
+            while True:
+                # Block until the file changes (returns immediately when the
+                # stamp is already stale — the debounce re-trigger path).
+                stamp, _ = pm.monitor(filename, stamp)
+                proc = handle_in_process(
+                    prediction_process, args=(shared_resources, args)
+                )
+                # Wait for the prediction to finish before accepting the next
+                # trigger, keeping shared state access strictly serial.
+                proc.join()
+        else:
+            while True:
+                # Original behaviour: spawn a prediction on every trigger
+                # without waiting for previous ones to finish.
+                stamp, procs = pm.monitor(filename, stamp, procs)
+                procs.append(
+                    handle_in_process(
+                        prediction_process, args=(shared_resources, args)
+                    )
+                )
     except KeyboardInterrupt:
         print_data(shared_resources.data)
         export_extrap(shared_resources.data)

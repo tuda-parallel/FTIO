@@ -361,6 +361,21 @@ Full documentation:
             help="Window length for STFT analysis in samples or time (e.g., '20s'). If 0, it is automatically calculated based on the dominant frequency.",
         )
 
+        parser.add_argument(
+            "--debounce",
+            dest="debounce",
+            action="store_true",
+            help=(
+                "Enable debounced (serial) prediction: only one prediction runs at a "
+                "time.  If the monitored file changes again while a prediction is in "
+                "flight, the stale stamp is detected on the next monitor call and a "
+                "follow-up prediction is triggered immediately — no trigger is lost. "
+                "This also prevents concurrent writes to shared state. "
+                "Default: off (original parallel behaviour)."
+            ),
+        )
+        parser.set_defaults(debounce=False)
+
         # Phase automaton
         parser.add_argument(
             "--phase-automaton",

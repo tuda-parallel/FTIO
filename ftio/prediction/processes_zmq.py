@@ -31,10 +31,21 @@ def predictor_with_processes_zmq(
     shard_resources,
     args,
 ) -> None:
-    """performs prediction in ProcessPoolExecuter. FTIO is a submitted future and probability is calculated as a callback
+    """Monitors a ZMQ socket and runs predictions whenever messages arrive.
+
+    Two modes are supported, selected by the ``--debounce`` flag in *args*:
+
+    * **Default (parallel)** — original behaviour: a new prediction process is
+      spawned for every batch of received messages regardless of whether a
+      previous prediction is still running.
+
+    * **Debounce (serial, --debounce)** — only one prediction runs at a time.
+      After a prediction finishes, another poll is performed immediately so
+      that messages that accumulated during the prediction are not silently
+      dropped — they trigger a follow-up prediction right away.
 
     Args:
-        shared_resources (SharedResources): shared resources among processes
+        shard_resources (SharedResources): shared resources among processes
         args (list[str]): additional arguments passed to ftio
     """
     procs = []
@@ -42,6 +53,7 @@ def predictor_with_processes_zmq(
     tmp_args = parse_args(args)
     addr = tmp_args.zmq_address
     port = tmp_args.zmq_port
+    debounce = getattr(tmp_args, "debounce", False)
 
     # bind the socket
     socket = bind_socket(addr, port)
@@ -52,13 +64,13 @@ def predictor_with_processes_zmq(
     if "-zmq" not in args:
         args.extend(["--zmq"])
 
-    # Loop and predict if changes occur
     try:
         with CONSOLE.status("[green]started\n", spinner="arrow3") as status:
             while True:
-                # join procs
-                procs = join_procs(procs)
-                # get messages
+                if not debounce:
+                    # Original behaviour: reap finished procs, then wait for msgs.
+                    procs = join_procs(procs)
+
                 msgs, ranks = receive_messages(socket, poller)
 
                 if not msgs:
@@ -67,11 +79,18 @@ def predictor_with_processes_zmq(
                 CONSOLE.print(f"[cyan]Got message from {ranks}:[/]")
                 status.update("")
 
-                procs.append(
-                    handle_in_process(
+                if debounce:
+                    # Serial: run one prediction and wait before the next poll.
+                    proc = handle_in_process(
                         prediction_process, args=(shard_resources, args, msgs)
                     )
-                )
+                    proc.join()
+                else:
+                    procs.append(
+                        handle_in_process(
+                            prediction_process, args=(shard_resources, args, msgs)
+                        )
+                    )
     except KeyboardInterrupt:
         print_data(shard_resources.data)
         export_extrap(shard_resources.data)
