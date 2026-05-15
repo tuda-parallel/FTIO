@@ -843,8 +843,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 if settings.debug_lvl > 1:
                     log_modules = "all"
                 else:
-                    # log_modules = "info,warnings,errors"
-                    log_modules = "none"
+                    log_modules = "errors"
                 additional_arguments += (
                     f"-x LIBGKFS_LOG={log_modules} "
                     f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
@@ -909,7 +908,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     )
                 if not settings.exclude_daemon:
                     log_modules = (
-                        "all" if settings.debug_lvl > 1 else "info,warnings,errors"
+                        "all" if settings.debug_lvl > 1 else "errors"
                     )
                     gkfs_env += (
                         f"LIBGKFS_LOG={log_modules} "
@@ -925,7 +924,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     additional_arguments += f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},LIBGKFS_METRICS_FLUSH_INTERVAL=5,"
                 if not settings.exclude_daemon:
                     log_modules = (
-                        "all" if settings.debug_lvl > 1 else "info,warnings,errors"
+                        "all" if settings.debug_lvl > 1 else "errors"
                     )
                     additional_arguments += (
                         f'LIBGKFS_LOG="{log_modules}",'
@@ -958,8 +957,9 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
             )
         if not settings.exclude_daemon:
+            log_modules = "all" if settings.debug_lvl > 1 else "errors"
             additional_arguments += (
-                f'-x LIBGKFS_LOG="info,warnings,errors" '
+                f"-x LIBGKFS_LOG={log_modules} "
                 f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
             )

@@ -54,8 +54,12 @@ def init_gekko(settings: JitSettings) -> None:
             exclude=["ftio", "demon", "proxy", "cargo"],
         )
         execute_block(unmount_call, raise_exception=False, dry_run=settings.dry_run)
-        calls.append(f"mkdir -p {settings.gkfs_mntdir} 2>/dev/null || [ -d {settings.gkfs_mntdir} ]")
-        calls.append(f"mkdir -p {settings.gkfs_rootdir} 2>/dev/null || [ -d {settings.gkfs_rootdir} ]")
+        calls.append(
+            f"mkdir -p {settings.gkfs_mntdir} 2>/dev/null || [ -d {settings.gkfs_mntdir} ]"
+        )
+        calls.append(
+            f"mkdir -p {settings.gkfs_rootdir} 2>/dev/null || [ -d {settings.gkfs_rootdir} ]"
+        )
         jit_print("[cyan]Creating directories[/]")
         for call in calls:
             tmp = flaged_call(
