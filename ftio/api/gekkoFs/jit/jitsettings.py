@@ -122,7 +122,7 @@ class JitSettings:
 
         self.nodes = 1
         self.max_time = None
-        self.ftio_args = "-m write -v --freq 10 --debounce"
+        self.ftio_args = "-m write -v --freq 10 "  # -v  # 10 -w data -v "
         self.gkfs_daemon_protocol = (
             "ofi+verbs"  # "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
         )
