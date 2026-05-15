@@ -99,10 +99,10 @@ def main() -> None:
         # Start services
         # ------------------------------------------------------------------
         start_gekko_daemon(settings)
-        start_fuse(settings)
         start_gekko_proxy(settings)
         start_cargo(settings)
         start_ftio(settings)
+        start_fuse(settings)
 
         # ------------------------------------------------------------------
         # Workflow execution
