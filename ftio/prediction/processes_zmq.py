@@ -101,6 +101,8 @@ def setup_socket(addr: str, port: str, socket_type = zmq.PULL, bind: bool = True
     """Bind the ZMQ socket, retrying with a corrected IP if necessary."""
     context = zmq.Context()
     socket = context.socket(socket_type)
+    if not bind and addr == "*":
+        addr = "127.0.0.1"
     try:
         if bind:
             socket.bind(f"tcp://{addr}:{port}")
