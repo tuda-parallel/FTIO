@@ -15,12 +15,13 @@ from __future__ import annotations
 
 import struct
 import subprocess
+
 import zmq
 
 from ftio.freq.helper import MyConsole
 from ftio.multiprocessing.async_process import handle_in_process, join_procs
 from ftio.parse.args import parse_args
-from ftio.prediction.helper import export_extrap, print_data, get_dominant_and_conf
+from ftio.prediction.helper import export_extrap, get_dominant_and_conf, print_data
 from ftio.prediction.processes import prediction_process
 
 CONSOLE = MyConsole()
