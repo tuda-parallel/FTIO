@@ -1,6 +1,15 @@
 """
 This module contains functions to find the period using autocorrelation
 and to filter outliers from the detected peaks.
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 from __future__ import annotations
@@ -15,7 +24,6 @@ from scipy.signal import find_peaks
 # from rich.padding import Padding
 import ftio.freq.discretize as dis
 from ftio.freq._analysis_figures import AnalysisFigures
-from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
 from ftio.plot.plot_autocorrelation import plot_autocorr_results
@@ -25,16 +33,15 @@ def find_autocorrelation(
     args: Namespace,
     data: dict,
     analysis_figures: AnalysisFigures,
-    share: SharedSignalData,
+    prediction_freq_analysis: Prediction,
 ) -> Prediction:
     """Finds the period using autocorreleation
 
     Args:
         args (argparse.Namespace): Command line arguments
         data (dict): Sampled data
-        share (SharedSignalData): shared signal data from freq analysis like DFT:
         analysis_figures (AnalysisFigures): Data and plot figures.
-
+        prediction_freq_analysis (Prediction): Frequency analysis prediction contains bandwidth and time stamps.
     Returns:
         tuple:
             - prediction (Prediction): Contains prediction results including dominant frequency, confidence, amplitude, etc.
@@ -58,12 +65,12 @@ def find_autocorrelation(
         )
 
         # Take data if already aviable from previous step
-        if not share.is_empty():
-            b_sampled = share.get("b_sampled")
-            freq = share.get("freq")
-            t_s = share.get("t_start")
-            t_e = share.get("t_end")
-            total_bytes = share.get("total_bytes")
+        if len(prediction_freq_analysis.b_sampled) > 0:
+            b_sampled = prediction_freq_analysis.b_sampled
+            freq = prediction_freq_analysis.freq
+            t_s = prediction_freq_analysis.t_start
+            t_e = prediction_freq_analysis.t_end
+            total_bytes = prediction_freq_analysis.total_bytes
         else:
             total_bytes = 0
             bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
@@ -140,7 +147,7 @@ def filter_outliers(
         method = "z"
         # With quantil and weights
         if "q" in method:
-            text += f"Filtering method: [purple]quantil[/]\n"
+            text += "Filtering method: [purple]quantil[/]\n"
             # candidates = candidates*weights/sum(weights)
             q1 = np.percentile(candidates, 25)
             q3 = np.percentile(candidates, 75)
@@ -213,7 +220,7 @@ def find_fd_autocorrelation(
     if candidates.size > 0:
         mean = np.average(candidates, weights=weights)
         std = np.sqrt(np.abs(np.average((candidates - mean) ** 2, weights=weights)))
-        tmp = [f"{1/i:.4f}" for i in candidates]  # Formatting frequencies
+        tmp = [f"{1 / i:.4f}" for i in candidates]  # Formatting frequencies
         periodicity = mean
         coef_var = np.abs(std / mean)
         conf = 1 - coef_var
@@ -229,7 +236,7 @@ def find_fd_autocorrelation(
         f"Found periods are [purple]{candidates}[/]\n"
         f"Matching frequencies are [purple]{tmp}[/]\n"
         f"Average period is [purple]{periodicity:.2f} [/]sec\n"
-        f"Average frequency is [purple]{1/periodicity if periodicity > 0 else np.nan:.4f} [/]Hz\n"
+        f"Average frequency is [purple]{1 / periodicity if periodicity > 0 else np.nan:.4f} [/]Hz\n"
         f"Confidence is [purple]{conf * 100:.2f} [/]%\n"
     )
     console = MyConsole()
@@ -246,10 +253,10 @@ def find_fd_autocorrelation(
 
     # plot
     if any(x in args.engine for x in ["mat", "plot"]):
-        console.print(f"Generating Autocorrelation Plot\n")
+        console.print("Generating Autocorrelation Plot\n")
         fig = plot_autocorr_results(args, acorr, peaks, outliers, len(candidates) > 0)
         analysis_figures.add_figure([fig], "Autocorrelation")
-        console.print(f" --- Done --- \n")
+        console.print(" --- Done --- \n")
 
     return {
         "autocorrelation": acorr,

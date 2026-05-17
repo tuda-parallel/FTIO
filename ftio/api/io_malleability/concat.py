@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Mär 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import argparse
 
 
@@ -5,7 +16,7 @@ def process_log_files(input_files, output_file, timestamp_column):
     last_timestamp = 0
     with open(output_file, "w") as outfile:
         for input_file in input_files:
-            with open(input_file, "r") as infile:
+            with open(input_file) as infile:
                 for line in infile:
                     # Split line by spaces and extract the relevant columns
                     columns = line.split()

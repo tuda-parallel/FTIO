@@ -1,16 +1,25 @@
-"""Contains functions that execute workflow using the continuous Wavelet Transform."""
+"""
+Contains functions that execute workflow using the continuous Wavelet Transform.
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
 
 import time
 from argparse import Namespace
 
 import numpy as np
-import pandas as pd
 from pywt import frequency2scale
-from scipy.signal import find_peaks, find_peaks_cwt
+from scipy.signal import find_peaks
 
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft_workflow import ftio_dft
-from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq._wavelet import wavelet_cont
 from ftio.freq._wavelet_helpers import get_scales
 from ftio.freq.discretize import sample_data
@@ -42,7 +51,6 @@ def ftio_wavelet_cont(
         ranks (int): The rank value (default is 0).
     """
     #! Default values for variables
-    share = SharedSignalData()
     prediction = Prediction(args.transformation)
     console = MyConsole(verbose=args.verbose)
 
@@ -58,7 +66,7 @@ def ftio_wavelet_cont(
     console.print(f"\n[cyan]Discretization finished:[/] {time.time() - tik:.3f} s")
 
     tik = time.time()
-    console.print(f"[cyan]Finding Scales:[/] \n")
+    console.print("[cyan]Finding Scales:[/] \n")
 
     #! Continuous Wavelet transform
     # TODO: use DFT to select the scales (see tmp/test.py)
@@ -83,7 +91,7 @@ def ftio_wavelet_cont(
         use_dominant_only = False
         scales = []
         t_sampled = time_stamps[0] + np.arange(0, len(b_sampled)) * 1 / args.freq
-        prediction, analysis_figures, share = ftio_dft(args, b_sampled, t_sampled)
+        prediction, analysis_figures = ftio_dft(args, b_sampled, t_sampled)
         dominant_freq, _ = get_dominant_and_conf(prediction)
 
         # Adjust wavelet
@@ -216,22 +224,18 @@ def ftio_wavelet_cont(
 
         for i, fig in enumerate(f):
             analysis_figures.add_figure([fig], f"wavelet_cont_{i}")
-        console.print(f" --- Done --- \n")
+        console.print(" --- Done --- \n")
     else:
         analysis_figures = AnalysisFigures()
 
     # Calculate the period (time difference between consecutive peaks)
     if len(peak_times) > 1:
-        periods = np.diff(
-            peak_times
-        )  # Differences between consecutive peak times (periods)
+        np.diff(peak_times)  # Differences between consecutive peak times (periods)
     else:
-        periods = []
-
-    dominant_index = []
+        pass
 
     console.print(
         f"\n[cyan]{args.transformation.upper()} + {args.outlier} finished:[/] {time.time() - tik:.3f} s"
     )
 
-    return prediction, analysis_figures, share
+    return prediction, analysis_figures

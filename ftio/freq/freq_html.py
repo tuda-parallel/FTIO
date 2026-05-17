@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import os
 from sys import platform
 from threading import Thread
@@ -31,10 +42,10 @@ def create_html(figs: list, render: str, configuration: dict, name: str = "freq"
             s = s + fig.to_html(config=configuration, include_plotlyjs=False) + "\n"
 
         template = template.format(plotly=get_plotlyjs(), plots=s)
-        with open(f"{name}.html", "a") as file:
-            file.write(template)
+        with open(f"{name}.html", "w") as file:
+            file.write(template.strip())
 
-        os.system(f"open ./{name}.html &\n")
+        os.system(f'open "./{name}.html"')
         console.print(f"[cyan]{name}.html created[/cyan]")
     else:
         os.mkdir("io_predicition_anomality_images")

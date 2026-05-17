@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Aug 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import argparse
 import os  # To handle file path operations
 import sys
@@ -90,7 +101,7 @@ def sub_plots(df):
     fields = ["read", "write", "both"]
     for i, field in enumerate(fields):
         row = 0
-        for j, metric in enumerate(metrics):
+        for _j, metric in enumerate(metrics):
             if field in metric:
                 row += 1
                 subplot_titles.append(metric)

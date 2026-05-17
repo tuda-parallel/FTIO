@@ -6,7 +6,8 @@ efficiently. It also includes mechanisms for monitoring file modification times 
 compatibility with GekkoFS libraries.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: Apr 2025
 
 Licensed under the BSD 3-Clause License.
@@ -37,8 +38,34 @@ CONSOLE.set(True)
 files_in_progress = FileQueue()
 
 
+def _write_flush_log(
+    log_file: str,
+    item: str,
+    dst: str,
+    triggered_by: str,
+    copy_time: float,
+    delete_time: float,
+) -> None:
+    if not log_file:
+        return
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
+    label = "FTIO-trigger" if triggered_by == "ftio" else "post-app    "
+    line = (
+        f"{ts} | {label} | {item} -> {dst}"
+        f" | copy: {copy_time:.3f} s | delete: {delete_time:.3f} s\n"
+    )
+    try:
+        with open(log_file, "a") as f:
+            f.write(line)
+    except Exception:
+        pass
+
+
 def move_files_os(
-    args: argparse.Namespace, parallel: bool = False, period: float = 0
+    args: argparse.Namespace,
+    parallel: bool = False,
+    period: float = 0,
+    triggered_by: str = "ftio",
 ) -> None:
     """
     Moves files and directories from the source directory to the stage-out path.
@@ -48,6 +75,7 @@ def move_files_os(
         parallel (bool, optional): Whether to use parallel processing for file moving.
             modification time checks. Defaults to False.
         period (float, optional): Time period for file modification checks. Defaults to 0.
+        triggered_by (str): Who initiated the flush — "ftio" (predictor) or "post_app".
     """
     CONSOLE.print("[bold green][Trigger][/] Moving files\n")
     args.ld_preload = args.ld_preload.replace("libc_", "")
@@ -72,13 +100,21 @@ def move_files_os(
     items_to_submit = get_items_to_submit(files, args, "folder")
 
     if "cp" in args.flush_call:
-        flush_using_cp(args, items_to_submit, period)
+        flush_using_cp(args, items_to_submit, period, triggered_by)
     else:  # flush using tar
-        flush_using_tar(args, items_to_submit)
+        flush_using_tar(args, items_to_submit, triggered_by)
 
 
-def flush_using_tar(args: argparse.Namespace, items_to_submit: list[str] = []):
-    tar_cmd = f"tar -rf {args.stage_out_path}/data.tar {' '.join(items_to_submit)}"
+def flush_using_tar(
+    args: argparse.Namespace,
+    items_to_submit: list[str] = None,
+    triggered_by: str = "ftio",
+):
+    if items_to_submit is None:
+        items_to_submit = []
+    flush_log = getattr(args, "flush_log", "")
+    tar_dst = f"{args.stage_out_path}/data.tar"
+    tar_cmd = f"tar -rf {tar_dst} {' '.join(items_to_submit)}"
     CONSOLE.print(
         f"[bold green][Trigger][/] taring {len(items_to_submit)} items to {args.stage_out_path})\n"
     )
@@ -88,15 +124,23 @@ def flush_using_tar(args: argparse.Namespace, items_to_submit: list[str] = []):
     CONSOLE.print(
         f"[bold green][Trigger][/] Finished taring {len(items_to_submit)} items to {args.stage_out_path})\n"
     )
-    start = time.time()
+    start_del = time.time()
     delete_items(args, items_to_submit)
+    delete_time = time.time() - start_del
     CONSOLE.print(
         f"[bold green][Trigger][/][green]: Tar time for {len(items_to_submit)}: tarred in {tar_time} s, "
-        f"deleted in {time.time()-start} s[/]\n"
+        f"deleted in {delete_time} s[/]\n"
     )
+    summary = f"TAR {len(items_to_submit)} items"
+    _write_flush_log(flush_log, summary, tar_dst, triggered_by, tar_time, delete_time)
 
 
-def flush_using_cp(args: argparse.Namespace, items_to_submit: list[str], period: float):
+def flush_using_cp(
+    args: argparse.Namespace,
+    items_to_submit: list[str],
+    period: float,
+    triggered_by: str = "ftio",
+):
     """
     Submits file processing tasks to a ProcessPoolExecutor and tracks progress, ensuring no
     duplicate or ignored items are processed.
@@ -104,6 +148,7 @@ def flush_using_cp(args: argparse.Namespace, items_to_submit: list[str], period:
         args (argparse.Namespace): Command-line arguments namespace.
         items_to_submit (list[str]): List of items (file paths) that need to be processed.
         period (float): Time interval in seconds between task executions.
+        triggered_by (str): Who initiated the flush — "ftio" or "post_app".
     Returns:
         None
     """
@@ -118,7 +163,9 @@ def flush_using_cp(args: argparse.Namespace, items_to_submit: list[str], period:
                 item
             ) and not files_in_progress.is_ignored(args, item):
                 files_in_progress.put(item)
-                futures[executor.submit(move_item, args, item, period)] = idx
+                futures[executor.submit(move_item, args, item, period, triggered_by)] = (
+                    idx
+                )
                 if args.debug:
                     CONSOLE.print(f"[bold green][Trigger][/]: moving {item}")
             else:
@@ -217,13 +264,20 @@ def get_items_to_submit(files: list, args: argparse.Namespace, mode: str = "file
     return items_to_submit
 
 
-def move_item(args: argparse.Namespace, item: str, period: float = 0) -> None:
+def move_item(
+    args: argparse.Namespace,
+    item: str,
+    period: float = 0,
+    triggered_by: str = "ftio",
+) -> None:
     """
     Stages out a single file if it matches the regex and meets modification time criteria.
 
     Args:
         args (argparse.Namespace): Parsed command line arguments.
         item (str): Name of the file to stage out.
+        period (float): Expected I/O period used to derive mtime threshold.
+        triggered_by (str): Who initiated the flush — "ftio" or "post_app".
     """
     fast = False  # fast copy still has an error with the preload
 
@@ -246,7 +300,7 @@ def move_item(args: argparse.Namespace, item: str, period: float = 0) -> None:
             # Todo: add mode for folder. However this currenlty not used
             fast_chunk_copy_file(args, item, threads=4)
         else:
-            copy_file_and_unlink(args, item)
+            copy_file_and_unlink(args, item, triggered_by)
 
         CONSOLE.print(
             f"[bold green][Trigger][/][yellow]: {len(files_in_progress)} files still in the queue."
@@ -258,14 +312,18 @@ def move_item(args: argparse.Namespace, item: str, period: float = 0) -> None:
         files_in_progress.mark_failed(item)
 
 
-def copy_file_and_unlink(args: argparse.Namespace, item: str) -> None:
+def copy_file_and_unlink(
+    args: argparse.Namespace, item: str, triggered_by: str = "ftio"
+) -> None:
     """
     Copies a file or folder to the stage-out path and removes it from the source.
 
     Args:
         args (argparse.Namespace): Parsed command line arguments.
         item (str): Name of the file or folder to copy and remove.
+        triggered_by (str): Who initiated the flush — "ftio" or "post_app".
     """
+    flush_log = getattr(args, "flush_log", "")
     if "." in item.split("/")[-1]:  # file
         cp_cmd = f"cp {item} {args.stage_out_path}"
         remove_cmd = f"unlink {item}"
@@ -301,9 +359,13 @@ def copy_file_and_unlink(args: argparse.Namespace, item: str) -> None:
         files_in_progress.put_ignore(args, item)
         CONSOLE.print(f"[bold yellow][Trigger][/]Added {item} to ignore queue ")
 
+    delete_time = time.time() - start
     CONSOLE.print(
         f"[bold green][Trigger][/][green]: Times  for {item}: copied in {copy_time} s, "
-        f"deleted in {time.time()-start} s[/]\n"
+        f"deleted in {delete_time} s[/]\n"
+    )
+    _write_flush_log(
+        flush_log, item, args.stage_out_path, triggered_by, copy_time, delete_time
     )
 
 
@@ -522,6 +584,12 @@ def jit_move(settings: JitSettings) -> None:
     if settings.debug_lvl > 0:
         args += ["--debug"]
 
+    if settings.fuse:
+        args += ["--node", f"{str(settings.single_node)}"]
+
+    if settings.flush_log:
+        args += ["--flush_log", str(settings.flush_log)]
+
     # Define CLI parser
     parser = argparse.ArgumentParser(
         description="Data staging arguments", prog="file_mover"
@@ -570,8 +638,8 @@ def jit_move(settings: JitSettings) -> None:
         default=False,
     )
     parser.add_argument(
-        "--adaptive",
-        dest="adaptive",
+        "--handle_new_prediction",
+        dest="handle_new_prediction",
         help="Adaptive flag for flushing",
         default="cancel",
         choices={"skip", "cancel", ""},
@@ -604,8 +672,21 @@ def jit_move(settings: JitSettings) -> None:
         help="Flushing method: 'cp' to copy files or 'tar' to compress them.",
     )
 
+    parser.add_argument(
+        "--node",
+        type=str,
+        default=None,
+        help="single node to flush with srun if fuse is set",
+    )
+    parser.add_argument(
+        "--flush_log",
+        type=str,
+        default="",
+        help="Path to the flush log file.",
+    )
+
     # Parse and call mover
     parsed_args = parser.parse_args(args)
 
     if not settings.dry_run:
-        move_files_os(parsed_args)
+        move_files_os(parsed_args, triggered_by="post_app")

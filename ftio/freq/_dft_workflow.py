@@ -1,4 +1,15 @@
-"""Contains functions that execute workflow using the discrete Fourier Transform."""
+"""
+Contains functions that execute workflow using the discrete Fourier Transform.
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Jan 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
 
 import time
 from argparse import Namespace
@@ -13,7 +24,6 @@ from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft import dft
 from ftio.freq._filter import filter_signal
 from ftio.freq._fourier_fit import fourier_fit
-from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq.discretize import sample_data
 from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
@@ -27,7 +37,7 @@ def ftio_dft(
     total_bytes: int = 0,
     ranks: int = 1,
     text: str = "",
-) -> tuple[Prediction, AnalysisFigures, SharedSignalData]:
+) -> tuple[Prediction, AnalysisFigures]:
     """
     Performs a Discrete Fourier Transform (DFT) on the sampled bandwidth data, finds the dominant frequency, followed by outlier
     detection to spot the dominant frequency. This function also  prepares the necessary outputs for plotting or reporting.
@@ -44,10 +54,8 @@ def ftio_dft(
         tuple:
             - prediction (Prediction): Contains prediction results including dominant frequency, confidence, amplitude, etc.
             - analysis_figures (AnalysisFigures): Data and plot figures.
-            - share (SharedSignalData): Contains shared information, including sampled bandwidth and total bytes.
     """
     #! Default values for variables
-    share = SharedSignalData()
     prediction = Prediction(args.transformation)
     analysis_figures = AnalysisFigures(args)
     console = MyConsole(verbose=args.verbose)
@@ -84,7 +92,7 @@ def ftio_dft(
     # welch(bandwidth,freq)
 
     #!  Find the dominant frequency
-    (dominant_index, conf[1 : int(n / 2) + 1], outlier_text) = outlier_detection(
+    dominant_index, conf[1 : int(n / 2) + 1], outlier_text = outlier_detection(
         amp, frequencies, args
     )
 
@@ -146,10 +154,10 @@ def ftio_dft(
         )
         if not args.autocorrelation:
             plot_dft(args, prediction, analysis_figures)
-        console.print(f" --- Done --- \n")
+        console.print(" --- Done --- \n")
 
-    if args.autocorrelation:
-        share.set_data_from_predicition(b_sampled, prediction)
+    if args.autocorrelation or args.machine_learning:
+        prediction.b_sampled = b_sampled
 
     precision_text = ""
     # precision_text = precision_dft(amp, phi, dominant_index, b_sampled, t_sampled, frequencies, args.engine)
@@ -167,4 +175,4 @@ def ftio_dft(
     console.print(
         f"\n[cyan]{args.transformation.upper()} + {args.outlier} finished:[/] {time.time() - tik:.3f} s"
     )
-    return prediction, analysis_figures, share
+    return prediction, analysis_figures

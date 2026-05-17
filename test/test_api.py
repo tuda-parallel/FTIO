@@ -1,5 +1,14 @@
 """
 Functions for testing the API functionalities of the ftio package.
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Mar 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 import numpy as np
@@ -7,7 +16,6 @@ import numpy as np
 from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
 from ftio.parse.bandwidth import overlap
-from ftio.plot.freq_plot import convert_and_plot
 from ftio.processing.print_output import display_prediction
 
 
@@ -80,7 +88,14 @@ def test_api():
     # plot and print info
     display_prediction(args, prediction)
     analysis_figures.show()
-    assert True
+    # verify prediction results
+    assert not prediction.is_empty()
+    assert prediction.source == "dft"
+    assert prediction.t_start == 0.0
+    assert prediction.t_end == 65.0
+    assert np.isclose(prediction.dominant_freq[0], 0.04615385, rtol=1e-5)
+    assert prediction.conf[0] > 0.8
+    assert analysis_figures is not None
 
 
 if __name__ == "__main__":

@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Aug 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -17,13 +28,13 @@ def heatmap(data):
 
     if data:
         # nbins = round(data[0]['freq']*(data[0]['t_end'] - data[0]['t_start']))
-        nbins = round((data[0]["t_end"] - data[0]["t_start"]))
+        nbins = round(data[0].t_end - data[0].t_start)
     for d in data:
-        metric = d["metric"]
-        if len(d["dominant_freq"]) > 0 and len(d["conf"]) > 0:
-            max_conf_index = np.argmax(d["conf"])
-            dominant_freq = d["dominant_freq"][max_conf_index]
-            conf = d["conf"][max_conf_index] * 100
+        metric = d.metric
+        if len(d.dominant_freq) > 0 and len(d.conf) > 0:
+            max_conf_index = np.argmax(d.conf)
+            dominant_freq = d.dominant_freq[max_conf_index]
+            conf = d.conf[max_conf_index] * 100
         else:
             continue
             dominant_freq = 0
@@ -81,7 +92,7 @@ def heatmap(data):
     # Create the heatmap with switched axes
     fig = px.imshow(
         heatmap_pivot,
-        labels=dict(x="Metric", y="Dominant Frequency", color="Confidence"),
+        labels={"x": "Metric", "y": "Dominant Frequency", "color": "Confidence"},
         # text_auto=True,
         origin="lower",
         color_continuous_scale="Viridis",
@@ -90,15 +101,15 @@ def heatmap(data):
     fig.update_layout(
         # height=1500,
         xaxis_tickangle=-45,
-        margin=dict(l=100, r=100, t=50, b=150),
-        coloraxis_colorbar=dict(
-            yanchor="top",
-            y=1,
-            ticks="outside",
-            ticksuffix=" %",
+        margin={"l": 100, "r": 100, "t": 50, "b": 150},
+        coloraxis_colorbar={
+            "yanchor": "top",
+            "y": 1,
+            "ticks": "outside",
+            "ticksuffix": " %",
             # lenmode="pixels",
             # len=200,
-        ),
+        },
     )
     fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()
@@ -119,10 +130,13 @@ def scatter(df, x, y, color, symbol) -> None:
         xaxis_title=x,
         yaxis_title=y,
         xaxis_tickangle=-45,
-        margin=dict(l=100, r=100, t=50, b=150),
-        coloraxis_colorbar=dict(
-            orientation="h", ticks="outside", ticksuffix=" %", title=""
-        ),
+        margin={"l": 100, "r": 100, "t": 50, "b": 150},
+        coloraxis_colorbar={
+            "orientation": "h",
+            "ticks": "outside",
+            "ticksuffix": " %",
+            "title": "",
+        },
     )
     fig.show()
 
@@ -146,8 +160,13 @@ def scatter2D(df) -> None:
         xaxis_title="Metric",
         yaxis_title="Dominant Frequency",
         xaxis_tickangle=-45,
-        margin=dict(l=100, r=100, t=50, b=150),
-        coloraxis_colorbar=dict(yanchor="top", y=1, ticks="outside", ticksuffix=" %"),
+        margin={"l": 100, "r": 100, "t": 50, "b": 150},
+        coloraxis_colorbar={
+            "yanchor": "top",
+            "y": 1,
+            "ticks": "outside",
+            "ticksuffix": " %",
+        },
     )
     fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()
@@ -161,12 +180,12 @@ def heatmap_2(data):
     confs = []
     counter = 0
 
-    for d in data:
-        metric = d["metric"]
-        if len(d["dominant_freq"]) > 0 and len(d["conf"]) > 0:
-            max_conf_index = np.argmax(d["conf"])
-            dominant_freq = d["dominant_freq"][max_conf_index]
-            conf = d["conf"][max_conf_index]
+    for prediction in data:
+        metric = prediction.metric
+        if len(prediction.dominant_freq) > 0 and len(prediction.conf) > 0:
+            max_conf_index = np.argmax(prediction.conf)
+            dominant_freq = prediction.dominant_freq[max_conf_index]
+            conf = prediction.conf[max_conf_index]
         else:
             continue
             dominant_freq = 0
@@ -274,18 +293,18 @@ def density_heatmap(data) -> None:
 
     # Calculate number of bins based on data range
     if data:
-        t_start = data[0].get("t_start", 0)
-        t_end = data[0].get("t_end", 100)  # Use a default end value if not provided
+        t_start = data[0].t_start
+        t_end = data[0].t_end
         nbins = round((t_end - t_start) / 10)
     else:
         nbins = 30  # Default value if no data is provided
 
-    for d in data:
-        if len(d["dominant_freq"]) > 0 and len(d["conf"]) > 0:
-            max_conf_index = np.argmax(d["conf"])
-            dominant_freq = d["dominant_freq"][max_conf_index]
-            conf = d["conf"][max_conf_index] * 100
-            data_points.append((d["metric"], dominant_freq, conf))
+    for prediction in data:
+        if len(prediction.dominant_freq) > 0 and len(prediction.conf) > 0:
+            max_conf_index = np.argmax(prediction.conf)
+            dominant_freq = prediction.dominant_freq[max_conf_index]
+            conf = prediction.conf[max_conf_index] * 100
+            data_points.append((prediction.metric, dominant_freq, conf))
         else:
             continue
 
@@ -314,14 +333,14 @@ def density_heatmap(data) -> None:
         xaxis_title="Metric",
         yaxis_title="Dominant Frequency",
         xaxis_tickangle=-45,
-        coloraxis_colorbar=dict(
-            yanchor="top",
-            y=1,
-            ticks="outside",
-            ticksuffix=" %",
-            title="Confidence (%)",
-        ),
-        margin=dict(l=100, r=100, t=50, b=150),
+        coloraxis_colorbar={
+            "yanchor": "top",
+            "y": 1,
+            "ticks": "outside",
+            "ticksuffix": " %",
+            "title": "Confidence (%)",
+        },
+        margin={"l": 100, "r": 100, "t": 50, "b": 150},
     )
     fig.show()
 
@@ -331,7 +350,7 @@ def plot_heatmap(heatmap_diff):
     # Create the heatmap with switched axes
     fig = px.imshow(
         heatmap_diff,
-        labels=dict(x="", y="", color="Difference in Dominant Frequency"),
+        labels={"x": "", "y": "", "color": "Difference in Dominant Frequency"},
         # text_auto=True,
         origin="lower",
         # width=1200,  # Adjust width as needed
@@ -353,19 +372,24 @@ def plot_heatmap(heatmap_diff):
     fig.update_layout(
         xaxis_title="Metric",
         yaxis_title="Metric",
-        coloraxis_colorbar=dict(
-            title="Relative deviation (%)",
-            yanchor="top",
-            y=1,
-            ticks="outside",
-            ticksuffix=" %",
+        coloraxis_colorbar={
+            "title": "Relative deviation (%)",
+            "yanchor": "top",
+            "y": 1,
+            "ticks": "outside",
+            "ticksuffix": " %",
             # tickvals=[0, critical/2, critical, 2*critical, 1/critical],
-        ),
-        xaxis=dict(
-            tickmode="linear",  # Ensure tick labels are spaced out
-            tickangle=90,  # Rotate tick labels if they overlap
-        ),
-        margin=dict(l=100, r=100, t=50, b=150),  # Adjust margins to give more space
+        },
+        xaxis={
+            "tickmode": "linear",  # Ensure tick labels are spaced out
+            "tickangle": 90,  # Rotate tick labels if they overlap
+        },
+        margin={
+            "l": 100,
+            "r": 100,
+            "t": 50,
+            "b": 150,
+        },  # Adjust margins to give more space
     )
     fig = format_plot_and_ticks(fig, False, True, False, False)
     fig.show()

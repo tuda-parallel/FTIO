@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import numpy as np
 import pandas as pd
 
@@ -7,7 +18,7 @@ def set_unit(arr: np.ndarray, suffix="B/s") -> tuple[str, float]:
 
     Args:
         arr (np.ndarray | float): array or float
-        unit (optional): default B/s
+        suffix (optional): default B/s
 
     Returns:
         unit (string): unit in GB/s, MB/s, KB/s or B/s
@@ -19,7 +30,7 @@ def set_unit(arr: np.ndarray, suffix="B/s") -> tuple[str, float]:
         pass
     elif isinstance(arr, pd.DataFrame):
         arr = arr.to_numpy()
-    elif isinstance(arr, float) or isinstance(arr, int):
+    elif isinstance(arr, (float, int)):
         arr = np.array(arr)
 
     if arr.size > 0 and np.max(arr) > 0:

@@ -1,5 +1,15 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import importlib.util
-import sys
 
 import ftio.plot.dash_files.constants.id as id
 import ftio.plot.dash_files.constants.io_mode as io_mode
@@ -7,7 +17,7 @@ from ftio.plot.dash_files.callback_files.callbacks import get_callbacks
 
 DASH_AVAILABLE = importlib.util.find_spec("dash") is not None
 if not DASH_AVAILABLE:
-    sys.exit(
+    raise RuntimeError(
         "Dash module not found. Please install it using 'make full' or 'pip install dash dash-extensions'."
     )
 else:
@@ -76,7 +86,7 @@ class IOAnalysisApp(DashProxy):
                     id=id.DROPDOWN_FILE,
                     multi=True,
                     style={"marginTop": 10},
-                    disabled=(True if self._plot_core.data.args.merge_plots else False),
+                    disabled=(bool(self._plot_core.data.args.merge_plots)),
                 ),
                 dcc.Checklist(
                     options=self._io_modes,

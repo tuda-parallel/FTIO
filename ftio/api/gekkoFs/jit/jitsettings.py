@@ -2,7 +2,8 @@
 JIT Settings
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: Aug 2024
 
 Licensed under the BSD 3-Clause License.
@@ -39,9 +40,9 @@ class JitSettings:
 
         # flags
         ##############
-        self.set_tasks_affinity = True  # required for ls and cp
+        self.set_tasks_affinity = False  # required for ls and cp
         self.cargo_mode = "posix"  # "parallel" or "posix"
-        self.debug_lvl = 0
+        self.debug_lvl = 0  # >0 FTIO, >1 GKFS & FTIO, >2 GKFS & FTIO & CARGO
         self.verbose = True
         self.verbose_error = True
         self.node_local = True  # execute in node local space or memory
@@ -59,7 +60,7 @@ class JitSettings:
         self.parallel_move_threads = 32  # Can be slower if many files are moved
         self.lock_generator = False
         self.lock_consumer = False
-        self.adaptive = "cancel"
+        self.handle_new_prediction = "cancel"
         self.job_id = 0
         self.static_allocation = False
         self.ftio_node = ""
@@ -77,6 +78,8 @@ class JitSettings:
         self.mpi_hostfile = ""
         self.parsed_gkfs_daemon = ""
         self.parsed_gkfs_intercept = ""
+        self.home = ""
+        self.fuse = False
 
         self.log_dir = ""
         self.gkfs_daemon_log = ""
@@ -90,6 +93,8 @@ class JitSettings:
         self.ftio_err = ""
         self.app_log = ""
         self.app_err = ""
+        self.app_start_file = ""
+        self.flush_log = ""
 
         # exclude flags
         ################
@@ -103,6 +108,7 @@ class JitSettings:
         ################
         self.ftio_pid = 0
         self.gkfs_daemon_pid = 0
+        self.gkfs_fuse_pid = 0
         self.gkfs_proxy_pid = 0
         self.cargo_pid = 0
         self.app_pid = 0
@@ -115,7 +121,7 @@ class JitSettings:
         self.port_cargo = "62000"  # port between cargo and ftio
 
         self.nodes = 1
-        self.max_time = 30
+        self.max_time = None
         self.ftio_args = "-m write -v --freq 10 "  # -v  # 10 -w data -v "
         self.gkfs_daemon_protocol = (
             "ofi+verbs"  # "ofi+verbs" #"ofi+sockets"  or "ofi+verbs"
@@ -126,7 +132,7 @@ class JitSettings:
         self.trap_exit = True
         self.soft_kill = True
         self.hard_kill = True
-        self.procs = os.cpu_count() or 128
+        self.procs = min((len(os.sched_getaffinity(0)), os.cpu_count() or 1, 128))
         self.omp_threads = 64
         self.task_set_0 = ""
         self.task_set_1 = ""
@@ -148,18 +154,25 @@ class JitSettings:
     def set_cluster_mode(self) -> None:
         """automatically identifies if it's a cluster or local machine"""
         hostname = socket.gethostname()
-        if "cpu" in hostname or "mogon" in hostname:
+        if any(x in hostname for x in ("cpu", "mogon", "login", "gs")):
             self.cluster = True
-            if "mogon" in hostname:
+            if any(x in hostname for x in ("login", "mogon")):
                 console.print(
                     "[bold red]Execute this script on CPU nodes\n mpiexec still has some bugs[/]"
                 )
 
         console.print(f"[bold  green]CLUSTER MODE: {self.cluster}[/]")
 
+        if "gp" in hostname:
+            self.gkfs_use_syscall = True
+            self.fuse = True
+            # self.procs = os.cpu_count() / 2
+            console.print("[bold green]FUSE MODE: ON[/]")
+            self.port_ftio = "5558"
+
     def update(self) -> None:
         """updates the flags and pass variables after the passed options are read.
-        This is necessary, to adapt to the cluster mode and the installation path
+        This is necessary to adapt to the cluster mode and the installation path
         """
         self.set_flags()
         self.set_variables()
@@ -185,9 +198,9 @@ class JitSettings:
 
     def update_app_nodes(self):
         if self.pre_app_call:
-            if "$APP_PROCS" in self.pre_app_call:
+            if "$APP_PROCS_X_NODES" in self.pre_app_call:
                 self.pre_app_call = self.pre_app_call.replace(
-                    "$APP_PROCS", str(self.procs_app * self.app_nodes)
+                    "$APP_PROCS_X_NODES", str(self.procs_app * self.app_nodes)
                 )
             elif "$APP_NODES" in self.pre_app_call:
                 self.pre_app_call = self.pre_app_call.replace(
@@ -270,10 +283,10 @@ class JitSettings:
             self.log_suffix = self.log_suffix.replace("F", "")
 
         if self.set_tasks_affinity:
-            self.task_set_0 = f"taskset -c 0-{np.floor(self.procs/2)-1:.0f}"
+            self.task_set_0 = f"taskset -c 0-{np.floor(self.procs / 2) - 1:.0f}"
             if self.procs - np.floor(self.procs / 2) >= self.procs_app:
                 self.task_set_1 = (
-                    f"taskset -c {np.ceil(self.procs/2):.0f}-{self.procs-1:.0f}"
+                    f"taskset -c {np.ceil(self.procs / 2):.0f}-{self.procs - 1:.0f}"
                 )
 
     def set_log_dirs(self):
@@ -282,12 +295,16 @@ class JitSettings:
         self.gkfs_proxy_log = os.path.join(self.log_dir, "gekko_proxy.log")
         self.gkfs_proxy_err = os.path.join(self.log_dir, "gekko_proxy.err")
         self.gkfs_client_log = os.path.join(self.log_dir, "gekko_client.log")
+        self.gkfs_fuse_log = os.path.join(self.log_dir, "gekko_fuse.log")
+        self.gkfs_fuse_err = os.path.join(self.log_dir, "gekko_fuse.err")
         self.cargo_log = os.path.join(self.log_dir, "cargo.log")
         self.cargo_err = os.path.join(self.log_dir, "cargo.err")
         self.ftio_log = os.path.join(self.log_dir, "ftio.log")
         self.ftio_err = os.path.join(self.log_dir, "ftio.err")
         self.app_log = os.path.join(self.log_dir, "app.log")
         self.app_err = os.path.join(self.log_dir, "app.err")
+        self.app_start_file = os.path.join(self.log_dir, "app_start.flag")
+        self.flush_log = os.path.join(self.log_dir, "flush.log")
 
     def to_dict(self):  # -> dict[str, Any]:
         # Define a list of attribute names to be promoted to top-level keys
@@ -349,93 +366,111 @@ class JitSettings:
             self.install_location = "/beegfs/home/Shared/admire/JIT"
 
         # ****** job allocation call ******
-        # self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name JIT --no-shell --exclude=cpu0082"
+        # self.alloc_call_flags = "--overcommit --oversubscribe --partition parallel -A nhr-gekko --job-name JIT --no-shell --exclude=cpu0082"
         self.job_name = "JIT"
-        # self.alloc_call_flags = f"--overcommit --oversubscribe --partition largemem -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0401"
-        self.alloc_call_flags = f"--overcommit --oversubscribe --partition parallel -A nhr-admire --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0085,cpu0086,cpu0087,cpu0088,cpu0401"
+        # self.alloc_call_flags = f"--overcommit --oversubscribe --partition largemem -A nhr-gekko --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0401"
+        self.alloc_call_flags = f"--overcommit --oversubscribe --partition parallel -A nhr-gekko --job-name {self.job_name} --no-shell --exclude=cpu0081,cpu0082,cpu0083,cpu0084,cpu0085,cpu0086,cpu0087,cpu0088,cpu0401"
 
         # ? Tools
         # ?##########################
+        # self.home = "/lustre/project/nhr-gekko/tarraf"  # mogon
+        # self.tmp_dir = self.home # dir tro store stage in and out files
+        self.home = str(os.path.expanduser("~"))  # bsc
+        self.tmp_dir = os.getenv("STAGE_DIR", "")
+
         # ****** ftio variables ******
-        self.ftio_bin_location = "/lustre/project/nhr-admire/tarraf/FTIO/.venv/bin"
+        self.ftio_bin_location = f"{self.home}/FTIO/.venv/bin"
 
         # ****** gkfs variables ******
-        self.gkfs_deps = "/lustre/project/nhr-admire/tarraf/deps"  # _gcc12_2"
+        # self.gkfs_dir = f"{self.home}/deps/gekkofs_zmq_install"  # mogon
+        # self.gkfs_dir = "/apps/GPP/GEKKOFS/gkfs-master"  # bsc
+        self.gkfs_dir = f"{self.home}/deps/install"  # bsc
+
         if self.parsed_gkfs_daemon:
             self.gkfs_daemon = self.parsed_gkfs_daemon
         else:
-            self.gkfs_daemon = f"{self.gkfs_deps}/gekkofs_zmq_install/bin/gkfs_daemon"
+            self.gkfs_daemon = f"{self.gkfs_dir}/bin/gkfs_daemon"
 
         if self.parsed_gkfs_intercept:
             self.gkfs_intercept = self.parsed_gkfs_intercept
         else:
-            self.gkfs_intercept = (
-                f"{self.gkfs_deps}/gekkofs_zmq_install/lib64/libgkfs_intercept.so"
-            )
+            self.gkfs_intercept = f"{self.gkfs_dir}/lib64/libgkfs_intercept.so"
 
+        self.gkfs_fuse = f"{self.gkfs_dir}/bin/fuse_client"
         self.gkfs_mntdir = "/dev/shm/tarraf_gkfs_mountdir"
         self.gkfs_rootdir = "/dev/shm/tarraf_gkfs_rootdir"
-        self.gkfs_hostfile = "/lustre/project/nhr-admire/tarraf/gkfs_hosts.txt"
-        self.gkfs_proxy = (
-            "/lustre/project/nhr-admire/tarraf/gekkofs/build/src/proxy/gkfs_proxy"
-        )
+        self.gkfs_hostfile = f"{self.home}/gkfs_hosts.txt"
+        self.gkfs_proxy = f"{self.home}/gekkofs/build/src/proxy/gkfs_proxy"
         self.gkfs_proxyfile = "/dev/shm/tarraf_gkfs_proxy.pid"
         self.update_files_with_gkfs_mntdir = []
 
         # ****** cargo variables ******
-        self.cargo_bin = f"{self.gkfs_deps}/gekkofs_zmq_install/bin"  # "/lustre/project/nhr-admire/tarraf/cargo/build/cli"
+        self.cargo_bin = f"{self.gkfs_dir}/bin"  # f"{self.home}/cargo/build/cli"
 
         # ? APP settings
         # ?##########################
         # ****** app call ******
         #  ├─ IOR
         if "ior" in self.app:
-            self.app_call = "/lustre/project/nhr-admire/tarraf/ior/src/ior -a POSIX -i 4 -o ${GKFS_MNTDIR}/iortest -t 128k -b 512m -F"
+            self.app_call = "./ior "
+            self.run_dir = f"{self.home}/ior/src"
+            self.app_flags = "-a POSIX -i 4 -o ./iortest -t 128k -b 512m -F"
         #  ├─ HACCIO
         elif "hacc" in self.app:
-            self.app_call = "/lustre/project/nhr-admire/tarraf/HACC-IO/HACC_ASYNC_IO 1000000 ${GKFS_MNTDIR}/mpi"
+            self.app_call = "./HACC_ASYNC_IO"
+            self.run_dir = f"{self.home}/HACC-IO"
+            self.app_flags = "1000000 test_run/mpi"
         # ├─ NEK5000 --> change gkfs_daemon_protocol to socket
         elif "nek" in self.app:
             self.app_call = "./nek5000"
-            self.run_dir = "/home/tarrafah/nhr-admire/shared/run_gkfs_marc"
+            self.run_dir = "/home/tarrafah/nhr-gekko/shared/run_gkfs_marc"
             self.app_flags = ""
         #  ├─ Wacom++ --> change wacom.json if needed
         elif "wacom" in self.app:
             self.app_call = "./wacommplusplus"
-            # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build"
-            # self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/roms"
-            self.run_dir = "/lustre/project/nhr-admire/tarraf/wacommplusplus/build_new"
+            # self.run_dir = f"{self.home}/wacommplusplus/build"
+            # self.run_dir = f"{self.home}/wacommplusplus/roms"
+            self.run_dir = f"{self.home}/wacommplusplus/build_new"
             if not self.app_flags:  # default value if app_flags is not set
                 self.app_flags = ""
         #  ├─ LAMMPS
         elif "lammps" in self.app:
-            self.app_call = "/lustre/project/nhr-admire/shared/mylammps/build/lmp"
+            self.app_call = "/lustre/project/nhr-gekko/shared/mylammps/build/lmp"
             self.run_dir = f"{self.gkfs_mntdir}"
             self.app_flags = "-in in.spce.hex"
         #  ├─ DLIO
         elif "dlio" in self.app:
             self.app_call = "dlio_benchmark"
-            self.run_dir = "."
-            # workload = " workload=cosmoflow_a100 "
-            # workload = " workload=bert "
-            # workload = " workload=bert_small "
-            # workload = " workload=bert_v100_pytorch " #paper
-            workload = " workload=bert_v100_pytorch_2 "
-            # workload = " workload=bert_v100_pytorch_allranks.yaml "
-            # workload = " workload=unet3d_my_a100 "
-            # workload = " workload=resnet50_my_a100 "
-            # workload = " workload=llama_my_7b_zero3 "
-            # workload = " workload=resnet50_my_a100_pytorch "
+            # self.run_dir = "."
+            self.run_dir = self.tmp_dir
+            workload = os.getenv("WORKLOAD")
+            # if not set, take a fixed one
+            if workload is None:
+                # workload = "cosmoflow_a100"
+                # workload = "bert"
+                # workload = "bert_small"
+                # workload = "bert_v100_pytorch" #paper
+                # workload = "bert_v100_pytorch_2" # good
+                # workload = "resnet50_v100"# work with fues on bsc
+                # workload = "resnet50_v100_new"  # bsc best for real test
+                workload = "resnet50_v100_new_small"  # bsc
+                # workload = "bert_v100_pytorch_allranksyaml "
+                # workload = "unet3d_my_a100"
+                # workload = "resnet50_my_a100"
+                # workload = "llama_my_7b_zero3"
+                # workload = "resnet50_my_a100_pytorch"
+            # ensure surrounding spaces
+            workload = f" workload={workload} "
         #  ├─ S3D-IO
         elif "s3d" in self.app:
-            self.app_call = "/lustre/project/nhr-admire/shared/S3D-IO/s3d_io.x"
+            self.app_call = "/lustre/project/nhr-gekko/shared/S3D-IO/s3d_io.x"
             self.run_dir = "."
             if not self.app_flags:  # default value if app_flags is not set
-                self.app_flags = "600 600 600 6 6 6 0 F ."
+                self.app_flags = "200 200 200 2 2 2 0 F ."
         #  └─ WRF
         elif "wrf" in self.app:
             self.app_call = "./wrf.exe"
-            self.run_dir = "/lustre/project/nhr-admire/tarraf/WRF/test/em_real"
+            self.run_dir = f"{self.home}/WRF/test/em_real"
             self.app_flags = ""
 
         else:
@@ -453,23 +488,54 @@ class JitSettings:
             if self.exclude_daemon:
                 self.app_flags = (
                     f"{workload} "
-                    f"++workload.workflow.generate_data=False ++workload.workflow.train=True ++workload.workflow.checkpoint=True "
-                    f"++workload.dataset.data_folder={self.run_dir}/data ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints "
+                    f"++workload.workflow.generate_data=False "
+                    f"++workload.workflow.train=True "
+                    f"++workload.workflow.checkpoint=True "
+                    f"++workload.dataset.data_folder={self.run_dir}/data "
+                    f"++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints "
                     f"++workload.output.output_folder={self.run_dir}/hydra_log "
                 )
                 # self.pre_app_call = f"mpirun -np 8 dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
-                self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                # self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False"
+                self.pre_app_call = (
+                    f"mpirun -np $APP_PROCS_X_NODES dlio_benchmark "
+                    f"{workload} "
+                    f"++workload.workflow.generate_data=True "
+                    f"++workload.workflow.train=False "
+                    f"++workload.workflow.checkpoint=False "
+                    f"++workload.dataset.data_folder={self.run_dir}/data "
+                    f"++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints "
+                    f"++workload.output.output_folder={self.run_dir}/hydra_log "
+                )
                 self.post_app_call = ""
             else:
                 # self.run_dir = self.gkfs_mntdir #? don't enable this flag, as the executing node doesn't have this folder
                 self.app_flags = (
-                    f"{workload} "
                     # f"++workload.workflow.generate_data=True ++workload.workflow.train=True ++workload.workflow.checkpoint=True "
-                    f"++workload.workflow.generate_data=False ++workload.workflow.train=True ++workload.workflow.checkpoint=True "
-                    f"++workload.dataset.data_folder={self.gkfs_mntdir}/data ++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints "
+                    f"{workload} "
+                    f"++workload.workflow.generate_data=False "
+                    f"++workload.workflow.train=True "
+                    f"++workload.workflow.checkpoint=True "
+                    f"++workload.dataset.data_folder={self.gkfs_mntdir}/data "
+                    f"++workload.checkpoint.checkpoint_folder={self.gkfs_mntdir}/checkpoints "
                     f"++workload.output.output_folder={self.gkfs_mntdir}/hydra_log "
                 )
-                self.pre_app_call = f"mpirun -np $APP_NODES dlio_benchmark {self.app_flags} ++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.dataset.data_folder=/lustre/project/nhr-admire/tarraf/stage-in/data"
+                dlio_dir = (
+                    f"{self.gkfs_mntdir}"  # no stag-in requiored, directly write to gkfs
+                )
+                # dlio_dir = (
+                # f"{self.tmp_dir}/stage-in"  # write to stag-in, than stage-in data
+                # )
+                self.pre_app_call = (
+                    f"mpirun -np $APP_PROCS_X_NODES dlio_benchmark "
+                    f"{workload} "
+                    f"++workload.workflow.generate_data=True "
+                    f"++workload.workflow.train=False "
+                    f"++workload.workflow.checkpoint=False "
+                    f"++workload.dataset.data_folder={dlio_dir}/data "
+                    f"++workload.checkpoint.checkpoint_folder={dlio_dir}/checkpoints "
+                    f"++workload.output.output_folder={dlio_dir}/hydra_log "
+                )
                 self.post_app_call = ""
         # ├─ Nek5000
         elif "nek" in self.app:
@@ -501,14 +567,28 @@ class JitSettings:
             self.post_app_call = ""
             if not self.exclude_daemon:
                 self.app_flags = self.app_flags.replace(".", f"{self.gkfs_mntdir}")
+        # ├─ IOR
+        elif "ior" in self.app:
+            self.pre_app_call = ""
+            self.post_app_call = ""
+            if not self.exclude_daemon:
+                self.app_flags = self.app_flags.replace(
+                    "./iortest", f"{self.gkfs_mntdir}/iortest"
+                )
+        #  ├─ HACCIO
+        elif "hacc" in self.app:
+            self.pre_app_call = ""
+            self.post_app_call = ""
+            if not self.exclude_daemon:
+                self.app_flags = self.app_flags.replace("test_run", f"{self.gkfs_mntdir}")
         # ├─ wrf
         elif "wrf" in self.app:
             if self.exclude_daemon:
-                self.pre_app_call = f"cd /lustre/project/nhr-admire/tarraf/WRF/test/em_real; du -sh wrfout_d0* ; rm -rf wrfout_d0* rsl.*.*"
-                self.post_app_call = f""
+                self.pre_app_call = "cdf {self.home}/WRF/test/em_real; du -sh wrfout_d0* ; rm -rf wrfout_d0* rsl.*.*"
+                self.post_app_call = ""
             else:
                 self.run_dir = f"{self.gkfs_mntdir}"
-                self.pre_app_call = f"cd /lustre/project/nhr-admire/tarraf/WRF/test/em_real_stagein; du -sh wrfout_d0* ; rm -rf wrfout_d0* rsl.*.*; mkdir -p {self.run_dir}; cp /lustre/project/nhr-admire/tarraf/WRF/test/em_real_stagein/wrf.exe {self.run_dir}"
+                self.pre_app_call = f"cdf {self.home}/WRF/test/em_real_stagein; du -sh wrfout_d0* ; rm -rf wrfout_d0* rsl.*.*; mkdir -p {self.run_dir}; cpf {self.home}/WRF/test/em_real_stagein/wrf.exe {self.run_dir}"
                 self.post_app_call = ""
                 self.app_call = f"{self.run_dir}/wrf.exe"
         else:
@@ -520,36 +600,32 @@ class JitSettings:
         # ├─ Nek5000
         if "nek" in self.app:
             self.stage_in_path = f"{self.run_dir}/input"
-            self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
+            self.stage_out_path = f"{self.tmp_dir}/stage-out"
         # ├─ Wacom++
         elif "wacom" in self.app:
             self.stage_in_path = f"{self.run_dir}/stage-in"
-            self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
+            self.stage_out_path = f"{self.tmp_dir}/stage-out"
         # ├─ DLIO
         elif "dlio" in self.app:
-            self.stage_in_path = "/lustre/project/nhr-admire/tarraf/stage-in"
-            self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
+            self.stage_in_path = f"{self.tmp_dir}/stage-in"
+            self.stage_out_path = f"{self.tmp_dir}/stage-out"
         # ├─ LAMMPS
         elif "lammps" in self.app:
-            self.stage_in_path = (
-                "/lustre/project/nhr-admire/shared/mylammps/examples/HEAT"
-            )
-            self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
+            self.stage_in_path = "/lustre/project/nhr-gekko/shared/mylammps/examples/HEAT"
+            self.stage_out_path = f"{self.tmp_dir}/stage-out"
         # ├─ WRF
         elif "wrf" in self.app:
-            self.stage_in_path = (
-                f"/lustre/project/nhr-admire/tarraf/WRF/test/em_real_stagein"
-            )
-            # self.stage_in_path = f"/lustre/project/nhr-admire/tarraf/WRF/test/em_real"
-            self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
+            self.stage_in_path = f"{self.tmp_dir}/WRF/test/em_real_stagein"
+            # self.stage_in_path = ff"{self.tmp_dir}/WRF/test/em_real"
+            self.stage_out_path = f"{self.tmp_dir}/stage-out"
         # └─ Other
         else:
-            self.stage_in_path = "/lustre/project/nhr-admire/tarraf/stage-in"
-            self.stage_out_path = "/lustre/project/nhr-admire/tarraf/stage-out"
+            self.stage_in_path = f"{self.tmp_dir}/stage-in"
+            self.stage_out_path = f"{self.tmp_dir}/stage-out"
 
         # ? Regex relevant files (move matches out and in)
         # ?##########################
-        self.regex_file = "/lustre/project/nhr-admire/shared/nek_regex4cargo.txt"
+        self.regex_file = f"{self.tmp_dir}/nek_regex4cargo.txt"
         # ├─ Nek5000
         if "nek" in self.app_call:
             self.regex_flush_match = ".*/[a-zA-Z0-9]*turbPipe0\\.f\\d+"
@@ -640,7 +716,7 @@ class JitSettings:
             # Create the folder if it doesn't exist
             os.makedirs(self.stage_in_path, exist_ok=True)
             os.makedirs(self.stage_out_path, exist_ok=True)
-            with open(os.path.join(self.stage_in_path, "test.txt"), "w") as f:
+            with open(os.path.join(self.stage_in_path, "test.txt"), "w"):
                 pass
 
             if "dlio" in self.app:
@@ -657,7 +733,7 @@ class JitSettings:
                         f"++workload.output.output_folder={self.run_dir}/hydra_log/ "
                     )
                     self.pre_app_call = (
-                        f"mpirun -np  $APP_PROCS dlio_benchmark "
+                        f"mpirun -np  $APP_PROCS_X_NODES dlio_benchmark "
                         f"{workload} "
                         f"++workload.workflow.generate_data=True ++workload.workflow.train=False ++workload.workflow.checkpoint=True "  # ++workload.workflow.evaluation=True "
                         f"++workload.dataset.data_folder={self.run_dir}/data/ ++workload.checkpoint.checkpoint_folder={self.run_dir}/checkpoints/ "
@@ -691,3 +767,10 @@ class JitSettings:
                 self.stage_in_path = "/tmp/input"
                 if not self.exclude_daemon:
                     self.app_flags = re.sub(r"/[^\s]+", self.gkfs_mntdir, self.app_flags)
+            elif "hacc" in self.app:
+                self.run_dir = "/d/github/HACC-IO"
+                if not self.exclude_daemon:
+                    self.app_flags = re.sub(r"/[^\s]+", self.gkfs_mntdir, self.app_flags)
+            elif "ior" in self.app:
+                self.run_dir = "/d/github/IOR"
+                self.app_flags = re.sub(r"/[^\s]+", self.gkfs_mntdir, self.app_flags)

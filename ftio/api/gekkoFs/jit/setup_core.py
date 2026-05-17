@@ -4,7 +4,8 @@ including the Gekko daemon, proxy, cargo, and FTIO. It also includes functions f
 data in and out, and executing pre- and post-application calls.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: Aug 2024
 
 Licensed under the BSD 3-Clause License.
@@ -12,7 +13,9 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
+import math
 import os
+import re
 
 # import multiprocessing
 import subprocess
@@ -52,6 +55,52 @@ from ftio.api.gekkoFs.jit.setup_helper import (
 from ftio.api.gekkoFs.jit.setup_init import init_gekko
 from ftio.api.gekkoFs.posix_control import jit_move
 
+_MAX_RETRIES = 3
+
+_GEKKO_CONN_PATTERNS = (
+    "software caused connection abort",
+    "connection abort",
+    "errno 103",
+    "transport endpoint is not connected",
+    "stale file handle",
+)
+
+
+def _has_gekko_connection_error(text: str) -> bool:
+    lower = text.lower()
+    return any(pat in lower for pat in _GEKKO_CONN_PATTERNS)
+
+
+def _cleanup_stale_gekko(settings: JitSettings) -> None:
+    """Soft-kills Gekko daemon and FUSE and unmounts stale GekkoFS mount points before a retry."""
+    jit_print("[bold yellow]Cleaning up stale Gekko/FUSE state before retry...[/]")
+    if not settings.exclude_daemon:
+        try:
+            shut_down(settings, "GEKKO", settings.gkfs_daemon_pid)
+            settings.gkfs_daemon_pid = 0
+        except Exception as e:
+            jit_print(f"[yellow]Unable to shut down Gekko daemon: {e}[/]")
+    if settings.fuse:
+        try:
+            shut_down(settings, "FUSE", settings.gkfs_fuse_pid)
+            settings.gkfs_fuse_pid = 0
+        except Exception as e:
+            jit_print(f"[yellow]Unable to shut down FUSE: {e}[/]")
+    # Unmount stale GekkoFS FUSE mount on all nodes (daemon always FUSE-mounts gkfs_mntdir)
+    unmount_call = flaged_call(
+        settings,
+        f"fusermount -uz {settings.gkfs_mntdir} || true",
+        nodes=settings.app_nodes,
+        procs_per_node=1,
+        exclude=["ftio", "demon", "proxy", "cargo"],
+    )
+    execute_block(unmount_call, raise_exception=False, dry_run=settings.dry_run)
+    try:
+        os.remove(settings.gkfs_hostfile)
+    except Exception as e:
+        jit_print(f"[yellow]Unable to remove hostfile: {e}[/]")
+    time.sleep(5)
+
 
 #! Start gekko
 #!###############################
@@ -65,85 +114,204 @@ def start_gekko_daemon(settings: JitSettings) -> None:
         jit_print(
             f"[bold yellow]############## Skipping Gkfs Demon [/][black][{get_time()}][/]"
         )
+        return
+
+    jit_print(
+        f"[bold green]############## Starting Gkfs Demon [/][black][{get_time()}][/]"
+    )
+
+    if settings.use_mpirun:
+        debug_flag = f"-x GKFS_DAEMON_LOG_LEVEL=off -x GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern"
+        if settings.debug_lvl > 1:
+            debug_flag = debug_flag.replace("=none", "=err")
     else:
-        jit_print(
-            f"[bold green]############## Starting Gkfs Demon [/][black][{get_time()}][/]"
-        )
-        # Create host file and dirs for geko
-        init_gekko(settings)
+        debug_flag = f"--export=ALL,GKFS_DAEMON_LOG_LEVEL=err,GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern"
+        if settings.debug_lvl > 1:
+            debug_flag = debug_flag.replace("=err", "=trace")
 
+    if settings.cluster:
         if settings.use_mpirun:
-            debug_flag = f"-x GKFS_DAEMON_LOG_LEVEL=off -x GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern"
-            if settings.debug_lvl > 0:
-                # debug_flag = debug_flag.replace("=err", "=trace")
-                debug_flag = debug_flag.replace("=none", "=err")
-        else:
-            debug_flag = f"--export=ALL,GKFS_DAEMON_LOG_LEVEL=err,GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern"
-            if settings.debug_lvl > 0:
-                debug_flag = debug_flag.replace("=err", "=trace")
-
-        if settings.cluster:
-            if settings.use_mpirun:
-                # mpiexec
-                call = (
-                    f" {settings.gkfs_daemon} "
-                    f"-r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol}"
-                )
-                call = mpiexec_call(
-                    settings,
-                    call,
-                    settings.app_nodes,
-                    additional_arguments=debug_flag,
-                )
-            else:
-                call = (
-                    f"srun {debug_flag} --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
-                    #   f"--ntasks={settings.app_nodes*settings.procs_daemon} --cpus-per-task={settings.procs_daemon} --ntasks-per-node={settings.procs_daemon} --overcommit --overlap "
-                    f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
-                    f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                    f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol}"
-                )
-            if not settings.exclude_proxy:
-                # Demon call with proxy
-                call += " -p ofi+verbs -L ib0"
-        else:  # no cluster mode
-            if settings.debug_lvl > 0:
-                debug_flag = "GKFS_DAEMON_LOG_LEVEL=trace"
-            else:
-                # debug_flag = "GKFS_DAEMON_LOG_LEVEL=debug"
-                # debug_flag = "GKFS_DAEMON_LOG_LEVEL=trace"
-                debug_flag = "GKFS_DAEMON_LOG_LEVEL=err"
             call = (
-                f"{debug_flag} LIBGKFS_LOG=all  GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
-                f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l lo -P {settings.gkfs_daemon_protocol}"
+                f" {settings.gkfs_daemon} "
+                f"-r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+                f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol}"
             )
-            if not settings.exclude_proxy:
-                # Demon call with proxy
-                call += (
-                    " --proxy-listen lo --proxy-protocol {settings.gkfs_daemon_protocol}"
-                )
+            call = mpiexec_call(
+                settings,
+                call,
+                settings.app_nodes,
+                additional_arguments=debug_flag,
+            )
+        else:
+            call = (
+                f"srun {debug_flag} --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
+                f"--oversubscribe --mem=0 {settings.task_set_0} {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+                f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l ib0 -P {settings.gkfs_daemon_protocol}"
+            )
+        if not settings.exclude_proxy:
+            call += " -p ofi+verbs -L ib0"
+    else:  # no cluster mode
+        if settings.debug_lvl > 1:
+            debug_flag = "GKFS_DAEMON_LOG_LEVEL=trace"
+        else:
+            debug_flag = "GKFS_DAEMON_LOG_LEVEL=err"
+        call = (
+            f"{debug_flag} LIBGKFS_LOG=all  GKFS_DAEMON_LOG_PATH={settings.gkfs_daemon_log}_intern {settings.gkfs_daemon} -r {settings.gkfs_rootdir} -m {settings.gkfs_mntdir} "
+            f"-H {settings.gkfs_hostfile}  -c --clean-rootdir -l lo -P {settings.gkfs_daemon_protocol}"
+        )
+        if not settings.exclude_proxy:
+            call += " --proxy-listen lo --proxy-protocol {settings.gkfs_daemon_protocol}"
 
-        jit_print("[cyan]Starting Demons[/]", True)
-        # p = multiprocessing.Process(target=execute_background, args= (call, settings.gkfs_daemon_log, settings.gkfs_daemon_err, settings.dry_run))
-        # p.start()
-        # if settings.verbose:
-        #     _ = monitor_log_file(settings.gkfs_daemon_err,"Error Demon")
-        #     _ = monitor_log_file(settings.gkfs_daemon_log,"Demon")
+    for attempt in range(_MAX_RETRIES):
+        try:
+            if attempt > 0:
+                jit_print(
+                    f"[bold yellow]Retrying Gekko daemon (attempt {attempt + 1}/{_MAX_RETRIES})...[/]"
+                )
+                _cleanup_stale_gekko(settings)
+
+            init_gekko(settings)
+
+            jit_print("[cyan]Starting Demons[/]", True)
+            _ = execute_background_and_log(
+                settings,
+                call,
+                settings.gkfs_daemon_log,
+                "daemon",
+                settings.gkfs_daemon_err,
+            )
+            if settings.verbose_error:
+                _ = monitor_log_file(settings.gkfs_daemon_err, "Error Demon")
+
+            if wait_for_file(
+                settings.gkfs_hostfile,
+                dry_run=settings.dry_run,
+                error_file=settings.gkfs_daemon_err,
+            ):
+                break
+
+            jit_print(
+                f"[bold yellow]Gekko daemon did not create hostfile "
+                f"(attempt {attempt + 1}/{_MAX_RETRIES})[/]"
+            )
+            if attempt == _MAX_RETRIES - 1:
+                raise RuntimeError(
+                    f"Gekko daemon failed to start after {_MAX_RETRIES} attempts"
+                )
+            _cleanup_stale_gekko(settings)
+
+        except RuntimeError:
+            raise
+        except Exception as e:
+            if attempt == _MAX_RETRIES - 1:
+                raise
+            jit_print(
+                f"[bold yellow]Gekko daemon start error (attempt {attempt + 1}/{_MAX_RETRIES}): {e} — retrying...[/]"
+            )
+            _cleanup_stale_gekko(settings)
+
+    jit_print("[green]############## Gkfs init finished ##############\n\n\n\n ")
+
+
+#! Start FUSE
+#!###############################
+def start_fuse(settings: JitSettings) -> None:
+    """Starts the Gekko FUSE overlay.
+
+    Args:
+        settings (JitSettings): jit settings
+    """
+    if settings.exclude_daemon or not settings.fuse:
+        jit_print(
+            f"[bold yellow]############## Skipping FUSE [/][black][{get_time()}][/]"
+        )
+        return
+
+    jit_print(f"[bold green]############## Starting FUSE [/][black][{get_time()}][/]")
+    wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run)
+    if settings.cluster:
+        if settings.use_mpirun:
+            # mpiexec
+            call = (
+                f"{settings.gkfs_fuse} -o max_idle_threads=4 "
+                f"-o direct_io -f -o fifo -o auto_unmount {settings.gkfs_mntdir}"
+            )
+            call = mpiexec_call(
+                settings,
+                (
+                    f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
+                    f"-x LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio} "
+                    f"-x LIBGKFS_ENABLE_METRICS=on -x"
+                    f"LIBGKFS_METRICS_FLUSH_INTERVAL=5 "
+                    f"{call}"
+                ),
+                settings.app_nodes,
+            )
+        else:
+            call = (
+                f"srun  --jobid={settings.job_id} {settings.app_nodes_command} --disable-status -N {settings.app_nodes} "
+                #   f"--ntasks={settings.app_nodes*settings.procs_daemon} --cpus-per-task={settings.procs_daemon} --ntasks-per-node={settings.procs_daemon} --overcommit --overlap "
+                f"--export=ALL,LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
+                f"LIBGKFS_METRICS_IP_PORT={settings.address_ftio}:{settings.port_ftio},"
+                f"LIBGKFS_ENABLE_METRICS=on,LIBGKFS_METRICS_FLUSH_INTERVAL=5 "
+                f"--ntasks={settings.app_nodes} --cpus-per-task={settings.procs_daemon} --ntasks-per-node=1 --overcommit --overlap "
+                f"--oversubscribe --mem=0 {settings.task_set_0} "
+                f"{settings.gkfs_fuse} -o max_idle_threads=4 "
+                f"-o direct_io -f -o fifo -o auto_unmount {settings.gkfs_mntdir}"
+            )
+    else:
+        raise RuntimeError("Not implemented fuse")
+
+    # Disable intercept once — FUSE mode does not use LD_PRELOAD
+    settings.gkfs_intercept = ""
+
+    for attempt in range(_MAX_RETRIES):
+        if attempt > 0:
+            jit_print(
+                f"[bold yellow]Retrying FUSE (attempt {attempt + 1}/{_MAX_RETRIES})...[/]"
+            )
+            try:
+                shut_down(settings, "FUSE", settings.gkfs_fuse_pid)
+                settings.gkfs_fuse_pid = 0
+            except Exception as e:
+                jit_print(f"[yellow]Unable to shut down FUSE: {e}[/]")
+            unmount_call = flaged_call(
+                settings,
+                f"fusermount -uz {settings.gkfs_mntdir} || true",
+                nodes=settings.app_nodes,
+                procs_per_node=1,
+                exclude=["ftio", "demon", "proxy", "cargo"],
+            )
+            execute_block(unmount_call, raise_exception=False, dry_run=settings.dry_run)
+            time.sleep(5)
+
+        jit_print("[cyan]Starting FUSE Demons[/]", True)
         _ = execute_background_and_log(
             settings,
             call,
-            settings.gkfs_daemon_log,
-            "daemon",
-            settings.gkfs_daemon_err,
+            settings.gkfs_fuse_log,
+            "fuse",
+            settings.gkfs_fuse_err,
         )
         if settings.verbose_error:
-            _ = monitor_log_file(settings.gkfs_daemon_err, "Error Demon")
+            _ = monitor_log_file(settings.gkfs_daemon_err, "Error Fuse")
 
-        wait_for_file(settings.gkfs_hostfile, dry_run=settings.dry_run)
+        if wait_for_line(
+            settings.gkfs_fuse_log,
+            "root node allocated",
+            occurrences=settings.app_nodes,
+            error_file=settings.gkfs_fuse_err,
+        ):
+            break
 
-    if not settings.exclude_daemon:
-        jit_print(f"[green]############## Gkfs init finished ##############\n\n\n\n ")
+        jit_print(
+            f"[bold yellow]FUSE did not start in time (attempt {attempt + 1}/{_MAX_RETRIES})[/]"
+        )
+        if attempt == _MAX_RETRIES - 1:
+            raise RuntimeError(f"FUSE failed to start after {_MAX_RETRIES} attempts")
+
+    jit_print("[green]############## Gkfs FUSE init finished ##############\n\n\n\n ")
 
 
 #! Start Proxy
@@ -198,7 +366,7 @@ def start_gekko_proxy(settings: JitSettings) -> None:
             _ = monitor_log_file(settings.gkfs_proxy_err, "Error Proxy")
 
     if not settings.exclude_proxy:
-        jit_print(f"[green]############## Proxy init finished ##############\n\n\n\n ")
+        jit_print("[green]############## Proxy init finished ##############\n\n\n\n ")
 
 
 #! start Cargo
@@ -228,11 +396,11 @@ def start_cargo(settings: JitSettings) -> None:
                 call,
                 settings.app_nodes,
                 settings.procs_cargo,
-                exclude=["ftio", "demon_log", "preload", "proxy"],
+                exclude=["ftio", "demon", "preload", "proxy"],
             )
 
         else:
-            # if settings.debug_lvl > 0:
+            # if settings.debug_lvl > 2:
             #     debug_flag = "CARGO_LOG_LEVEL=trace"
             # else:
             #     debug_flag = "CARGO_LOG_LEVEL=debug"
@@ -245,7 +413,7 @@ def start_cargo(settings: JitSettings) -> None:
                 call,
                 1,
                 settings.procs_cargo,
-                exclude=["ftio", "demon_log", "preload", "proxy"],
+                exclude=["ftio", "demon", "preload", "proxy"],
             )
 
         jit_print("[cyan]Starting Cargo[/]")
@@ -257,7 +425,7 @@ def start_cargo(settings: JitSettings) -> None:
         # if settings.verbose_error:
         #     _ = monitor_log_file(settings.cargo_err,"Error Cargo")
 
-        process = execute_background_and_log(
+        execute_background_and_log(
             settings, call, settings.cargo_log, "cargo", settings.cargo_err
         )
         if settings.verbose_error:
@@ -274,7 +442,7 @@ def start_cargo(settings: JitSettings) -> None:
         time.sleep(4)
 
     if not settings.exclude_cargo:
-        jit_print(f"[green]############## Cargo init finished ##############\n\n\n\n ")
+        jit_print("[green]############## Cargo init finished ##############\n\n\n\n ")
 
 
 #! start FTIO
@@ -321,11 +489,15 @@ def start_ftio(settings: JitSettings) -> None:
         if settings.exclude_cargo:
             ftio_data_staget_args += (
                 f"--stage_out_path {settings.stage_out_path} --stage_in_path {settings.stage_in_path} "
-                f"--ld_preload {settings.gkfs_intercept} --host_file {settings.gkfs_hostfile} --gkfs_mntdir {settings.gkfs_mntdir} "
+                f" --host_file {settings.gkfs_hostfile} --gkfs_mntdir {settings.gkfs_mntdir} "
             )
+            if not settings.fuse:
+                ftio_data_staget_args += f"--ld_preload {settings.gkfs_intercept} "
 
-            if settings.adaptive:
-                ftio_data_staget_args += f"--adaptive '{settings.adaptive}' "
+            if settings.handle_new_prediction:
+                ftio_data_staget_args += (
+                    f"--handle_new_prediction '{settings.handle_new_prediction}' "
+                )
 
             if settings.regex_match:
                 ftio_data_staget_args += f"--regex '{settings.regex_match}' "
@@ -352,12 +524,25 @@ def start_ftio(settings: JitSettings) -> None:
 
             if settings.flush_call:
                 ftio_data_staget_args += f"--flush_call '{settings.flush_call}' "
+            if settings.fuse:
+                ftio_data_staget_args += f"--node '{str(settings.single_node)}'"
 
         else:
             ftio_data_staget_args += (
                 f"--cargo --cargo_bin {settings.cargo_bin} "
                 f"--cargo_server {settings.gkfs_daemon_protocol}://{settings.address_cargo}:{settings.port_cargo} --stage_out_path {settings.stage_out_path} -t 0.2"
             )
+
+        if settings.app_start_file:
+            # Remove any stale flag from a previous run before starting predictor_jit
+            try:
+                os.remove(settings.app_start_file)
+            except FileNotFoundError:
+                jit_print("[yellow]app_start flag file not found, nothing to remove[/]")
+            ftio_data_staget_args += f" --app_start_file {settings.app_start_file}"
+
+        if settings.flush_log:
+            ftio_data_staget_args += f" --flush_log {settings.flush_log}"
 
         if settings.cluster:
             jit_print(
@@ -400,7 +585,7 @@ def start_ftio(settings: JitSettings) -> None:
             )
         time.sleep(8)
     if not settings.exclude_ftio:
-        jit_print(f"[green]############## FTIO init finished ##############\n\n\n\n ")
+        jit_print("[green]############## FTIO init finished ##############\n\n\n\n ")
 
 
 #! Stage in
@@ -422,6 +607,14 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
 
         # remove locks
         jit_print("[cyan]Cleaning locks")
+        # make sure the path exists
+        os.makedirs(settings.stage_in_path, exist_ok=True)
+        os.makedirs(settings.stage_out_path, exist_ok=True)
+        # Create an empty file named "test"
+        test_file = os.path.join(settings.stage_in_path, "test")
+        with open(test_file, "w"):
+            pass
+
         if settings.stage_in_path:
             execute_block(
                 f"cd {settings.stage_in_path} && rm -f  $(find .  | grep .lock)"
@@ -487,7 +680,7 @@ def stage_in(settings: JitSettings, runtime: JitTime) -> None:
         # adjust regex for flushing
         adjust_regex(settings, "flush")
     if not settings.exclude_all:
-        jit_print(f"[green]############## Stage-in finished ##############\n\n\n\n ")
+        jit_print("[green]############## Stage-in finished ##############\n\n\n\n ")
 
 
 #! Stage out
@@ -504,7 +697,6 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             f"[bold yellow]############## Skipping  Stage out [/][black][{get_time()}][/]"
         )
     else:
-
         jit_print(
             f"[bold green]############## Staging out [/][black][{get_time()}][/]\n",
             f"[cyan]Moving data from {settings.gkfs_mntdir} -> {settings.stage_out_path}[/]",
@@ -528,7 +720,6 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             jit_move(settings)
             elapsed_time(settings, runtime, "Stage out", time.time() - start)
         else:
-
             if not settings.dry_run:
                 try:
                     call = flaged_call(
@@ -571,7 +762,7 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
             relevant_files(settings)
             time.sleep(5)
     if not settings.exclude_all:
-        jit_print(f"[green]############## Stage-Out finished ##############\n\n\n\n ")
+        jit_print("[green]############## Stage-Out finished ##############\n\n\n\n ")
 
 
 #! App call
@@ -608,7 +799,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     f"-x LIBGKFS_PROXY_PID_FILE={settings.gkfs_proxyfile} "
                 )
             if not settings.exclude_daemon:
-                if settings.debug_lvl > 0:
+                if settings.debug_lvl > 1:
                     log_modules = "all"
                 else:
                     # log_modules = "info,warnings,errors"
@@ -630,7 +821,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 # f"strace -f -e trace=read,write,open,close,stat,fstat,lseek,access -o /gpfs/fs1/home/tarrafah/strace_n{settings.app_nodes}_p{settings.procs_app}.txt mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
                 # f" cd {settings.run_dir} && time -p mpiexec --mca errhandler ftmpi --mca mpi_abort_print_stack 1  -np {settings.app_nodes*settings.procs_app} --oversubscribe "
                 # ssh {settings.single_node} 'pwd && cd {settings.run_dir} && pwd  && ls && hostname
-                f" cd {settings.run_dir} && time -p  mpiexec -np {settings.app_nodes*settings.procs_app} --oversubscribe "
+                f" cd {settings.run_dir} && time -p  mpiexec -np {settings.app_nodes * settings.procs_app} --oversubscribe "
                 f"--hostfile {settings.mpi_hostfile} --map-by node "
                 f"{additional_arguments} "
                 f"{settings.task_set_1} {settings.app_call} {settings.app_flags}"
@@ -648,8 +839,9 @@ def start_application(settings: JitSettings, runtime: JitTime):
                     f"LIBGKFS_LOG=all,"
                     f"LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log},"
                     f"LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile},"
-                    f"LD_PRELOAD={settings.gkfs_intercept},"
                 )
+                if not settings.fuse:
+                    additional_arguments += f"LD_PRELOAD={settings.gkfs_intercept},"
                 if (
                     not settings.exclude_cargo and settings.lock_generator
                 ):  # if gekko and cargo active
@@ -660,7 +852,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
                 f" cd {settings.run_dir} && time -p srun "
                 f"--export=ALL,{additional_arguments}LD_LIBRARY_PATH={os.environ.get('LD_LIBRARY_PATH')} "
                 f"--jobid={settings.job_id} {settings.app_nodes_command} --disable-status "
-                f"-N {settings.app_nodes} --ntasks={settings.app_nodes*settings.procs_app} "
+                f"-N {settings.app_nodes} --ntasks={settings.app_nodes * settings.procs_app} "
                 f"--cpus-per-task={settings.procs_app} --ntasks-per-node={settings.procs_app} "
                 f"--overcommit --overlap --oversubscribe --mem=0 "
                 f"{settings.task_set_1} {app_call} {settings.app_flags}"
@@ -680,7 +872,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
             )
         if not settings.exclude_daemon:
             additional_arguments += (
-                f"-x LIBGKFS_LOG=info,warnings,errors "
+                f'-x LIBGKFS_LOG="info,warnings,errors" '
                 f"-x LIBGKFS_LOG_OUTPUT={settings.gkfs_client_log} "
                 f"-x LIBGKFS_HOSTS_FILE={settings.gkfs_hostfile} "
                 f"-x LD_PRELOAD={settings.gkfs_intercept} "
@@ -697,39 +889,79 @@ def start_application(settings: JitSettings, runtime: JitTime):
 
     # elapsed = execute_block_and_log(call, settings.app_log_dir)
     check(settings)
-    start = time.time()
-    # p_app = multiprocessing.Process(target=execute_background_and_log_in_process, args=(call, settings.app_log,"", settings.app_err, settings.dry_run))
-    # p_app.start()
-    # p_app.join()
+    for attempt in range(_MAX_RETRIES):
+        if attempt > 0:
+            jit_print(
+                f"[bold yellow]Retrying application (attempt {attempt + 1}/{_MAX_RETRIES})...[/]"
+            )
+            time.sleep(5)
 
-    process = execute_background(
-        call, settings.app_log, settings.app_err, settings.dry_run
-    )
-    # monitor log
-    if settings.verbose:
-        _ = monitor_log_file(settings.app_log, "")
+        start = time.time()
+        process = execute_background(
+            call, settings.app_log, settings.app_err, settings.dry_run
+        )
+        # monitor log
+        if settings.verbose:
+            _ = monitor_log_file(settings.app_log, "")
+        # monitor error
+        if settings.verbose_error:
+            _ = monitor_log_file(settings.app_err, f"{name} error")
 
-    # monitor error
-    if settings.verbose_error:
-        _ = monitor_log_file(settings.app_err, f"{name} error")
+        app_timeout = settings.max_time * 60 if settings.max_time else None
+        timed_out = False
+        try:
+            _, stderr = process.communicate(timeout=app_timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.communicate()
+            timed_out = True
+            jit_print(
+                f"[bold yellow]Application timed out after {settings.max_time} min"
+                f" (attempt {attempt + 1}/{_MAX_RETRIES}) — stopping and retrying...[/]"
+            )
 
-    _, stderr = process.communicate()
+        # The timing result will be in stderr because 'time' outputs to stderr by default
+        real_time = time.time() - start
+        real_time = extract_accurate_time(settings, real_time)
 
-    # get the real time
-    # The timing result will be in stderr because 'time' outputs to stderr by default
+        if not timed_out and process.returncode == 0:
+            elapsed_time(settings, runtime, "App", real_time)
+            break
 
-    # Extract the 'real' time from the output
-    real_time = time.time() - start
-    real_time = extract_accurate_time(settings, real_time)
+        if not timed_out:
+            err_content = ""
+            if os.path.isfile(settings.app_err):
+                with open(settings.app_err) as f:
+                    err_content = f.read().strip()
 
-    elapsed_time(settings, runtime, "App", real_time)
+            jit_print(
+                f"[bold yellow]Application failed (attempt {attempt + 1}/{_MAX_RETRIES},"
+                f" returncode={process.returncode})[/]"
+            )
+            jit_print(f"[red]Error executing command: {call}[/]")
+            if err_content:
+                jit_print(f"[red]Error output:\n{err_content}[/]")
 
-    if process.returncode != 0:
-        jit_print(f"[red]Error executing command:{call}")
-        jit_print(f"[red]Error was:\n{stderr}")
-        exit_routine(settings)
-    else:
-        pass
+            # GekkoFS daemon died mid-run: restart the whole infrastructure before retrying
+            if (
+                not settings.exclude_daemon
+                and err_content
+                and _has_gekko_connection_error(err_content)
+                and attempt < _MAX_RETRIES - 1
+            ):
+                jit_print(
+                    "[bold yellow]GekkoFS connection lost (Errno 103) — "
+                    "restarting daemon, FUSE, and re-staging data before retry...[/]"
+                )
+                _cleanup_stale_gekko(settings)
+                start_gekko_daemon(settings)
+                if settings.fuse:
+                    start_fuse(settings)
+                stage_in(settings, runtime)
+
+        if attempt == _MAX_RETRIES - 1:
+            elapsed_time(settings, runtime, "App", real_time)
+            exit_routine(settings)
 
     if not settings.exclude_ftio and settings.exclude_cargo:
         jit_print("[cyan]Shuting down FTIO as application finished")
@@ -738,7 +970,7 @@ def start_application(settings: JitSettings, runtime: JitTime):
     os.chdir(original_dir)
     jit_print(f"Changing directory to {os.getcwd()}")
 
-    jit_print(f"[green]############## Application finished ##############\n\n\n\n ")
+    jit_print("[green]############## Application finished ##############\n\n\n\n ")
 
 
 #! Pre app call
@@ -749,37 +981,94 @@ def pre_call(settings: JitSettings) -> None:
     Args:
         settings (JitSettings): jit settings
     """
+    name = (
+        settings.app_call.split("/", 1)[1]
+        if "/" in settings.app_call
+        else settings.app_call
+    )
+
     if settings.pre_app_call:
         jit_print(
             f"[green bold]############## Pre-application Call [/][black][{get_time()}][/]"
         )
-        if isinstance(settings.pre_app_call, str):
-            call = settings.pre_app_call
-            if any(x in call for x in ["mpiex", "mpirun"]):
-                call = flaged_call(settings, call, exclude=["ftio"])
-            execute_block_and_monitor(
-                settings.verbose,
-                call,
-                settings.app_log,
-                settings.app_err,
-                settings.dry_run,
-            )
-        elif isinstance(settings.pre_app_call, list):
-            for call in settings.pre_app_call:
+        for attempt in range(_MAX_RETRIES):
+            if attempt > 0:
+                jit_print(
+                    f"[bold yellow]Retrying pre-application call"
+                    f" (attempt {attempt + 1}/{_MAX_RETRIES})...[/]"
+                )
+                time.sleep(5)
+
+            returncode = 0
+            if isinstance(settings.pre_app_call, str):
+                call = settings.pre_app_call
                 if any(x in call for x in ["mpiex", "mpirun"]):
-                    call = flaged_call(settings, call, exclude=["ftio"])
-                execute_block_and_monitor(
+                    # call = flaged_call(settings, call, exclude=["ftio"])
+                    all_procs = re.search(r"-np\s+(\d+)", call)
+                    all_procs = int(all_procs.group(1))
+
+                    # use a single node if everything fits on one node
+                    if all_procs <= settings.procs_app:
+                        app_nodes = 1
+                        procs_per_node = all_procs
+                    else:
+                        # spread processes across available nodes
+                        app_nodes = math.ceil(all_procs / settings.procs_app)
+                        procs_per_node = math.ceil(all_procs / app_nodes)
+
+                    call = flaged_call(
+                        settings,
+                        call,
+                        app_nodes,
+                        procs_per_node,
+                        exclude=["ftio"],
+                    )
+
+                returncode = execute_block_and_monitor(
                     settings.verbose,
                     call,
                     settings.app_log,
                     settings.app_err,
                     settings.dry_run,
+                    src=name,
                 )
+            elif isinstance(settings.pre_app_call, list):
+                for call in settings.pre_app_call:
+                    if any(x in call for x in ["mpiex", "mpirun"]):
+                        call = flaged_call(settings, call, exclude=["ftio"])
+                    returncode = execute_block_and_monitor(
+                        settings.verbose,
+                        call,
+                        settings.app_log,
+                        settings.app_err,
+                        settings.dry_run,
+                    )
+                    if returncode != 0:
+                        break
+
+            if returncode == 0:
+                break
+
+            err_content = ""
+            if os.path.isfile(settings.app_err):
+                with open(settings.app_err) as f:
+                    err_content = f.read().strip()
+
+            jit_print(
+                f"[bold yellow]Pre-application call failed"
+                f" (attempt {attempt + 1}/{_MAX_RETRIES}, returncode={returncode})[/]"
+            )
+            if err_content:
+                jit_print(f"[red]Error output:\n{err_content}[/]")
+
+            if attempt == _MAX_RETRIES - 1:
+                exit_routine(settings)
+
         # _ = execute_block_and_log(
         #     settings.pre_app_call, settings.app_log
         # )
         jit_print(
-            f"[green]############## Pre-application call finished ##############\n\n\n\n "
+            "[green]############## Pre-application call finished ##############\n\n\n\n "
         )
 
 
@@ -817,5 +1106,5 @@ def post_call(settings: JitSettings) -> None:
                     settings.dry_run,
                 )
         jit_print(
-            f"[green]############## Post-application call finished ##############\n\n\n\n "
+            "[green]############## Post-application call finished ##############\n\n\n\n "
         )

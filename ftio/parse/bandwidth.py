@@ -1,7 +1,16 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import numpy as np
 from numba import jit
-
-from ftio.parse.overlap_thread import overlap_thread
 
 
 class Bandwidth:
@@ -68,13 +77,11 @@ class Bandwidth:
 
         if args.avr or args.sum:
             # 1) assign rank level metric
-            if args.sum:
-                if "b_rank_sum" in b:
-                    self.b_rank_sum.extend(b["b_rank_sum"])
+            if args.sum and "b_rank_sum" in b:
+                self.b_rank_sum.extend(b["b_rank_sum"])
 
-            if args.avr:
-                if "b_rank_avr" in b:
-                    self.b_rank_avr.extend(b["b_rank_avr"])
+            if args.avr and "b_rank_avr" in b:
+                self.b_rank_avr.extend(b["b_rank_avr"])
 
             if "t_rank_s" in b:
                 self.t_rank_s.extend(b["t_rank_s"])
@@ -265,11 +272,7 @@ def overlap_two_series_safe(b1, t1, b2, t2):
             curr_b2 = b2[i2]
             t_out.append(t2[i2])
             i2 += 1
-        elif i2 == n2:
-            curr_b1 = b1[i1]
-            t_out.append(t1[i1])
-            i1 += 1
-        elif t1[i1] < t2[i2]:
+        elif i2 == n2 or t1[i1] < t2[i2]:
             curr_b1 = b1[i1]
             t_out.append(t1[i1])
             i1 += 1
@@ -307,11 +310,7 @@ def overlap_two_series_jit_impl(b1, t1, b2, t2):
             curr_b2 = b2[i2]
             t_out[counter] = t2[i2]
             i2 += 1
-        elif i2 == n2:
-            curr_b1 = b1[i1]
-            t_out[counter] = t1[i1]
-            i1 += 1
-        elif t1[i1] < t2[i2]:
+        elif i2 == n2 or t1[i1] < t2[i2]:
             curr_b1 = b1[i1]
             t_out[counter] = t1[i1]
             i1 += 1
@@ -358,7 +357,7 @@ def merge_overlaps_safe(b, t):
     merged_b = []
     unique_t = []
 
-    for val, time in zip(b, t):
+    for val, time in zip(b, t, strict=False):
         if unique_t and time == unique_t[-1]:
             merged_b[-1] += val
         else:

@@ -1,4 +1,15 @@
-"""Outlier plot function"""
+"""
+Outlier plot function
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Sep 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
 
 from __future__ import annotations
 
@@ -91,14 +102,14 @@ def plot_outliers(
         # draw the circles
         for i in range(0, len(d)):
             figs[0].add_shape(
-                dict(
-                    type="circle",
-                    x0=d[i, 0] - eps,
-                    y0=d[i, 1] - eps,
-                    x1=d[i, 0] + eps,
-                    y1=d[i, 1] + eps,
-                    opacity=0.3,
-                ),
+                {
+                    "type": "circle",
+                    "x0": d[i, 0] - eps,
+                    "y0": d[i, 1] - eps,
+                    "x1": d[i, 0] + eps,
+                    "y1": d[i, 1] + eps,
+                    "opacity": 0.3,
+                },
                 name=labels[i],
                 line_color=color[i],
             )
@@ -111,7 +122,7 @@ def plot_outliers(
                 x=d[labels == i, 0],
                 y=d[labels == i, 1],
                 mode="markers",
-                marker=dict(color=color[labels == i], colorscale=colorscale),
+                marker={"color": color[labels == i], "colorscale": colorscale},
                 text=conf[labels == i],
                 hovertemplate="<b>Noremed values<br><br>Freq: %{x:.4f}  <br>"
                 + "Amplitude: %{y:.2f}<br>"
@@ -126,13 +137,13 @@ def plot_outliers(
                 x=d[labels == i, 0],
                 y=d[labels == i, 1],
                 mode="markers",
-                marker=dict(
-                    color=conf[labels == i],
-                    colorscale=colorscale,
-                    coloraxis="coloraxis",
-                    symbol=symbol[labels == i],
-                    size=12,
-                ),
+                marker={
+                    "color": conf[labels == i],
+                    "colorscale": colorscale,
+                    "coloraxis": "coloraxis",
+                    "symbol": symbol[labels == i],
+                    "size": 12,
+                },
                 text=labels[labels == i],
                 hovertemplate="<b>Noremed values<br><br>Freq: %{x:.4f}  <br>"
                 + "Amplitude: %{y:.2f}<br>"
@@ -147,7 +158,7 @@ def plot_outliers(
                 x=freq_arr[indecies[labels == i]],
                 y=2 * amp[indecies[labels == i]],
                 mode="markers",
-                marker=dict(color=color[labels == i], colorscale=colorscale),
+                marker={"color": color[labels == i], "colorscale": colorscale},
                 text=labels[labels == i],
                 hovertemplate="<b>Freq: %{x:.4f}    Hz<br>"
                 + "Amplitude: %{y:.2f}<br>"
@@ -165,7 +176,7 @@ def plot_outliers(
                 "y": 0.57,
                 "title": "conf",
                 "thickness": 10,
-                "tickfont": dict(size=14),
+                "tickfont": {"size": 14},
             },
             "colorscale": colorscale,
         }

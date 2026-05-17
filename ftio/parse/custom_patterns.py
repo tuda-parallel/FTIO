@@ -1,3 +1,15 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
+
 def convert() -> tuple[dict[str, str], dict[str, tuple[str, float]]]:
     """Converts input according to pattern into and ftio supported file format.
     The translation dictionary species the matching fields from ftio/parse/sample.py

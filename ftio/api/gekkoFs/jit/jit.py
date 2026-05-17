@@ -4,7 +4,8 @@ allocating resources, starting necessary services, and managing the workflow fro
 data in to staging out. It also handles pre- and post-application calls.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: Aug 2024
 
 Licensed under the BSD 3-Clause License.
@@ -14,6 +15,7 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 
 import signal
 import sys
+import traceback
 
 from rich.console import Console
 
@@ -27,6 +29,7 @@ from ftio.api.gekkoFs.jit.setup_core import (
     start_application,
     start_cargo,
     start_ftio,
+    start_fuse,
     start_gekko_daemon,
     start_gekko_proxy,
 )
@@ -56,96 +59,86 @@ def main() -> None:
     allocating resources, starting necessary services,
     and managing the workflow from staging in to staging out.
     """
-
     console.print("\n\n[bold green]################ JIT ################[/]\n")
     settings = JitSettings()
     runtime = JitTime()
+    error = 0
 
-    # Parse options
-    parse_options(settings, sys.argv[1:])
+    try:
+        # ------------------------------------------------------------------
+        # Setup
+        # ------------------------------------------------------------------
+        parse_options(settings, sys.argv[1:])
 
-    # Handle kill signal
-    signal.signal(signal.SIGINT, lambda signal, frame: handle_sigint(settings))
+        if not settings.tmp_dir:
+            raise RuntimeError(
+                "STAGE_DIR is not set. "
+                "Either define it in the environment or specify it in this file (jitsettings)."
+            )
 
-    # Clean other jobs
-    cancel_jit_jobs(settings)
+        signal.signal(signal.SIGINT, lambda signal, frame: handle_sigint(settings))
 
-    # # 1.0 set env variables
-    # set_env(settings)
+        cancel_jit_jobs(settings)
+        allocate(settings)
 
-    # 1.1 Allocate resources
-    allocate(settings)
+        log_dir(settings)
+        log_execution(settings)
 
-    # 1.2 Create folder for logs
-    log_dir(settings)
+        get_address_ftio(settings)
+        get_address_cargo(settings)
+        set_dir_gekko(settings)
 
-    # 1.3 Mark execution as pending
-    log_execution(settings)
+        print_settings(settings)
 
-    # 1.4 Get the address
-    get_address_ftio(settings)
+        # ------------------------------------------------------------------
+        # Start services
+        # ------------------------------------------------------------------
+        start_gekko_daemon(settings)
+        start_fuse(settings)
+        start_gekko_proxy(settings)
+        start_cargo(settings)
+        start_ftio(settings)
 
-    # 1.5 Get address carg
-    get_address_cargo(settings)
+        # ------------------------------------------------------------------
+        # Workflow execution
+        # ------------------------------------------------------------------
+        pre_call(settings)
+        stage_in(settings, runtime)
 
-    # 1.6 Set Gekko Root dir
-    set_dir_gekko(settings)
+        # Signal predictor_jit to start processing predictions now that the
+        # application is about to launch (pre-application I/O is excluded).
+        if not settings.exclude_ftio and settings.app_start_file:
+            open(settings.app_start_file, "w").close()
 
-    # 1.7 Print settings
-    print_settings(settings)
+        start_application(settings, runtime)
+        stage_out(settings, runtime)
+        post_call(settings)
 
-    # 2.0 Start Gekko Server (Daemon)
-    start_gekko_daemon(settings)
+        # ------------------------------------------------------------------
+        # Save results
+        # ------------------------------------------------------------------
+        runtime.print_and_save_time(settings)
+        save_bandwidth(settings)
+        log_execution(settings)
+        save_hosts_file(settings)
+        snapshot_directory(settings)
 
-    # 2.1 Start Proxy
-    start_gekko_proxy(settings)
+    except Exception as e:
+        console.print(f"[bold red]JIT failed:[/] {e}\n")
+        traceback.print_exc()
+        error = 1
 
-    # 3.0 Start Cargo Server
-    start_cargo(settings)
+    finally:
+        # Cleanup
+        soft_kill(settings)
+        hard_kill(settings)
 
-    # 4.0 Start FTIO
-    start_ftio(settings)
+    if error == 0:
+        console.print("[bold green]############### JIT completed ###############[/]")
+    else:
+        console.print("[bold red]################# JIT failed #################[/]")
 
-    # 5.0 pre application call
-    pre_call(settings)
-
-    # 6.0 Stage in
-    stage_in(settings, runtime)
-
-    # 7.0 Pre- and application with Gekko intercept
-    # pre_call(settings)
-    start_application(settings, runtime)
-
-    # 8.0 Stage out
-    stage_out(settings, runtime)
-
-    # 9.0 Post call if exists
-    post_call(settings)
-
-    # 10.0 Display total time
-    # _ = runtime.print_time()
-    runtime.print_and_save_time(settings)
-
-    # 10.1 save_bandwidth
-    save_bandwidth(settings)
-
-    # 10.2 mark execution as completed
-    log_execution(settings)
-
-    # 10.3 save the host files
-    save_hosts_file(settings)
-
-    # 10.4 save the host files
-    snapshot_directory(settings)
-
-    # 11.0 Soft kill
-    soft_kill(settings)
-
-    # 12.0 Hard kill
-    hard_kill(settings)
-
-    console.print("[bold green]############### JIT completed ###############[/]")
-    sys.exit(0)
+    sys.exit(error)
 
 
 if __name__ == "__main__":

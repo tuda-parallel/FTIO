@@ -1,5 +1,15 @@
-"""Generates HTML page out of plotly images
+"""
+Generates HTML page out of plotly images
 Used by plot_core.py
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 import os
@@ -47,7 +57,7 @@ class PrintHtml:
         a folder is created that hosts all sub-pages
         """
         # only execute if dynmaic plots are needed
-        if not "stat" in self.render:  # only generate a single image
+        if "stat" not in self.render:  # only generate a single image
 
             # ? 1. set current working directory
             pwd = os.getcwd()
@@ -127,11 +137,11 @@ class PrintHtml:
             if self.names:
                 # self.names = list(set(self.names))
                 file.write("<br><br> Folders map to:<ul>\n")
-                for i in self.names:
-                    file.write(f"<li> Run {self.names.index(i)}: {i} </li>\n")
+                for index, name in enumerate(self.names):
+                    file.write(f"<li> Run {index}: {name} </li>\n")
                 file.write("</ul> \n")
             file.write("</body></html> \n")
-        CONSOLE.print(f"    └──  [green]done    [/]")
+        CONSOLE.print("    └──  [green]done    [/]")
 
         CONSOLE.print(
             f"[cyan]\nTo see the result call \nopen {self.path}/main.html \n[/]"
@@ -154,7 +164,7 @@ class PrintHtml:
 # *                       1. figures_to_html
 # **********************************************************************
 def figures_to_html(
-    figs: list, filename: str = "write_async.html", names: list = []
+    figs: list, filename: str = "write_async.html", names: list = None
 ) -> None:
     """Convert list of figures to a HTML file
 
@@ -164,6 +174,8 @@ def figures_to_html(
         names (list, optional): folders to map the runs if needed. Defaults to [].
     """
     # conf = {  "toImageButtonOptions": {     "format": "svg", "scale":1  }}
+    if names is None:
+        names = []
     conf = {"toImageButtonOptions": {"format": "png", "scale": 2}}
     template = """
     <!DOCTYPE html>
@@ -197,11 +209,10 @@ def figures_to_html(
             + "\n"
         )
 
-    run_names = ""
     if names:
         run_names = "<br><br> Folders map to:<ul>\n"
-        for i in names:
-            run_names = run_names + (f"<li> Run {names.index(i)}: {i} </li>\n")
+        for index, name in enumerate(names):
+            run_names = run_names + (f"<li> Run {index}: {name} </li>\n")
         run_names = run_names + "</ul> \n"
 
     template = template.format(

@@ -8,7 +8,8 @@ Currently Darshan, recorder, and traces generated with our internal tool TMIO an
 call ftio -h to see list of supported arguments.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: Feb 2024
 
 Licensed under the BSD 3-Clause License.
@@ -26,21 +27,20 @@ import numpy as np
 
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft_workflow import ftio_dft
-from ftio.freq._share_signal_data import SharedSignalData
+from ftio.freq._stft_workflow import ftio_stft
 from ftio.freq._wavelet_cont_workflow import ftio_wavelet_cont
 from ftio.freq._wavelet_disc_workflow import ftio_wavelet_disc
 from ftio.freq.autocorrelation import find_autocorrelation
-from ftio.freq.helper import MyConsole
+from ftio.freq.helper import MyConsole, append_messages
 from ftio.freq.prediction import Prediction
 from ftio.freq.time_window import data_in_time_window
 from ftio.parse.extract import get_time_behavior_and_args
-from ftio.plot.freq_plot import convert_and_plot
 from ftio.prediction.unify_predictions import merge_predictions
 from ftio.processing.print_output import display_prediction
 
 
 def main(
-    cmd_input: list[str], msgs=None
+    cmd_input: list[str], msgs=None, shared_resource=None
 ) -> tuple[list[Prediction], Namespace]:  # -> dict[Any, Any]:
     """
     Main entry point to process input data, perform frequency analysis, and generate predictions.
@@ -55,6 +55,7 @@ def main(
     Args:
         cmd_input (list[str]): A list of input strings containing the command-line arguments or data.
         msgs (optional): ZMQ message, in case the input is not provided via a file.
+        shared_resource (optional): Shared resources among processes, in case of predictor analysis.
 
     Returns:
         tuple[list[Prediction], Namespace]:
@@ -70,6 +71,10 @@ def main(
     console.print(f"[cyan]Frequency Analysis:[/] {args.transformation.upper()}")
     console.print(f"[cyan]Mode:[/] {args.mode}")
 
+    # Handle shared resource
+    if shared_resource is not None:
+        data = append_messages(data, shared_resource)
+
     list_analysis_figures = []
     list_predictions = []
 
@@ -83,9 +88,9 @@ def main(
 
     # show merge results
     display_prediction(args, list_predictions)
-    # TODO: convert an plot only if autocorrelation is passed
-    convert_and_plot(args, list_predictions, list_analysis_figures)
-    console.print(f"[cyan]Total elapsed time:[/] {time.time()-start:.3f} s\n")
+    for analysis_figures in list_analysis_figures:
+        analysis_figures.show()
+    console.print(f"[cyan]Total elapsed time:[/] {time.time() - start:.3f} s\n")
 
     return list_predictions, args
 
@@ -114,9 +119,11 @@ def core(sim: dict, args: Namespace) -> tuple[Prediction, AnalysisFigures]:
         return Prediction(), AnalysisFigures()
 
     # Perform frequency analysis (dft/wavelet)
-    prediction_freq_analysis, analysis_figures, share = freq_analysis(args, sim)
+    prediction_freq_analysis, analysis_figures = freq_analysis(args, sim)
     # Perform autocorrelation if args.autocorrelation is true + Merge the results into a single prediction
-    prediction_auto = find_autocorrelation(args, sim, analysis_figures, share)
+    prediction_auto = find_autocorrelation(
+        args, sim, analysis_figures, prediction_freq_analysis
+    )
     # Merge results
     prediction = merge_predictions(
         args, prediction_freq_analysis, prediction_auto, analysis_figures
@@ -125,9 +132,7 @@ def core(sim: dict, args: Namespace) -> tuple[Prediction, AnalysisFigures]:
     return prediction, analysis_figures
 
 
-def freq_analysis(
-    args: Namespace, data: dict
-) -> tuple[Prediction, AnalysisFigures, SharedSignalData]:
+def freq_analysis(args: Namespace, data: dict) -> tuple[Prediction, AnalysisFigures]:
     """
     Performs frequency analysis (DFT, continuous wavelet, or discrete wavelet) and prepares data for plotting.
 
@@ -148,27 +153,20 @@ def freq_analysis(
 
     Returns:
         tuple: A tuple containing:
-            - Prediction: Contains the prediction results, including:
+            - Prediction: Contains the prediction results, including
                 - "dominant_freq" (list): The identified dominant frequencies.
                 - "conf" (np.ndarray): Confidence values corresponding to the dominant frequencies.
                 - "t_start" (int): Start time of the analysis.
                 - "t_end" (int): End time of the analysis.
                 - "total_bytes" (int): Total bytes involved in the analysis.
             - AnalysisFigures
-            - SharedSignalData: Contains sampled data used for sharing (e.g., autocorrelation) containing
-            the following fields:
-                - "b_sampled" (np.ndarray): The sampled bandwidth data.
-                - "freq" (np.ndarray): Frequencies corresponding to the sampled data.
-                - "t_start" (int): Start time of the sampled data.
-                - "t_end" (int): End time of the sampled data.
-                - "total_bytes" (int): Total bytes from the sampled data.
     """
 
     #! Init
     bandwidth = data["bandwidth"] if "bandwidth" in data else np.array([])
     time_b = data["time"] if "time" in data else np.array([])
-    total_bytes = data["total_bytes"] if "total_bytes" in data else 0
-    ranks = data["ranks"] if "ranks" in data else 0
+    total_bytes = data.get("total_bytes", 0)
+    ranks = data.get("ranks", 0)
 
     #! Extract relevant data
     bandwidth, time_b, text = data_in_time_window(
@@ -177,24 +175,59 @@ def freq_analysis(
 
     #! Perform transformation
     if "dft" in args.transformation:
-        prediction, analysis_figures, share = ftio_dft(
+        prediction, analysis_figures = ftio_dft(
             args, bandwidth, time_b, total_bytes, ranks, text
         )
 
-    elif "wave_disc" in args.transformation:
-        prediction, analysis_figures, share = ftio_wavelet_disc(
+    elif "wave_disc" in args.transformation or "dwt" in args.transformation:
+        prediction, analysis_figures = ftio_wavelet_disc(
             args, bandwidth, time_b, ranks, total_bytes
         )
 
-    elif "wave_cont" in args.transformation:
-        prediction, analysis_figures, share = ftio_wavelet_cont(
-            args, bandwidth, time_b, ranks
+    elif "wave_cont" in args.transformation or "cwt" in args.transformation:
+        prediction, analysis_figures = ftio_wavelet_cont(args, bandwidth, time_b, ranks)
+
+    elif "stft" in args.transformation and "astft" not in args.transformation:
+        prediction, analysis_figures = ftio_stft(
+            args, bandwidth, time_b, total_bytes, ranks, text
+        )
+
+    elif "astft" in args.transformation:
+        # Check dependencies for AMD-based methods
+        try:
+            import vmdpy  # noqa: F401
+        except ImportError:
+            raise RuntimeError(
+                "ASTFT transformation is disabled.\n"
+                'Install with: pip install "ftio[amd-libs]" or pip install -e ".[amd-libs]"'
+            ) from None
+
+        from ftio.freq._astft_workflow import ftio_astft
+
+        prediction, analysis_figures = ftio_astft(
+            args, bandwidth, time_b, total_bytes, ranks, text
+        )
+
+    elif any(t in args.transformation for t in ("efd", "vmd")):
+        # Check dependencies for AMD-based methods
+        try:
+            import vmdpy  # noqa: F401
+        except ImportError:
+            raise RuntimeError(
+                f"{args.transformation.upper()} transformation is disabled.\n"
+                'Install with: pip install "ftio[amd-libs]" or pip install -e ".[amd-libs]"'
+            ) from None
+
+        from ftio.freq._amd_workflow import ftio_amd
+
+        prediction, analysis_figures = ftio_amd(
+            args, bandwidth, time_b, total_bytes, ranks, text
         )
 
     else:
         raise Exception("Unsupported decomposition specified")
 
-    return prediction, analysis_figures, share
+    return prediction, analysis_figures
 
 
 def run():

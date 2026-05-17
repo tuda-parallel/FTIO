@@ -1,4 +1,15 @@
-"""Function to plot the bandwidth from the JIT"""
+"""
+Function to plot the bandwidth from the JIT
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Jan 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
 
 import argparse
 import json
@@ -33,7 +44,7 @@ def load_json_and_plot(filenames):
         json_file_path = os.path.join(current_directory, filename)
 
         # Load the JSON file
-        with open(json_file_path, "r") as json_file:
+        with open(json_file_path) as json_file:
             data = json.load(json_file)
 
         # Extract arrays from the JSON data
@@ -181,7 +192,7 @@ def plot_bar_with_rich(
     plot_str += (
         f"\n{' ' * new_label_offset}{''.join(label_line)}"  # Adjusted x-axis label
     )
-    plot_str = f" " * (label_offset + 2 + len(y_unit)) + "^\n" + plot_str
+    plot_str = " " * (label_offset + 2 + len(y_unit)) + "^\n" + plot_str
 
     # Create a panel with the plot
     panel = Panel(

@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Mär 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import json
 import re
 import sys
@@ -18,7 +29,7 @@ def parse(
     b_out = np.array([])
     t_out = np.array([])
     try:
-        with open(file_path, "r") as json_file:
+        with open(file_path) as json_file:
             json_data = json.load(json_file)
     except FileNotFoundError:
         print(f"Error: File '{file_path}' not found.")
@@ -54,7 +65,7 @@ def extract(json_data, match, verbose=False):
                 t_out = x[:, 0]
                 b_out = x[:, 1]
                 # remove None from b
-                b_out[b_out == None] = 0
+                b_out[b_out is None] = 0
                 # reduce to derivative
                 if "deriv" not in key:
                     if verbose:
@@ -72,8 +83,10 @@ def filter_metrics(
     filter_deriv: bool = True,
     exclude=None,
     scale_t: float = 1,
-    rename: dict = {},
+    rename: dict = None,
 ):
+    if rename is None:
+        rename = {}
     out = {}
     t = process_time()
     metrics = json_data["metrics"].keys()
@@ -113,7 +126,7 @@ def filter_metrics(
                     suffix += 1
                 out[new_key] = out.pop(old_key)
 
-        if len(set(["time", "hits", "size"]) & set(exclude)) == 2:
+        if len({"time", "hits", "size"} & set(exclude)) == 2:
             keys_to_rename = [(metric, metric.rsplit("__", 1)[-1]) for metric in out]
             # Perform renaming after collecting all keys
             if keys_to_rename:
@@ -148,7 +161,7 @@ def parse_all(
     if scale_t != 1:
         CONSOLE.info(f"\n[yellow]Scaling time by: {scale_t}[/]")
     try:
-        with open(file_path, "r") as json_file:
+        with open(file_path) as json_file:
             json_data = json.load(json_file)
     except FileNotFoundError:
         print(f"Error: File '{file_path}' not found.")

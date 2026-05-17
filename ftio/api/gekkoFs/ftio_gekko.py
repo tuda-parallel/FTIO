@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Mär 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 # import os
 import argparse
 import glob
@@ -11,7 +22,7 @@ from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
 from ftio.multiprocessing.async_process import handle_in_process
 from ftio.parse.args import parse_args
-from ftio.parse.bandwidth import overlap, overlap_two_series
+from ftio.parse.bandwidth import overlap
 from ftio.plot.helper import format_plot
 from ftio.plot.units import set_unit
 from ftio.prediction.helper import dump_json
@@ -22,7 +33,7 @@ CONSOLE.set(True)
 
 
 def run(
-    files_or_msgs: list, argv=["-e", "plotly", "-f", "100"], b_app=[], t_app=[]
+    files_or_msgs: list, argv=None, b_app=None, t_app=None
 ) -> tuple[Prediction, argparse.Namespace, float]:  # "0.01"] ):
     """Executes ftio on a list of files_or_msgs.
 
@@ -34,6 +45,12 @@ def run(
     """
 
     # parse args
+    if t_app is None:
+        t_app = []
+    if b_app is None:
+        b_app = []
+    if argv is None:
+        argv = ["-e", "plotly", "-f", "100"]
     args = parse_args(argv, "ftio")
     ranks = len(files_or_msgs)
 

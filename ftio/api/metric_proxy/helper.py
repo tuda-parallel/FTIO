@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Aug 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import json
 
 import numpy as np
@@ -25,19 +36,20 @@ def extract_data(data):
     # Prepare the data for the plot
     data_points = []
 
-    for d in data:
-        if len(d["dominant_freq"]) > 0 and len(d["conf"]) > 0:
-            max_conf_index = np.argmax(d["conf"])
-            dominant_freq = d["dominant_freq"][max_conf_index]
-            conf = d["conf"][max_conf_index] * 100
-            phi = d["phi"][max_conf_index]  # np.degrees(d['phi'][max_conf_index])
-            amp = d["amp"][max_conf_index]
-            t_s = d["t_start"]
-            t_e = d["t_end"]
-            data_points.append((d["metric"], dominant_freq, conf, amp, phi, t_s, t_e))
+    for prediction in data:
+        if len(prediction.dominant_freq) > 0 and len(prediction.conf) > 0:
+            max_conf_index = np.argmax(prediction.conf)
+            dominant_freq = prediction.dominant_freq[max_conf_index]
+            conf = prediction.conf[max_conf_index] * 100
+            phi = prediction.phi[max_conf_index]  # np.degrees(d['phi'][max_conf_index])
+            amp = prediction.amp[max_conf_index]
+            t_s = prediction.t_start
+            t_e = prediction.t_end
+            data_points.append(
+                (prediction.metric, dominant_freq, conf, amp, phi, t_s, t_e)
+            )
         else:
             continue
-            data_points.append((d["metric"], np.NaN, np.NaN, np.NaN, np.NaN, np.NaN))
 
     # Create a DataFrame for the plot
     df = pd.DataFrame(

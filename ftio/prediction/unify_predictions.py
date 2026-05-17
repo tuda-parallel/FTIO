@@ -1,4 +1,15 @@
-"""Merge Predections"""
+"""
+Merge Predections
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
 
 from __future__ import annotations
 
@@ -36,7 +47,7 @@ def merge_predictions(
     pred_merged = pred_dft
     if args.autocorrelation:
         tik = time.time()
-        CONSOLE.print(f"[cyan]Merging Started:[/]\n")
+        CONSOLE.print("[cyan]Merging Started:[/]\n")
         text = f"Merging Autocorrelation and {args.transformation.upper()}\n"
         if not pred_auto.is_empty() and not np.isnan(pred_auto.dominant_freq):
             pred_merged, text = merge_core(pred_dft, pred_auto, args.freq, text)

@@ -1,4 +1,15 @@
-"""Converts results from TMIO / Darshan files into Extra-P supported format"""
+"""
+Converts results from TMIO / Darshan files into Extra-P supported format
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
 
 import numpy as np
 
@@ -510,7 +521,7 @@ class Print:
             if not call_path:
                 call_path = io_mode
             if "txt" in print_type:  # txt file
-                self.file.write("\nREGION %s\nMETRIC %s\n" % (call_path, metric))
+                self.file.write(f"\nREGION {call_path}\nMETRIC {metric}\n")
                 for i in range(0, self.data.n):
                     value = getattr(self.data.s[i], io_mode)
                     if "bandwidth" in var:
@@ -536,9 +547,8 @@ class Print:
                         art = -1 if np.isnan(art) else art
                     if isinstance(art, list):
                         for j, _ in enumerate(art):
-                            if j == 0:
-                                if self.args.scale:
-                                    metric, order = scale_metric(metric, art[j])
+                            if j == 0 and self.args.scale:
+                                metric, order = scale_metric(metric, art[j])
                             self.file.write(
                                 f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art[j]*order:e} }}\n'
                             )
@@ -567,10 +577,7 @@ class Print:
                 except AttributeError:
                     return False
 
-            if isinstance(art, list) and not art:
-                return False
-            else:
-                return True
+            return not (isinstance(art, list) and not art)
 
     def print_points(self):
         for run in self.data.s:

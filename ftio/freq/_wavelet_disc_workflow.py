@@ -1,4 +1,15 @@
-"""Contains functions that execute workflow using the continuous Wavelet Transform."""
+"""
+Contains functions that execute workflow using the continuous Wavelet Transform.
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
 
 import copy
 import time
@@ -7,11 +18,9 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 
-from ftio.analysis._logicize import logicize
 from ftio.freq._analysis_figures import AnalysisFigures
 from ftio.freq._dft_workflow import ftio_dft
 from ftio.freq._dft_x_dwt import analyze_correlation
-from ftio.freq._share_signal_data import SharedSignalData
 from ftio.freq._wavelet import wavelet_disc
 from ftio.freq._wavelet_helpers import (
     decomposition_level,
@@ -21,7 +30,6 @@ from ftio.freq._wavelet_helpers import (
 from ftio.freq.autocorrelation import find_fd_autocorrelation
 from ftio.freq.discretize import sample_data
 from ftio.freq.helper import MyConsole
-from ftio.plot.freq_plot import convert_and_plot
 from ftio.plot.plot_wavelet_disc import (
     plot_coeffs_reconst_signal,
     plot_wavelet_disc_spectrum,
@@ -49,8 +57,6 @@ def ftio_wavelet_disc(
         total_bytes (int): total transferred bytes (default is 0).
     """
     # Default values for variables
-    share = SharedSignalData()
-    df_out = [[], [], [], []]
     prediction = {
         "source": {args.transformation},
         "dominant_freq": [],
@@ -74,6 +80,10 @@ def ftio_wavelet_disc(
     tik = time.time()
     console.print(f"[cyan]Executing:[/] {args.transformation.upper()} + {args.outlier}\n")
 
+    # Ensure wavelet is set early
+    if not args.wavelet:
+        args.wavelet = "db1"
+
     # ! Find the level for the discrete wavelet
     # https://edisciplinas.usp.br/pluginfile.php/4452162/mod_resource/content/1/V1
     # -Parte%20de%20Slides%20de%20p%C3%B3sgrad%20PSI5880_PDF4%20em%20Wavelets%20
@@ -85,7 +95,7 @@ def ftio_wavelet_disc(
     if args.level == 0:
         if method == "dft":
             args.transformation = "dft"
-            prediction, _, _ = ftio_dft(args, bandwidth, time_stamps, total_bytes, ranks)
+            prediction, _ = ftio_dft(args, bandwidth, time_stamps, total_bytes, ranks)
             if len(prediction.dominant_freq) > 0:
                 args.level = int(1 / (5 * prediction.get_dominant_freq()))
                 console.print(f"[green]Decomposition level adjusted to {args.level}[/]")
@@ -96,7 +106,6 @@ def ftio_wavelet_disc(
             args.level = decomposition_level(args, len(b_sampled))
 
     # ! calculate the coefficients using the discrete wavelet
-    # args.wavelet = "db8"
     # coefficients ->  [cA_n, cD_n, cD_n-1, …, cD2, cD1]
     coefficients = wavelet_disc(b_sampled, args.wavelet, args.level)
     # compute the frequency ranges
@@ -125,11 +134,14 @@ def ftio_wavelet_disc(
             args, t_sampled, coefficients_upsampled, freq_ranges
         )
 
-        analysis_figures_wavelet.add_figure([f1], f"wavelet_disc")
-        analysis_figures_wavelet.add_figure([f2], f"wavelet_disc_spectrum")
-        console.print(f" --- Done --- \n")
+        analysis_figures_wavelet.add_figure(f1, "wavelet_disc")
+        analysis_figures_wavelet.add_figure(f2, "wavelet_disc_spectrum")
+
+        if args.runtime_plots:
+            analysis_figures_wavelet.show()
+        console.print(" --- Done --- \n")
     else:
-        analysis_figures_wavelet = AnalysisFigures()
+        analysis_figures_wavelet = AnalysisFigures(args)
 
     # ! Perform analysis on the result from the DWT
     # analysis = "dft_on_approx_coeff"
@@ -146,7 +158,7 @@ def ftio_wavelet_disc(
     if "dft_on_approx_coeff" in analysis:
         args.transformation = "dft"
         # Option 1: Filter using wavelet and call DFT on lowest last coefficient
-        prediction, analysis_figures_dft, share = ftio_dft(
+        prediction, analysis_figures_dft = ftio_dft(
             args, coefficients_upsampled[0], t_sampled, total_bytes, ranks
         )
         analysis_figures_wavelet += analysis_figures_dft
@@ -169,11 +181,17 @@ def ftio_wavelet_disc(
 
             # Process futures as they complete
             for future in as_completed(futures):
-                prediction, analysis_figures_dft, _ = future.result()
+                prediction, analysis_figures_dft = future.result()
                 display_prediction(["ftio"], prediction)
                 index = futures[future]
                 analyze_correlation(
-                    args, prediction, coefficients_upsampled[index], t_sampled
+                    args,
+                    prediction,
+                    coefficients_upsampled[index],
+                    t_sampled,
+                    analysis_figures_dft,
+                    bandwidth,
+                    time_stamps,
                 )
                 console.print(f"[green]{index} completed[/]")
             exit()
@@ -182,22 +200,35 @@ def ftio_wavelet_disc(
     elif "dft_x_dwt" in analysis:
         args.transformation = "dft"
         # 1): compute DFT on lowest last coefficient
-        prediction, analysis_figures_dft, share = ftio_dft(
+        prediction, analysis_figures_dft = ftio_dft(
             args, coefficients_upsampled[0], t_sampled, total_bytes, ranks
         )
         # 2) compare the results
-        analyze_correlation(args, prediction, coefficients_upsampled[0], t_sampled)
+        analyze_correlation(
+            args,
+            prediction,
+            coefficients_upsampled[0],
+            t_sampled,
+            analysis_figures_dft,
+            bandwidth,
+            time_stamps,
+        )
         if any(x in args.engine for x in ["mat", "plot"]):
             analysis_figures_wavelet += analysis_figures_dft
 
     # ? Option 4: Apply autocorrelation on low
     elif "dwt_x_autocorrelation" in analysis:
-        res = find_fd_autocorrelation(
+        find_fd_autocorrelation(
             args,
             coefficients_upsampled[0],
             args.freq,
             analysis_figures_wavelet,
         )
+        if any(x in args.engine for x in ["mat", "plot"]) and args.runtime_plots:
+            analysis_figures_wavelet.show()
         exit()
 
-    return prediction, analysis_figures_wavelet, share
+    if any(x in args.engine for x in ["mat", "plot"]) and args.runtime_plots:
+        analysis_figures_wavelet.show()
+
+    return prediction, analysis_figures_wavelet

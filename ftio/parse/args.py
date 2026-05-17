@@ -1,8 +1,19 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 from __future__ import annotations
 
 import argparse
 
-from ftio import __copyright__, __license__, __repo__, __version__
+from ftio import __copyright__, __license__, __repo__
 
 
 def parse_args(argv: list, name="") -> argparse.Namespace:
@@ -11,7 +22,7 @@ def parse_args(argv: list, name="") -> argparse.Namespace:
         name = argv[0]
         name = name[name.rfind("/") + 1 :]
     else:
-        # API call
+        # API callj
         flag = False
 
     if "plot" in name:
@@ -30,7 +41,7 @@ def parse_args(argv: list, name="") -> argparse.Namespace:
         description=disc,
         epilog=f"""
 --------------------------------------------
-Author: 
+Author:
 Ahmad H. Tarraf
 
 Contributors:
@@ -140,7 +151,7 @@ Full documentation:
             "--transformation",
             dest="transformation",
             type=str,
-            help="Specifies the frequency technique to use. Supported modes are: dft (default), wave_disc, and wave_cont",
+            help="Specifies the frequency technique to use. Supported modes are: dft (default), wave_disc, wave_cont, and stft",
         )
         parser.set_defaults(transformation="dft")
         parser.add_argument(
@@ -154,7 +165,7 @@ Full documentation:
             "-rp",
             "--runtime_plots",
             action="store_true",
-            help="if set, shows the plot at at runtime (works only with plotly",
+            help="if set, shows the plot at at runtime",
         )
         parser.set_defaults(runtime_plots=False)
         parser.add_argument(
@@ -241,14 +252,31 @@ Full documentation:
         )
         parser.set_defaults(autocorrelation=False)
         parser.add_argument(
+            "-ml",
+            "--machine_learning",
+            dest="machine_learning",
+            action="store_true",
+            help="if set, machine learning is enabled (api call only)",
+        )
+        parser.set_defaults(machine_learning=False)
+        parser.add_argument(
             "-w",
             "--window_adaptation",
             dest="window_adaptation",
             type=str,
-            choices=["frequency_hits", "data"],
-            help='online time window adaptation. If set to frequency_hits, the time window is shifted on X "frequency hits" (a dominant frequency was found) to X times the last found period from the current instance. Alternatively it can be set to "data" to move the window to X times after data has been received',
+            choices=["frequency_hits", "data", "adwin", "cusum", "ph"],
+            help=(
+                "online window adaptation strategy. "
+                "'frequency_hits': shift the time window on X frequency hits to X times the last found period. "
+                "'data': move the window to X times after data has been received. "
+                "'adwin': Adaptive Windowing with automatic window sizing and mathematical guarantees. "
+                "'cusum': Cumulative Sum detection for rapid change detection. "
+                "'ph': Page-Hinkley test for sequential change point detection. "
+                "For 'adwin', 'cusum', and 'ph', the option '--gui' is supported to display detected change points."
+            ),
         )
-        parser.set_defaults(window_adaptation="")
+
+        parser.set_defaults(window_adaptation=None)
         parser.add_argument(
             "-hi",
             "--hits",
@@ -271,6 +299,12 @@ Full documentation:
             help="avoids opening the generated HTML file since zmq is used",
         )
         parser.set_defaults(zmq=False)
+        parser.add_argument(
+            "--gui",
+            action="store_true",
+            help="enables forwarding prediction data to the FTIO GUI dashboard. Start the GUI first with 'ftio-gui' then run predictor with this flag.",
+        )
+        parser.set_defaults(gui=False)
         parser.add_argument(
             "--zmq_source",
             type=str,
@@ -320,6 +354,19 @@ Full documentation:
             type=int,
             default=4,
             help="Order of Butterworth filter.",
+        )
+        # adaptive tsa arguments
+        parser.add_argument(
+            "--tfpf",
+            type=int,
+            default=0,
+            help="Number of time-frequency peak filtering iterations.",
+        )
+        parser.add_argument(
+            "--stft_window",
+            type=str,
+            default="0",
+            help="Window length for STFT analysis in samples or time (e.g., '20s'). If 0, it is automatically calculated based on the dominant frequency.",
         )
 
     #! IOPLOT Settings
@@ -411,17 +458,17 @@ Full documentation:
     # default values:
     if "ftio" in name.lower() or "predictor" in name.lower():
         if "wave" in args.transformation:
-            if "cont" in args.transformation:
-                args.wavelet = "morl"
-            else:
-                args.wavelet = "db1"
+            if not args.wavelet:
+                if "cont" in args.transformation:
+                    args.wavelet = "morl"
+                else:
+                    args.wavelet = "db1"
 
         recon = []
         if args.reconstruction:
             recon = [int(x) for val in args.reconstruction for x in val.split(",")]
-        if args.n_freq:
-            if args.n_freq not in recon:
-                recon.append(int(args.n_freq))
+        if args.n_freq and args.n_freq not in recon:
+            recon.append(int(args.n_freq))
         args.reconstruction = recon
 
     return args

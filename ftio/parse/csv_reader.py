@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Jul 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import csv
 
 
@@ -5,7 +16,7 @@ import csv
 def read_csv_file(file_path):
     arrays = {}
 
-    with open(file_path, "r") as csvfile:
+    with open(file_path) as csvfile:
         reader = csv.DictReader(csvfile)
 
         # Initialize arrays based on headers

@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Okt 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import numpy as np
 
 from ftio.freq.prediction import Prediction
@@ -18,10 +29,7 @@ class PhaseMode:
             raise AttributeError(f"'MyClass' object has no attribute '{attribute}'")
 
     def match(self, d: dict):
-        if any(n in d["metric"] for n in self.matches):
-            return True
-        else:
-            return False
+        return bool(any(n in d.metric for n in self.matches))
 
     def add(self, d: dict) -> None:
         self.data.append(d)
@@ -42,9 +50,9 @@ class PhaseMode:
         wave = np.array([])
         name = ""
         if self.t.size != 0:
-            for d in self.data:
-                if metric in d["metric"]:
-                    wave, name = calculate_wave(d, self.t)
+            for prediction in self.data:
+                if metric in prediction.metric:
+                    wave, name = calculate_wave(prediction, self.t)
 
         return (wave, name)
 
@@ -55,28 +63,24 @@ def calculate_wave(
     wave = np.array([])
     name = ""
     if prediction:
-        n = int(np.floor((prediction.t_end - prediction.t_start) * prediction.freq))
         if t.size == 0:
             t = np.arange(prediction.t_start, prediction.t_end, 1 / prediction.freq)
 
-        if "top_freq" in prediction:
+        if len(prediction.top_freqs) > 0:
             wave = np.zeros_like(t)
             for j in range(0, len(prediction.top_freqs["freq"])):
                 amp = prediction.top_freqs["amp"][j]
                 freq = prediction.top_freqs["freq"][j]
                 phi = prediction.top_freqs["phi"][j]
-                cosine_wave, cosine_name = prediction.get_wave_and_name(freq, amp, phi)
+                cosine_wave, cosine_name = prediction.get_wave_and_name(freq, amp, phi, t)
                 wave = wave + cosine_wave
                 if j < 3:
                     name += cosine_name
                 elif j == 4:
                     name += "..."
         else:
-            max_conf_index = np.argmax(prediction["conf"])
-            amp = prediction["amp"][max_conf_index]
-            freq = prediction["dominant_freq"][max_conf_index]
-            phi = prediction["phi"][max_conf_index]
-            wave, cosine_name = prediction.get_wave_and_name(freq, amp, phi)
+            freq, amp, phi = prediction.get_dominant_freq_amp_phi()
+            wave, cosine_name = prediction.get_wave_and_name(freq, amp, phi, t)
             name += cosine_name
     return (wave, name)
 

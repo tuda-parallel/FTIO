@@ -1,6 +1,16 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Jan 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import argparse
 import json
-import sys
 
 import numpy as np
 
@@ -51,20 +61,16 @@ def main(args=parse_options()):
         "b_rank_sum",
         "b_ind",
     ]
-    with open(args.filename, "rt") as current_file:
+    with open(args.filename) as current_file:
         data = json.load(current_file)
         for mode in data:
-            if "read" in mode or "write" in mode:
-                if data[mode]:
-                    for metric in fields_metrics:
-                        if metric in data[mode]:
-                            scale(data[mode], metric)
-                    for metric in fields_bandwidth:
-                        if (
-                            "bandwidth" in data[mode]
-                            and metric in data[mode]["bandwidth"]
-                        ):
-                            scale(data[mode]["bandwidth"], metric)
+            if ("read" in mode or "write" in mode) and data[mode]:
+                for metric in fields_metrics:
+                    if metric in data[mode]:
+                        scale(data[mode], metric)
+                for metric in fields_bandwidth:
+                    if "bandwidth" in data[mode] and metric in data[mode]["bandwidth"]:
+                        scale(data[mode]["bandwidth"], metric)
 
     # json.dump(data,out_file)
     with open(args.outfile, "w") as out_file:

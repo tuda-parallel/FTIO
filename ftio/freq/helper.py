@@ -1,6 +1,20 @@
-"""Helper function for frequency techniques"""
+"""
+Helper function for frequency techniques
 
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
+import numpy as np
 from rich.console import Console
+
+from ftio.prediction.shared_resources import SharedResources
 
 
 def get_mode(data, mode):
@@ -70,3 +84,15 @@ class MyConsole(Console):
 
     def info(self, s):
         Console.print(self, s)
+
+
+def append_messages(data: dict, shared_resources: SharedResources) -> dict:
+    for sim in data:
+        if "bandwidth" in sim:
+            b = sim["bandwidth"] if "bandwidth" in sim else np.array([])
+            t = sim["time"] if "time" in sim else np.array([])
+            shared_resources.b_app.extend(b)
+            shared_resources.t_app.extend(t)
+            sim["bandwidth"] = np.array(shared_resources.b_app[:])
+            sim["time"] = np.array(shared_resources.t_app[:])
+    return data

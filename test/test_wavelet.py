@@ -1,5 +1,14 @@
 """
 Functions for testing the wavelet functionality of the ftio package.
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Jan 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 import os
@@ -15,29 +24,37 @@ from ftio.parse.args import parse_args
 def test_wavelet_cont_args():
     """Test continuous wavelet transformation with default decomposition level."""
     args = parse_args(["-e", "no", "-tr", "wave_cont"], "ftio")
-    _ = core([], args)
-    assert True
+    pred, analysis_figs = core([], args)
+
+    assert pred.is_empty()
+    assert analysis_figs is not None
 
 
 def test_wavelet_disc_args():
     """Test discrete wavelet transformation with default decomposition level."""
     args = parse_args(["-e", "no", "-tr", "wave_disc"], "ftio")
-    _ = core([], args)
-    assert True
+    pred, analysis_figs = core([], args)
+
+    assert pred.is_empty()
+    assert analysis_figs is not None
 
 
 def test_wavelet_cont_lvl_args():
     """Test continuous wavelet transformation with a specified decomposition level."""
     args = parse_args(["-e", "no", "-tr", "wave_cont", "-le", "5"], "ftio")
-    _ = core([], args)
-    assert True
+    pred, analysis_figs = core([], args)
+
+    assert args.level == 5
+    assert pred.is_empty()
 
 
 def test_wavelet_disc_lvl_args():
     """Test discrete wavelet transformation with a specified decomposition level."""
     args = parse_args(["-e", "no", "-tr", "wave_disc", "-le", "5"], "ftio")
-    _ = core([], args)
-    assert True
+    pred, analysis_figs = core([], args)
+
+    assert args.level == 5
+    assert pred.is_empty()
 
 
 ####################################################################################################
@@ -52,5 +69,8 @@ def test_wavelet_cont():
         "../examples/tmio/ior/collective/1536_new.json",
     )
     args = ["ftio", file, "-e", "no", "-tr", "wave_cont"]
-    _, args = main(args)
-    assert True
+    pred, args = main(args)
+
+    assert len(pred) > 0
+    assert not pred[-1].is_empty()
+    assert pred[-1].source == "wave_cont"

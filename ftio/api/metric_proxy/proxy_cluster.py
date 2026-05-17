@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Aug 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -123,7 +134,7 @@ def plot_cluster(
 
     # Customize the marker size and add hover information
     fig.update_traces(
-        marker=dict(size=10),
+        marker={"size": 10},
         hovertemplate=(
             "x: %{x}<br>"
             "y: %{y}<br>"

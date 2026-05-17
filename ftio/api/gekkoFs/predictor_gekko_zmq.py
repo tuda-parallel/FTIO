@@ -4,7 +4,8 @@ Cargo for data staging. It includes processes for handling ZMQ messages, perform
 predictions, and managing shared resources.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: Nov 2024
 
 Licensed under the BSD 3-Clause License.
@@ -12,6 +13,7 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
+import os
 import sys
 import time
 
@@ -30,8 +32,10 @@ from ftio.api.gekkoFs.stage_data import (
 from ftio.freq.helper import MyConsole
 from ftio.multiprocessing.async_process import handle_in_process, join_procs
 from ftio.plot.plot_bandwidth import plot_bar_with_rich
-from ftio.prediction.helper import print_data  # , export_extrap
-from ftio.prediction.helper import get_dominant_and_conf
+from ftio.prediction.helper import (
+    get_dominant_and_conf,
+    print_data,  # , export_extrap
+)
 from ftio.prediction.online_analysis import (
     display_result,
     save_data,
@@ -93,6 +97,17 @@ def main(args: list[str] = sys.argv[1:]) -> None:
                     # CONSOLE.print('[red]No messages[/]')
                     status.update("[cyan]Waiting for messages\n", spinner="dots")
                     continue
+
+                # Hold predictions until the application has started
+                if data_stager_args.app_start_file and not os.path.isfile(
+                    data_stager_args.app_start_file
+                ):
+                    status.update(
+                        "[yellow]Holding predictions — waiting for application to start...\n",
+                        spinner="dots",
+                    )
+                    continue
+
                 CONSOLE.print(f"[cyan]Got message from {ranks}:[/]")
                 status.update("")
 
@@ -146,7 +161,10 @@ def prediction_zmq_process(
     # display results
     text = display_result(freq, prediction, shared_resources)
     # data analysis to decrease window thus change start_time
-    text += window_adaptation(parsed_args, prediction, freq, shared_resources)
+    adaptation_text, _, _ = window_adaptation(
+        parsed_args, prediction, freq, shared_resources
+    )
+    text += adaptation_text
     # print text
     console.print(text)
 

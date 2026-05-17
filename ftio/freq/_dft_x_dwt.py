@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Jun 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 from ftio.analysis._correlation import (
     extract_correlation_ranges,
     plot_correlation,
@@ -10,6 +21,9 @@ def analyze_correlation(
     prediction,
     coefficients_upsampled,
     t_sampled,
+    analysis_figures=None,
+    b_orig=None,
+    t_orig=None,
 ):
     """
     Analyze the correlation between the dominant frequency component (from DFT)
@@ -20,6 +34,9 @@ def analyze_correlation(
         coefficients_upsampled: List of upsampled wavelet coefficients at a specific level.
         t_sampled: Time samples corresponding to the signals.
         args: Argument object with attributes like 'freq', 'verbose', and 'engine'.
+        analysis_figures: An AnalysisFigures object to add figures to.
+        b_orig: Original bandwidth signal.
+        t_orig: Original time stamps.
     """
     if len(prediction.dominant_freq) > 0:
         signal_1 = prediction.get_dominant_wave()
@@ -36,7 +53,8 @@ def analyze_correlation(
             t_corr, corr, min_duration=window_duration, verbose=args.verbose
         )
         if any(x in args.engine for x in ["mat", "plot"]):
-            plot_correlation(
+            fig = plot_correlation(
+                args,
                 t_sampled,
                 signal_1,
                 signal_2,
@@ -46,4 +64,9 @@ def analyze_correlation(
                     f"{dominant_name} (from DFT)",
                     "upsampled approximation coefficients (from DWT)",
                 ],
+                prediction=prediction,
+                b_orig=b_orig,
+                t_orig=t_orig,
             )
+            if fig and analysis_figures is not None:
+                analysis_figures.add_figure(fig, "correlation")

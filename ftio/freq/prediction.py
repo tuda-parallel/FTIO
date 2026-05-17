@@ -1,4 +1,16 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Mai 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import numpy as np
+from rich.table import Table
 
 
 class Prediction:
@@ -48,6 +60,8 @@ class Prediction:
         self._top_freqs = {}
         self._candidates = np.array([])
         self._ranges = np.array([])
+        self._metric = ""
+        self._b_sampled = np.array([])
 
     @property
     def source(self):
@@ -230,6 +244,24 @@ class Prediction:
             )
         self._ranges = value
 
+    @property
+    def metric(self):
+        return self._metric
+
+    @metric.setter
+    def metric(self, value):
+        self._metric = str(value)
+
+    @property
+    def b_sampled(self):
+        return self._b_sampled
+
+    @b_sampled.setter
+    def b_sampled(self, value):
+        if not isinstance(value, (list, np.ndarray)):
+            raise TypeError("b_sampled must be a list or numpy array")
+        self._b_sampled = value
+
     def get(self, key: str):
         """
         Retrieve the value for a given attribute.
@@ -344,10 +376,10 @@ class Prediction:
 
     def get_dominant_index(self):
         # or use conf?
-        if self._amp is not None and len(self._amp) > 0:
+        if self._amp is not None and self._amp.size > 0:
             return np.argmax(self._amp)
-        elif self._conf is not None and len(self._conf) > 0:
-            return np.argmax(self.conf)
+        elif self._conf is not None and self._conf.size > 0:
+            return np.argmax(self._conf)
         else:
             return None
 
@@ -360,7 +392,9 @@ class Prediction:
         """
         return not self.source
 
-    def get_wave(self, freq: float, amp: float, phi: float) -> np.ndarray:
+    def get_wave(
+        self, freq: float, amp: float, phi: float, t_sampled: np.ndarray = None
+    ) -> np.ndarray:
         """
         Generate a cosine wave using the given frequency, amplitude, and phase.
 
@@ -368,14 +402,16 @@ class Prediction:
             freq (float): Frequency of the cosine wave in Hz.
             amp (float): Amplitude of the wave.
             phi (float): Phase of the wave in radians.
+            t_sampled (np.ndarray, optional): Array of time values. Defaults to None.
 
         Returns:
             np.ndarray: Array of sampled cosine wave values. Returns an empty array
             if the frequency is NaN or sampling is invalid.
         """
         if not np.isnan(freq) and self._n_samples != 0:
-            t_sampled = self._t_start + np.arange(0, self._n_samples) * 1 / self._freq
-            if freq != 0 and not freq == self._freq / 2:
+            if t_sampled is None:
+                t_sampled = self._t_start + np.arange(0, self._n_samples) * 1 / self._freq
+            if freq != 0 and freq != self._freq / 2:
                 amp *= 2 / self._n_samples
             else:
                 amp *= 1 / self._n_samples
@@ -402,7 +438,7 @@ class Prediction:
         return name
 
     def get_wave_and_name(
-        self, freq: float, amp: float, phi: float
+        self, freq: float, amp: float, phi: float, t_sampled: np.ndarray = None
     ) -> tuple[np.ndarray, str]:
         """
         Generate a cosine wave using the given frequency, amplitude, and phase. Returns additionally a string which can be used to label the plots
@@ -411,12 +447,13 @@ class Prediction:
             freq (float): Frequency of the cosine wave in Hz.
             amp (float): Amplitude of the wave.
             phi (float): Phase of the wave in radians.
+            t_sampled (np.ndarray, optional): Array of time values. Defaults to None.
 
         Returns:
             np.ndarray: Array of sampled cosine wave values. Returns an empty array
             str: Name of the cosine wave at the specified entities
         """
-        cosine_wave = self.get_wave(freq, amp, phi)
+        cosine_wave = self.get_wave(freq, amp, phi, t_sampled)
         name = self.get_wave_name(freq, amp, phi)
         return cosine_wave, name
 
@@ -432,7 +469,7 @@ class Prediction:
             if not np.isnan(f_d):
                 text = (
                     f"[cyan underline]Prediction results:[/]\n[cyan]Frequency:[/] {f_d:.3e} Hz"
-                    f"[cyan]->[/] {np.round(1/f_d, 4)} s\n"
+                    f"[cyan]->[/] {np.round(1 / f_d, 4) if f_d > 0 else 0} s\n"
                     f"[cyan]Confidence:[/] {color_pred(c_d)}"
                     f"{np.round(c_d * 100, 2)}[/] %\n"
                 )
@@ -452,6 +489,16 @@ class Prediction:
             return ""
 
     def disp_ranges(self) -> str:
+        """
+        Generates a formatted string representation of the valid time ranges stored
+        in the 'ranges' attribute. Each valid time range is displayed with its start
+        and end points rounded to two decimal places. If no valid time ranges
+        exist, an empty string is returned.
+
+        Returns:
+            str: A formatted string showing all valid time ranges. Returns an empty
+            string if no ranges are available.
+        """
         if len(self.ranges) > 0:
             text = "[cyan]Valid time segments:\n[/]"
             for start, end in self.ranges:
@@ -460,6 +507,36 @@ class Prediction:
             return text
         else:
             return ""
+
+    def display_frequencies_in_ranges(self):
+        if len(self.dominant_freq) > 1:
+            table = Table(
+                show_header=True, header_style="bold cyan", title="Identified segments"
+            )
+            table.add_column("Window", justify="right", style="white", no_wrap=True)
+            table.add_column("Freq (Hz)", justify="right", style="white", no_wrap=True)
+            table.add_column("Period (s)", justify="right", style="white", no_wrap=True)
+            table.add_column("Conf. (%)", justify="right", style="white", no_wrap=True)
+            table.add_column(
+                "Time Range (s)", justify="right", style="white", no_wrap=True
+            )
+
+            for i in range(1, len(self.dominant_freq)):
+                t_range = (
+                    f"[{self.ranges[i][0]:.2f}, {self.ranges[i][1]:.2f}]"
+                    if len(self.ranges) > i
+                    else 0
+                )
+
+                table.add_row(
+                    str(i - 1),
+                    f"{self.dominant_freq[i]:.3e}",
+                    f"{np.round(1 / self.dominant_freq[i], 4) if self.dominant_freq[i] > 0 else 0:.4f}",
+                    f"{np.round(self.conf[i] * 100, 2):.2f}",
+                    t_range,
+                )
+            return table
+        return ""
 
     def to_dict(self):
         """

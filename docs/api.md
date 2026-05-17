@@ -2,7 +2,7 @@
 
 The API allows interacting with `ftio` directly, rather than using the command line interface provided in the [
 `cli`](/ftio/cli/) folder.
-Below or several examples of this.
+Below are several examples of this.
 
 - [API](#api)
     - [General](#general)
@@ -18,8 +18,7 @@ The file [`ftio_api.py`](/examples/API/test_api.py) provides an example how to d
 import numpy as np
 from ftio.cli.ftio_core import core
 from ftio.parse.args import parse_args
-from ftio.freq._dft import display_prediction
-from ftio.plot.freq_plot import convert_and_plot
+from ftio.processing.print_output import display_prediction
 from ftio.parse.bandwidth import overlap
 
 ranks = 10
@@ -82,7 +81,7 @@ To suppress the output, the function `display_prediction` can be commented out. 
 be changed to `["-e", "no"]` to disable the plots.
 
 Furthermore, at the end of [`proxy.py`](/ftio/api/metric_proxy/proxy.py), postprocessing occurs to label the phases
-according to the function label_phases from [`processing.py`](/ftio/post/processing.py).
+according to the function `label_phases` from [`post_processing.py`](/ftio/processing/post_processing.py).
 
 <p align="right"><a href="#api">⬆</a></p>
 
@@ -94,6 +93,9 @@ The file [`predictor_gekko.py`](/ftio/api/gekkoFs/predictor_gekko.py) provides a
 For [`ftio_gekko.py`](/ftio/api/gekkoFs/ftio_gekko.py), the path to the files needs to be specified in the code:
 
 ```python
+import glob
+from ftio.api.gekkoFs.ftio_gekko import run
+
 if __name__ == "__main__":
     # absolute path to search all text files inside a specific folder
     # path=r'/d/github/FTIO/examples/API/gekkoFs/JSON/*.json' # For JSON
@@ -105,6 +107,8 @@ if __name__ == "__main__":
 Similarly, for [`predictor_gekko.py`](/ftio/api/gekkoFs/predictor_gekko.py), the following lines can be adjusted:
 
 ```python
+import glob
+
 def main(args: list[str] = []) -> None:
     n_buffers = 4  # number of buffers 
     args = ["-e", "plotly", "-f", "0.01"]  # arguments for ftio
@@ -115,8 +119,7 @@ def main(args: list[str] = []) -> None:
 
 ## GekkoFS with ZMQ
 
-The file [
-`predictor_zmq_gekko`](https://github.com/tuda-parallel/FTIO/blob/main/ftio/api/gekkoFs/predictor_gekko_zmq.py) deploys
+The file [`predictor_gekko_zmq.py`](https://github.com/tuda-parallel/FTIO/blob/main/ftio/api/gekkoFs/predictor_gekko_zmq.py) deploys
 this functionality.
 
 Download and compile the file [`test_mpi.cxx`](https://github.com/tuda-parallel/TMIO/blob/main/test/zmq/test_mpi.cxx)
@@ -133,7 +136,7 @@ for `ftio`, first navigate to the script and then execute it:
 
 ```sh
 cd ftio/api/gekkoFs
-python3 predictor_zmq_gekko.py 
+python3 predictor_gekko_zmq.py 
 ```
 
 <p align="right"><a href="#api">⬆</a></p>

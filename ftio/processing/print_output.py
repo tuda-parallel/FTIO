@@ -2,6 +2,15 @@
 Module for displaying prediction results from the ftio package.
 
 This module provides functionality to process and display prediction results on the console.
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Apr 2025
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 from argparse import Namespace
@@ -11,7 +20,6 @@ from rich.table import Table
 
 from ftio.freq.helper import MyConsole
 from ftio.freq.prediction import Prediction
-from ftio.prediction.helper import get_dominant_and_conf
 
 
 def display_prediction(
@@ -34,7 +42,12 @@ def display_prediction(
 
     console = MyConsole()
     # Display results if a prediction is available
-    console.info(prediction.disp_dominant_freq_and_conf() + prediction.disp_ranges())
+    if any(x in prediction.source.lower() for x in ["stft", "astft", "vmd", "efd"]):
+        # show results in a table
+        console.info(prediction.disp_dominant_freq_and_conf())
+        console.info(prediction.display_frequencies_in_ranges())
+    else:
+        console.info(prediction.disp_dominant_freq_and_conf() + prediction.disp_ranges())
 
     # If -n is provided, print the top frequencies with their confidence and amplitude in a table
     if isinstance(argv, Namespace) and argv.n_freq > 0:
@@ -117,3 +130,20 @@ def display_prediction(
             )
         else:
             console.info("[red]No top frequency data found[/]")
+
+
+def display_frequencies_in_ranges(
+    argv: str | Namespace = "ftio", prediction: Prediction = Prediction()
+) -> None:
+    """
+    Displays the result of the prediction from ftio per window.
+
+    Args:
+        argv (str | Namespace): Command-line arguments or parsed arguments.
+        prediction (Prediction): The result from ftio.
+    """
+    console = MyConsole()
+    # Use standard display for overall result
+    console.info(prediction.disp_dominant_freq_and_conf())
+    # show stft results
+    console.info(prediction.display_frequencies_in_ranges())

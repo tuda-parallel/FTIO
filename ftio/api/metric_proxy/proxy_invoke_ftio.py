@@ -1,7 +1,18 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Aug 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import sys
 
 from ftio.api.metric_proxy.helper import data_to_json
-from ftio.api.metric_proxy.parse_proxy import load_proxy_trace_stdin, parse_all
+from ftio.api.metric_proxy.parse_proxy import load_proxy_trace_stdin
 from ftio.prediction.tasks import ftio_metric_task_save
 
 

@@ -1,4 +1,15 @@
-"""Performs prediction with Pools (ProcessPoolExecutor) and a callback mechanism"""
+"""
+Performs prediction with Pools (ProcessPoolExecutor) and a callback mechanism
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Mär 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
 
 from __future__ import annotations
 
@@ -28,7 +39,6 @@ def predictor_with_processes_zmq(
         args (list[str]): additional arguments passed to ftio
     """
     procs = []
-
     # parse arguments
     tmp_args = parse_args(args)
     addr = tmp_args.zmq_address
@@ -76,8 +86,6 @@ def predictor_with_processes_zmq(
                 CONSOLE.print(f"[cyan]Got message from {ranks}:[/]")
                 status.update("")
 
-                # launch prediction
-                # TODO: append b_app and t_app
                 procs.append(
                     handle_in_process(
                         prediction_process, args=(shared_resources, args, msgs)
@@ -101,14 +109,25 @@ def setup_socket(addr: str, port: str, socket_type = zmq.PULL, bind: bool = True
     except zmq.error.ZMQError as e:
         CONSOLE.print(f"[yellow]Error encountered:\n{e}[/]")
         CONSOLE.print("[yellow]Wrong IP address. Attempting to correct...[/]")
-        addr = str(
-            subprocess.check_output(
-                "ip addr | grep 'inet 10' | awk  '{print $2}'", shell=True
-            )
+        # addr = str(
+        #     subprocess.check_output(
+        #         "ip addr | grep 'inet 10' | awk  '{print $2}'", shell=True
+        #     )
+        # )
+        # end = addr.rfind("/")
+        # start = addr.find("'")
+        # addr = addr[start + 1 : end]
+        # CONSOLE.print("[bold green]Corrected IP address:[/]", addr)
+        # socket.bind(f"tcp://{addr}:{port}")
+        output = subprocess.check_output(
+            "ip addr | grep 'inet 10' | awk '{print $2}'",
+            shell=True,
+            text=True,  # returns str instead of bytes
         )
-        end = addr.rfind("/")
-        start = addr.find("'")
-        addr = addr[start + 1 : end]
+
+        # Take first matching address
+        addr = output.splitlines()[0].split("/")[0]
+
         CONSOLE.print("[bold green]Corrected IP address:[/]", addr)
         if bind:
             socket.bind(f"tcp://{addr}:{port}")

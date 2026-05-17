@@ -1,4 +1,15 @@
-"""Module contains function functions to discretize the data."""
+"""
+Module contains function functions to discretize the data.
+
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Feb 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
 
 from __future__ import annotations
 
@@ -66,7 +77,7 @@ def sample_data(
         N = int(np.floor((t[-1] - t[0]) * freq))
         limit_N = int(memory_limit // np.dtype(np.float64).itemsize)
         text += f"memory limit: {memory_limit/ 1000**3:.3e} GB ({limit_N} samples)\n"
-        if N > limit_N:
+        if limit_N < N:
             N = limit_N
             freq = N / duration if duration > 0 else 10
             text += f"[yellow]Adjusted sampling frequency due to memory limit: {freq:.3e} Hz[/])\n"
@@ -88,8 +99,8 @@ def sample_data(
     # error   = 0
     # errorStep   = 0
     for _ in range(0, N):
-        for i in range(n_old, n):
-            if (t_step >= t[i]) and (t_step < t[i + 1]) or i == n - 1:
+        for i in range(min(n_old, n - 1), n):
+            if (t_step >= t[i]) and (t_step < t[i + 1]) if i < n - 1 else True:
                 n_old = i  # no need to iterate over entire array
                 b_sampled[counter] = b[i]
                 counter = counter + 1
@@ -98,7 +109,12 @@ def sample_data(
 
     #! Abstraction error
     v_a = np.sum(np.abs(b_sampled * np.repeat(1 / freq, len(b_sampled))))
-    v_0 = np.sum(b * (np.concatenate([t[1:], t[-1:]]) - t))
+    # Ensure lengths match for v_0 calculation
+    min_len = min(len(b), len(t))
+    b_sub = b[:min_len]
+    t_sub = t[:min_len]
+    v_0 = np.sum(b_sub * (np.concatenate([t_sub[1:], t_sub[-1:]]) - t_sub))
+
     # E = (abs(error))/(V0) if V0 > 0 else 0
     error = (abs(v_a - v_0)) / v_0 if v_0 > 0 else 0
     text += f"Abstraction error: {error:.5e}\n"
@@ -150,7 +166,7 @@ def sample_data_same_size(
     counter = 0
     t_step = 0
     n = len(b)
-    for k in range(0, n_bins):
+    for _k in range(0, n_bins):
         if (t_step < t[0]) or (t_step > t[-1]):
             counter = counter + 1
         else:

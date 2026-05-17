@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Aug 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import json
 import os
 import re
@@ -160,8 +171,10 @@ def flatten_dict(d):
     return flat
 
 
-def statistics(df, elapsed_time="", settings={}) -> None:
+def statistics(df, elapsed_time="", settings=None) -> None:
     # print(df)
+    if settings is None:
+        settings = {}
     df_dom = reduce_to_max_conf(df)
     prefixes = relevant_prefix(df)
     color = ["purple4", "gold3", "deep_sky_blue1"]

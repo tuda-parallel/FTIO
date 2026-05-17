@@ -4,7 +4,8 @@ It includes functions to execute commands in blocking and non-blocking modes, lo
 monitor log files, and wait for specific lines or files to appear.
 
 Author: Ahmad Tarraf
-Copyright (c) 2025 TU Darmstadt, Germany
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
 Date: Aug 2024
 
 Licensed under the BSD 3-Clause License.
@@ -20,8 +21,6 @@ import time
 from datetime import datetime
 
 from rich.console import Console
-from rich.markup import escape
-from rich.panel import Panel
 from rich.status import Status
 
 from ftio.api.gekkoFs.jit.jitsettings import JitSettings
@@ -38,6 +37,7 @@ TERMINAL_WIDTH = console.size.width
 JIT_LOGGER = Logger(prefix="jit").get()
 DAEMON_LOGGER = Logger(prefix="daemon").get()
 PROXY_LOGGER = Logger(prefix="proxy").get()
+FUSE_LOGGER = Logger(prefix="fuse").get()
 DLIO_LOGGER = Logger(prefix="dlio").get()
 FTIO_LOGGER = Logger(prefix="ftio").get()
 ERROR_LOGGER = Logger(prefix="error").get()
@@ -137,7 +137,8 @@ def execute_block_and_monitor(
     log_file: str = "",
     log_err_file: str = "",
     dry_run=False,
-):
+    src="",
+) -> int:
     """Executes a call, monitors its log file, and waits for completion.
 
     Args:
@@ -146,21 +147,27 @@ def execute_block_and_monitor(
         log_file (str): log file to monitor
         log_err_file (str): error log file to monitor
         dry_run (bool): if True, only print the call without executing
+        src (str): source label for colored log output
+
+    Returns:
+        int: process return code
     """
     if len(log_err_file) == 0:
         log_err_file = log_file
 
     process = execute_background(call, log_file, log_err_file, dry_run)
     if verbose:
-        out = monitor_log_file(log_file, "")
+        out = monitor_log_file(log_file, src)
         if log_err_file != log_file:
-            err = monitor_log_file(log_err_file, "")
+            err = monitor_log_file(log_err_file, src)
 
-    _ = process.communicate()
+    process.communicate()
     if verbose:
         out.terminate()
         if log_err_file != log_file:
             err.terminate()
+
+    return process.returncode
 
 
 def execute_background(
@@ -195,16 +202,15 @@ def execute_background(
     # print(call)
     # process = subprocess.Popen(call, shell=True, preexec_fn=os.setpgrp,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if log_file and log_err_file:
-        with open(log_file, "a") as log_out:
-            with open(log_err_file, "w") as log_err:
-                process = subprocess.Popen(
-                    call,
-                    shell=True,
-                    executable="/bin/bash",
-                    stdout=log_out,
-                    stderr=log_err,
-                    env=os.environ,
-                )
+        with open(log_file, "a") as log_out, open(log_err_file, "w") as log_err:
+            process = subprocess.Popen(
+                call,
+                shell=True,
+                executable="/bin/bash",
+                stdout=log_out,
+                stderr=log_err,
+                env=os.environ,
+            )
     elif log_file:
         with open(log_file, "a") as log_out:
             process = subprocess.Popen(
@@ -342,7 +348,7 @@ def end_of_transfer(
     settings: JitSettings,
     log_file: str,
     call: str,
-    monitored_files: list[str] = [],
+    monitored_files: list[str] = None,
 ) -> None:
     """Monitors the end of a transfer process by checking log files.
 
@@ -352,6 +358,8 @@ def end_of_transfer(
         call (str): bash call to execute if stuck
         monitored_files (list[str]): list of files to monitor
     """
+    if monitored_files is None:
+        monitored_files = []
     if settings.dry_run:
         return
 
@@ -372,7 +380,7 @@ def end_of_transfer(
     elif n == 0:
         return
     else:
-        with open(log_file, "r") as file:
+        with open(log_file) as file:
             # Move to the end of the file
             file.seek(0, 2)
             last_pos = file.tell()
@@ -439,15 +447,14 @@ def end_of_transfer(
                         status.update(
                             f"Waiting for {len(monitored_files)} more files to be deleted [yellow]({hits}/{limit})[/]: {monitored_files}"
                         )
-                        if hits > 4:
-                            if stuck:
-                                jit_print("[cyan]Stuck? Triggering cargo again\n")
-                                _ = execute_background(
-                                    call,
-                                    settings.cargo_log,
-                                    settings.cargo_err,
-                                )
-                                stuck = False
+                        if hits > 4 and stuck:
+                            jit_print("[cyan]Stuck? Triggering cargo again\n")
+                            _ = execute_background(
+                                call,
+                                settings.cargo_log,
+                                settings.cargo_err,
+                            )
+                            stuck = False
                         if hits > limit:
                             jit_print("[cyan]Stopping stage out\n")
                             return
@@ -477,7 +484,6 @@ def end_of_transfer_online(
         return
 
     repeated_trigger = True
-    copy = False  # Trigger cargo again
     monitored_files = get_files(settings, True)
     stuck_time = 5
     last_lines = read_last_n_lines(log_file)
@@ -752,7 +758,6 @@ def print_file(file, src=""):
         src (str): source of the file for colored output
     """
     logger = JIT_LOGGER
-    close = ""
     newline = True
     wait_time = 0.0
     if src:
@@ -762,6 +767,10 @@ def print_file(file, src=""):
 
         elif "proxy" in src.lower():
             logger = PROXY_LOGGER
+            wait_time = 0.2
+
+        if "fuse" in src.lower():
+            logger = FUSE_LOGGER
             wait_time = 0.2
 
         elif any(keyword in src.lower() for keyword in ["dlio", "lammp"]):
@@ -780,12 +789,10 @@ def print_file(file, src=""):
         if "error" in src.lower():
             time.sleep(0.1)
         else:
-            with console.status(
-                f"[bold green]Waiting for {file} to appear ..."
-            ) as status:
+            with console.status(f"[bold green]Waiting for {file} to appear ..."):
                 time.sleep(0.1)
 
-    with open(file, "r") as file:
+    with open(file) as file:
         # Go to the end of the file
         file.seek(0, os.SEEK_END)
         buffer = []
@@ -825,18 +832,48 @@ def print_file(file, src=""):
                         logger.info(content)
 
 
-def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
+_FATAL_PATTERNS = (
+    "transport endpoint",
+    "address already in use",
+    "no such file or directory",
+    "permission denied",
+    "terminated",
+    "software caused connection abort",
+)
+
+
+def _has_fatal_error(text: str) -> bool:
+    lower = text.lower()
+    return any(pat in lower for pat in _FATAL_PATTERNS)
+
+
+def wait_for_file(
+    filename: str,
+    timeout: int = 180,
+    dry_run: bool = False,
+    error_file: str | None = None,
+) -> bool:
     """Waits for a file to be created.
 
     Args:
         filename (str): absolute file path
         timeout (int): timeout in seconds
         dry_run (bool): if True, only print the call without executing
+        error_file (str | None): optional stderr/error log to monitor for fatal
+            errors; if new content matching a fatal pattern is detected the
+            function returns False immediately without waiting for the timeout
+
+    Returns:
+        bool: True if the file was created, False if timeout or fatal error
     """
     if dry_run:
-        return
+        return True
 
     start_time = time.time()
+    err_offset = (
+        os.path.getsize(error_file) if error_file and os.path.isfile(error_file) else 0
+    )
+
     with Status(
         f"[cyan]Waiting for {filename} to be created...\n", console=console
     ) as status:
@@ -845,17 +882,31 @@ def wait_for_file(filename: str, timeout: int = 180, dry_run=False) -> None:
             if passed_time >= timeout:
                 status.update("Timeout reached")
                 jit_print("[bold red] Timeout reached[/]")
-                return
+                return False
+
+            if error_file and os.path.isfile(error_file):
+                current_size = os.path.getsize(error_file)
+                if current_size > err_offset:
+                    with open(error_file) as ef:
+                        ef.seek(err_offset)
+                        new_content = ef.read()
+                    err_offset = current_size
+                    if _has_fatal_error(new_content):
+                        jit_print(
+                            f"[bold red]Fatal error in {error_file}:[/]\n{new_content.strip()}"
+                        )
+                        return False
 
             status.update(
                 f"[cyan]Waiting for {filename} to be created... ({passed_time}/{timeout}) s"
             )
-            time.sleep(0.1)  # Wait for 1 second before checking again
+            time.sleep(0.1)
 
         # When the file is created, update the status
         status.update(f"{filename} has been created.\n")
         print("\n")
         jit_print(f"{filename} has been created.")
+    return True
 
 
 def wait_for_line(
@@ -863,7 +914,9 @@ def wait_for_line(
     target_line: str,
     msg: str = "",
     timeout: int = 60,
-    dry_run=False,
+    dry_run: bool = False,
+    occurrences: int = 1,
+    error_file: str | None = None,
 ) -> bool:
     """Waits for a specific line to appear in a log file.
 
@@ -873,9 +926,13 @@ def wait_for_line(
         msg (str): message to print
         timeout (int): maximal timeout
         dry_run (bool): if True, only print the call without executing
+        occurrences (int): number of times the target line must appear
+        error_file (str | None): optional stderr/error log to monitor for fatal
+            errors; if new content matching a fatal pattern is detected the
+            function returns False immediately without waiting for the timeout
 
     Returns:
-        bool: True if the line appeared, False if timeout reached
+        bool: True if the line appeared, False if timeout or fatal error reached
     """
     success = True
     if dry_run:
@@ -884,13 +941,17 @@ def wait_for_line(
     if not msg:
         msg = "Waiting for line to appear..."
 
+    err_offset = (
+        os.path.getsize(error_file) if error_file and os.path.isfile(error_file) else 0
+    )
+
     while not os.path.exists(filename):
         with console.status(
             f"[bold green]Waiting for {filename} to appear ..."
         ) as status:
             time.sleep(0.1)
 
-    with open(filename, "r") as file:
+    with open(filename) as file:
         # Move to the end of the file to start monitoring
         # file.seek(0, 2)  # Go to the end of the file and look at the last 10 entris
         try:
@@ -898,11 +959,13 @@ def wait_for_line(
         except:
             file.seek(0, 0)  # Go to the end of the file and look at the last 10 entris
 
+        count = 0  # NEW: occurrence counter
+
         with Status(f"[cyan]{msg}", console=console) as status:
             while True:
                 line = file.readline()
                 if not line:
-                    # If no line, wait and check againet
+                    # If no line, wait and check again
                     time.sleep(0.01)
                     passed_time = int(time.time() - start_time)
                     if passed_time >= timeout:
@@ -910,14 +973,39 @@ def wait_for_line(
                         jit_print("[bold red] Timeout reached[/]", True)
                         success = False
                         break
+
+                    if error_file and os.path.isfile(error_file):
+                        current_size = os.path.getsize(error_file)
+                        if current_size > err_offset:
+                            with open(error_file) as ef:
+                                ef.seek(err_offset)
+                                new_content = ef.read()
+                            err_offset = current_size
+                            if _has_fatal_error(new_content):
+                                jit_print(
+                                    f"[bold red]Fatal error in {error_file}:[/]\n{new_content.strip()}"
+                                )
+                                success = False
+                                break
+
                     status.update(f"[cyan]{msg} ({passed_time}/{timeout})")
                     continue
 
                 if target_line in line:
-                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-                    status.update(f"Found target line: '{target_line}'")
-                    jit_print(f"[cyan]Stopped waiting at [{timestamp}]")
-                    break
+                    count += 1
+
+                    if count >= occurrences:
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+                        status.update(
+                            f"Found target line {count}/{occurrences}: '{target_line}'"
+                        )
+                        jit_print(f"[cyan]Stopped waiting at [{timestamp}]")
+                        break
+                    else:
+                        status.update(
+                            f"Found {count}/{occurrences} occurrences of '{target_line}'"
+                        )
+
         return success
 
 

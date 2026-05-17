@@ -1,3 +1,14 @@
+"""
+Author: Ahmad Tarraf
+Copyright (c) 2024-2026 TU Darmstadt, Germany
+Version: 0.0.8
+Date: Mai 2024
+
+Licensed under the BSD 3-Clause License.
+For more information, see the LICENSE file in the project root:
+https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
+"""
+
 import json
 
 from ftio.freq.helper import MyConsole
@@ -20,7 +31,7 @@ class ParseJson:
             Simrun: Simrun object
         """
         file = self.path
-        with open(file, "rt") as current_file:
+        with open(file) as current_file:
             data = json.load(current_file)
 
         source = detect_source(data, args)
@@ -105,7 +116,7 @@ class ParseJson:
                             "t_overlap": data[t_fields[0]],
                         }
                         console.info(
-                            f"[yellow]Treating Json data as application-level metrics[/]"
+                            "[yellow]Treating Json data as application-level metrics[/]"
                         )
 
                     elif len(t_fields) == 2:
@@ -117,7 +128,7 @@ class ParseJson:
                             "t_rank_e": data[t_e[0]],
                         }
                         console.info(
-                            f"[yellow]Treating Json data as rank-level metrics[/]"
+                            "[yellow]Treating Json data as rank-level metrics[/]"
                         )
 
                     data = {
