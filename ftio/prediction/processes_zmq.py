@@ -74,9 +74,7 @@ def predictor_with_processes_zmq(
                     CONSOLE.print(f"[cyan]Sending Frequency:{data[0]}[/]")
                     CONSOLE.print(f"[cyan]Sending Confidence:{data[1]}[/]")
                     packet = struct.pack("dd", data[0], data[1])
-                    socket_out.send(
-                        packet
-                    )
+                    socket_out.send(packet)
 
                 # get messages
                 msgs, ranks = receive_messages(socket_in, poller)
@@ -98,7 +96,7 @@ def predictor_with_processes_zmq(
         print("-- done -- ")
 
 
-def setup_socket(addr: str, port: str, socket_type = zmq.PULL, bind: bool = True):
+def setup_socket(addr: str, port: str, socket_type=zmq.PULL, bind: bool = True):
     """Bind the ZMQ socket, retrying with a corrected IP if necessary."""
     context = zmq.Context()
     socket = context.socket(socket_type)
