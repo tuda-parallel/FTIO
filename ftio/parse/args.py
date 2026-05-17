@@ -293,6 +293,14 @@ Full documentation:
             help="zmq port for communication",
         )
         parser.set_defaults(zmq_port="5555")
+        parser.add_argument(
+            "--zmq_port_reply",
+            "--zmq_port_reply",
+            dest="zmq_port_reply",
+            type=str,
+            help="zmq port for communicating dominant frequency",
+        )
+        parser.set_defaults(zmq_port_reply="5556")
         # filter arguments
         parser.add_argument(
             "--filter_type",
