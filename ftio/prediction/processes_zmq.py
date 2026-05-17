@@ -13,8 +13,8 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 
 from __future__ import annotations
 
-import subprocess
 import struct
+import subprocess
 import zmq
 
 from ftio.freq.helper import MyConsole
@@ -76,7 +76,7 @@ def predictor_with_processes_zmq(
                     socket_out.send(
                         packet
                     )
-                    
+
                 # get messages
                 msgs, ranks = receive_messages(socket_in, poller)
 
