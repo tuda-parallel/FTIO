@@ -91,5 +91,9 @@ For `predictor`, execute:
 ```sh
 predictor --zmq --zmq_source tmio -m write_async -f 100
 ```
-
+### Return frequency information to TMIO
+To initiate `predicator` to return information to TMIO's prefetcher use
+```sh
+predictor --zmq --zmq_source tmio --zmq_port_reply 5556 -m read_sync
+```
 <p align="right"><a href="#zmq-with-a-generic-format">⬆</a></p>
