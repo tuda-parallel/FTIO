@@ -540,7 +540,7 @@ def install_all(settings: JitSettings) -> None:
                         cwd=settings.install_location,
                         check=True,
                     )
-                except:
+                except Exception:
                     jit_print(">  Wget failed, copying boost from shared")
                     subprocess.run(
                         [
@@ -1073,7 +1073,7 @@ def get_pid(settings: JitSettings, name: str, pid: int) -> None:
         if res.stdout.strip():
             try:
                 pid = int(res.stdout.strip())
-            except:
+            except Exception:
                 pid = res.stdout.strip()
 
     if name.lower() in "cargo":
@@ -1139,14 +1139,14 @@ def soft_kill(settings: JitSettings) -> None:
             try:
                 shut_down(settings, "FTIO", settings.ftio_pid)
                 jit_print("[bold  cyan]killed FTIO [/]")
-            except:
+            except Exception:
                 jit_print("[bold  cyan]Unable to soft kill FTIO [/]")
 
     if not settings.exclude_daemon:
         try:
             shut_down(settings, "GEKKO", settings.gkfs_daemon_pid)
             jit_print("[bold  cyan]killed GEKKO DEMON [/]")
-        except:
+        except Exception:
             jit_print("[bold  cyan]Unable to soft kill GEKKO DEMON [/]")
 
     if settings.fuse:
@@ -1178,21 +1178,21 @@ def soft_kill(settings: JitSettings) -> None:
         try:
             shut_down(settings, "GEKKO", settings.gkfs_proxy_pid)
             jit_print("[bold  cyan]killed GEKKO PROXY [/]")
-        except:
+        except Exception:
             jit_print("[bold  cyan]Unable to soft  kill GEKKO PROXY [/]")
 
     if not settings.exclude_cargo:
         try:
             shut_down(settings, "CARGO", settings.cargo_pid)
             jit_print("[bold  cyan]killed CARGO [/]")
-        except:
+        except Exception:
             jit_print("[bold  cyan]Unable to soft kill CARGO [/]")
 
     if not settings.dry_run:
         try:
             shut_down(settings, "CARGO", settings.app_pid)
             jit_print("[bold  cyan]killed App [/]")
-        except:
+        except Exception:
             jit_print("[bold  cyan]Unable to soft kill App [/]")
 
     if settings.app_start_file:

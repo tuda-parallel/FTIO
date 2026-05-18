@@ -21,6 +21,9 @@ import os
 import numpy as np
 import pandas
 
+from ftio.cli import ftio_core
+from ftio.ml.hybrid_model import BandwidthDataset, HybridModel, spectral_loss
+
 TORCH_AVAILABLE = importlib.util.find_spec("torch") is not None
 if TORCH_AVAILABLE:
     import torch
@@ -28,9 +31,6 @@ else:
     raise RuntimeError(
         "Torch module not found. Please install it using 'make full' or 'pip install ftio[ml-libs]'."
     )
-
-from ftio.cli import ftio_core
-from ftio.ml.hybrid_model import BandwidthDataset, HybridModel, spectral_loss
 
 
 def train_hybrid_model(

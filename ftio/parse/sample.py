@@ -96,7 +96,7 @@ class Sample:
 
         # add phase info
         data = [getattr(self.bandwidth, s) for s in name]
-        l = len(data[-1])
+        length = len(data[-1])
         name = name + common
-        data.extend([[self.number_of_ranks] * l, [self.file_index] * l])
+        data.extend([[self.number_of_ranks] * length, [self.file_index] * length])
         return name, data

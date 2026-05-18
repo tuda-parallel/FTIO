@@ -108,10 +108,9 @@ def assign(data: dict, unpacker, io_type="w", debug_level: int = 0) -> dict:
         "total_iops",
         "total_bytes",
     ]
-    index = 0
     t_flush = 0
     skip = False
-    for item in unpacker:
+    for index, item in enumerate(unpacker):
         if isinstance(item, dict):
             item = item[data_fields[index]]
 
@@ -132,7 +131,6 @@ def assign(data: dict, unpacker, io_type="w", debug_level: int = 0) -> dict:
         else:
             data[data_fields[index]] = item
             # exit if it is not the right mode
-        index += 1
 
     # convert from µs to s
     if not skip:

@@ -156,7 +156,7 @@ class PrintHtml:
             if "windows" in platform:
                 try:
                     os.system(f"powershell.exe start {self.path}/main.html &\n")
-                except:
+                except Exception:
                     os.system(f"powershell.exe start./{self.path}/main.html")
 
 

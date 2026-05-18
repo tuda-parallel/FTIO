@@ -956,7 +956,7 @@ def wait_for_line(
         # file.seek(0, 2)  # Go to the end of the file and look at the last 10 entris
         try:
             file.seek(-2, os.SEEK_END)
-        except:
+        except Exception:
             file.seek(0, 0)  # Go to the end of the file and look at the last 10 entris
 
         count = 0  # NEW: occurrence counter

@@ -113,7 +113,7 @@ def main(argv=sys.argv[1:]) -> None:
                 try:
                     flat_res["job_id"] = base_name.split("_")[0]
                     flat_res["file"] = file_path
-                except:
+                except Exception:
                     flat_res["job_id"] = "??"
                     flat_res["file"] = "??"
                     console.print("[bold red]Unable to extract job id/path[/]")

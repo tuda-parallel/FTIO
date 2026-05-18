@@ -55,7 +55,7 @@ def plot_outliers(
     labels = [(f"cluster {i}") if (i >= 0) else "outliers" for i in dominant_index]
     # prepare figures
     figs = []
-    for i in np.arange(0, 5):
+    for _ in np.arange(0, 5):
         f = go.Figure()
         f = format_plot(f)
         figs.append(f)

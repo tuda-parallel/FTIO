@@ -23,6 +23,8 @@ from math import inf
 import numpy as np
 import pandas as pd
 
+from ftio.ml.hybrid_training import extract
+
 TORCH_AVAILABLE = importlib.util.find_spec("torch") is not None
 if TORCH_AVAILABLE:
     from statsmodels.tsa.arima.model import ARIMA
@@ -32,8 +34,6 @@ else:
     raise RuntimeError(
         "Torch module not found. Please install it using 'make full' or 'pip install ftio[ml-libs]'."
     )
-
-from ftio.ml.hybrid_training import extract
 
 
 def train_arima(
@@ -103,12 +103,12 @@ def train_arima(
 
             try:
                 kps = kpss(partial_sequence.dropna())[1]
-            except:
+            except Exception:
                 kps = 0.0
 
             try:
                 adf = adfuller(partial_sequence.dropna())[1]
-            except:
+            except Exception:
                 adf = 1.0
 
             while d is not max_depth and kps > 0.05 > adf:
@@ -117,12 +117,12 @@ def train_arima(
 
                 try:
                     kps = kpss(partial_sequence.dropna())[1]
-                except:
+                except Exception:
                     kps = 0.0
 
                 try:
                     adf = adfuller(partial_sequence.dropna())[1]
-                except:
+                except Exception:
                     adf = 1.0
             # in case NA, INF and -INF values are introduced by differencing
             partial_sequence = partial_sequence.fillna(0.0)
@@ -151,7 +151,7 @@ def train_arima(
                         best_aic = aic
                         print("p : d : q", (p, d, q))
                 # some variations will throw exceptions and warnings, this will exclude them
-                except:
+                except Exception:
                     continue
         # the forecast
         prediction = final_model.forecast(len(future_part))

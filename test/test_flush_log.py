@@ -35,7 +35,8 @@ def test_write_flush_log_creates_file(tmp_path):
 def test_write_flush_log_ftio_label(tmp_path):
     log = str(tmp_path / "flush.log")
     _write_flush_log(log, "/gkfs/data/f0.h5", "/stage-out", "ftio", 1.23, 0.05)
-    content = open(log).read()
+    with open(log) as f:
+        content = f.read()
     assert "FTIO-trigger" in content
     assert "post-app" not in content
 
@@ -43,7 +44,8 @@ def test_write_flush_log_ftio_label(tmp_path):
 def test_write_flush_log_post_app_label(tmp_path):
     log = str(tmp_path / "flush.log")
     _write_flush_log(log, "/gkfs/data/f1.h5", "/stage-out", "post_app", 0.9, 0.02)
-    content = open(log).read()
+    with open(log) as f:
+        content = f.read()
     assert "post-app" in content
     assert "FTIO-trigger" not in content
 
@@ -51,7 +53,8 @@ def test_write_flush_log_post_app_label(tmp_path):
 def test_write_flush_log_contains_item_and_dst(tmp_path):
     log = str(tmp_path / "flush.log")
     _write_flush_log(log, "/gkfs/data/f2.h5", "/lustre/stage-out", "ftio", 2.0, 0.1)
-    content = open(log).read()
+    with open(log) as f:
+        content = f.read()
     assert "/gkfs/data/f2.h5" in content
     assert "/lustre/stage-out" in content
 
@@ -59,7 +62,8 @@ def test_write_flush_log_contains_item_and_dst(tmp_path):
 def test_write_flush_log_contains_timings(tmp_path):
     log = str(tmp_path / "flush.log")
     _write_flush_log(log, "/gkfs/f.h5", "/out", "ftio", 3.456, 0.789)
-    content = open(log).read()
+    with open(log) as f:
+        content = f.read()
     assert "3.456" in content
     assert "0.789" in content
 
@@ -68,7 +72,8 @@ def test_write_flush_log_appends(tmp_path):
     log = str(tmp_path / "flush.log")
     _write_flush_log(log, "/gkfs/a.h5", "/out", "ftio", 1.0, 0.1)
     _write_flush_log(log, "/gkfs/b.h5", "/out", "post_app", 2.0, 0.2)
-    lines = open(log).readlines()
+    with open(log) as f:
+        lines = f.readlines()
     assert len(lines) == 2
     assert "FTIO-trigger" in lines[0]
     assert "post-app" in lines[1]
@@ -117,7 +122,8 @@ def test_copy_file_and_unlink_writes_log(tmp_path):
         mock_call.return_value = ""
         copy_file_and_unlink(args, str(src), triggered_by="ftio")
 
-    log_content = open(args.flush_log).read()
+    with open(args.flush_log) as f:
+        log_content = f.read()
     assert "FTIO-trigger" in log_content
     assert str(src) in log_content
 
@@ -132,7 +138,8 @@ def test_copy_file_and_unlink_post_app_label(tmp_path):
         mock_call.return_value = ""
         copy_file_and_unlink(args, str(src), triggered_by="post_app")
 
-    log_content = open(args.flush_log).read()
+    with open(args.flush_log) as f:
+        log_content = f.read()
     assert "post-app" in log_content
 
 

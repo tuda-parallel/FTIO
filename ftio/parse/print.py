@@ -24,18 +24,16 @@ class Print:
         self.args = self.data.args
 
     def print_txt(self):
-        self.file = open("./scale.txt", "w")
-        self.file.write("pARAMETER x\n\n")
-        self.print_points()
-        self.print_regions_txt()
-        self.file.write("\n")
-        self.file.close()
+        with open("./scale.txt", "w") as self.file:
+            self.file.write("pARAMETER x\n\n")
+            self.print_points()
+            self.print_regions_txt()
+            self.file.write("\n")
         print("\033[1;32m------------------- done -------------------\n\033[1;0m")
 
     def print_json_lines(self):
-        self.file = open("./scale.jsonl", "w")
-        self.print_regions_jsonl()
-        self.file.close()
+        with open("./scale.jsonl", "w") as self.file:
+            self.print_regions_jsonl()
         print("\033[1;32m------------------- done -------------------\n\033[1;0m")
 
     def print_regions_jsonl(self):
@@ -289,7 +287,7 @@ class Print:
                 print_type=type,
             )
 
-        except:
+        except Exception:
             pass
 
     def print_io_percent(self, type="txt"):
@@ -506,7 +504,7 @@ class Print:
                 print_type=type,
             )
 
-        except:
+        except Exception:
             pass
 
     def print_data(

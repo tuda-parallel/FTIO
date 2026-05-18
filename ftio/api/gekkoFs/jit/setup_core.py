@@ -753,11 +753,11 @@ def stage_out(settings: JitSettings, runtime: JitTime) -> None:
                         exclude=["ftio"],
                     )
                     raw = subprocess.check_output(call, shell=True).decode()
-                    lines = [l for l in raw.splitlines() if l.strip()]
+                    lines = [line for line in raw.splitlines() if line.strip()]
                     parsed = [
-                        (int(l.split()[0]), l.split(None, 1)[1])
-                        for l in lines
-                        if len(l.split(None, 1)) == 2 and l.split()[0].isdigit()
+                        (int(line.split()[0]), line.split(None, 1)[1])
+                        for line in lines
+                        if len(line.split(None, 1)) == 2 and line.split()[0].isdigit()
                     ]
                     total = sum(sz for sz, _ in parsed)
                     file_details = "\n".join(

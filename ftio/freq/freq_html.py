@@ -13,6 +13,7 @@ import os
 from sys import platform
 from threading import Thread
 
+import plotly.io
 from plotly.offline import get_plotlyjs
 from rich.console import Console
 
@@ -86,7 +87,7 @@ def create_static_figure(fig, index: int, length: int, extension: str) -> None:
     """
     console = Console()
     scale = 1
-    console.print("working on [cyan]figure (%i/%i) [/]" % (index + 1, length))
+    console.print(f"working on [cyan]figure ({index + 1}/{length}) [/]")
     if fig.layout.title.text:
         file_name = f"io_predicition_freq_images/{fig.layout.title.text.replace(' ', '_').replace('(', '_').replace(')', '_')}.{extension}"
     else:

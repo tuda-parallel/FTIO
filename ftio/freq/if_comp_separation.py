@@ -17,17 +17,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-"""
-TODO:
-binary image:
-- denoise signal (preprocessing?)
-- adjust prominence threshold
-component_linking:
-- set area threshold depending on sampling frequency and minimum win size
-  (shortest relevant I/O phase period?)
-- 10-connected neighbouring set
-"""
-
 import cv2
 import numpy as np
 from scipy.signal import find_peaks, peak_prominences
@@ -35,12 +24,19 @@ from scipy.signal import find_peaks, peak_prominences
 from ftio.analysis.anomaly_detection import remove_harmonics
 from ftio.analysis.anomaly_detection import z_score as z_score
 
-"""
-Rankine, L., Mesbah, M., & Boashash, B. (2007).
-IF estimation for multicomponent signals using image processing
-techniques in the time-frequency domain.
-Signal Processing, 87(6), 1234-1250.
-"""
+# TODO:
+# binary image:
+# - denoise signal (preprocessing?)
+# - adjust prominence threshold
+# component_linking:
+# - set area threshold depending on sampling frequency and minimum win size
+#   (shortest relevant I/O phase period?)
+# - 10-connected neighbouring set
+
+# Rankine, L., Mesbah, M., & Boashash, B. (2007).
+# IF estimation for multicomponent signals using image processing
+# techniques in the time-frequency domain.
+# Signal Processing, 87(6), 1234-1250.
 
 
 def binary_image(Zxx):

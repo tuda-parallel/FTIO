@@ -195,11 +195,13 @@ class Scales:
         self.call = ""
         for i in argv:
             self.call = self.call + " " + i
-        f = open(f"{os.getcwd()}/.call.txt", "a")
-        f.write(
-            datetime.datetime.now().strftime("%Y-%m-%d %H:%M") + " :" + self.call + "\n\n"
-        )
-        f.close()
+        with open(f"{os.getcwd()}/.call.txt", "a") as f:
+            f.write(
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+                + " :"
+                + self.call
+                + "\n\n"
+            )
 
     def check_same_path(self):
         if len(self.paths) > 1:

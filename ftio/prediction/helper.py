@@ -103,8 +103,8 @@ def export_extrap(data: list[dict], name: str = "./freq.jsonl"):
 
     if not np.isnan(ranks):
         name = f"./freq_{ranks}.jsonl"
-    file = open(name, "w", encoding="utf-8")
-    file.write(extrap_string)
+    with open(name, "w", encoding="utf-8") as file:
+        file.write(extrap_string)
 
 
 def format_jsonl(data: list[dict]) -> tuple[str, str]:

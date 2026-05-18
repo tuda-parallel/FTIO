@@ -47,7 +47,7 @@ def astft(b_sampled, freq, bandwidth, time_b, args):
 
     if args.tfpf:
         signal_hat = b_sampled
-        for i in range(0, args.tfpf):
+        for _ in range(0, args.tfpf):
             signal_hat = tfpf_wvd(signal_hat, freq, t)
         return astft_3step(
             b_sampled, freq, t, args, filtered=signal_hat, b_orig=bandwidth, t_orig=time_b
@@ -173,7 +173,7 @@ def frq_refinement(signal, start, end, frq_est, fs, duration):
         return yf, ind, start_per, end_per
 
     maxiter = 3
-    for i in range(0, maxiter):
+    for _ in range(0, maxiter):
         yf_old, ind_old, start_per_old, end_per_old, magn_old = (
             yf,
             ind,

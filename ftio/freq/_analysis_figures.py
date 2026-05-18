@@ -156,21 +156,23 @@ class AnalysisFigures:
     def show_figs(self, fig_list, name, condition=None):
         if condition is None:
             condition = any(x in self.args.engine for x in ["mat", "plot"])
-        if condition:
-            if "mat" in self.args.engine:
-                figs_to_show = []
-                for fig in fig_list:
-                    if isinstance(fig, matplotlib.figure.Figure):
-                        # Matplotlib clears the figure after show()
-                        # If it has no axes, it's already been shown and cleared
-                        if fig.get_axes() and plt.fignum_exists(fig.number):
-                            plt.figure(fig.number)
-                            figs_to_show.append(fig)
-                if figs_to_show:
-                    plt.show()
-            else:
-                conf = {"toImageButtonOptions": {"format": "png", "scale": 4}}
-                create_html(fig_list, self.args.render, conf, name)
+        if condition and "mat" in self.args.engine:
+            figs_to_show = []
+            for fig in fig_list:
+                # Matplotlib clears the figure after show()
+                # If it has no axes, it's already been shown and cleared
+                if (
+                    isinstance(fig, matplotlib.figure.Figure)
+                    and fig.get_axes()
+                    and plt.fignum_exists(fig.number)
+                ):
+                    plt.figure(fig.number)
+                    figs_to_show.append(fig)
+            if figs_to_show:
+                plt.show()
+        elif condition:
+            conf = {"toImageButtonOptions": {"format": "png", "scale": 4}}
+            create_html(fig_list, self.args.render, conf, name)
 
     def show(self):
         if self.args is not None:

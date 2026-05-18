@@ -58,7 +58,7 @@ def plot_wave_disc(
     plt.plot(
         time_disc,
         reconstructed_signal[0 : len(time_disc)],
-        label="reconstructed levels %d" % level,
+        label=f"reconstructed levels {level}",
         linestyle="--",
     )
     # plt.plot(time,reconstructed_signal[0:len(time)], label="reconstructed levels %d", linestyle="--")

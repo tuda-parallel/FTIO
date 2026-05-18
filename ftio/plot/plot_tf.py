@@ -12,15 +12,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-"""
-TODO:
-- make plot pretty
-- plot x axis in Hz
-- plot y axis in s
-- plot global DFT below
-- plot plot signal left side
-"""
-
 import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,6 +19,13 @@ from scipy.signal import stft
 from scipy.signal.windows import boxcar, gaussian
 
 from ftio.freq.concentration_measures import cm3, cm4, cm5
+
+# TODO:
+# - make plot pretty
+# - plot x axis in Hz
+# - plot y axis in s
+# - plot global DFT below
+# - plot plot signal left side
 
 
 def plot_tf(x, fs, time, win_len=None, nfreqbins=40, step=None):

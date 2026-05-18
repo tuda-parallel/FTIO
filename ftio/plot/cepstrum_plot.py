@@ -44,7 +44,7 @@ def plot_cepstrum(
     colorscale = [(0, "rgb(0,50,150)"), (0.5, "rgb(150,50,150)"), (1, "rgb(255,50,0)")]
     # prepare figures
     figs = []
-    for i in np.arange(0, 4):
+    for _ in np.arange(0, 4):
         f = go.Figure()
         f = format_plot(f)
         figs.append(f)

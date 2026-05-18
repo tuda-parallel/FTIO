@@ -12,6 +12,8 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 import os
 import tempfile
 
+import pytest
+
 from ftio.parse.csv_reader import read_csv_file
 
 

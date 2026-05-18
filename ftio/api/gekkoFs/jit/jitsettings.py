@@ -265,13 +265,12 @@ class JitSettings:
             self.exclude_daemon = True
             self.exclude_proxy = True
 
-        if not self.cluster:
-            if self.nodes > 1:
-                self.procs = self.nodes
-                self.nodes = 1
-                console.print(
-                    f"[bold green]JIT [bold  cyan]correcting nodes to {self.nodes} and processes to {self.procs} [/]"
-                )
+        if not self.cluster and self.nodes > 1:
+            self.procs = self.nodes
+            self.nodes = 1
+            console.print(
+                f"[bold green]JIT [bold  cyan]correcting nodes to {self.nodes} and processes to {self.procs} [/]"
+            )
         self.log_suffix = "DPCF"
         if self.exclude_daemon:
             self.procs_daemon = 0

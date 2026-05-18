@@ -124,7 +124,7 @@ class FrequencyTimelineViz:
                 )
             )
 
-            for pred_id, freq, label in zip(
+            for pred_id, _freq, label in zip(
                 cp_pred_ids, cp_frequencies, cp_labels, strict=False
             ):
                 fig.add_vline(

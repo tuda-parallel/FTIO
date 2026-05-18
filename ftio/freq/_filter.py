@@ -129,11 +129,4 @@ def filter_signal(
 
 
 def display_order(order):
-    if order == 1:
-        return "1st"
-    elif order == 2:
-        return "2nd"
-    elif order == 3:
-        return "3rd"
-    else:
-        return f"{order}th"
+    return {1: "1st", 2: "2nd", 3: "3rd"}.get(order, f"{order}th")

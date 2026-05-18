@@ -141,7 +141,7 @@ def demo_small_variations():
     ):
         freq = pred.dominant_freq[0]
         print(f"{i:>5}  {lbl:>5}  {tf:>8.3f}  {freq:>10.4f}  ", end="")
-        for name, aut in automata.items():
+        for _name, aut in automata.items():
             tr = aut.step(pred)
             marker = " ←" if tr else "  "
             print(f"  {len(aut.states):>8}/{len(aut.transitions):<3}{marker}", end="")
@@ -201,7 +201,7 @@ def demo_detector_comparison():
         print()
 
     print()
-    for name, aut in automata.items():
+    for _name, aut in automata.items():
         aut.print_summary()
 
     automata["ksigma"].plot(title="Demo 3 — k-sigma (large shifts)", show=False)

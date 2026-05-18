@@ -185,7 +185,7 @@ def overlap(b, t_s, t_e):
     id_e = np.argsort(t_e)
     try:
         b_overlap, t_overlap = overlap_core(b, t_s, t_e, id_s, id_e)
-    except:
+    except Exception:
         b_overlap, t_overlap = overlap_core_safe(b, t_s, t_e, id_s, id_e)
 
     return list(b_overlap), list(t_overlap)
@@ -252,7 +252,7 @@ def overlap_two_series(b1, t1, b2, t2):
         return overlap_two_series_jit_impl(
             np.array(b1), np.array(t1), np.array(b2), np.array(t2)
         )
-    except:
+    except Exception:
         return overlap_two_series_safe(b1, t1, b2, t2)
 
 
@@ -336,7 +336,7 @@ def merge_overlaps(b, t):
     """
     try:
         return merge_overlaps_jit(np.array(b), np.array(t))
-    except:
+    except Exception:
         return merge_overlaps_safe(b, t)
 
 

@@ -20,23 +20,19 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-"""
-TODO:
-- scaling parameter mu
-- set f_peak (highest relevant frequency), lag window too large
-- normalization of max?
-"""
-
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal.windows import hamming
 from tftb.processing import PseudoWignerVilleDistribution as pwvd
 
-"""
-Boashash, B., & Mesbah, M. (2004).
-Signal enhancement by time-frequency peak filtering.
-IEEE Transactions on signal processing, 52(4), 929-937.
-"""
+# TODO:
+# - scaling parameter mu
+# - set f_peak (highest relevant frequency), lag window too large
+# - normalization of max?
+
+# Boashash, B., & Mesbah, M. (2004).
+# Signal enhancement by time-frequency peak filtering.
+# IEEE Transactions on signal processing, 52(4), 929-937.
 
 
 def tfpf_wvd(x, fs, time):

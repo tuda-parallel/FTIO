@@ -207,10 +207,13 @@ class FTIODashApp:
         def update_visualization(n_intervals, view_mode, selected_pred_id, clear_clicks):
 
             ctx = callback_context
-            if ctx.triggered and ctx.triggered[0]["prop_id"] == "clear-button.n_clicks":
-                if clear_clicks > 0:
-                    self.data_store.clear_data()
-                    self.selected_prediction_id = None
+            if (
+                ctx.triggered
+                and ctx.triggered[0]["prop_id"] == "clear-button.n_clicks"
+                and clear_clicks > 0
+            ):
+                self.data_store.clear_data()
+                self.selected_prediction_id = None
 
             pred_options = []
             pred_value = selected_pred_id
@@ -582,7 +585,7 @@ class FTIODashApp:
                     annotation_position="top",
                 )
 
-        for seg_start, seg_end, pred in segment_info:
+        for seg_start, _seg_end, pred in segment_info:
             if pred.is_change_point and pred.change_point:
                 marker_time = seg_start  # Mark at the START of the changed segment
 

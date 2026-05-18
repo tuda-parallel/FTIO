@@ -131,9 +131,7 @@ def z_score(
         f"         + Z > Z_max*{tol * 100}% > 3 -> [green]{len(index[0])}[/] candidates\n"
     )
     if len(index[0]) > 3:
-        counter = 0
-        for i in index[0]:
-            counter += 1
+        for counter, i in enumerate(index[0], start=1):
             text += f"           {counter}) {1 / freq_arr[i + 1]:.3f} s: z_k = {z_k[i] / np.max(z_k):.2f}\n"
 
     index, removed_index, msg = remove_harmonics(freq_arr, amp_tmp, indices[index[0]])

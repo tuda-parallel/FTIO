@@ -13,7 +13,7 @@ from argparse import Namespace
 
 import matplotlib.pyplot as plt
 import numpy as np
-import plotly.graph_objs as go
+import plotly.graph_objects as go
 from rich.panel import Panel
 from scipy.optimize import curve_fit
 from sklearn.metrics import mean_squared_error
@@ -102,7 +102,7 @@ def fourier_fit(
     b_max = max(b_sampled)
     lower_bounds = []
     upper_bounds = []
-    for i in range(args.n_freq):
+    for _ in range(args.n_freq):
         lower_bounds += [-b_max, 0, -np.pi]
         upper_bounds += [b_max, 2 * f_nyquist, np.pi]
 
@@ -169,9 +169,6 @@ def fourier_fit(
             title_align="left",
         )
     )
-
-
-import plotly.graph_objects as go
 
 
 def plot_fourier_fit(

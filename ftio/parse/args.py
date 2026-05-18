@@ -539,11 +539,10 @@ Full documentation:
     # default values:
     if "ftio" in name.lower() or "predictor" in name.lower():
         if "wave" in args.transformation:
-            if not args.wavelet:
-                if "cont" in args.transformation:
-                    args.wavelet = "morl"
-                else:
-                    args.wavelet = "db1"
+            if not args.wavelet and "cont" in args.transformation:
+                args.wavelet = "morl"
+            elif not args.wavelet:
+                args.wavelet = "db1"
 
         recon = []
         if args.reconstruction:

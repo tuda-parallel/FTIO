@@ -84,7 +84,7 @@ def process_file(file_path: str, argv: list, settings: dict, index: int = 0) -> 
             else:
                 flat_res["job_id"] = base_name.split("_")[0]
             flat_res["file"] = file_path
-        except:
+        except Exception:
             flat_res["job_id"] = "??"
             flat_res["file"] = "??"
             console.print("[bold red]Unable to extract job id[/]")

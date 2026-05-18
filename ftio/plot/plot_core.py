@@ -23,7 +23,13 @@ import plotly.graph_objects as go
 from ftio.freq.helper import MyConsole
 from ftio.parse.metrics import Metrics
 from ftio.parse.scales import Scales
-from ftio.plot.helper import *
+from ftio.plot.helper import (
+    add_fig_col,
+    add_fig_row,
+    format_plot,
+    legend_fix,
+    save_fig,
+)
 from ftio.plot.plot_error import plot_error_bar, plot_time_error_bar
 from ftio.plot.print_html import PrintHtml
 from ftio.plot.units import find_unit
@@ -491,7 +497,7 @@ class PlotCore:
                 i = int(i)
                 index = df_t[1]["number_of_ranks"].isin([i])
                 index_ind = df_t[3]["number_of_ranks"].isin([i])
-            except:
+            except Exception:
                 index = df_t[1]["number_of_ranks"].astype(str).isin([i])
                 index_ind = df_t[3]["number_of_ranks"].astype(str).isin([i])
             if (
@@ -1677,7 +1683,7 @@ class PlotCore:
                     mode="lines+markers",
                     legendgroup="delta_t_sr",
                     legendgrouptitle_text="Sync read",
-                    name="run %i" % i,
+                    name=f"run {i}",
                     marker={
                         "symbol": symbols[0],
                         "line": {"width": 1, "color": markeredgecolor},
@@ -1693,7 +1699,7 @@ class PlotCore:
                     mode="lines+markers",
                     legendgroup="delta_t_ara",
                     legendgrouptitle_text="Async read act.",
-                    name="run %i" % i,
+                    name=f"run {i}",
                     marker={
                         "symbol": symbols[1],
                         "line": {"width": 1, "color": markeredgecolor},
@@ -1709,7 +1715,7 @@ class PlotCore:
                     mode="lines+markers",
                     legendgroup="delta_t_arr",
                     legendgrouptitle_text="Async read req.",
-                    name="run %i" % i,
+                    name=f"run {i}",
                     marker={
                         "symbol": symbols[2],
                         "line": {"width": 1, "color": markeredgecolor},
@@ -1725,7 +1731,7 @@ class PlotCore:
                     mode="lines+markers",
                     legendgroup="delta_t_ar_lost",
                     legendgrouptitle_text="Async read lost.",
-                    name="run %i" % i,
+                    name=f"run {i}",
                     marker={
                         "symbol": symbols[3],
                         "line": {"width": 1, "color": markeredgecolor},
@@ -1741,7 +1747,7 @@ class PlotCore:
                     mode="lines+markers",
                     legendgroup="delta_t_sw",
                     legendgrouptitle_text="Sync write ",
-                    name="run %i" % i,
+                    name=f"run {i}",
                     marker={
                         "symbol": symbols[4],
                         "line": {"width": 1, "color": markeredgecolor},
@@ -1757,7 +1763,7 @@ class PlotCore:
                     mode="lines+markers",
                     legendgroup="delta_t_awa",
                     legendgrouptitle_text="Async write act.",
-                    name="run %i" % i,
+                    name=f"run {i}",
                     marker={
                         "symbol": symbols[5],
                         "line": {"width": 1, "color": markeredgecolor},
@@ -1773,7 +1779,7 @@ class PlotCore:
                     mode="lines+markers",
                     legendgroup="delta_t_awr",
                     legendgrouptitle_text="Async write req.",
-                    name="run %i" % i,
+                    name=f"run {i}",
                     marker={
                         "symbol": symbols[6],
                         "line": {"width": 1, "color": markeredgecolor},
@@ -1789,7 +1795,7 @@ class PlotCore:
                     mode="lines+markers",
                     legendgroup="delta_t_aw_lost",
                     legendgrouptitle_text="Async lost",
-                    name="run %i" % i,
+                    name=f"run {i}",
                     marker={
                         "symbol": symbols[7],
                         "line": {"width": 1, "color": markeredgecolor},

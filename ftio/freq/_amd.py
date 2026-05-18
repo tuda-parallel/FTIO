@@ -56,7 +56,7 @@ def vmd(signal, t, fs, args, b_orig=None, t_orig=None):
     figs = []
     if args.tfpf:
         signal_hat = signal
-        for i in range(0, args.tfpf):
+        for _ in range(0, args.tfpf):
             signal_hat = tfpf_wvd(signal_hat, fs, t)
         u, u_hat, omega = VMD(signal_hat, alpha, tau, K, DC, init, tol)
 
@@ -129,7 +129,7 @@ def efd(signal, t, fs, args, b_orig=None, t_orig=None):
     signal_hat = None
     if args.tfpf:
         signal_hat = signal
-        for i in range(0, args.tfpf):
+        for _ in range(0, args.tfpf):
             signal_hat = tfpf_wvd(signal_hat, fs, t)
         imfs, cerf = efd_model.fit_transform(signal_hat, return_all=True)
         if any(x in args.engine for x in ["mat", "plot"]):

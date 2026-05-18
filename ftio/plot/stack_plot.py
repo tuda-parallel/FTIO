@@ -44,7 +44,7 @@ class StackPlot:
             )
         elif "mat" in self.engine:
             if group != 0:
-                label = "ranks %i -> %s" % (group, name)
+                label = f"ranks {group} -> {name}"
             else:
                 label = name
             plt.plot([], [], label=label)

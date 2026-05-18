@@ -405,8 +405,8 @@ class PhaseAutomaton:
         # Deduplicate legend
         handles, labels = ax.get_legend_handles_labels()
         seen = {}
-        for h, l in zip(handles, labels, strict=False):
-            seen.setdefault(l, h)
+        for h, label in zip(handles, labels, strict=False):
+            seen.setdefault(label, h)
         ax.legend(seen.values(), seen.keys(), loc="upper right", fontsize=8)
 
         plt.tight_layout()

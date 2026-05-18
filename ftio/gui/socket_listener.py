@@ -253,7 +253,7 @@ class SocketListener:
             try:
                 client_socket.close()
                 print(f"Client {address} disconnected")
-            except:
+            except Exception:
                 pass
 
     def stop_server(self):

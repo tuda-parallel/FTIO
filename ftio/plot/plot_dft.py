@@ -411,7 +411,6 @@ def plot_dft_plotly_top(
     width = 1100
     height = 600  # 600
     f = go.Figure()
-    color_counter = 0
     for i, signal in enumerate(top_signals):
         f.add_trace(
             Scatter(
@@ -423,12 +422,9 @@ def plot_dft_plotly_top(
                 + "<br><b>Amplitude</b>: %{y}"
                 + "<br><b>T</b>: %{text} s",
                 text=len(signal) * [f"{1/args.freq:.2f}"],
-                marker_color=(
-                    colors[color_counter] if color_counter != 1 else "rgb(70,220,70)"
-                ),
+                marker_color=(colors[i] if i != 1 else "rgb(70,220,70)"),
             )
         )
-        color_counter += 1
     f.add_trace(
         Scatter(
             x=t_sampled,

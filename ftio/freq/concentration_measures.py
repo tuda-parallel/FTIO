@@ -12,23 +12,19 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-"""
-TODO:
-- window function CM?
-- find an CM implementation to verify approach
-- adapt min_win to f_s
-"""
-
 import numpy as np
 from scipy.fftpack import fftshift
 from scipy.signal import stft
 from scipy.signal.windows import boxcar
 
-"""
-Pei, S. C., & Huang, S. G. (2012).
-STFT with adaptive window width based on the chirp rate.
-IEEE Transactions on Signal Processing, 60(8), 4065-4080.
-"""
+# TODO:
+# - window function CM?
+# - find an CM implementation to verify approach
+# - adapt min_win to f_s
+
+# Pei, S. C., & Huang, S. G. (2012).
+# STFT with adaptive window width based on the chirp rate.
+# IEEE Transactions on Signal Processing, 60(8), 4065-4080.
 
 min_win = 80
 max_win = 500
