@@ -11,6 +11,7 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 import gzip
 import json
 import math
+import sys
 
 import numpy as np
 
@@ -200,6 +201,7 @@ def process(trace: str):
 
 
 if __name__ == "__main__":
-    process(
-        "/d/github/FTIO/test/memory/ftio_memory_bound_example/USER340813U_vasp_id10231776_8-16-55214-7838406825892018000_1.darshan.tef.json.gz"
-    )
+    if len(sys.argv) < 2:
+        print(f"Usage: {sys.argv[0]} <trace.json|trace.json.gz>")
+        sys.exit(1)
+    process(sys.argv[1])
