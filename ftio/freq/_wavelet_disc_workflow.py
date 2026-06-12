@@ -231,4 +231,20 @@ def ftio_wavelet_disc(
     if any(x in args.engine for x in ["mat", "plot"]) and args.runtime_plots:
         analysis_figures_wavelet.show()
 
+    if getattr(args, "burst_width", False):
+        from ftio.freq.duty_cycle import estimate_burst_widths
+        from ftio.plot.plot_burst_width import plot_burst_width
+
+        prediction.burst_widths = estimate_burst_widths(
+            b_sampled, prediction, getattr(args, "burst_energy_fraction", 0.95)
+        )
+        analysis_figures_wavelet.add_figure(
+            [
+                plot_burst_width(
+                    prediction, b_sampled, getattr(args, "burst_energy_fraction", 0.95)
+                )
+            ],
+            "burst_width",
+        )
+
     return prediction, analysis_figures_wavelet

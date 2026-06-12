@@ -297,6 +297,10 @@ def plot_stft_matplotlib_reconstruction(args, prediction, b_sampled, fs, t_stft)
                     fontsize=FONT_SIZE_ANNOTATION,
                 )
 
+    from ftio.freq.duty_cycle import overlay_burst_widths_matplotlib
+
+    overlay_burst_widths_matplotlib(prediction)
+
     plt.title(
         f"STFT time-varying reconstruction ({win_duration:.2f} s)", fontsize=FONT_SIZE
     )

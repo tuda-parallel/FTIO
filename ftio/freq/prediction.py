@@ -62,6 +62,8 @@ class Prediction:
         self._ranges = np.array([])
         self._metric = ""
         self._b_sampled = np.array([])
+        self._burst_widths = np.array([])
+        self._burst_t_starts = np.array([])
 
     @property
     def source(self):
@@ -261,6 +263,50 @@ class Prediction:
         if not isinstance(value, (list, np.ndarray)):
             raise TypeError("b_sampled must be a list or numpy array")
         self._b_sampled = value
+
+    @property
+    def burst_widths(self) -> np.ndarray:
+        return self._burst_widths
+
+    @burst_widths.setter
+    def burst_widths(self, value):
+        if isinstance(value, list):
+            value = np.array(value)
+        if not isinstance(value, np.ndarray):
+            raise TypeError("burst_widths must be a numpy ndarray or list")
+        self._burst_widths = value
+
+    @property
+    def burst_t_starts(self) -> np.ndarray:
+        return self._burst_t_starts
+
+    @burst_t_starts.setter
+    def burst_t_starts(self, value):
+        if isinstance(value, list):
+            value = np.array(value)
+        if not isinstance(value, np.ndarray):
+            raise TypeError("burst_t_starts must be a numpy ndarray or list")
+        self._burst_t_starts = value
+
+    @property
+    def burst_width_median(self) -> float:
+        return float(np.median(self._burst_widths)) if len(self._burst_widths) else np.nan
+
+    @property
+    def burst_width_min(self) -> float:
+        return float(np.min(self._burst_widths)) if len(self._burst_widths) else np.nan
+
+    @property
+    def burst_width_max(self) -> float:
+        return float(np.max(self._burst_widths)) if len(self._burst_widths) else np.nan
+
+    @property
+    def duty_cycle(self) -> float:
+        f = self.get_dominant_freq()
+        bw = self.burst_width_median
+        if not np.isnan(f) and f > 0 and not np.isnan(bw):
+            return float(bw * f)
+        return np.nan
 
     def get(self, key: str):
         """
@@ -484,6 +530,16 @@ class Prediction:
                     "[cyan underline]Prediction results:[/]\n"
                     "[red]No dominant frequency found[/]\n"
                 )
+
+            if len(self._burst_widths) > 0:
+                dc = self.duty_cycle
+                text += (
+                    f"[cyan]Burst width:[/] {color_pred(dc)}"
+                    f"{self.burst_width_median:.3f}[/] s"
+                    f"  [min={self.burst_width_min:.3f}s, max={self.burst_width_max:.3f}s]\n"
+                    f"[cyan]Duty cycle:[/] {color_pred(dc)}"
+                    f"{np.round(dc * 100, 2)}[/] %\n"
+                )
             return text
         else:
             return ""
@@ -560,6 +616,7 @@ class Prediction:
             "n_samples": self._n_samples,
             "top_freqs": self._top_freqs,
             "candidates": self._candidates,
+            "burst_widths": self._burst_widths,
         }
 
     def to_json(self) -> str:

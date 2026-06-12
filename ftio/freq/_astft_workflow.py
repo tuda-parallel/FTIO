@@ -105,6 +105,22 @@ def ftio_astft(
     prediction.total_bytes = total_bytes
     prediction.n_samples = len(b_sampled)
 
+    if getattr(args, "burst_width", False):
+        from ftio.freq.duty_cycle import estimate_burst_widths
+        from ftio.plot.plot_burst_width import plot_burst_width
+
+        prediction.burst_widths = estimate_burst_widths(
+            b_sampled, prediction, getattr(args, "burst_energy_fraction", 0.95)
+        )
+        analysis_figures.add_figure(
+            [
+                plot_burst_width(
+                    prediction, b_sampled, getattr(args, "burst_energy_fraction", 0.95)
+                )
+            ],
+            "burst_width",
+        )
+
     # Add figures if any were generated
     if figs:
         analysis_figures.add_figure(figs, "astft")

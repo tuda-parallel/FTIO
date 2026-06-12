@@ -16,6 +16,15 @@ import argparse
 from ftio import __copyright__, __license__, __repo__
 
 
+def _energy_fraction_type(value: str) -> float:
+    v = float(value)
+    if not (0.0 < v <= 1.0):
+        raise argparse.ArgumentTypeError(
+            f"--burst_energy_fraction must be in (0, 1], got {v}"
+        )
+    return v
+
+
 def parse_args(argv: list, name="") -> argparse.Namespace:
     flag = True
     if name == "":
@@ -383,6 +392,34 @@ Full documentation:
             ),
         )
         parser.set_defaults(debounce=False)
+
+        parser.add_argument(
+            "-bw",
+            "--burst_width",
+            dest="burst_width",
+            action="store_true",
+            help=(
+                "Estimate per-period burst width and duty cycle using the shortest "
+                "contiguous time window that contains --burst_energy_fraction of each "
+                "period's total energy (O(N) two-pointer sweep — negligible cost). "
+                "Requires a valid dominant frequency. Results are stored in "
+                "prediction.burst_widths and displayed in the console output. "
+                "Default: off."
+            ),
+        )
+        parser.set_defaults(burst_width=False)
+
+        parser.add_argument(
+            "--burst_energy_fraction",
+            dest="burst_energy_fraction",
+            type=_energy_fraction_type,
+            default=0.95,
+            help=(
+                "Energy fraction used for burst width estimation (default: 0.95). "
+                "The burst window is the shortest contiguous interval containing "
+                "this fraction of the period's total energy. Only used with --burst_width."
+            ),
+        )
 
         # Phase automaton
         parser.add_argument(

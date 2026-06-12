@@ -114,33 +114,37 @@ def plot_dft(
             top_names.append(wave_name)
 
     if "mat" in args.engine:
-        f = [
-            plot_dft_matplotlib_top(
-                args,
-                order,
-                unit,
-                b_sampled,
-                t_sampled,
-                b,
-                t,
-                sum_all_components,
-                top_signals,
-                top_names,
-            ),
-            plot_dft_matplotlib_dominant(
-                args,
-                order,
-                unit,
-                b_sampled,
-                t_sampled,
-                b,
-                t,
-                dominant_signal,
-                dominant_name,
-                sum_top,
-            ),
-            plot_dft_matplotlib_spectrum(args, freq, amp),
-        ]
+        from ftio.freq.duty_cycle import overlay_burst_widths_matplotlib
+
+        f_top = plot_dft_matplotlib_top(
+            args,
+            order,
+            unit,
+            b_sampled,
+            t_sampled,
+            b,
+            t,
+            sum_all_components,
+            top_signals,
+            top_names,
+        )
+        overlay_burst_widths_matplotlib(prediction)
+
+        f_dom = plot_dft_matplotlib_dominant(
+            args,
+            order,
+            unit,
+            b_sampled,
+            t_sampled,
+            b,
+            t,
+            dominant_signal,
+            dominant_name,
+            sum_top,
+        )
+        overlay_burst_widths_matplotlib(prediction)
+
+        f = [f_top, f_dom, plot_dft_matplotlib_spectrum(args, freq, amp)]
 
     else:
         f = [

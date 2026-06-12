@@ -236,6 +236,22 @@ def ftio_stft(
 
     periodicity_score = new_periodicity_scores(amp_mean, b_sampled, prediction, args)
 
+    if getattr(args, "burst_width", False):
+        from ftio.freq.duty_cycle import estimate_burst_widths
+        from ftio.plot.plot_burst_width import plot_burst_width
+
+        prediction.burst_widths = estimate_burst_widths(
+            b_sampled, prediction, getattr(args, "burst_energy_fraction", 0.95)
+        )
+        analysis_figures.add_figure(
+            [
+                plot_burst_width(
+                    prediction, b_sampled, getattr(args, "burst_energy_fraction", 0.95)
+                )
+            ],
+            "burst_width",
+        )
+
     #! Prepare for plotting
     if any(x in args.engine for x in ["mat", "plot"]):
         console.print(f"Generating {args.transformation.upper()} Plot\n")

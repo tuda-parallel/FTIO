@@ -159,6 +159,22 @@ def ftio_dft(
     if args.autocorrelation or args.machine_learning:
         prediction.b_sampled = b_sampled
 
+    if getattr(args, "burst_width", False):
+        from ftio.freq.duty_cycle import estimate_burst_widths
+        from ftio.plot.plot_burst_width import plot_burst_width
+
+        prediction.burst_widths = estimate_burst_widths(
+            b_sampled, prediction, getattr(args, "burst_energy_fraction", 0.95)
+        )
+        analysis_figures.add_figure(
+            [
+                plot_burst_width(
+                    prediction, b_sampled, getattr(args, "burst_energy_fraction", 0.95)
+                )
+            ],
+            "burst_width",
+        )
+
     precision_text = ""
     # precision_text = precision_dft(amp, phi, dominant_index, b_sampled, t_sampled, frequencies, args.engine)
     text = Group(text, outlier_text, periodicity_score, precision_text[:-1])
