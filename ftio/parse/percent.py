@@ -10,10 +10,6 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 
-
-
-
-
 class Percent:
     def __init__(self, io_time):
         # XXXX

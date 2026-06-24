@@ -10,10 +10,6 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 
-
-
-
-
 class Time:
     def __init__(self, data, rank, args):
         # total

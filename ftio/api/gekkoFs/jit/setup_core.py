@@ -13,10 +13,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-
-
-
-
 import math
 import os
 import re

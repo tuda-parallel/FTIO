@@ -11,10 +11,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-
-
-
-
 import numpy as np
 
 from ftio.prediction.helper import get_dominant

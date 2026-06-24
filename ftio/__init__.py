@@ -9,10 +9,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-
-
-
-
 # This file is part of the FTIO software
 #
 # Copyright (c) 2024-2026, Technical University of Darmstadt, Germany

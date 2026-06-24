@@ -10,10 +10,6 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 
-
-
-
-
 def init_data(args: list) -> tuple[str, dict[str, int], dict[str, int]]:
     """init data set
 

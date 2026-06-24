@@ -9,10 +9,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-
-
-
-
 import pandas as pd
 
 import ftio.plot.dash_files.constants.io_mode as io_mode

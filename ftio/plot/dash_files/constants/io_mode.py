@@ -11,10 +11,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-
-
-
-
 ASYNC_READ: str = "read_async"
 ASYNC_WRITE: str = "write_async"
 SYNC_READ: str = "read_sync"

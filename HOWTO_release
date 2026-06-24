@@ -21,13 +21,7 @@ git push
 git tag -a v0.0.X -m "IPDPS'24 release"
 git push --tags
 
-## 3. If the tag needs to be moved (e.g. commits added after tagging):
-git tag -d v0.0.X                          # delete local tag
-git push origin :refs/tags/v0.0.X          # delete remote tag
-git tag -a v0.0.X -m "Version 0.0.X Release"  # recreate at HEAD
-git push origin main --tags                # push commits + tag
-
-## 4. Login to GitHub and create the release:
+## 3. Login to GitHub and create the release:
 - Go to https://github.com/tuda-parallel/FTIO/releases/new
 - Select tag v0.0.X
 - Create a message like:

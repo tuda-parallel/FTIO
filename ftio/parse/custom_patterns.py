@@ -10,10 +10,6 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 
-
-
-
-
 def convert() -> tuple[dict[str, str], dict[str, tuple[str, float]]]:
     """Converts input according to pattern into and ftio supported file format.
     The translation dictionary species the matching fields from ftio/parse/sample.py

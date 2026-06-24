@@ -9,10 +9,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-
-
-
-
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots

@@ -11,10 +11,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-
-
-
-
 from rich.console import Console
 
 from ftio.cli.ftio_core import core

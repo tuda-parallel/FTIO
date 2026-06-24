@@ -9,10 +9,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-
-
-
-
 from ftio.api.metric_proxy.parse_proxy import parse
 from ftio.cli.ftio_core import core
 from ftio.freq.helper import MyConsole

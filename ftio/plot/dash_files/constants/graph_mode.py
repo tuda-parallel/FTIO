@@ -9,10 +9,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-
-
-
-
 SUM: str = "sum"
 AVERAGE: str = "average"
 INDIVIDUAL: str = "individual"

@@ -17,10 +17,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-
-
-
-
 import cv2
 import numpy as np
 from scipy.signal import find_peaks, peak_prominences

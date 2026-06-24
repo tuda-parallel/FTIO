@@ -9,10 +9,6 @@ For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
-
-
-
-
 from ftio.plot.dash_files.callback_files.io_mode_callbacks import (
     get_io_mode_specific_callbacks,
 )

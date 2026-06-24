@@ -10,10 +10,6 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
 
 
-
-
-
-
 class FreqData:
     """contains the data from the frequency analysis including the
     1. bandwidth over time spaced with constant steps (1/freq)
