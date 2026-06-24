@@ -1,0 +1,56 @@
+# Release
+
+-- ALWAYS be on main. Tags are associated with commits not branches.
+
+## 1. Update the files:
+cd /d/github/FTIO
+python ftio/util/update_header.py v0.0.X
+
+## 2. Edit the version variable and commit:
+vim /d/github/FTIO/ftio/__init__.py   # set __version__ = "0.0.X"
+
+### For a normal release:
+git commit -m "release: bump version to v0.0.X"
+git push
+git tag -a v0.0.X -m "Version 0.0.X Release"
+git push --tags
+
+### For a paper release (e.g. conference artifact):
+git commit -m "IPDPS'24 release"
+git push
+git tag -a v0.0.X -m "IPDPS'24 release"
+git push --tags
+
+## 3. If the tag needs to be moved (e.g. commits added after tagging):
+git tag -d v0.0.X                          # delete local tag
+git push origin :refs/tags/v0.0.X          # delete remote tag
+git tag -a v0.0.X -m "Version 0.0.X Release"  # recreate at HEAD
+git push origin main --tags                # push commits + tag
+
+## 4. Login to GitHub and create the release:
+- Go to https://github.com/tuda-parallel/FTIO/releases/new
+- Select tag v0.0.X
+- Create a message like:
+
+###############################
+## Version 0.0.X
+
+- Added ...
+- Fixed ...
+- Docs: ...
+
+### Full Changelog: https://github.com/tuda-parallel/FTIO/compare/v0.0.(X-1)...v0.0.X
+
+####################################
+
+## Previous example (v0.0.4 / IPDPS'24):
+## Version 0.0.4
+- Added support for custom [JSON format](docs/file_formats.md#custom-json-files)
+- Added [ZMQ Support](docs/zmq.md)
+- IPDPS artifacts completed
+- Added postprocessing options
+- Added support for GekkoFS and Cargo (JIT)
+- Cleaned Readme and extended [file formats](docs/file_formats.md) and [API](docs/api.md) documentation
+- Code cleaning
+
+### Full Changelog: https://github.com/tuda-parallel/FTIO/compare/v0.0.3...v0.0.4
