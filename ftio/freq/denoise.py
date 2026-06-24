@@ -12,13 +12,17 @@ range) are heuristic and should be made adaptive for robust applications.
 Author: josefinez
 Editor: Ahmad Tarraf
 Copyright (c) 2024-2026 TU Darmstadt, Germany
-Version: 0.0.8
+Version: v0.0.9
 Date: Oct 2025
 
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
+
+
+
+
 
 import matplotlib.pyplot as plt
 import numpy as np

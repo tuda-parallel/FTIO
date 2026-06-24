@@ -1,13 +1,17 @@
 """
 Author: Ahmad Tarraf
 Copyright (c) 2024-2026 TU Darmstadt, Germany
-Version: 0.0.8
+Version: v0.0.9
 Date: Feb 2024
 
 Licensed under the BSD 3-Clause License.
 For more information, see the LICENSE file in the project root:
 https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 """
+
+
+
+
 
 # This file is part of the FTIO software
 #
@@ -17,7 +21,7 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 # See the LICENSE file in the base directory for details.
 
 __title__ = "FTIO"
-__version__ = "0.0.8"
+__version__ = "0.0.9"
 __license__ = "BSD 3"
 __description__ = "FTIO: Capturing Periodic I/O Using Frequency Techniques"
 __copyright__ = (
