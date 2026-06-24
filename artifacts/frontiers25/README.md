@@ -38,7 +38,7 @@ git checkout v0.0.7
 
 
 ### Extracting the Data Set:
-download the zip file from [here](https://doi.org/10.5281/zenodo.10670270) or using wget in a bash terminal:
+download the zip file from [here](https://zenodo.org/records/17713784) or using wget in a bash terminal:
 ```sh
 wget https://zenodo.org/records/17713784/files/data.zip?download=1
 ```
