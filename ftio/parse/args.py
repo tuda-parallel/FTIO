@@ -160,7 +160,11 @@ Full documentation:
             "--transformation",
             dest="transformation",
             type=str,
-            help="Specifies the frequency technique to use. Supported modes are: dft (default), wave_disc, wave_cont, and stft",
+            help=(
+                "Specifies the frequency technique to use. "
+                "Supported modes: dft (default), stft, astft, wave_disc, wave_cont. "
+                "Experimental (requires pip install 'ftio[amd-libs]'): efd, vmd."
+            ),
         )
         parser.set_defaults(transformation="dft")
         parser.add_argument(

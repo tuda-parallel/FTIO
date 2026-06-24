@@ -11,6 +11,7 @@ FTIO supports five frequency-analysis methods and two optional validation passes
 - [Continuous Wavelet Transform](#continuous-wavelet-transform-wave_cont)
 - [Autocorrelation](#autocorrelation)
 - [Periodicity detection](#periodicity-detection)
+- [EFD and VMD — Experimental](#efd-and-vmd--experimental)
 - [Comparison table](#comparison-table)
 
 ---
@@ -237,6 +238,46 @@ ftio trace.json -p ind -au   # combine with autocorrelation
 
 ---
 
+## EFD and VMD — Experimental
+
+> **These methods are under active development.  Results may be unreliable and the interface may change.**
+
+Two Adaptive Mode Decomposition methods are available as optional extras.  They require an additional dependency:
+
+```bash
+pip install "ftio[amd-libs]"
+# or in editable mode:
+pip install -e ".[amd-libs]"
+```
+
+### EFD — Empirical Fourier Decomposition
+
+**Flag:** `-tr efd`
+
+Decomposes the signal into intrinsic mode functions (IMFs) using Empirical Fourier Decomposition, then selects the periodic components via STFT-based analysis.  Each IMF is characterised by a centre frequency, amplitude, and phase.  The dominant frequency is the highest-energy periodic IMF.
+
+```bash
+ftio trace.json -tr efd
+ftio trace.json -tr efd --tfpf 1   # with time-frequency peak filtering
+```
+
+**Current limitations:** Confidence values are hardcoded (0.85 for all components, 1.0 for the best).  The dominant frequency is returned via `get_dominant_freq()` as with other methods, but the confidence does not reflect actual detection quality.
+
+### VMD — Variational Mode Decomposition
+
+**Flag:** `-tr vmd`
+
+Decomposes the signal into band-limited modes using VMD (Dragomiretskiy & Zosso, 2014), then selects periodic modes via STFT-based analysis.
+
+```bash
+ftio trace.json -tr vmd
+ftio trace.json -tr vmd --tfpf 2
+```
+
+**Current limitations:** Amplitude values for VMD modes are not extracted (`amp = 0`), which means the amplitude-based dominant-frequency selection falls back to the first component.  Confidence is also hardcoded.  VMD works in practice but should be treated as experimental.
+
+---
+
 ## Comparison table
 
 | Method | Stability assumption | Time-frequency | Cost | Best for |
@@ -247,3 +288,5 @@ ftio trace.json -p ind -au   # combine with autocorrelation
 | `wave_disc` | Multi-scale | Approximate | Medium | Multi-scale patterns |
 | `wave_cont` | Non-stationary | Yes | High | Short traces, exploration |
 | `-au` (validation) | Any | No | Low | Cross-checking DFT |
+| `efd` ⚠️ experimental | Any | No | Medium | Research / exploration |
+| `vmd` ⚠️ experimental | Any | No | High | Research / exploration |

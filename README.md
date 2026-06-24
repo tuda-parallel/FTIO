@@ -238,17 +238,25 @@ call:
 ```
 ftio -h
 
-usage: ftio [-h] [-m MODE] [-s SOURCE] [-r RENDER] [-f FREQ] [--memory_limit MEMORY_LIMIT]
-            [-ts TS] [-te TE] [-tr TRANSFORMATION] [-e ENGINE] [-rp]
-            [-o {z-score,dbscan,forest,lof,peak}] [-p {rpde,sf,corr,ind}] [-ce] [-le LEVEL]
-            [--wavelet WAVELET] [-t TOL] [-d] [-re [RECONSTRUCTION ...]] [-np] [-n N_FREQ]
-            [--fourier_fit] [-au] [-ml] [-w {frequency_hits,data,adwin,cusum,ph}] [-hi HITS]
-            [-v] [--zmq] [--gui] [--zmq_source ZMQ_SOURCE] [--zmq_address ZMQ_ADDRESS]
-            [--zmq_port ZMQ_PORT] [--filter_type {lowpass,highpass,bandpass}]
-            [--filter_cutoff FILTER_CUTOFF [FILTER_CUTOFF ...]] [--filter_order FILTER_ORDER]
-            [--tfpf TFPF] [--stft_window STFT_WINDOW] [-bw] [--burst_energy_fraction FRACTION]
-            [--sum] [--no_sum] [--avr] [--no_avr]
-            [--ind] [--no_ind] [-cf CUSTOM_FILE] [-x DXT_MODE] [-l LIMIT]
+usage: ftio [-h] [-m MODE] [-s SOURCE] [-r RENDER] [-f FREQ]
+            [--memory_limit MEMORY_LIMIT] [-ts TS] [-te TE]
+            [-tr TRANSFORMATION] [-e ENGINE] [-rp]
+            [-o {z-score,dbscan,forest,lof,peak}] [-p {rpde,sf,corr,ind}]
+            [-ce] [-le LEVEL] [--wavelet WAVELET] [-t TOL] [-d]
+            [-re [RECONSTRUCTION ...]] [-np] [-n N_FREQ] [--fourier_fit] [-au]
+            [-ml] [-w {frequency_hits,data,adwin,cusum,ph}] [-hi HITS] [-v]
+            [--zmq] [--gui] [--zmq_source ZMQ_SOURCE]
+            [--zmq_address ZMQ_ADDRESS] [--zmq_port ZMQ_PORT]
+            [--zmq_port_reply ZMQ_PORT_REPLY]
+            [--filter_type {lowpass,highpass,bandpass}]
+            [--filter_cutoff FILTER_CUTOFF [FILTER_CUTOFF ...]]
+            [--filter_order FILTER_ORDER] [--tfpf TFPF]
+            [--stft_window STFT_WINDOW] [--debounce] [-bw]
+            [--burst_energy_fraction BURST_ENERGY_FRACTION]
+            [--phase-automaton] [--pa-method {cusum,ph,adwin,ksigma,none}]
+            [--pa-period-ratio RATIO] [--pa-no-rank-trigger]
+            [--pa-export PATH] [--sum] [--no_sum] [--avr] [--no_avr] [--ind]
+            [--no_ind] [-cf CUSTOM_FILE] [-x DXT_MODE] [-l LIMIT]
             files [files ...]
 ```
 
@@ -275,7 +283,7 @@ Several flags can be specified. The most relevant settings are:
 | --memory_limit MEMORY_LIMIT                         | Memory limit in GB during discretization in case `freq` is passed with -1. Default is 0.5 GB.                                                                                                                                                                                                                                                                                                                             |
 | -ts TS, --ts TS                                     | modifies the start time of the examined time window                                                                                                                                                                                                                                                                                                                                                                       |
 | -te TE, --te TE                                     | modifies the end time of the examined time window                                                                                                                                                                                                                                                                                                                                                                         |
-| -tr TRANSFORMATION, --transformation TRANSFORMATION | specifies the frequency technique to use. Supported modes are: dft (default), wave_disc, wave_cont, and stft                                                                                                                                                                                                                                                                                                              |
+| -tr TRANSFORMATION, --transformation TRANSFORMATION | specifies the frequency technique to use. Supported modes are: `dft` (default), `stft`, `astft`, `wave_disc`, `wave_cont`. Experimental (require `pip install "ftio[amd-libs]"`): `efd`, `vmd`. See [Frequency Methods](/docs/frequency_methods.md). |
 | -e ENGINE, --engine ENGINE                          | specifies the engine used to display the figures. Either plotly (default) or matplotlib can be used. Plotly is used to generate interactive plots as HTML files. Set this value to no if you do not want to generate plots                                                                                                                                                                                               |
 | -rp, --runtime_plots                                | if set, shows the plot at runtime                                                                                                                                                                                                                                                                                                                                                                                         |
 | -o OUTLIER, --outlier OUTLIER                       | outlier detection method: z-score (default), dbscan, forest, lof, or peak (find_peaks)                                                                                                                                                                                                                                                                                                                                    |

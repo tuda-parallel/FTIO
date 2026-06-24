@@ -41,7 +41,7 @@ ftio [options] files [files ...]
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `-tr`, `--transformation` | str | `dft` | Frequency method: `dft`, `stft`, `astft`, `wave_disc`, `wave_cont`. See [Frequency Methods](frequency_methods.md). |
+| `-tr`, `--transformation` | str | `dft` | Frequency method: `dft`, `stft`, `astft`, `wave_disc`, `wave_cont`. Experimental (requires `pip install "ftio[amd-libs]"`): `efd`, `vmd`. See [Frequency Methods](frequency_methods.md). |
 | `-o`, `--outlier` | str | `z-score` | Outlier detection on the spectrum: `z-score`, `dbscan`, `forest`, `lof`, `peak`. |
 | `-t`, `--tol` | float | `0.8` | Tolerance / confidence threshold used by the outlier detector. |
 | `-n`, `--n_freq` | int | `0` | Extract up to N dominant frequencies (0 = auto, finds the single dominant). |
