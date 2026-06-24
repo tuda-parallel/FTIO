@@ -183,7 +183,7 @@ That's it. Now every time you commit, the code is formatted correctly.
 - Check that all previous points are covered (especially **Point 6**).
 - When your thesis is complete, create a **pull request (PR)** to merge your branch into the `development` branch.
 - Include a summary of your work and link the pull request to your issue for reference.
-- Don’t forget to add yourself to the [list of contributors](/docs/contributing.md#list-of-contributors).
+- Don’t forget to add yourself to the [list of contributors](../CONTRIBUTORS.md).
 
 ---
 

@@ -365,6 +365,8 @@ Kindly see the instructions provided under [docs/contributing.md](/docs/contribu
 > [!note]
 > If you are a student from TU Darmstadt, kindly see these [instructions](/docs/students_contribute.md).
 
+We sincerely thank our [contributors](./CONTRIBUTORS.md) for their valuable contributions!
+
 
 <!-- CONTACT -->
 
