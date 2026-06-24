@@ -379,7 +379,13 @@ Full documentation:
             "--stft_window",
             type=str,
             default="0",
-            help="Window length for STFT analysis in samples or time (e.g., '20s'). If 0, it is automatically calculated based on the dominant frequency.",
+            help=(
+                "Window length in samples or seconds (e.g. '20s'). Default: 0 (auto). "
+                "For -tr stft: auto sets the window to 4× the dominant period found by "
+                "a preliminary DFT. "
+                "For -tr astft: auto determines the window via the cm5 concentration "
+                "measure; a non-zero value overrides that automatic selection."
+            ),
         )
 
         parser.add_argument(
@@ -419,9 +425,11 @@ Full documentation:
             type=_energy_fraction_type,
             default=0.95,
             help=(
-                "Energy fraction used for burst width estimation (default: 0.95). "
-                "The burst window is the shortest contiguous interval containing "
-                "this fraction of the period's total energy. Only used with --burst_width."
+                "Energy fraction (in (0, 1]) for burst width estimation (default: 0.95). "
+                "The burst window is the shortest contiguous time interval whose squared "
+                "bandwidth (power) sums to at least this fraction of the period's total "
+                "energy. For example, 0.95 means the detected burst captures 95%% of the "
+                "period's energy. Only used with -bw / --burst_width."
             ),
         )
 
@@ -538,17 +546,36 @@ Full documentation:
 
     #! Data modes (for all)
     parser.add_argument(
-        "--sum", action="store_true", help="sum plot: True (default) or False"
+        "--sum",
+        action="store_true",
+        help=(
+            "Show the summed (application-level) bandwidth in plots (default: on). "
+            "When trace data is provided at rank level (e.g. from TMIO), individual "
+            "rank bandwidths are overlapped and summed to obtain the total application "
+            "I/O bandwidth. Use --no_sum to hide this trace."
+        ),
     )
     parser.add_argument("--no_sum", dest="sum", action="store_false")
     parser.set_defaults(sum=True)
     parser.add_argument(
-        "--avr", action="store_true", help="avr plot: True (default) or False"
+        "--avr",
+        action="store_true",
+        help=(
+            "Show the average bandwidth across all ranks in plots (default: on). "
+            "Relevant when trace data contains per-rank metrics (e.g. from TMIO). "
+            "Use --no_avr to hide this trace."
+        ),
     )
     parser.add_argument("--no_avr", dest="avr", action="store_false")
     parser.set_defaults(avr=True)
     parser.add_argument(
-        "--ind", action="store_true", help="ind plot: True or False (default)"
+        "--ind",
+        action="store_true",
+        help=(
+            "Show individual per-rank bandwidth traces in plots (default: off). "
+            "Useful with TMIO traces to inspect rank-level I/O patterns. "
+            "Use --no_ind to hide individual traces (already the default)."
+        ),
     )
     parser.add_argument("--no_ind", dest="ind", action="store_false")
     parser.set_defaults(ind=False)

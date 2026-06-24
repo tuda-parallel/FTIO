@@ -54,7 +54,7 @@ ftio [options] files [files ...]
 | `-p`, `--periodicity_detection` | str | none | Extra periodicity check: `rpde`, `sf` (spectral flatness), `corr`, `ind`. |
 | `-le`, `--level` | int | `0` (auto) | Decomposition level for discrete wavelet transform. |
 | `--wavelet` | str | `db1` / `morl` | Wavelet family (see `pywt` docs). Defaults depend on `wave_disc` vs `wave_cont`. |
-| `--stft_window` | str | `0` (auto) | STFT window length in samples or seconds (e.g. `20s`). Auto uses 4× the detected period. |
+| `--stft_window` | str | `0` (auto) | Window length in samples or seconds (e.g. `20s`). For `stft`: auto uses 4× the detected period. For `astft`: auto uses the cm5 concentration measure; a non-zero value overrides it. |
 | `--tfpf` | int | `0` | Time-frequency peak-filtering iterations (ASTFT). |
 
 ### Signal filtering (pre-analysis)

@@ -134,7 +134,7 @@ The ASTFT is an offline-optimised variant of the STFT that automatically determi
 | Flag | Default | Effect |
 |------|---------|--------|
 | `--tfpf` | `0` | Time-frequency peak-filtering iterations (helps with noisy spectra). |
-| `--stft_window` | `0` | Override the automatic window selection with a fixed value. |
+| `--stft_window` | `0` (auto) | Override the automatic cm5 window selection with a fixed value (samples or seconds, e.g. `20s`). When `0`, ASTFT determines the optimal window automatically. |
 
 **When to use:** Best for offline analysis where the optimal window size is unknown.  Higher computational cost than plain STFT but produces the most accurate window.  Not recommended for online/streaming use due to the window-search overhead.
 
