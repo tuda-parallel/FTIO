@@ -12,3 +12,5 @@ We sincerely thank the following contributors for their valuable contributions t
 | [Julian Opper](https://github.com/JulianOpper) | Improved CI/CD pipeline (PPT Lab) |
 | [Luca Schultze](https://github.com/lucasch03) | Improved CI/CD pipeline (PPT Lab) |
 | [nGreen27](https://github.com/nGreen27) | Checkpoint management (Master Thesis) |
+| [josefinez](https://github.com/josefinez) | Adaptive frequency analysis: ASTFT, EFD, and VMD (Master Thesis) |
+| [raIIe](https://github.com/raIIe) | Machine learning models for I/O prediction (Bachelor Thesis) |
