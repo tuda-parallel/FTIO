@@ -104,6 +104,84 @@ def _automaton_step(
     return text
 
 
+def _model_manager_step(
+    prediction,
+    args: Namespace,
+    shared_resources: SharedResources,
+) -> str:
+    """Step the model manager with one new Prediction.
+
+    Retrieves (or creates) the ModelManager from shared_resources, feeds the
+    prediction, and writes the updated manager back.  Returns a Rich-formatted
+    status string for the predictor log.
+
+    Only the ModelManager object itself is stored in the Manager dict; its
+    read-only reference automaton and compact tracker state live on the object.
+    """
+    from ftio.modeling.model_manager import ModelManager
+
+    det = shared_resources.online_detection
+    mgr: ModelManager | None = det.get("pa_model_manager", None)
+
+    if mgr is None:
+        library_dir = getattr(args, "pa_library", None) or "./ftio_models"
+        app_name = getattr(args, "pa_app_name", None) or _derive_app_name(args)
+        strategy = getattr(args, "pa_match", "greedy")
+        mgr = ModelManager(library_dir, app_name, strategy)
+
+    forecast = mgr.step(prediction)
+    det["pa_model_manager"] = mgr  # write back — Manager proxies don't track mutations
+
+    pred_count = shared_resources.count.value
+
+    if forecast is None:
+        return (
+            f"[purple][PREDICTOR] (#{pred_count}):[/] "
+            f"[dim]Reference ({mgr.app_name}): cold start — "
+            f"no library match. Learning from this run.[/]"
+        )
+
+    pos_pct = forecast.position * 100
+    state_str = f"{forecast.current_state_idx + 1}/{forecast.n_states}"
+    text = (
+        f"[purple][PREDICTOR] (#{pred_count}):[/] "
+        f"[green]Reference ({mgr._strategy}): "
+        f"state {state_str}, pos={pos_pct:.0f}%, "
+        f"tracking={forecast.tracking_quality:.2f}[/]"
+    )
+
+    if forecast.at_end:
+        text += (
+            f"\n[purple][PREDICTOR] (#{pred_count}):[/] "
+            f"[bold yellow]  → APPLICATION IN FINAL REFERENCE STATE[/]"
+        )
+    elif forecast.has_timing:
+        text += (
+            f"\n[purple][PREDICTOR] (#{pred_count}):[/] "
+            f"[green]  Transition in ~{forecast.eta_seconds:.1f}s "
+            f"[{forecast.eta_lower:.1f}s–{forecast.eta_upper:.1f}s] "
+            f"→ next period ≈ {forecast.next_period:.2f}s[/]"
+        )
+    elif not np.isnan(forecast.next_period):
+        text += (
+            f"\n[purple][PREDICTOR] (#{pred_count}):[/] "
+            f"[green]  Next period ≈ {forecast.next_period:.2f}s "
+            f"(timing improves after ≥2 runs in library)[/]"
+        )
+
+    return text
+
+
+def _derive_app_name(args: Namespace) -> str:
+    """Derive an application name from the monitored filename."""
+    import os
+
+    files = getattr(args, "files", [])
+    if files:
+        return os.path.splitext(os.path.basename(files[0]))[0] or "unknown"
+    return "unknown"
+
+
 def ftio_process(shared_resources: SharedResources, args: Namespace, msgs=None) -> None:
     """Perform a single prediction with FTIO
 
@@ -145,15 +223,26 @@ def ftio_process(shared_resources: SharedResources, args: Namespace, msgs=None) 
     # save prediction results
     save_data(prediction, shared_resources)
 
+    # --pa-library implies --phase-automaton
+    if getattr(parsed_args, "pa_library", None):
+        parsed_args.phase_automaton = True
+
     # Phase automaton: step if enabled (stored in shared_resources across processes)
     automaton_text = ""
     if getattr(parsed_args, "phase_automaton", False):
         automaton_text = _automaton_step(prediction, parsed_args, shared_resources)
 
+    # Reference library: position tracking + transition forecast
+    model_text = ""
+    if getattr(parsed_args, "pa_library", None):
+        model_text = _model_manager_step(prediction, parsed_args, shared_resources)
+
     # display results
     text = display_result(freq, prediction, shared_resources)
     if automaton_text:
         text += "\n" + automaton_text
+    if model_text:
+        text += "\n" + model_text
 
     # data analysis to decrease window by changing start_time
     adaptation_text, change_detected, change_point_info = window_adaptation(

@@ -498,6 +498,49 @@ Full documentation:
                 "transitions, and automaton configuration."
             ),
         )
+        parser.add_argument(
+            "--pa-library",
+            dest="pa_library",
+            type=str,
+            default=None,
+            metavar="DIR",
+            help=(
+                "Root directory for the phase automaton library "
+                "(default: ./ftio_models when this flag is given). "
+                "Each app+rank configuration is stored as "
+                "<DIR>/<app_name>/ranks_<key>.json. "
+                "On the first run for an app (cold start) the automaton is "
+                "saved as a new reference.  On subsequent runs the distributions "
+                "are updated using pooled statistics. "
+                "Implies --phase-automaton."
+            ),
+        )
+        parser.add_argument(
+            "--pa-app-name",
+            dest="pa_app_name",
+            type=str,
+            default=None,
+            metavar="NAME",
+            help=(
+                "Application name used as the library subdirectory "
+                "(default: stem of the monitored filename). "
+                "Use this to distinguish different applications that happen to "
+                "run at the same rank count."
+            ),
+        )
+        parser.add_argument(
+            "--pa-match",
+            dest="pa_match",
+            choices=["greedy", "dtw", "viterbi"],
+            default="greedy",
+            help=(
+                "Matching strategy for position tracking against the reference "
+                "automaton (default: greedy). "
+                "greedy — nearest period at each step; "
+                "dtw    — sequence alignment over an observation window; "
+                "viterbi — HMM decoding with Gaussian emission on period."
+            ),
+        )
 
     #! IOPLOT Settings
     if "plot" in name.lower():
