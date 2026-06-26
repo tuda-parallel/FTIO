@@ -259,6 +259,66 @@ class PhaseAutomaton:
             print(f"  {t}")
         print("=" * 65)
 
+    def print_graph(self) -> None:
+        """Print the automaton as a vertical ASCII state-graph diagram."""
+        if not self.states:
+            print("  (no states)")
+            return
+
+        trans_map = {t.from_state: t for t in self.transitions}
+
+        INNER = 30
+        INDENT = "  "
+        MID = (INNER + 2) // 2
+
+        def _box(state: PhaseState) -> list[str]:
+            dur = state.duration
+            dur_str = f"{dur:.1f} s" if not np.isnan(dur) else "ongoing"
+            rows = [
+                f"S{state.state_id}",
+                f"f = {state.dominant_freq:.4f} Hz",
+                f"T = {state.period:.2f} s",
+                f"ranks = {state.ranks}",
+                f"dur   = {dur_str}",
+            ]
+            top = "┌" + "─" * INNER + "┐"
+            bot = "└" + "─" * INNER + "┘"
+            body = [f"│ {row:<{INNER - 2}} │" for row in rows]
+            return [top] + body + [bot]
+
+        _cause_label = {
+            "rank_change": "rank change",
+            "period_ratio": "period ratio",
+            "frequency": "freq shift (statistical)",
+        }
+
+        print(f"\n{'=' * 65}")
+        print(
+            f"PhaseAutomaton graph  method={self.method!r}  "
+            f"states={len(self.states)}  transitions={len(self.transitions)}"
+        )
+        print("─" * 65)
+
+        for state in self.states:
+            for line in _box(state):
+                print(INDENT + line)
+
+            tr = trans_map.get(state.state_id)
+            if tr is None:
+                continue
+
+            pad = " " * MID
+            old_p = 1.0 / tr.old_freq if tr.old_freq > 0 else float("inf")
+            new_p = 1.0 / tr.new_freq if tr.new_freq > 0 else float("inf")
+            cause_str = _cause_label.get(tr.cause, tr.cause)
+
+            print(INDENT + pad + "│")
+            print(INDENT + pad + f"├─ {cause_str}  @t={tr.timestamp:.1f} s")
+            print(INDENT + pad + f"│  T: {old_p:.2f} s → {new_p:.2f} s")
+            print(INDENT + pad + "▼")
+
+        print("=" * 65)
+
     def to_dict(self) -> dict:
         """Serialise the automaton to a plain, JSON-compatible dict.
 
