@@ -166,7 +166,9 @@ def test_execute_includes_metrics_without_dominant_freq():
 
             msgpack.packb(sanitize([pred]), use_bin_type=True)
         except Exception as exc:
-            raise AssertionError(f"Prediction must be msgpack-serializable: {exc}") from exc
+            raise AssertionError(
+                f"Prediction must be msgpack-serializable: {exc}"
+            ) from exc
 
 
 def test_execute_multi_metric_all_serializable():
