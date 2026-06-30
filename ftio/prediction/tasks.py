@@ -80,51 +80,13 @@ def ftio_metric_task_save(
     show: bool = False,
 ) -> None:
     prediction = ftio_metric_task(metric, arrays, argv, ranks, show)
-    # freq = get_dominant(prediction) #just get a single dominant value
-    names = []
-    if prediction.top_freqs:
-        freqs = prediction.top_freqs["freq"]
-        amps = prediction.top_freqs["amp"]
-        phis = prediction.top_freqs["phi"]
-
-        for f, a, p in zip(freqs, amps, phis, strict=True):
-            names.append(prediction.get_wave_name(f, a, p))
-
-        data.append(
-            {
-                "metric": f"{metric}",
-                "dominant_freq": prediction.dominant_freq,
-                "conf": prediction.conf,
-                "amp": prediction.amp,
-                "phi": prediction.phi,
-                "t_start": prediction.t_start,
-                "t_end": prediction.t_end,
-                "total_bytes": prediction.total_bytes,
-                "ranks": prediction.ranks,
-                "freq": float(prediction.freq),
-                "top_freq": prediction.top_freqs,
-                "n_samples": prediction.n_samples,
-                "wave_names": names,
-            }
-        )
-    # if prediction:
-    # data.append(
-    #     {
-    #         "metric": f"{metric}",
-    #         "dominant_freq": prediction.dominant_freq,
-    #         "conf": prediction.conf,
-    #         "amp": prediction.amp,
-    #         "phi": prediction.phi,
-    #         "t_start": prediction.t_start,
-    #         "t_end": prediction.t_end,
-    #         "total_bytes": prediction.total_bytes,
-    #         "ranks": prediction.ranks,
-    #         "freq": prediction.freq,
-    #         "top_freq": prediction.top_freqs,
-    #     }
-    # )
-    # caused issues with msgpack serialization
-    # prediction.metric = metric
-    # data.append(prediction)
+    if prediction is None:
+        return
+    has_data = (
+        len(prediction.dominant_freq) > 0 or len(prediction.top_freqs.get("freq", [])) > 0
+    )
+    if has_data:
+        prediction.metric = metric
+        data.append(prediction)
     else:
-        CONSOLE.info(f"\n[yellow underline]Warning: {metric} returned {prediction}[/]")
+        CONSOLE.info(f"\n[yellow underline]Warning: {metric} has no periodicity data[/]")

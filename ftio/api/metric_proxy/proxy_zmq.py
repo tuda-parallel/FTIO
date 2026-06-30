@@ -25,6 +25,7 @@ from rich.console import Console
 from ftio.api.metric_proxy.parallel_proxy import execute, execute_parallel
 from ftio.api.metric_proxy.parse_proxy import filter_metrics
 from ftio.freq.helper import MyConsole
+from ftio.freq.prediction import Prediction
 
 CONSOLE = MyConsole()
 CONSOLE.set(True)
@@ -35,8 +36,14 @@ last_request = time.time()
 
 
 def sanitize(obj):
-    if isinstance(obj, np.ndarray):
+    if isinstance(obj, Prediction):
+        return sanitize(obj.to_dict())
+    elif isinstance(obj, np.ndarray):
+        if obj.dtype.kind == "f":
+            obj = np.where(np.isfinite(obj), obj, 0.0)
         return obj.tolist()
+    elif isinstance(obj, float) and not np.isfinite(obj):
+        return 0.0
     elif isinstance(obj, dict):
         return {k: sanitize(v) for k, v in obj.items()}
     elif isinstance(obj, list):

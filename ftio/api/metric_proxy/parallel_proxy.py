@@ -120,10 +120,9 @@ def main(args: argparse.Namespace = parse_args()) -> None:
         else:
             ftio_args.extend(["-e", "no"])
 
-    # finds up to n frequencies. Comment this out to go back to the default version
-    # ftio_args.extend(['-n', '10'])
+    # pass -n <N> to use multi-frequency wave reconstruction (default: dominant freq only)
 
-    console.print("FTIO args: ftio_args")
+    console.print(f"FTIO args: {ftio_args}")
     if args.proxy:
         mp = MetricProxy()
         if not args.job_id:
@@ -211,10 +210,7 @@ def execute_parallel(
     with progress:
         try:
             if pools:
-                # with Progress() as progress:
-                #     task = progress.add_task('[cyan]Metrics handled', total=len(metrics.keys()))
                 for metric, arrays in metrics.items():
-                    # with ProcessPoolExecutor(max_workers=80) as executor:
                     with ProcessPoolExecutor() as executor:
                         _ = executor.submit(
                             ftio_metric_task_save,
@@ -225,7 +221,6 @@ def execute_parallel(
                             ranks,
                             show,
                         )
-                        # progress.update(task, advance=1)
                         counter += 1
                         progress.update(task, completed=counter)
             else:  # use futures
@@ -250,7 +245,9 @@ def execute_parallel(
             print("-- done -- ")
             exit()
 
-    return data
+    result = list(data)  # copy out before manager shuts down on scope exit
+    manager.shutdown()
+    return result
 
 
 def execute(metrics: dict, argv: list, ranks: int, show: bool):
@@ -266,12 +263,20 @@ def execute(metrics: dict, argv: list, ranks: int, show: bool):
         task = progress.add_task("[green]Processing metrics", total=total_files)
         for metric, arrays in metrics.items():
             if check:
-                decreasing_order = np.all(arrays[1][-1] >= arrays[1][1])
-                # negative = np.all(arrays[0] <= 0)
-                if not decreasing_order:  # or not  negative:
+                if len(arrays[1]) < 2:
                     error_counter += 1
-                    # err = '[bold red] Negative metric' if not negative else '[bold  yellow]time not decreasing'
-                    err = "[bold  yellow]time not decreasing"
+                    console = MyConsole()
+                    console.set(True)
+                    console.print(
+                        f"[bold red]- {error_counter}. Error in {metric}: [bold yellow]too few samples[/]"
+                    )
+                    continue
+                increasing_order = np.all(arrays[1][-1] >= arrays[1][0])
+                # negative = np.all(arrays[0] <= 0)
+                if not increasing_order:  # or not  negative:
+                    error_counter += 1
+                    # err = '[bold red] Negative metric' if not negative else '[bold yellow]time not increasing'
+                    err = "[bold yellow]time not increasing"
                     console = MyConsole()
                     console.set(True)
                     console.print(

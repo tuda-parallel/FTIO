@@ -209,6 +209,7 @@ def figures_to_html(
             + "\n"
         )
 
+    run_names = ""
     if names:
         run_names = "<br><br> Folders map to:<ul>\n"
         for index, name in enumerate(names):

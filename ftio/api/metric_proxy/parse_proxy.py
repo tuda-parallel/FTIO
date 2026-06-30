@@ -60,12 +60,10 @@ def extract(json_data, match, verbose=False):
             if match == key:
                 if verbose:
                     print(f"matched {key}")
-                x = np.array(value)
+                x = np.array(value, dtype=float)
                 x = np.nan_to_num(x=x, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
                 t_out = x[:, 0]
                 b_out = x[:, 1]
-                # remove None from b
-                b_out[b_out is None] = 0
                 # reduce to derivative
                 if "deriv" not in key:
                     if verbose:

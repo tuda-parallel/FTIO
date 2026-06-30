@@ -74,6 +74,8 @@ class NpArrayEncode(json.JSONEncoder):
         if isinstance(obj, np.ndarray):
             np.nan_to_num(x=obj, copy=False, nan=0.0, posinf=0.0, neginf=0.0)
             return obj.tolist()
+        if hasattr(obj, "to_dict"):
+            return obj.to_dict()
         return json.JSONEncoder.default(self, obj)
 
 

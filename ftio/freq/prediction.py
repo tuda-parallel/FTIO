@@ -602,6 +602,7 @@ class Prediction:
             dict: A copy of all relevant instance attributes.
         """
         return {
+            "metric": self._metric,
             "source": self._source,
             "dominant_freq": self._dominant_freq,
             "conf": self._conf,
