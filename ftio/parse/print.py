@@ -23,8 +23,10 @@ class Print:
         self.data = Scales(args)
         if prepare_plot_data:
             self.data.assign_data()  # plotting DataFrames only; the jsonl walk never reads them
-        self.file = None  # opened by print_txt/print_json_lines; None -> collect records only
-        self.records: list[Record] = []   #used for extraps build model
+        self.file = (
+            None  # opened by print_txt/print_json_lines; None -> collect records only
+        )
+        self.records: list[Record] = []  # used for extraps build model
         self.args = self.data.args
 
     def print_txt(self):
@@ -551,7 +553,14 @@ class Print:
                         for j, _ in enumerate(art):
                             if j == 0 and self.args.scale:
                                 metric, order = scale_metric(metric, art[j])
-                            self.records.append(Record(self.data.s[i].ranks, call_path, metric, art[j] * order))
+                            self.records.append(
+                                Record(
+                                    self.data.s[i].ranks,
+                                    call_path,
+                                    metric,
+                                    art[j] * order,
+                                )
+                            )
                             if self.file is not None:
                                 self.file.write(
                                     f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art[j]*order:e} }}\n'
@@ -559,7 +568,9 @@ class Print:
                     else:
                         if self.args.scale:
                             metric, order = scale_metric(metric, art)
-                        self.records.append(Record(self.data.s[i].ranks, call_path, metric, art * order))
+                        self.records.append(
+                            Record(self.data.s[i].ranks, call_path, metric, art * order)
+                        )
                         if self.file is not None:
                             self.file.write(
                                 f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art*order:e} }}\n'
