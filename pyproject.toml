@@ -76,6 +76,7 @@ ftio = "ftio.cli.ftio_core:run"
 predictor = "ftio.cli.predictor:main"
 ioplot = "ftio.util.ioplot:main"
 ioparse = "ftio.util.ioparse:main" # parse several JSON files from TMIO to a single profile for Extra-P
+ftio_to_extrap = "ftio.parse.ftio_to_extrap:run" # FTIO traces -> Extra-P models in-process, no intermediate file
 predictor_jit = "ftio.api.gekkoFs.predictor_gekko_zmq:main"
 jit = "ftio.api.gekkoFs.jit.jit:main"
 parallel_trace_analysis = "ftio.api.trace_analysis.parallel_trace_analysis:main" # analyses several traces (JSON or CSV) in parallel
@@ -106,6 +107,12 @@ external-libs = [
 # Keep it opt-in: `pip install .[darshan-libs]` (plus darshan-util on the system).
 darshan-libs = [
     "darshan",
+]
+
+# Only needed for ftio_to_extrap (in-process Extra-P modeling).
+# Keep it opt-in: extrap pins numpy<2 and pulls in PySide6.
+extrap-libs = [
+    "extrap",
 ]
 
 development-libs = [

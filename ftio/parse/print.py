@@ -14,13 +14,17 @@ https://github.com/tuda-parallel/FTIO/blob/main/LICENSE
 import numpy as np
 
 from ftio.parse.helper import scale_metric
+from ftio.parse.record import Record
 from ftio.parse.scales import Scales
 
 
 class Print:
-    def __init__(self, args):
+    def __init__(self, args, prepare_plot_data: bool = True):
         self.data = Scales(args)
-        self.data.assign_data()
+        if prepare_plot_data:
+            self.data.assign_data()  # plotting DataFrames only; the jsonl walk never reads them
+        self.file = None  # opened by print_txt/print_json_lines; None -> collect records only
+        self.records: list[Record] = []   #used for extraps build model
         self.args = self.data.args
 
     def print_txt(self):
@@ -547,15 +551,19 @@ class Print:
                         for j, _ in enumerate(art):
                             if j == 0 and self.args.scale:
                                 metric, order = scale_metric(metric, art[j])
-                            self.file.write(
-                                f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art[j]*order:e} }}\n'
-                            )
+                            self.records.append(Record(self.data.s[i].ranks, call_path, metric, art[j] * order))
+                            if self.file is not None:
+                                self.file.write(
+                                    f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art[j]*order:e} }}\n'
+                                )
                     else:
                         if self.args.scale:
                             metric, order = scale_metric(metric, art)
-                        self.file.write(
-                            f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art*order:e} }}\n'
-                        )
+                        self.records.append(Record(self.data.s[i].ranks, call_path, metric, art * order))
+                        if self.file is not None:
+                            self.file.write(
+                                f'{{"params":{{"Processes":{self.data.s[i].ranks}}},"callpath":"{call_path}","metric":"{metric}","value":{art*order:e} }}\n'
+                            )
             else:
                 pass
 
@@ -580,3 +588,10 @@ class Print:
     def print_points(self):
         for run in self.data.s:
             run.print_rank(self.file)
+
+    def collect_records(self) -> list[Record]:
+        """Same as print_json_lines(), without writing a file."""
+        self.file = None
+        self.records = []
+        self.print_regions_jsonl()
+        return self.records
